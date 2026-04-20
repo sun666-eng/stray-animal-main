@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>公告中心</title>
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/element.css">
+    <style>
+        body { margin: 0; background: #f5f7fb; color: #24324a; }
+        .page-shell { max-width: 1080px; margin: 0 auto; padding: 28px 20px 60px; }
+        .nav { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+        .chip { display: inline-flex; align-items: center; height: 38px; padding: 0 14px; border-radius: 999px; background: #fff; color: #3552a6; text-decoration: none; box-shadow: 0 8px 20px rgba(25, 43, 77, 0.06); }
+        .hero { background: linear-gradient(135deg, #ffd27d 0%, #ff9d5c 100%); color: #fff; border-radius: 20px; padding: 28px 30px; box-shadow: 0 12px 30px rgba(255, 157, 92, 0.2); margin-bottom: 22px; }
+        .hero h1 { margin: 0 0 8px; font-size: 30px; }
+        .toolbar { display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+        .toolbar input { flex: 1; min-width: 240px; height: 42px; border: 1px solid #d9e2f2; border-radius: 10px; padding: 0 14px; outline: none; background: #fff; }
+        .toolbar button { height: 42px; padding: 0 18px; border: 0; border-radius: 10px; cursor: pointer; }
+        .btn-primary { background: #ff9d5c; color: #fff; }
+        .btn-ghost { background: #fff1e8; color: #b85e23; }
+        .list { display: grid; gap: 16px; }
+        .notice-card { background: #fff; border-radius: 18px; padding: 20px 22px; box-shadow: 0 8px 24px rgba(25, 43, 77, 0.08); }
+        .notice-title { font-size: 22px; font-weight: 700; margin-bottom: 10px; }
+        .notice-content { color: #556277; line-height: 1.9; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .notice-actions { margin-top: 14px; }
+        .notice-actions a { color: #356df3; text-decoration: none; }
+        .empty { background: #fff; border-radius: 18px; padding: 60px 20px; text-align: center; color: #7a8599; box-shadow: 0 8px 24px rgba(25, 43, 77, 0.08); }
+        .pager { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+        .pager button { height: 38px; padding: 0 14px; border-radius: 10px; border: 1px solid #d6def0; background: #fff; cursor: pointer; }
+        .pager .current { background: #ff9d5c; color: #fff; border-color: #ff9d5c; }
+    </style>
+</head>
+<body>
+<div id="app" class="page-shell">
+    <div class="nav">
+        <a class="chip" href="./animal_browse.html">动物浏览</a>
+        <a class="chip" href="./my_adopt.html">我的领养申请</a>
+        <a class="chip" href="./volunteer_apply.html">义工申请</a>
+        <a class="chip" href="./notice_list.html">公告中心</a>
+        <a class="chip" href="./login.html">登录页</a>
+    </div>
+    <div class="hero">
+        <h1>公告中心</h1>
+        <p>查看系统公告、领养活动和志愿活动通知。</p>
+    </div>
+    <div class="toolbar">
+        <input v-model.trim="query" type="text" placeholder="输入标题关键词搜索公告">
+        <button class="btn-primary" @click="loadNotices(1)">搜索</button>
+        <button class="btn-ghost" @click="resetQuery">重置</button>
+    </div>
+    <div v-if="loading" class="empty">公告加载中...</div>
+    <div v-else-if="notices.length === 0" class="empty">暂无公告内容</div>
+    <div v-else class="list">
+        <div class="notice-card" v-for="item in notices" :key="item.id">
+            <div class="notice-title">{{ item.title || '未命名公告' }}</div>
+            <div class="notice-content">{{ item.content || '暂无内容' }}</div>
+            <div class="notice-actions"><a :href="`./notice_detail.html?id=${item.id}`">查看详情</a></div>
+        </div>
+    </div>
+    <div class="pager" v-if="totalPages > 1">
+        <button :disabled="pageNum === 1" @click="loadNotices(pageNum - 1)">上一页</button>
+        <button v-for="p in pageList" :key="p" :class="{ current: p === pageNum }" @click="loadNotices(p)">{{ p }}</button>
+        <button :disabled="pageNum === totalPages" @click="loadNotices(pageNum + 1)">下一页</button>
+        <span>第 {{ pageNum }} / {{ totalPages }} 页</span>
+    </div>
+</div>
+<script src="../../js/jquery.min.js"></script>
+<script src="../../js/vue.min.js"></script>
+<script src="../../js/element.js"></script>
+<script>
+new Vue({
+  el: '#app',
+  data: { notices: [], query: '', loading: false, pageNum: 1, pageSize: 8, totalPages: 1 },
+  computed: {
+    pageList() {
+      const pages = [];
+      const start = Math.max(1, this.pageNum - 2);
+      const end = Math.min(this.totalPages, start + 4);
+      for (let i = start; i <= end; i++) pages.push(i);
+      return pages;
+    }
+  },
+  mounted() { this.loadNotices(1); },
+  methods: {
+    loadNotices(page) {
+      this.loading = true;
+      this.pageNum = page;
+      $.ajax({ url: '/api/notice/page', type: 'GET', data: { name: this.query, pageNum: this.pageNum, pageSize: this.pageSize } })
+        .then(res => {
+          if (res.code === '0' && res.data) {
+            this.notices = res.data.records || [];
+            this.totalPages = res.data.pages || 1;
+          } else {
+            this.$message.error(res.msg || '加载公告失败');
+          }
+        })
+        .catch(() => { this.$message.error('网络异常，加载公告失败'); })
+        .always(() => { this.loading = false; });
+    },
+    resetQuery() { this.query = ''; this.loadNotices(1); }
+  }
+});
+</script>
+</body>
+</html>

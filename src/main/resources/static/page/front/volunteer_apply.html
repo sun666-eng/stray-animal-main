@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>义工申请</title>
+    <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/element.css">
+    <style>
+        body { margin: 0; background: #f5f7fb; color: #24324a; }
+        .page-shell { max-width: 1080px; margin: 0 auto; padding: 28px 20px 60px; }
+        .nav { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+        .chip { display: inline-flex; align-items: center; height: 38px; padding: 0 14px; border-radius: 999px; background: #fff; color: #3552a6; text-decoration: none; box-shadow: 0 8px 20px rgba(25, 43, 77, 0.06); }
+        .hero { background: linear-gradient(135deg, #7ce0b8 0%, #41b883 100%); color: #fff; border-radius: 20px; padding: 28px 30px; box-shadow: 0 12px 30px rgba(65, 184, 131, 0.2); margin-bottom: 24px; }
+        .hero h1 { margin: 0 0 8px; font-size: 30px; }
+        .panel { background: #fff; border-radius: 18px; box-shadow: 0 8px 24px rgba(25, 43, 77, 0.08); padding: 24px; }
+        .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 22px; }
+        .field.full { grid-column: 1 / -1; }
+        .field label { display: block; margin-bottom: 8px; font-size: 14px; color: #4d5b73; font-weight: 600; }
+        .input, .select, .textarea { width: 100%; box-sizing: border-box; border: 1px solid #d9e2f2; border-radius: 12px; background: #fff; color: #24324a; outline: none; }
+        .input, .select { height: 44px; padding: 0 14px; }
+        .textarea { min-height: 120px; padding: 12px 14px; resize: vertical; }
+        .actions { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+        .btn { height: 44px; padding: 0 22px; border: 0; border-radius: 12px; cursor: pointer; }
+        .btn-primary { background: #41b883; color: #fff; }
+        .btn-ghost { background: #edf8f3; color: #22845c; }
+        @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+<div id="app" class="page-shell">
+    <div class="nav">
+        <a class="chip" href="./animal_browse.html">动物浏览</a>
+        <a class="chip" href="./my_adopt.html">我的领养申请</a>
+        <a class="chip" href="./volunteer_apply.html">义工申请</a>
+        <a class="chip" href="./my_volunteer.html">我的义工申请</a>
+        <a class="chip" href="./notice_list.html">公告中心</a>
+        <a class="chip" href="./login.html">登录页</a>
+    </div>
+    <div class="hero">
+        <h1>义工申请</h1>
+        <p>填写基础信息后将提交到 `/api/volunteer`，等待工作人员联系。已提交过申请时，可直接进入“我的义工申请”查看状态。</p>
+    </div>
+    <div class="panel" style="margin-bottom: 18px;" v-if="existingCount > 0">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+            <div>
+                <div style="font-size:18px;font-weight:700;">已匹配到 {{ existingCount }} 条义工申请记录</div>
+                <div style="margin-top:6px;color:#637089;">当前账号可直接查看历史申请和审核状态，无需重复填写同样的信息。</div>
+            </div>
+            <button class="btn btn-ghost" @click="goMyVolunteer">查看我的义工申请</button>
+        </div>
+    </div>
+    <div class="panel">
+        <div class="grid">
+            <div class="field"><label>姓名</label><input class="input" v-model.trim="form.name" type="text" placeholder="请输入姓名"></div>
+            <div class="field"><label>年龄</label><input class="input" v-model.number="form.age" type="number" min="0" placeholder="请输入年龄"></div>
+            <div class="field"><label>联系电话</label><input class="input" v-model.trim="form.tel" type="text" placeholder="请输入手机号"></div>
+            <div class="field"><label>微信号</label><input class="input" v-model.trim="form.wechat" type="text" placeholder="请输入微信号"></div>
+            <div class="field"><label>邮箱</label><input class="input" v-model.trim="form.email" type="email" placeholder="请输入邮箱"></div>
+            <div class="field"><label>工作单位</label><input class="input" v-model.trim="form.company" type="text" placeholder="请输入工作单位"></div>
+            <div class="field"><label>现居地</label><input class="input" v-model.trim="form.location" type="text" placeholder="请输入现居地"></div>
+            <div class="field"><label>每周空闲时间</label><select class="select" v-model.number="form.sparetime"><option :value="null">请选择</option><option :value="1">周末为主</option><option :value="2">工作日晚上</option><option :value="3">工作日白天</option><option :value="4">时间较灵活</option></select></div>
+            <div class="field"><label>是否到过基地</label><select class="select" v-model.number="form.isvisit"><option :value="null">请选择</option><option :value="1">到过</option><option :value="0">未到过</option></select></div>
+            <div class="field"><label>审核状态</label><input class="input" value="提交后默认为待审核" disabled></div>
+            <div class="field full"><label>能力自述</label><textarea class="textarea" v-model.trim="form.moreability" placeholder="请描述自己的特长以及愿意参与的活动，例如救助、临时安置、摄影、线下活动支持等"></textarea></div>
+        </div>
+        <div class="actions">
+            <button class="btn btn-primary" :disabled="submitting" @click="submitApply">提交义工申请</button>
+            <button class="btn btn-ghost" @click="goMyVolunteer">我的义工申请</button>
+            <button class="btn btn-ghost" @click="goBrowse">返回动物浏览</button>
+        </div>
+    </div>
+</div>
+<script src="../../js/jquery.min.js"></script>
+<script src="../../js/vue.min.js"></script>
+<script src="../../js/element.js"></script>
+<script>
+new Vue({
+  el: '#app',
+  data: { user: {}, submitting: false, existingCount: 0, form: { company: '', email: '', age: null, isvisit: null, location: '', moreability: '', name: '', sparetime: null, tel: '', vstate: 0, wechat: '' } },
+  mounted() {
+    this.user = sessionStorage.getItem('user') ? JSON.parse(sessionStorage.getItem('user')) : {};
+    if (this.user.username) this.form.name = this.user.username;
+    if (this.user.phone) this.form.tel = this.user.phone;
+    if (this.user.email) this.form.email = this.user.email;
+    this.loadMine();
+  },
+  methods: {
+    loadMine() {
+      if (!this.user.username && !this.user.phone && !this.user.email) return;
+      $.ajax({
+        url: '/api/volunteer',
+        type: 'GET'
+      }).then(res => {
+        if (res.code === '0' && res.data) {
+          const list = Array.isArray(res.data) ? res.data : [];
+          this.existingCount = this.matchMine(list).length;
+        }
+      });
+    },
+    matchMine(list) {
+      return list.filter(item => {
+        const byName = this.user.username && item.name === this.user.username;
+        const byPhone = this.user.phone && item.tel === this.user.phone;
+        const byEmail = this.user.email && item.email === this.user.email;
+        return byName || byPhone || byEmail;
+      });
+    },
+    validateForm() {
+      if (!this.form.name) return '请输入姓名';
+      if (this.form.age === null || Number(this.form.age) < 16) return '请输入有效年龄';
+      if (!this.form.tel) return '请输入联系电话';
+      if (!/^1\d{10}$/.test(String(this.form.tel))) return '请输入正确的11位手机号';
+      if (!this.form.wechat) return '请输入微信号';
+      if (!this.form.email) return '请输入邮箱';
+      if (!this.form.company) return '请输入工作单位';
+      if (!this.form.location) return '请输入现居地';
+      if (this.form.sparetime === null) return '请选择空闲时间';
+      if (this.form.isvisit === null) return '请选择是否到过基地';
+      if (!this.form.moreability) return '请填写能力自述';
+      return '';
+    },
+    submitApply() {
+      const error = this.validateForm();
+      if (error) { this.$message.error(error); return; }
+      this.submitting = true;
+      $.ajax({ url: '/api/volunteer', type: 'POST', contentType: 'application/json', data: JSON.stringify(this.form) })
+        .then(res => {
+          if (res.code === '0' && res.data) {
+            this.$message.success('义工申请提交成功');
+            setTimeout(() => { location.href = './my_volunteer.html'; }, 900);
+          } else {
+            this.$message.error(res.msg || '义工申请提交失败');
+          }
+        })
+        .catch(() => { this.$message.error('网络异常，义工申请提交失败'); })
+        .always(() => { this.submitting = false; });
+    },
+    goMyVolunteer() { location.href = './my_volunteer.html'; },
+    goBrowse() { location.href = './animal_browse.html'; }
+  }
+});
+</script>
+</body>
+</html>
