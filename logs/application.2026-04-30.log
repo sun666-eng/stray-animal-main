@@ -1,0 +1,643 @@
+2026-04-30 00:13:48.213 [SpringApplicationShutdownHook] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：0
+2026-04-30 00:13:48.246 [SpringApplicationShutdownHook] INFO  o.s.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 00:13:48.249 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closing ...
+2026-04-30 00:13:48.250 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closed
+2026-04-30 00:15:05.614 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 6.2.5.Final
+2026-04-30 00:15:05.625 [main] INFO  com.example.Application - Starting Application using Java 21.0.9 on LAPTOP-93TNPJPV with PID 55292 (D:\2026.4.7\Myproject\stray-animal-main\target\classes started by lvjun in D:\2026.4.7\Myproject\stray-animal-main)
+2026-04-30 00:15:05.627 [main] INFO  com.example.Application - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 00:15:06.061 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-30 00:15:06.073 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 7 ms. Found 0 JPA repository interfaces.
+2026-04-30 00:15:06.530 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9999 (http)
+2026-04-30 00:15:06.535 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-9999"]
+2026-04-30 00:15:06.538 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-30 00:15:06.538 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
+2026-04-30 00:15:06.622 [main] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-30 00:15:06.623 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 953 ms
+2026-04-30 00:15:06.756 [main] INFO  org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-30 00:15:06.802 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 5.6.15.Final
+2026-04-30 00:15:06.905 [main] INFO  org.hibernate.annotations.common.Version - HCANN000001: Hibernate Commons Annotations {5.1.2.Final}
+2026-04-30 00:15:07.061 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2026-04-30 00:15:07.158 [main] INFO  org.hibernate.dialect.Dialect - HHH000400: Using dialect: org.hibernate.dialect.MySQL8Dialect
+2026-04-30 00:15:07.267 [main] INFO  o.h.e.t.jta.platform.internal.JtaPlatformInitiator - HHH000490: Using JtaPlatform implementation: [org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform]
+2026-04-30 00:15:07.272 [main] INFO  o.s.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 00:15:07.375 [main] WARN  c.b.mybatisplus.core.metadata.TableInfoHelper - Can not find table primary key in Class: "java.lang.Void".
+2026-04-30 00:15:07.377 [main] WARN  c.b.mybatisplus.core.injector.DefaultSqlInjector - class java.lang.Void ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2026-04-30 00:15:07.419 [main] WARN  c.b.mybatisplus.core.metadata.TableInfoHelper - Can not find table primary key in Class: "com.example.entity.Adopt".
+2026-04-30 00:15:07.419 [main] WARN  c.b.mybatisplus.core.injector.DefaultSqlInjector - class com.example.entity.Adopt ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2026-04-30 00:15:07.664 [main] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-30 00:15:07.853 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-9999"]
+2026-04-30 00:15:07.867 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 9999 (http) with context path ''
+2026-04-30 00:15:07.872 [main] INFO  com.example.Application - Started Application in 2.61 seconds (JVM running for 2.838)
+2026-04-30 00:15:12.474 [http-nio-9999-exec-1] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-30 00:15:12.475 [http-nio-9999-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-30 00:15:12.477 [http-nio-9999-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 2 ms
+2026-04-30 00:15:34.740 [http-nio-9999-exec-4] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-30 00:15:34.742 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 00:15:38.765 [http-nio-9999-exec-8] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-30 00:15:38.769 [http-nio-9999-exec-8] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 00:15:38.793 [http-nio-9999-exec-7] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：1
+2026-04-30 00:15:38.795 [http-nio-9999-exec-7] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"users":[{"username":"2396706066"}]}
+2026-04-30 00:19:47.065 [http-nio-9999-exec-7] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：0
+2026-04-30 00:19:47.103 [http-nio-9999-exec-2] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：1
+2026-04-30 00:19:47.104 [http-nio-9999-exec-2] INFO  com.example.component.WebSocketServer - 服务端给客户端[1]发送消息{"users":[{"username":"2396706066"}]}
+2026-04-30 00:19:47.112 [http-nio-9999-exec-6] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-30 00:19:47.115 [http-nio-9999-exec-6] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 00:19:49.095 [http-nio-9999-exec-1] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：0
+2026-04-30 00:19:49.142 [http-nio-9999-exec-3] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：1
+2026-04-30 00:19:49.143 [http-nio-9999-exec-3] INFO  com.example.component.WebSocketServer - 服务端给客户端[2]发送消息{"users":[{"username":"2396706066"}]}
+2026-04-30 00:19:49.147 [http-nio-9999-exec-9] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-30 00:19:49.149 [http-nio-9999-exec-9] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 00:19:51.252 [http-nio-9999-exec-2] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：0
+2026-04-30 00:19:51.292 [http-nio-9999-exec-6] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：1
+2026-04-30 00:19:51.293 [http-nio-9999-exec-6] INFO  com.example.component.WebSocketServer - 服务端给客户端[3]发送消息{"users":[{"username":"2396706066"}]}
+2026-04-30 00:19:51.296 [http-nio-9999-exec-10] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-30 00:19:51.299 [http-nio-9999-exec-10] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 00:19:51.818 [http-nio-9999-exec-1] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：0
+2026-04-30 00:19:51.859 [http-nio-9999-exec-3] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：1
+2026-04-30 00:19:51.859 [http-nio-9999-exec-3] INFO  com.example.component.WebSocketServer - 服务端给客户端[4]发送消息{"users":[{"username":"2396706066"}]}
+2026-04-30 00:19:51.865 [http-nio-9999-exec-9] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-30 00:19:51.869 [http-nio-9999-exec-9] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 00:29:26.318 [http-nio-9999-exec-4] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：0
+2026-04-30 00:29:26.358 [http-nio-9999-exec-5] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：1
+2026-04-30 00:29:26.358 [http-nio-9999-exec-5] INFO  com.example.component.WebSocketServer - 服务端给客户端[5]发送消息{"users":[{"username":"2396706066"}]}
+2026-04-30 00:29:26.366 [http-nio-9999-exec-1] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-30 00:29:26.369 [http-nio-9999-exec-1] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 00:38:28.069 [http-nio-9999-exec-6] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：0
+2026-04-30 00:38:28.109 [http-nio-9999-exec-10] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：1
+2026-04-30 00:38:28.109 [http-nio-9999-exec-10] INFO  com.example.component.WebSocketServer - 服务端给客户端[6]发送消息{"users":[{"username":"2396706066"}]}
+2026-04-30 00:38:28.118 [http-nio-9999-exec-4] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-30 00:38:28.121 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 00:38:30.240 [http-nio-9999-exec-9] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：0
+2026-04-30 00:38:30.262 [http-nio-9999-exec-7] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：1
+2026-04-30 00:38:30.263 [http-nio-9999-exec-7] INFO  com.example.component.WebSocketServer - 服务端给客户端[7]发送消息{"users":[{"username":"2396706066"}]}
+2026-04-30 00:38:30.268 [http-nio-9999-exec-8] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-30 00:38:30.270 [http-nio-9999-exec-8] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 00:38:30.953 [http-nio-9999-exec-4] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：0
+2026-04-30 00:38:30.987 [http-nio-9999-exec-5] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：1
+2026-04-30 00:38:30.988 [http-nio-9999-exec-5] INFO  com.example.component.WebSocketServer - 服务端给客户端[8]发送消息{"users":[{"username":"2396706066"}]}
+2026-04-30 00:38:30.992 [http-nio-9999-exec-1] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-30 00:38:30.994 [http-nio-9999-exec-1] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 00:38:31.510 [http-nio-9999-exec-8] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：0
+2026-04-30 00:38:31.531 [http-nio-9999-exec-2] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：1
+2026-04-30 00:38:31.531 [http-nio-9999-exec-2] INFO  com.example.component.WebSocketServer - 服务端给客户端[9]发送消息{"users":[{"username":"2396706066"}]}
+2026-04-30 00:38:31.535 [http-nio-9999-exec-6] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-30 00:38:31.536 [http-nio-9999-exec-6] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 00:38:32.770 [http-nio-9999-exec-5] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：0
+2026-04-30 00:38:32.812 [http-nio-9999-exec-1] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：1
+2026-04-30 00:38:32.812 [http-nio-9999-exec-1] INFO  com.example.component.WebSocketServer - 服务端给客户端[a]发送消息{"users":[{"username":"2396706066"}]}
+2026-04-30 00:38:32.817 [http-nio-9999-exec-9] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-30 00:38:32.819 [http-nio-9999-exec-9] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 00:38:34.395 [http-nio-9999-exec-8] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：0
+2026-04-30 00:38:34.420 [http-nio-9999-exec-2] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：1
+2026-04-30 00:38:34.420 [http-nio-9999-exec-2] INFO  com.example.component.WebSocketServer - 服务端给客户端[b]发送消息{"users":[{"username":"2396706066"}]}
+2026-04-30 00:38:34.425 [http-nio-9999-exec-6] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-30 00:38:34.427 [http-nio-9999-exec-6] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 00:38:35.037 [http-nio-9999-exec-1] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：0
+2026-04-30 00:38:35.082 [http-nio-9999-exec-7] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-30 00:38:35.084 [http-nio-9999-exec-7] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 00:38:35.153 [http-nio-9999-exec-3] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 1380475
+2026-04-30 00:38:35.154 [http-nio-9999-exec-3] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 1380483
+2026-04-30 00:38:36.119 [http-nio-9999-exec-10] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：1
+2026-04-30 00:38:36.119 [http-nio-9999-exec-10] INFO  com.example.component.WebSocketServer - 服务端给客户端[c]发送消息{"users":[{"username":"2396706066"}]}
+2026-04-30 00:38:36.120 [http-nio-9999-exec-4] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-30 00:38:36.121 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 01:00:30.384 [SpringApplicationShutdownHook] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：0
+2026-04-30 01:00:30.428 [SpringApplicationShutdownHook] INFO  o.s.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 01:00:30.436 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closing ...
+2026-04-30 01:00:30.441 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closed
+2026-04-30 01:00:51.572 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 6.2.5.Final
+2026-04-30 01:00:51.580 [main] INFO  com.example.Application - Starting Application using Java 21.0.9 on LAPTOP-93TNPJPV with PID 33204 (D:\2026.4.7\Myproject\stray-animal-main\target\classes started by lvjun in D:\2026.4.7\Myproject\stray-animal-main)
+2026-04-30 01:00:51.581 [main] INFO  com.example.Application - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 01:00:51.965 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-30 01:00:51.975 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 6 ms. Found 0 JPA repository interfaces.
+2026-04-30 01:00:52.461 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9999 (http)
+2026-04-30 01:00:52.468 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-9999"]
+2026-04-30 01:00:52.470 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-30 01:00:52.471 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
+2026-04-30 01:00:52.556 [main] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-30 01:00:52.556 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 942 ms
+2026-04-30 01:00:52.701 [main] INFO  org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-30 01:00:52.751 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 5.6.15.Final
+2026-04-30 01:00:52.861 [main] INFO  org.hibernate.annotations.common.Version - HCANN000001: Hibernate Commons Annotations {5.1.2.Final}
+2026-04-30 01:00:53.029 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2026-04-30 01:00:53.150 [main] INFO  org.hibernate.dialect.Dialect - HHH000400: Using dialect: org.hibernate.dialect.MySQL8Dialect
+2026-04-30 01:00:53.270 [main] INFO  o.h.e.t.jta.platform.internal.JtaPlatformInitiator - HHH000490: Using JtaPlatform implementation: [org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform]
+2026-04-30 01:00:53.276 [main] INFO  o.s.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 01:00:53.381 [main] WARN  c.b.mybatisplus.core.metadata.TableInfoHelper - Can not find table primary key in Class: "java.lang.Void".
+2026-04-30 01:00:53.383 [main] WARN  c.b.mybatisplus.core.injector.DefaultSqlInjector - class java.lang.Void ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2026-04-30 01:00:53.427 [main] WARN  c.b.mybatisplus.core.metadata.TableInfoHelper - Can not find table primary key in Class: "com.example.entity.Adopt".
+2026-04-30 01:00:53.427 [main] WARN  c.b.mybatisplus.core.injector.DefaultSqlInjector - class com.example.entity.Adopt ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2026-04-30 01:00:53.685 [main] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-30 01:00:53.918 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-9999"]
+2026-04-30 01:00:53.938 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 9999 (http) with context path ''
+2026-04-30 01:00:53.944 [main] INFO  com.example.Application - Started Application in 2.712 seconds (JVM running for 2.98)
+2026-04-30 01:00:54.138 [http-nio-9999-exec-1] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-30 01:00:54.139 [http-nio-9999-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-30 01:00:54.139 [http-nio-9999-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 0 ms
+2026-04-30 01:02:56.474 [http-nio-9999-exec-10] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 123343
+2026-04-30 01:02:57.852 [http-nio-9999-exec-9] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-30 01:02:57.855 [http-nio-9999-exec-9] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 01:02:59.423 [http-nio-9999-exec-1] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-30 01:02:59.426 [http-nio-9999-exec-1] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 01:02:59.454 [http-nio-9999-exec-7] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：1
+2026-04-30 01:02:59.455 [http-nio-9999-exec-7] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"users":[{"username":"2396706066"}]}
+2026-04-30 01:03:11.552 [http-nio-9999-exec-4] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：0
+2026-04-30 01:03:11.598 [http-nio-9999-exec-2] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：1
+2026-04-30 01:03:11.598 [http-nio-9999-exec-2] INFO  com.example.component.WebSocketServer - 服务端给客户端[1]发送消息{"users":[{"username":"2396706066"}]}
+2026-04-30 01:03:11.603 [http-nio-9999-exec-9] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-30 01:03:11.605 [http-nio-9999-exec-9] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 01:03:52.547 [SpringApplicationShutdownHook] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：0
+2026-04-30 01:03:52.559 [SpringApplicationShutdownHook] INFO  o.s.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 01:03:52.560 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closing ...
+2026-04-30 01:03:52.562 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closed
+2026-04-30 16:54:17.023 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 6.2.5.Final
+2026-04-30 16:54:17.038 [main] INFO  com.example.Application - Starting Application using Java 21.0.9 on LAPTOP-93TNPJPV with PID 23868 (D:\2026.4.7\Myproject\stray-animal-main\target\classes started by lvjun in D:\2026.4.7\Myproject\stray-animal-main)
+2026-04-30 16:54:17.040 [main] INFO  com.example.Application - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 16:54:17.497 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-30 16:54:17.511 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 8 ms. Found 0 JPA repository interfaces.
+2026-04-30 16:54:18.007 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9999 (http)
+2026-04-30 16:54:18.014 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-9999"]
+2026-04-30 16:54:18.016 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-30 16:54:18.016 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
+2026-04-30 16:54:18.113 [main] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-30 16:54:18.113 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1033 ms
+2026-04-30 16:54:18.237 [main] INFO  org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-30 16:54:18.278 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 5.6.15.Final
+2026-04-30 16:54:18.387 [main] INFO  org.hibernate.annotations.common.Version - HCANN000001: Hibernate Commons Annotations {5.1.2.Final}
+2026-04-30 16:54:18.551 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2026-04-30 16:54:18.719 [main] INFO  org.hibernate.dialect.Dialect - HHH000400: Using dialect: org.hibernate.dialect.MySQL8Dialect
+2026-04-30 16:54:18.824 [main] INFO  o.h.e.t.jta.platform.internal.JtaPlatformInitiator - HHH000490: Using JtaPlatform implementation: [org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform]
+2026-04-30 16:54:18.835 [main] INFO  o.s.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 16:54:18.957 [main] WARN  c.b.mybatisplus.core.metadata.TableInfoHelper - Can not find table primary key in Class: "java.lang.Void".
+2026-04-30 16:54:18.957 [main] WARN  c.b.mybatisplus.core.injector.DefaultSqlInjector - class java.lang.Void ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2026-04-30 16:54:19.030 [main] WARN  c.b.mybatisplus.core.metadata.TableInfoHelper - Can not find table primary key in Class: "com.example.entity.Adopt".
+2026-04-30 16:54:19.030 [main] WARN  c.b.mybatisplus.core.injector.DefaultSqlInjector - class com.example.entity.Adopt ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2026-04-30 16:54:19.327 [main] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-30 16:54:19.536 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-9999"]
+2026-04-30 16:54:19.553 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 9999 (http) with context path ''
+2026-04-30 16:54:19.558 [main] INFO  com.example.Application - Started Application in 2.96 seconds (JVM running for 3.226)
+2026-04-30 16:54:27.294 [http-nio-9999-exec-1] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-30 16:54:27.294 [http-nio-9999-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-30 16:54:27.294 [http-nio-9999-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 0 ms
+2026-04-30 16:54:43.558 [http-nio-9999-exec-9] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619007548868, dirPath: upload
+2026-04-30 16:54:43.564 [http-nio-9999-exec-9] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 16:54:45.353 [http-nio-9999-exec-4] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619007548868, dirPath: upload
+2026-04-30 16:54:45.354 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 16:54:50.893 [http-nio-9999-exec-7] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619007548868, dirPath: upload
+2026-04-30 16:54:50.895 [http-nio-9999-exec-7] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 16:54:53.033 [http-nio-9999-exec-10] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619007548868, dirPath: upload
+2026-04-30 16:54:53.035 [http-nio-9999-exec-10] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 16:54:56.039 [http-nio-9999-exec-5] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619007548868, dirPath: upload
+2026-04-30 16:54:56.040 [http-nio-9999-exec-5] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 16:54:56.683 [http-nio-9999-exec-2] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619007548868, dirPath: upload
+2026-04-30 16:54:56.685 [http-nio-9999-exec-2] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 16:55:00.795 [http-nio-9999-exec-3] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619007548868, dirPath: upload
+2026-04-30 16:55:00.798 [http-nio-9999-exec-3] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:14:12.996 [SpringApplicationShutdownHook] INFO  o.s.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 17:14:12.998 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closing ...
+2026-04-30 17:14:13.004 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closed
+2026-04-30 17:14:34.316 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 6.2.5.Final
+2026-04-30 17:14:34.326 [main] INFO  com.example.Application - Starting Application using Java 21.0.9 on LAPTOP-93TNPJPV with PID 38512 (D:\2026.4.7\Myproject\stray-animal-main\target\classes started by lvjun in D:\2026.4.7\Myproject\stray-animal-main)
+2026-04-30 17:14:34.327 [main] INFO  com.example.Application - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 17:14:34.693 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-30 17:14:34.703 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 6 ms. Found 0 JPA repository interfaces.
+2026-04-30 17:14:35.135 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9999 (http)
+2026-04-30 17:14:35.140 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-9999"]
+2026-04-30 17:14:35.142 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-30 17:14:35.143 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
+2026-04-30 17:14:35.221 [main] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-30 17:14:35.222 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 862 ms
+2026-04-30 17:14:35.347 [main] INFO  org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-30 17:14:35.386 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 5.6.15.Final
+2026-04-30 17:14:35.483 [main] INFO  org.hibernate.annotations.common.Version - HCANN000001: Hibernate Commons Annotations {5.1.2.Final}
+2026-04-30 17:14:35.634 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2026-04-30 17:14:35.730 [main] INFO  org.hibernate.dialect.Dialect - HHH000400: Using dialect: org.hibernate.dialect.MySQL8Dialect
+2026-04-30 17:14:35.836 [main] INFO  o.h.e.t.jta.platform.internal.JtaPlatformInitiator - HHH000490: Using JtaPlatform implementation: [org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform]
+2026-04-30 17:14:35.841 [main] INFO  o.s.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 17:14:35.934 [main] WARN  c.b.mybatisplus.core.metadata.TableInfoHelper - Can not find table primary key in Class: "java.lang.Void".
+2026-04-30 17:14:35.937 [main] WARN  c.b.mybatisplus.core.injector.DefaultSqlInjector - class java.lang.Void ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2026-04-30 17:14:35.984 [main] WARN  c.b.mybatisplus.core.metadata.TableInfoHelper - Can not find table primary key in Class: "com.example.entity.Adopt".
+2026-04-30 17:14:35.985 [main] WARN  c.b.mybatisplus.core.injector.DefaultSqlInjector - class com.example.entity.Adopt ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2026-04-30 17:14:36.216 [main] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-30 17:14:36.407 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-9999"]
+2026-04-30 17:14:36.424 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 9999 (http) with context path ''
+2026-04-30 17:14:36.431 [main] INFO  com.example.Application - Started Application in 2.402 seconds (JVM running for 2.636)
+2026-04-30 17:14:45.542 [http-nio-9999-exec-1] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-30 17:14:45.542 [http-nio-9999-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-30 17:14:45.542 [http-nio-9999-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 0 ms
+2026-04-30 17:15:00.204 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:15:01.397 [http-nio-9999-exec-8] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:15:04.451 [http-nio-9999-exec-10] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:15:06.623 [http-nio-9999-exec-6] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:15:08.379 [http-nio-9999-exec-3] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:20:30.313 [http-nio-9999-exec-2] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:20:30.318 [http-nio-9999-exec-3] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 321928
+2026-04-30 17:20:30.319 [http-nio-9999-exec-3] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 323691
+2026-04-30 17:20:30.319 [http-nio-9999-exec-3] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 323692
+2026-04-30 17:20:30.320 [http-nio-9999-exec-3] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 323692
+2026-04-30 17:20:33.710 [http-nio-9999-exec-1] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:20:35.347 [http-nio-9999-exec-7] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:20:35.788 [http-nio-9999-exec-2] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:20:36.365 [http-nio-9999-exec-7] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:20:37.292 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:21:44.807 [http-nio-9999-exec-10] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 67515
+2026-04-30 17:21:44.808 [http-nio-9999-exec-10] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 68431
+2026-04-30 17:21:44.809 [http-nio-9999-exec-10] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 68432
+2026-04-30 17:21:45.974 [http-nio-9999-exec-3] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:21:48.240 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:21:48.264 [http-nio-9999-exec-2] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：1
+2026-04-30 17:21:48.265 [http-nio-9999-exec-2] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"users":[{"username":"2396706066"}]}
+2026-04-30 17:21:59.995 [http-nio-9999-exec-1] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：0
+2026-04-30 17:22:00.033 [http-nio-9999-exec-7] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：1
+2026-04-30 17:22:00.033 [http-nio-9999-exec-7] INFO  com.example.component.WebSocketServer - 服务端给客户端[1]发送消息{"users":[{"username":"2396706066"}]}
+2026-04-30 17:22:00.037 [http-nio-9999-exec-3] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:23:14.287 [http-nio-9999-exec-7] WARN  com.example.controller.FileController - 文件未找到 - flag: undefined, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:23:29.892 [http-nio-9999-exec-4] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 103915
+2026-04-30 17:23:29.893 [http-nio-9999-exec-4] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 103915
+2026-04-30 17:23:29.893 [http-nio-9999-exec-4] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 103916
+2026-04-30 17:29:40.620 [http-nio-9999-exec-9] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 345191
+2026-04-30 17:34:10.279 [http-nio-9999-exec-3] WARN  com.example.controller.FileController - 文件未找到 - flag: undefined, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:34:20.179 [http-nio-9999-exec-2] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 279481
+2026-04-30 17:34:41.118 [http-nio-9999-exec-3] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:34:43.992 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:34:56.717 [http-nio-9999-exec-6] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:35:02.347 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:35:08.143 [http-nio-9999-exec-7] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：0
+2026-04-30 17:35:08.218 [http-nio-9999-exec-3] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:35:09.098 [http-nio-9999-exec-1] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:35:09.137 [http-nio-9999-exec-8] INFO  com.example.controller.FileController - 文件下载 - flag: 1619980059403, 文件: 1619980059403-613bd821af28f1f79b8bbf028ab06b77.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:35:10.102 [http-nio-9999-exec-3] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:35:11.159 [http-nio-9999-exec-1] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：1
+2026-04-30 17:35:11.160 [http-nio-9999-exec-1] INFO  com.example.component.WebSocketServer - 服务端给客户端[2]发送消息{"users":[{"username":"2396706066"}]}
+2026-04-30 17:35:11.164 [http-nio-9999-exec-8] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:35:13.423 [http-nio-9999-exec-9] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：0
+2026-04-30 17:35:13.444 [http-nio-9999-exec-5] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：1
+2026-04-30 17:35:13.444 [http-nio-9999-exec-5] INFO  com.example.component.WebSocketServer - 服务端给客户端[3]发送消息{"users":[{"username":"2396706066"}]}
+2026-04-30 17:35:13.449 [http-nio-9999-exec-3] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:35:17.948 [http-nio-9999-exec-1] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:36:53.533 [http-nio-9999-exec-3] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：0
+2026-04-30 17:36:53.570 [http-nio-9999-exec-10] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：1
+2026-04-30 17:36:53.570 [http-nio-9999-exec-10] INFO  com.example.component.WebSocketServer - 服务端给客户端[4]发送消息{"users":[{"username":"2396706066"}]}
+2026-04-30 17:36:53.577 [http-nio-9999-exec-6] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:40:39.474 [http-nio-9999-exec-10] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 321524
+2026-04-30 17:40:39.474 [http-nio-9999-exec-8] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 321524
+2026-04-30 17:40:39.474 [http-nio-9999-exec-3] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 321524
+2026-04-30 17:40:39.475 [http-nio-9999-exec-6] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 321524
+2026-04-30 17:40:39.474 [http-nio-9999-exec-9] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 321519
+2026-04-30 17:40:39.485 [http-nio-9999-exec-2] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:40:40.825 [http-nio-9999-exec-10] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:40:46.676 [http-nio-9999-exec-6] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:40:47.325 [http-nio-9999-exec-7] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:40:48.381 [http-nio-9999-exec-5] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:40:49.006 [http-nio-9999-exec-8] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:41:07.885 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:41:08.633 [http-nio-9999-exec-3] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:41:10.712 [http-nio-9999-exec-3] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:41:36.379 [SpringApplicationShutdownHook] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：0
+2026-04-30 17:41:36.389 [SpringApplicationShutdownHook] INFO  o.s.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 17:41:36.390 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closing ...
+2026-04-30 17:41:36.392 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closed
+2026-04-30 17:41:52.972 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 6.2.5.Final
+2026-04-30 17:41:52.977 [main] INFO  com.example.Application - Starting Application using Java 21.0.9 on LAPTOP-93TNPJPV with PID 47184 (D:\2026.4.7\Myproject\stray-animal-main\target\classes started by lvjun in D:\2026.4.7\Myproject\stray-animal-main)
+2026-04-30 17:41:52.978 [main] INFO  com.example.Application - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 17:41:53.359 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-30 17:41:53.373 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 8 ms. Found 0 JPA repository interfaces.
+2026-04-30 17:41:53.788 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9999 (http)
+2026-04-30 17:41:53.792 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-9999"]
+2026-04-30 17:41:53.794 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-30 17:41:53.794 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
+2026-04-30 17:41:53.861 [main] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-30 17:41:53.861 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 849 ms
+2026-04-30 17:41:53.962 [main] INFO  org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-30 17:41:53.984 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 5.6.15.Final
+2026-04-30 17:41:54.062 [main] INFO  org.hibernate.annotations.common.Version - HCANN000001: Hibernate Commons Annotations {5.1.2.Final}
+2026-04-30 17:41:54.168 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2026-04-30 17:41:54.251 [main] INFO  org.hibernate.dialect.Dialect - HHH000400: Using dialect: org.hibernate.dialect.MySQL8Dialect
+2026-04-30 17:41:54.338 [main] INFO  o.h.e.t.jta.platform.internal.JtaPlatformInitiator - HHH000490: Using JtaPlatform implementation: [org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform]
+2026-04-30 17:41:54.346 [main] INFO  o.s.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 17:41:54.430 [main] WARN  c.b.mybatisplus.core.metadata.TableInfoHelper - Can not find table primary key in Class: "java.lang.Void".
+2026-04-30 17:41:54.432 [main] WARN  c.b.mybatisplus.core.injector.DefaultSqlInjector - class java.lang.Void ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2026-04-30 17:41:54.476 [main] WARN  c.b.mybatisplus.core.metadata.TableInfoHelper - Can not find table primary key in Class: "com.example.entity.Adopt".
+2026-04-30 17:41:54.476 [main] WARN  c.b.mybatisplus.core.injector.DefaultSqlInjector - class com.example.entity.Adopt ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2026-04-30 17:41:54.716 [main] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-30 17:41:54.913 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-9999"]
+2026-04-30 17:41:54.923 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 9999 (http) with context path ''
+2026-04-30 17:41:54.928 [main] INFO  com.example.Application - Started Application in 2.215 seconds (JVM running for 2.439)
+2026-04-30 17:41:56.034 [http-nio-9999-exec-1] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-30 17:41:56.034 [http-nio-9999-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-30 17:41:56.035 [http-nio-9999-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-04-30 17:48:19.796 [http-nio-9999-exec-7] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 368003
+2026-04-30 17:48:29.158 [http-nio-9999-exec-1] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:57:27.152 [http-nio-9999-exec-5] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 538019
+2026-04-30 17:57:27.153 [http-nio-9999-exec-5] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 538014
+2026-04-30 17:57:27.154 [http-nio-9999-exec-5] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 538015
+2026-04-30 17:57:28.314 [http-nio-9999-exec-6] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:57:30.026 [http-nio-9999-exec-3] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 17:58:23.701 [http-nio-9999-exec-9] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 18:07:23.297 [http-nio-9999-exec-2] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 539595
+2026-04-30 18:07:23.297 [http-nio-9999-exec-6] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 539600
+2026-04-30 18:07:23.297 [http-nio-9999-exec-8] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 539601
+2026-04-30 18:07:23.297 [http-nio-9999-exec-5] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 539601
+2026-04-30 18:07:23.297 [http-nio-9999-exec-1] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 539600
+2026-04-30 18:07:23.315 [http-nio-9999-exec-7] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 18:07:24.344 [http-nio-9999-exec-6] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 18:07:57.011 [http-nio-9999-exec-2] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 18:07:57.951 [http-nio-9999-exec-1] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:02:51.187 [http-nio-9999-exec-5] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:02:52.891 [http-nio-9999-exec-2] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:02:53.327 [http-nio-9999-exec-7] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:02:57.014 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:03:41.346 [http-nio-9999-exec-6] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:03:43.001 [http-nio-9999-exec-7] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:03:43.038 [http-nio-9999-exec-9] INFO  com.example.component.WebSocketServer - 有新用户加入，username=999, 当前在线人数为：1
+2026-04-30 20:03:43.041 [http-nio-9999-exec-9] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"users":[{"username":"999"}]}
+2026-04-30 20:03:43.581 [http-nio-9999-exec-6] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=999的用户session, 当前在线人数为：0
+2026-04-30 20:03:43.619 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:03:44.342 [http-nio-9999-exec-10] INFO  com.example.component.WebSocketServer - 有新用户加入，username=999, 当前在线人数为：1
+2026-04-30 20:03:44.342 [http-nio-9999-exec-10] INFO  com.example.component.WebSocketServer - 服务端给客户端[1]发送消息{"users":[{"username":"999"}]}
+2026-04-30 20:03:44.348 [http-nio-9999-exec-8] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:03:45.021 [http-nio-9999-exec-6] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=999的用户session, 当前在线人数为：0
+2026-04-30 20:03:45.054 [http-nio-9999-exec-2] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:03:45.993 [http-nio-9999-exec-10] INFO  com.example.component.WebSocketServer - 有新用户加入，username=999, 当前在线人数为：1
+2026-04-30 20:03:45.994 [http-nio-9999-exec-10] INFO  com.example.component.WebSocketServer - 服务端给客户端[2]发送消息{"users":[{"username":"999"}]}
+2026-04-30 20:03:45.997 [http-nio-9999-exec-8] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:03:53.052 [http-nio-9999-exec-8] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:04:12.336 [http-nio-9999-exec-8] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:04:14.188 [http-nio-9999-exec-8] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：2
+2026-04-30 20:04:14.188 [http-nio-9999-exec-8] INFO  com.example.component.WebSocketServer - 服务端给客户端[3]发送消息{"users":[{"username":"2396706066"},{"username":"999"}]}
+2026-04-30 20:04:14.189 [http-nio-9999-exec-8] INFO  com.example.component.WebSocketServer - 服务端给客户端[2]发送消息{"type":"join","username":"2396706066"}
+2026-04-30 20:04:14.195 [http-nio-9999-exec-10] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:04:14.195 [http-nio-9999-exec-9] WARN  com.example.controller.FileController - 文件未找到 - flag: undefined, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:04:26.377 [http-nio-9999-exec-4] INFO  com.example.component.WebSocketServer - 服务端收到用户username=2396706066的消息:{"from":"2396706066","to":"999","text":"zaiganma\n"}
+2026-04-30 20:04:26.396 [http-nio-9999-exec-4] INFO  com.example.component.WebSocketServer - 服务端给客户端[2]发送消息{"from":"2396706066","text":"zaiganma\n"}
+2026-04-30 20:04:26.397 [http-nio-9999-exec-4] INFO  com.example.component.WebSocketServer - 发送给用户username=999，消息：{"from":"2396706066","text":"zaiganma\n"}
+2026-04-30 20:04:26.401 [http-nio-9999-exec-1] WARN  com.example.controller.FileController - 文件未找到 - flag: undefined, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:04:53.894 [http-nio-9999-exec-2] WARN  com.example.controller.FileController - 文件未找到 - flag: undefined, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:05:09.167 [http-nio-9999-exec-2] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:05:10.215 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:05:12.626 [http-nio-9999-exec-8] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:05:15.892 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:05:18.181 [http-nio-9999-exec-6] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:17:16.180 [SpringApplicationShutdownHook] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=999的用户session, 当前在线人数为：1
+2026-04-30 20:17:16.180 [SpringApplicationShutdownHook] INFO  com.example.component.WebSocketServer - 服务端给客户端[3]发送消息{"type":"leave","username":"999"}
+2026-04-30 20:17:16.180 [SpringApplicationShutdownHook] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：0
+2026-04-30 20:17:16.201 [SpringApplicationShutdownHook] INFO  o.s.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 20:17:16.203 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closing ...
+2026-04-30 20:17:16.206 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closed
+2026-04-30 20:17:36.097 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 6.2.5.Final
+2026-04-30 20:17:36.106 [main] INFO  com.example.Application - Starting Application using Java 21.0.9 on LAPTOP-93TNPJPV with PID 16288 (D:\2026.4.7\Myproject\stray-animal-main\target\classes started by lvjun in D:\2026.4.7\Myproject\stray-animal-main)
+2026-04-30 20:17:36.107 [main] INFO  com.example.Application - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 20:17:36.474 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-30 20:17:36.485 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 6 ms. Found 0 JPA repository interfaces.
+2026-04-30 20:17:36.913 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9999 (http)
+2026-04-30 20:17:36.918 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-9999"]
+2026-04-30 20:17:36.921 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-30 20:17:36.921 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
+2026-04-30 20:17:36.995 [main] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-30 20:17:36.995 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 853 ms
+2026-04-30 20:17:37.110 [main] INFO  org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-30 20:17:37.149 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 5.6.15.Final
+2026-04-30 20:17:37.242 [main] INFO  org.hibernate.annotations.common.Version - HCANN000001: Hibernate Commons Annotations {5.1.2.Final}
+2026-04-30 20:17:37.384 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2026-04-30 20:17:37.480 [main] INFO  org.hibernate.dialect.Dialect - HHH000400: Using dialect: org.hibernate.dialect.MySQL8Dialect
+2026-04-30 20:17:37.583 [main] INFO  o.h.e.t.jta.platform.internal.JtaPlatformInitiator - HHH000490: Using JtaPlatform implementation: [org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform]
+2026-04-30 20:17:37.589 [main] INFO  o.s.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 20:17:37.680 [main] WARN  c.b.mybatisplus.core.metadata.TableInfoHelper - Can not find table primary key in Class: "java.lang.Void".
+2026-04-30 20:17:37.682 [main] WARN  c.b.mybatisplus.core.injector.DefaultSqlInjector - class java.lang.Void ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2026-04-30 20:17:37.724 [main] WARN  c.b.mybatisplus.core.metadata.TableInfoHelper - Can not find table primary key in Class: "com.example.entity.Adopt".
+2026-04-30 20:17:37.724 [main] WARN  c.b.mybatisplus.core.injector.DefaultSqlInjector - class com.example.entity.Adopt ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2026-04-30 20:17:37.952 [main] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-30 20:17:38.133 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-9999"]
+2026-04-30 20:17:38.149 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 9999 (http) with context path ''
+2026-04-30 20:17:38.154 [main] INFO  com.example.Application - Started Application in 2.337 seconds (JVM running for 2.57)
+2026-04-30 20:17:44.651 [http-nio-9999-exec-1] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-30 20:17:44.651 [http-nio-9999-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-30 20:17:44.652 [http-nio-9999-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-04-30 20:17:57.999 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:18:20.088 [http-nio-9999-exec-3] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:18:22.399 [http-nio-9999-exec-7] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:18:22.982 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:21:54.669 [http-nio-9999-exec-10] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:21:54.673 [http-nio-9999-exec-7] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 211676
+2026-04-30 20:21:54.675 [http-nio-9999-exec-7] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 212271
+2026-04-30 20:21:54.675 [http-nio-9999-exec-7] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 212270
+2026-04-30 20:21:54.691 [http-nio-9999-exec-6] INFO  com.example.component.WebSocketServer - 有新用户加入，username=999, 当前在线人数为：1
+2026-04-30 20:21:54.692 [http-nio-9999-exec-6] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"users":[{"username":"999"}]}
+2026-04-30 20:22:04.332 [http-nio-9999-exec-5] INFO  com.example.component.WebSocketServer - 服务端收到用户username=999的消息:{"text":"你好"}
+2026-04-30 20:22:04.341 [http-nio-9999-exec-5] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"type":"chat","from":"999","text":"你好"}
+2026-04-30 20:22:04.342 [http-nio-9999-exec-5] INFO  com.example.component.WebSocketServer - 群发消息给所有在线用户，来自username=999，消息：{"type":"chat","from":"999","text":"你好"}
+2026-04-30 20:22:13.001 [http-nio-9999-exec-4] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：2
+2026-04-30 20:22:13.001 [http-nio-9999-exec-4] INFO  com.example.component.WebSocketServer - 服务端给客户端[1]发送消息{"users":[{"username":"2396706066"},{"username":"999"}]}
+2026-04-30 20:22:13.001 [http-nio-9999-exec-4] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"type":"join","username":"2396706066"}
+2026-04-30 20:22:13.009 [http-nio-9999-exec-10] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:22:18.643 [http-nio-9999-exec-6] INFO  com.example.component.WebSocketServer - 服务端收到用户username=2396706066的消息:{"text":"年后"}
+2026-04-30 20:22:18.643 [http-nio-9999-exec-6] INFO  com.example.component.WebSocketServer - 服务端给客户端[1]发送消息{"type":"chat","from":"2396706066","text":"年后"}
+2026-04-30 20:22:18.643 [http-nio-9999-exec-6] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"type":"chat","from":"2396706066","text":"年后"}
+2026-04-30 20:22:18.644 [http-nio-9999-exec-6] INFO  com.example.component.WebSocketServer - 群发消息给所有在线用户，来自username=2396706066，消息：{"type":"chat","from":"2396706066","text":"年后"}
+2026-04-30 20:22:24.763 [http-nio-9999-exec-5] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：1
+2026-04-30 20:22:24.763 [http-nio-9999-exec-5] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"type":"leave","username":"2396706066"}
+2026-04-30 20:22:24.798 [http-nio-9999-exec-9] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：2
+2026-04-30 20:22:24.798 [http-nio-9999-exec-9] INFO  com.example.component.WebSocketServer - 服务端给客户端[2]发送消息{"users":[{"username":"2396706066"},{"username":"999"}]}
+2026-04-30 20:22:24.798 [http-nio-9999-exec-9] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"type":"join","username":"2396706066"}
+2026-04-30 20:22:24.806 [http-nio-9999-exec-2] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:22:41.782 [http-nio-9999-exec-8] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：1
+2026-04-30 20:22:41.783 [http-nio-9999-exec-8] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"type":"leave","username":"2396706066"}
+2026-04-30 20:22:41.815 [http-nio-9999-exec-6] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：2
+2026-04-30 20:22:41.816 [http-nio-9999-exec-6] INFO  com.example.component.WebSocketServer - 服务端给客户端[3]发送消息{"users":[{"username":"2396706066"},{"username":"999"}]}
+2026-04-30 20:22:41.816 [http-nio-9999-exec-6] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"type":"join","username":"2396706066"}
+2026-04-30 20:22:41.821 [http-nio-9999-exec-5] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:22:42.669 [http-nio-9999-exec-10] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：1
+2026-04-30 20:22:42.670 [http-nio-9999-exec-10] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"type":"leave","username":"2396706066"}
+2026-04-30 20:22:42.691 [http-nio-9999-exec-7] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：2
+2026-04-30 20:22:42.691 [http-nio-9999-exec-7] INFO  com.example.component.WebSocketServer - 服务端给客户端[4]发送消息{"users":[{"username":"2396706066"},{"username":"999"}]}
+2026-04-30 20:22:42.691 [http-nio-9999-exec-7] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"type":"join","username":"2396706066"}
+2026-04-30 20:22:42.696 [http-nio-9999-exec-8] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:22:54.071 [http-nio-9999-exec-4] INFO  com.example.component.WebSocketServer - 服务端收到用户username=999的消息:{"text":"在干嘛"}
+2026-04-30 20:22:54.071 [http-nio-9999-exec-4] INFO  com.example.component.WebSocketServer - 服务端给客户端[4]发送消息{"type":"chat","from":"999","text":"在干嘛"}
+2026-04-30 20:22:54.072 [http-nio-9999-exec-4] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"type":"chat","from":"999","text":"在干嘛"}
+2026-04-30 20:22:54.072 [http-nio-9999-exec-4] INFO  com.example.component.WebSocketServer - 群发消息给所有在线用户，来自username=999，消息：{"type":"chat","from":"999","text":"在干嘛"}
+2026-04-30 20:23:13.308 [http-nio-9999-exec-2] INFO  com.example.component.WebSocketServer - 服务端收到用户username=2396706066的消息:{"text":"我在上厕所"}
+2026-04-30 20:23:13.308 [http-nio-9999-exec-2] INFO  com.example.component.WebSocketServer - 服务端给客户端[4]发送消息{"type":"chat","from":"2396706066","text":"我在上厕所"}
+2026-04-30 20:23:13.309 [http-nio-9999-exec-2] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"type":"chat","from":"2396706066","text":"我在上厕所"}
+2026-04-30 20:23:13.309 [http-nio-9999-exec-2] INFO  com.example.component.WebSocketServer - 群发消息给所有在线用户，来自username=2396706066，消息：{"type":"chat","from":"2396706066","text":"我在上厕所"}
+2026-04-30 20:23:25.413 [http-nio-9999-exec-7] INFO  com.example.component.WebSocketServer - 服务端收到用户username=999的消息:{"text":"好的"}
+2026-04-30 20:23:25.413 [http-nio-9999-exec-7] INFO  com.example.component.WebSocketServer - 服务端给客户端[4]发送消息{"type":"chat","from":"999","text":"好的"}
+2026-04-30 20:23:25.413 [http-nio-9999-exec-7] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"type":"chat","from":"999","text":"好的"}
+2026-04-30 20:23:25.414 [http-nio-9999-exec-7] INFO  com.example.component.WebSocketServer - 群发消息给所有在线用户，来自username=999，消息：{"type":"chat","from":"999","text":"好的"}
+2026-04-30 20:23:34.486 [http-nio-9999-exec-1] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:23:50.087 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:47:53.100 [SpringApplicationShutdownHook] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：1
+2026-04-30 20:47:53.102 [SpringApplicationShutdownHook] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"type":"leave","username":"2396706066"}
+2026-04-30 20:47:53.102 [SpringApplicationShutdownHook] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=999的用户session, 当前在线人数为：0
+2026-04-30 20:47:53.113 [SpringApplicationShutdownHook] INFO  o.s.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 20:47:53.114 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closing ...
+2026-04-30 20:47:53.115 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closed
+2026-04-30 20:48:12.631 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 6.2.5.Final
+2026-04-30 20:48:12.639 [main] INFO  com.example.Application - Starting Application using Java 21.0.9 on LAPTOP-93TNPJPV with PID 57220 (D:\2026.4.7\Myproject\stray-animal-main\target\classes started by lvjun in D:\2026.4.7\Myproject\stray-animal-main)
+2026-04-30 20:48:12.641 [main] INFO  com.example.Application - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 20:48:12.985 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-30 20:48:12.995 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 5 ms. Found 0 JPA repository interfaces.
+2026-04-30 20:48:13.377 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9999 (http)
+2026-04-30 20:48:13.382 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-9999"]
+2026-04-30 20:48:13.383 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-30 20:48:13.383 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
+2026-04-30 20:48:13.447 [main] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-30 20:48:13.447 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 769 ms
+2026-04-30 20:48:13.541 [main] INFO  org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-30 20:48:13.563 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 5.6.15.Final
+2026-04-30 20:48:13.642 [main] INFO  org.hibernate.annotations.common.Version - HCANN000001: Hibernate Commons Annotations {5.1.2.Final}
+2026-04-30 20:48:13.740 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2026-04-30 20:48:13.819 [main] INFO  org.hibernate.dialect.Dialect - HHH000400: Using dialect: org.hibernate.dialect.MySQL8Dialect
+2026-04-30 20:48:13.897 [main] INFO  o.h.e.t.jta.platform.internal.JtaPlatformInitiator - HHH000490: Using JtaPlatform implementation: [org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform]
+2026-04-30 20:48:13.902 [main] INFO  o.s.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 20:48:13.985 [main] WARN  c.b.mybatisplus.core.metadata.TableInfoHelper - Can not find table primary key in Class: "java.lang.Void".
+2026-04-30 20:48:13.987 [main] WARN  c.b.mybatisplus.core.injector.DefaultSqlInjector - class java.lang.Void ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2026-04-30 20:48:14.029 [main] WARN  c.b.mybatisplus.core.metadata.TableInfoHelper - Can not find table primary key in Class: "com.example.entity.Adopt".
+2026-04-30 20:48:14.030 [main] WARN  c.b.mybatisplus.core.injector.DefaultSqlInjector - class com.example.entity.Adopt ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2026-04-30 20:48:14.250 [main] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-30 20:48:14.427 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-9999"]
+2026-04-30 20:48:14.437 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 9999 (http) with context path ''
+2026-04-30 20:48:14.442 [main] INFO  com.example.Application - Started Application in 2.051 seconds (JVM running for 2.265)
+2026-04-30 20:48:19.670 [http-nio-9999-exec-2] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-30 20:48:19.670 [http-nio-9999-exec-2] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-30 20:48:19.670 [http-nio-9999-exec-2] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 0 ms
+2026-04-30 20:48:43.905 [http-nio-9999-exec-1] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:48:45.544 [http-nio-9999-exec-3] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:48:45.583 [http-nio-9999-exec-6] INFO  com.example.component.WebSocketServer - 有新用户加入，username=999, 当前在线人数为：1
+2026-04-30 20:48:45.585 [http-nio-9999-exec-6] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"users":[{"username":"999"}]}
+2026-04-30 20:54:45.636 [SpringApplicationShutdownHook] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=999的用户session, 当前在线人数为：0
+2026-04-30 20:54:45.650 [SpringApplicationShutdownHook] INFO  o.s.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 20:54:45.651 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closing ...
+2026-04-30 20:54:45.657 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closed
+2026-04-30 20:55:17.536 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 6.2.5.Final
+2026-04-30 20:55:17.547 [main] INFO  com.example.Application - Starting Application using Java 21.0.9 on LAPTOP-93TNPJPV with PID 9872 (D:\2026.4.7\Myproject\stray-animal-main\target\classes started by lvjun in D:\2026.4.7\Myproject\stray-animal-main)
+2026-04-30 20:55:17.547 [main] INFO  com.example.Application - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 20:55:17.886 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-30 20:55:17.896 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 5 ms. Found 0 JPA repository interfaces.
+2026-04-30 20:55:18.307 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9999 (http)
+2026-04-30 20:55:18.312 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-9999"]
+2026-04-30 20:55:18.313 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-30 20:55:18.315 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
+2026-04-30 20:55:18.386 [main] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-30 20:55:18.386 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 810 ms
+2026-04-30 20:55:18.501 [main] INFO  org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-30 20:55:18.538 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 5.6.15.Final
+2026-04-30 20:55:18.622 [main] INFO  org.hibernate.annotations.common.Version - HCANN000001: Hibernate Commons Annotations {5.1.2.Final}
+2026-04-30 20:55:18.758 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2026-04-30 20:55:18.855 [main] INFO  org.hibernate.dialect.Dialect - HHH000400: Using dialect: org.hibernate.dialect.MySQL8Dialect
+2026-04-30 20:55:18.953 [main] INFO  o.h.e.t.jta.platform.internal.JtaPlatformInitiator - HHH000490: Using JtaPlatform implementation: [org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform]
+2026-04-30 20:55:18.958 [main] INFO  o.s.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 20:55:19.050 [main] WARN  c.b.mybatisplus.core.metadata.TableInfoHelper - Can not find table primary key in Class: "java.lang.Void".
+2026-04-30 20:55:19.052 [main] WARN  c.b.mybatisplus.core.injector.DefaultSqlInjector - class java.lang.Void ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2026-04-30 20:55:19.094 [main] WARN  c.b.mybatisplus.core.metadata.TableInfoHelper - Can not find table primary key in Class: "com.example.entity.Adopt".
+2026-04-30 20:55:19.094 [main] WARN  c.b.mybatisplus.core.injector.DefaultSqlInjector - class com.example.entity.Adopt ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2026-04-30 20:55:19.311 [main] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-30 20:55:19.487 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-9999"]
+2026-04-30 20:55:19.504 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 9999 (http) with context path ''
+2026-04-30 20:55:19.509 [main] INFO  com.example.Application - Started Application in 2.244 seconds (JVM running for 2.464)
+2026-04-30 20:57:05.073 [http-nio-9999-exec-1] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-30 20:57:05.073 [http-nio-9999-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-30 20:57:05.074 [http-nio-9999-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-04-30 20:57:36.149 [http-nio-9999-exec-6] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 137311
+2026-04-30 20:57:37.446 [http-nio-9999-exec-1] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:57:39.472 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 20:57:39.492 [http-nio-9999-exec-7] INFO  com.example.component.WebSocketServer - 有新用户加入，username=999, 当前在线人数为：1
+2026-04-30 20:57:39.493 [http-nio-9999-exec-7] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"users":[{"username":"999"}]}
+2026-04-30 20:57:51.651 [http-nio-9999-exec-9] INFO  com.example.component.WebSocketServer - 服务端收到用户username=999的消息:{"text":"你好"}
+2026-04-30 20:57:51.665 [http-nio-9999-exec-9] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"type":"chat","from":"999","text":"你好"}
+2026-04-30 20:57:51.666 [http-nio-9999-exec-9] INFO  com.example.component.WebSocketServer - 群发消息给所有在线用户，来自username=999，消息：{"type":"chat","from":"999","text":"你好"}
+2026-04-30 20:57:57.465 [http-nio-9999-exec-5] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：2
+2026-04-30 20:57:57.465 [http-nio-9999-exec-5] INFO  com.example.component.WebSocketServer - 服务端给客户端[1]发送消息{"users":[{"username":"2396706066"},{"username":"999"}]}
+2026-04-30 20:57:57.466 [http-nio-9999-exec-5] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"type":"join","username":"2396706066"}
+2026-04-30 20:57:57.475 [http-nio-9999-exec-8] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 21:01:00.653 [http-nio-9999-exec-6] INFO  com.example.component.WebSocketServer - 服务端收到用户username=2396706066的消息:{"text":"你好"}
+2026-04-30 21:01:00.654 [http-nio-9999-exec-6] INFO  com.example.component.WebSocketServer - 服务端给客户端[1]发送消息{"type":"chat","from":"2396706066","text":"你好"}
+2026-04-30 21:01:00.655 [http-nio-9999-exec-6] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"type":"chat","from":"2396706066","text":"你好"}
+2026-04-30 21:01:00.656 [http-nio-9999-exec-6] INFO  com.example.component.WebSocketServer - 群发消息给所有在线用户，来自username=2396706066，消息：{"type":"chat","from":"2396706066","text":"你好"}
+2026-04-30 21:01:22.565 [http-nio-9999-exec-3] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 205099
+2026-04-30 21:01:22.565 [http-nio-9999-exec-4] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 225133
+2026-04-30 21:01:22.579 [http-nio-9999-exec-5] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 21:01:23.970 [http-nio-9999-exec-7] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 21:01:41.994 [http-nio-9999-exec-8] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 21:01:54.532 [http-nio-9999-exec-3] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 21:02:00.852 [http-nio-9999-exec-9] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 21:10:11.438 [SpringApplicationShutdownHook] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：1
+2026-04-30 21:10:11.439 [SpringApplicationShutdownHook] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"type":"leave","username":"2396706066"}
+2026-04-30 21:10:11.439 [SpringApplicationShutdownHook] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=999的用户session, 当前在线人数为：0
+2026-04-30 21:10:11.451 [SpringApplicationShutdownHook] INFO  o.s.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 21:10:11.453 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closing ...
+2026-04-30 21:10:11.454 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closed
+2026-04-30 21:10:28.118 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 6.2.5.Final
+2026-04-30 21:10:28.124 [main] INFO  com.example.Application - Starting Application using Java 21.0.9 on LAPTOP-93TNPJPV with PID 33396 (D:\2026.4.7\Myproject\stray-animal-main\target\classes started by lvjun in D:\2026.4.7\Myproject\stray-animal-main)
+2026-04-30 21:10:28.126 [main] INFO  com.example.Application - No active profile set, falling back to 1 default profile: "default"
+2026-04-30 21:10:28.497 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-30 21:10:28.508 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 6 ms. Found 0 JPA repository interfaces.
+2026-04-30 21:10:28.947 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9999 (http)
+2026-04-30 21:10:28.951 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-9999"]
+2026-04-30 21:10:28.953 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-30 21:10:28.953 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
+2026-04-30 21:10:29.024 [main] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-30 21:10:29.024 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 865 ms
+2026-04-30 21:10:29.125 [main] INFO  org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-30 21:10:29.149 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 5.6.15.Final
+2026-04-30 21:10:29.225 [main] INFO  org.hibernate.annotations.common.Version - HCANN000001: Hibernate Commons Annotations {5.1.2.Final}
+2026-04-30 21:10:29.331 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2026-04-30 21:10:29.412 [main] INFO  org.hibernate.dialect.Dialect - HHH000400: Using dialect: org.hibernate.dialect.MySQL8Dialect
+2026-04-30 21:10:29.498 [main] INFO  o.h.e.t.jta.platform.internal.JtaPlatformInitiator - HHH000490: Using JtaPlatform implementation: [org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform]
+2026-04-30 21:10:29.503 [main] INFO  o.s.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 21:10:29.591 [main] WARN  c.b.mybatisplus.core.metadata.TableInfoHelper - Can not find table primary key in Class: "java.lang.Void".
+2026-04-30 21:10:29.593 [main] WARN  c.b.mybatisplus.core.injector.DefaultSqlInjector - class java.lang.Void ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2026-04-30 21:10:29.636 [main] WARN  c.b.mybatisplus.core.metadata.TableInfoHelper - Can not find table primary key in Class: "com.example.entity.Adopt".
+2026-04-30 21:10:29.636 [main] WARN  c.b.mybatisplus.core.injector.DefaultSqlInjector - class com.example.entity.Adopt ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2026-04-30 21:10:29.870 [main] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-30 21:10:30.059 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-9999"]
+2026-04-30 21:10:30.071 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 9999 (http) with context path ''
+2026-04-30 21:10:30.075 [main] INFO  com.example.Application - Started Application in 2.218 seconds (JVM running for 2.441)
+2026-04-30 21:10:30.219 [http-nio-9999-exec-1] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-30 21:10:30.219 [http-nio-9999-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-30 21:10:30.220 [http-nio-9999-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 0 ms
+2026-04-30 21:10:44.621 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 127.0.0.1
+2026-04-30 21:10:52.816 [http-nio-9999-exec-8] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 127.0.0.1
+2026-04-30 21:10:56.730 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 127.0.0.1
+2026-04-30 21:10:57.781 [http-nio-9999-exec-2] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 21:10:58.973 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 127.0.0.1
+2026-04-30 21:11:07.018 [http-nio-9999-exec-6] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 21:11:07.066 [http-nio-9999-exec-8] INFO  com.example.controller.FileController - 文件下载 - flag: 1619974780054, 文件: 1619974780054-IMG_20210131_094431.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 21:11:07.067 [http-nio-9999-exec-5] INFO  com.example.controller.FileController - 文件下载 - flag: 1619999075860, 文件: 1619999075860--608c9667f16ae395.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 21:11:07.067 [http-nio-9999-exec-2] INFO  com.example.controller.FileController - 文件下载 - flag: 1620199166487, 文件: 1620199166487-IMG_20210131_094422.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 21:11:07.067 [http-nio-9999-exec-3] INFO  com.example.controller.FileController - 文件下载 - flag: 1619974742741, 文件: 1619974742741-89ce97956de2979f8c9481c233f4cc08.jpg, IP: 127.0.0.1
+2026-04-30 21:11:07.068 [http-nio-9999-exec-9] INFO  com.example.controller.FileController - 文件下载 - flag: 1619974758837, 文件: 1619974758837-613bd821af28f1f79b8bbf028ab06b77.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 21:11:07.068 [http-nio-9999-exec-1] INFO  com.example.controller.FileController - 文件下载 - flag: 1619980059403, 文件: 1619980059403-613bd821af28f1f79b8bbf028ab06b77.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 21:11:13.324 [http-nio-9999-exec-6] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 21:11:19.680 [http-nio-9999-exec-1] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 21:11:19.693 [http-nio-9999-exec-5] INFO  com.example.component.WebSocketServer - 有新用户加入，username=999, 当前在线人数为：1
+2026-04-30 21:11:19.695 [http-nio-9999-exec-5] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"users":[{"username":"999"}]}
+2026-04-30 21:11:22.168 [http-nio-9999-exec-7] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=999的用户session, 当前在线人数为：0
+2026-04-30 21:11:22.190 [http-nio-9999-exec-10] INFO  com.example.component.WebSocketServer - 有新用户加入，username=999, 当前在线人数为：1
+2026-04-30 21:11:22.190 [http-nio-9999-exec-10] INFO  com.example.component.WebSocketServer - 服务端给客户端[1]发送消息{"users":[{"username":"999"}]}
+2026-04-30 21:11:22.197 [http-nio-9999-exec-6] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 127.0.0.1
+2026-04-30 21:11:28.774 [http-nio-9999-exec-5] INFO  com.example.component.WebSocketServer - 服务端收到用户username=999的消息:{"text":"niaho "}
+2026-04-30 21:11:28.787 [http-nio-9999-exec-5] INFO  com.example.component.WebSocketServer - 服务端给客户端[1]发送消息{"type":"chat","from":"999","text":"niaho "}
+2026-04-30 21:11:28.788 [http-nio-9999-exec-5] INFO  com.example.component.WebSocketServer - 群发消息给所有在线用户，来自username=999，消息：{"type":"chat","from":"999","text":"niaho "}
+2026-04-30 21:11:32.239 [http-nio-9999-exec-9] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=999的用户session, 当前在线人数为：0
+2026-04-30 21:11:32.275 [http-nio-9999-exec-8] INFO  com.example.component.WebSocketServer - 有新用户加入，username=999, 当前在线人数为：1
+2026-04-30 21:11:32.275 [http-nio-9999-exec-8] INFO  com.example.component.WebSocketServer - 服务端给客户端[2]发送消息{"users":[{"username":"999"}]}
+2026-04-30 21:11:32.282 [http-nio-9999-exec-10] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 127.0.0.1
+2026-04-30 21:11:38.237 [http-nio-9999-exec-1] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：2
+2026-04-30 21:11:38.238 [http-nio-9999-exec-1] INFO  com.example.component.WebSocketServer - 服务端给客户端[3]发送消息{"users":[{"username":"2396706066"},{"username":"999"}]}
+2026-04-30 21:11:38.238 [http-nio-9999-exec-1] INFO  com.example.component.WebSocketServer - 服务端给客户端[2]发送消息{"type":"join","username":"2396706066"}
+2026-04-30 21:11:38.249 [http-nio-9999-exec-2] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 127.0.0.1
+2026-04-30 21:11:46.927 [http-nio-9999-exec-10] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-30 21:12:00.220 [http-nio-9999-exec-1] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=999的用户session, 当前在线人数为：1
+2026-04-30 21:12:00.221 [http-nio-9999-exec-1] INFO  com.example.component.WebSocketServer - 服务端给客户端[3]发送消息{"type":"leave","username":"999"}
+2026-04-30 21:12:00.256 [http-nio-9999-exec-5] INFO  com.example.component.WebSocketServer - 有新用户加入，username=999, 当前在线人数为：2
+2026-04-30 21:12:00.257 [http-nio-9999-exec-5] INFO  com.example.component.WebSocketServer - 服务端给客户端[4]发送消息{"users":[{"username":"2396706066"},{"username":"999"}]}
+2026-04-30 21:12:00.257 [http-nio-9999-exec-5] INFO  com.example.component.WebSocketServer - 服务端给客户端[3]发送消息{"type":"join","username":"999"}
+2026-04-30 21:12:00.264 [http-nio-9999-exec-9] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 127.0.0.1
+2026-04-30 21:12:28.704 [http-nio-9999-exec-2] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 127.0.0.1
+2026-04-30 21:13:49.446 [SpringApplicationShutdownHook] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=999的用户session, 当前在线人数为：1
+2026-04-30 21:13:49.446 [SpringApplicationShutdownHook] INFO  com.example.component.WebSocketServer - 服务端给客户端[3]发送消息{"type":"leave","username":"999"}
+2026-04-30 21:13:49.446 [SpringApplicationShutdownHook] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=2396706066的用户session, 当前在线人数为：0
+2026-04-30 21:13:49.456 [SpringApplicationShutdownHook] INFO  o.s.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-30 21:13:49.457 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closing ...
+2026-04-30 21:13:49.463 [SpringApplicationShutdownHook] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} closed

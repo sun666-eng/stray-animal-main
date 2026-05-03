@@ -1,0 +1,3 @@
+2026-04-29 23:34:38.715 - [审计日志] 时间: 2026-04-29 23:34:38 | 用户: anonymous | IP: 0:0:0:0:0:0:0:1 | 模块: 用户管理 | 操作: 用户登录 | 方法: com.example.controller.UserController.login | 参数: [{"password":"admin","username":"admin"},{}] | 结果: 成功 | 耗时: 236ms | 错误: 无
+2026-04-29 23:37:34.257 - [审计日志] 时间: 2026-04-29 23:37:34 | 用户: admin | IP: 0:0:0:0:0:0:0:1 | 模块: 用户管理 | 操作: 用户登出 | 方法: com.example.controller.UserController.logout | 参数: [{}] | 结果: 成功 | 耗时: 0ms | 错误: 无
+2026-04-29 23:37:55.314 - [审计日志] 时间: 2026-04-29 23:37:55 | 用户: anonymous | IP: 0:0:0:0:0:0:0:1 | 模块: 用户管理 | 操作: 用户登录 | 方法: com.example.controller.UserController.login | 参数: [{"password":"2396706066","username":"2396706066"},{}] | 结果: 成功 | 耗时: 68ms | 错误: 无

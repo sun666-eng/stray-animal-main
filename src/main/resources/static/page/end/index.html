@@ -167,16 +167,19 @@
                         <i style="font-size: 22px; cursor: pointer"
                            :class="[isCollapse ? 'el-icon-s-unfold' : 'el-icon-s-fold']" @click="handleCollapse"></i>
                     </el-col>
-                    <el-col :span="2" :offset="21" style="text-align: right">
-                        <span style="color: white; margin-right: 10px">{{user.username}}</span>
-                        <el-dropdown>
-                            <img :src=`/api/files/${user.avatar}`
-                                 style="width: 40px; height: 40px; margin-right: 10px; border-radius: 50%">
+                    <el-col :span="6" :offset="17" style="text-align: right">
+                        <el-dropdown trigger="click">
+                            <span style="display:inline-flex;align-items:center;gap:12px;cursor:pointer;height:60px;">
+                                <span style="font-size:20px;font-weight:700;">{{user.username}}</span>
+                                <img :src=`/api/files/${user.avatar}` style="width:50px;height:50px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.45);">
+                            </span>
                             <el-dropdown-menu slot="dropdown">
-                                <a href="/page/end/person.html"
-                                   style="display:inline-block; padding: 5px 0; width: 100px; text-align: center; color: black">个人信息</a>
-                                <a @click="logout" href="#"
-                                   style="display:block; width: 100px;  text-align: center; color: black">退出</a>
+                                <el-dropdown-item>
+                                    <a href="/page/end/person.html" style="display:block;padding:4px 12px;font-size:17px;color:#24324a;text-decoration:none;">个人信息</a>
+                                </el-dropdown-item>
+                                <el-dropdown-item>
+                                    <a @click="logout" href="#" style="display:block;padding:4px 12px;font-size:17px;color:#c73636;text-decoration:none;">退出</a>
+                                </el-dropdown-item>
                             </el-dropdown-menu>
                         </el-dropdown>
                     </el-col>
@@ -202,6 +205,10 @@
                           <a class="admin-entry-card" href="/page/end/notice.html">
                               <div class="admin-entry-title">公告管理</div>
                               <div class="admin-entry-desc">发布、修改、删除系统公告和活动通知。</div>
+                          </a>
+                          <a class="admin-entry-card" href="/page/end/rescue.html" style="background:linear-gradient(135deg,#ff9a76,#f96d5c);">
+                              <div class="admin-entry-title">救助管理</div>
+                              <div class="admin-entry-desc">查看和处理用户提交的流浪动物救助请求。</div>
                           </a>
                       </div>
                   </template>
@@ -313,6 +320,14 @@
 
 
 <script>
+    // 全局AJAX错误处理，便于排查
+    $(document).ajaxError(function(event, xhr) {
+        console.error('AJAX Error:', xhr.status, xhr.responseText, 'URL:', this.url);
+        if (xhr.status === 401) {
+            location.href = '/page/end/login.html';
+        }
+    });
+
     let pieOption = {
         "title": {
             "text": "支出统计"
@@ -385,6 +400,10 @@
         },
         created() {
             this.user = sessionStorage.getItem("user") ? JSON.parse(sessionStorage.getItem("user")) : {};
+            if (!this.user.id) {
+                location.href = "/page/end/login.html";
+                return;
+            }
             this.$nextTick(() => {
                 this.load();
                 this.loadEcharts();
@@ -519,3 +538,4 @@
 </script>
 </body>
 </html>
+

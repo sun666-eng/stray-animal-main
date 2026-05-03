@@ -1,0 +1,105 @@
+2026-04-29 23:34:11.667 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 6.2.5.Final
+2026-04-29 23:34:11.678 [main] INFO  com.example.Application - Starting Application using Java 21.0.9 on LAPTOP-93TNPJPV with PID 25604 (D:\2026.4.7\Myproject\stray-animal-main\target\classes started by lvjun in D:\2026.4.7\Myproject\stray-animal-main)
+2026-04-29 23:34:11.685 [main] INFO  com.example.Application - No active profile set, falling back to 1 default profile: "default"
+2026-04-29 23:34:12.175 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-29 23:34:12.190 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 8 ms. Found 0 JPA repository interfaces.
+2026-04-29 23:34:12.758 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9999 (http)
+2026-04-29 23:34:12.765 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-9999"]
+2026-04-29 23:34:12.768 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-29 23:34:12.769 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
+2026-04-29 23:34:12.856 [main] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-29 23:34:12.856 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1114 ms
+2026-04-29 23:34:13.000 [main] INFO  org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-29 23:34:13.047 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 5.6.15.Final
+2026-04-29 23:34:13.161 [main] INFO  org.hibernate.annotations.common.Version - HCANN000001: Hibernate Commons Annotations {5.1.2.Final}
+2026-04-29 23:34:13.330 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2026-04-29 23:34:13.506 [main] INFO  org.hibernate.dialect.Dialect - HHH000400: Using dialect: org.hibernate.dialect.MySQL8Dialect
+2026-04-29 23:34:13.615 [main] INFO  o.h.e.t.jta.platform.internal.JtaPlatformInitiator - HHH000490: Using JtaPlatform implementation: [org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform]
+2026-04-29 23:34:13.621 [main] INFO  o.s.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-29 23:34:13.747 [main] WARN  c.b.mybatisplus.core.metadata.TableInfoHelper - Can not find table primary key in Class: "java.lang.Void".
+2026-04-29 23:34:13.749 [main] WARN  c.b.mybatisplus.core.injector.DefaultSqlInjector - class java.lang.Void ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2026-04-29 23:34:13.818 [main] WARN  c.b.mybatisplus.core.metadata.TableInfoHelper - Can not find table primary key in Class: "com.example.entity.Adopt".
+2026-04-29 23:34:13.818 [main] WARN  c.b.mybatisplus.core.injector.DefaultSqlInjector - class com.example.entity.Adopt ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2026-04-29 23:34:13.860 [main] WARN  c.b.mybatisplus.core.injector.DefaultSqlInjector - class java.lang.Void ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2026-04-29 23:34:14.172 [main] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-29 23:34:14.403 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-9999"]
+2026-04-29 23:34:14.421 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 9999 (http) with context path ''
+2026-04-29 23:34:14.426 [main] INFO  com.example.Application - Started Application in 3.151 seconds (JVM running for 3.436)
+2026-04-29 23:34:23.344 [http-nio-9999-exec-3] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-29 23:34:23.344 [http-nio-9999-exec-3] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-29 23:34:23.345 [http-nio-9999-exec-3] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-04-29 23:34:44.963 [http-nio-9999-exec-4] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619007548868, dirPath: upload
+2026-04-29 23:34:44.966 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:34:51.849 [http-nio-9999-exec-6] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619007548868, dirPath: upload
+2026-04-29 23:34:51.852 [http-nio-9999-exec-6] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:34:52.202 [http-nio-9999-exec-9] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1620662396281, dirPath: upload
+2026-04-29 23:34:52.204 [http-nio-9999-exec-9] INFO  com.example.controller.FileController - 文件下载 - flag: 1620662396281, 文件: 1620662396281-IMG_20210114_185849.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:34:52.297 [http-nio-9999-exec-7] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1620617530063, dirPath: upload
+2026-04-29 23:34:52.298 [http-nio-9999-exec-2] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1620199166487, dirPath: upload
+2026-04-29 23:34:52.298 [http-nio-9999-exec-7] INFO  com.example.controller.FileController - 文件下载 - flag: 1620617530063, 文件: 1620617530063-qq_pic_merged_1609115058245.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:34:52.299 [http-nio-9999-exec-2] INFO  com.example.controller.FileController - 文件下载 - flag: 1620199166487, 文件: 1620199166487-IMG_20210131_094422.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:34:52.316 [http-nio-9999-exec-10] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1620199097977, dirPath: upload
+2026-04-29 23:34:52.317 [http-nio-9999-exec-10] INFO  com.example.controller.FileController - 文件下载 - flag: 1620199097977, 文件: 1620199097977-IMG_20201222_112807.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:34:52.323 [http-nio-9999-exec-8] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1620006191125, dirPath: upload
+2026-04-29 23:34:52.324 [http-nio-9999-exec-8] INFO  com.example.controller.FileController - 文件下载 - flag: 1620006191125, 文件: 1620006191125-IMG_20201222_112911.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:34:52.346 [http-nio-9999-exec-6] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619980059403, dirPath: upload
+2026-04-29 23:34:52.348 [http-nio-9999-exec-6] INFO  com.example.controller.FileController - 文件下载 - flag: 1619980059403, 文件: 1619980059403-613bd821af28f1f79b8bbf028ab06b77.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:34:52.468 [http-nio-9999-exec-5] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619974780054, dirPath: upload
+2026-04-29 23:34:52.469 [http-nio-9999-exec-5] INFO  com.example.controller.FileController - 文件下载 - flag: 1619974780054, 文件: 1619974780054-IMG_20210131_094431.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:34:52.515 [http-nio-9999-exec-3] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619010478231, dirPath: upload
+2026-04-29 23:34:52.516 [http-nio-9999-exec-3] INFO  com.example.controller.FileController - 文件下载 - flag: 1619010478231, 文件: 1619010478231-f4.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:34:52.553 [http-nio-9999-exec-1] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619974758837, dirPath: upload
+2026-04-29 23:34:52.554 [http-nio-9999-exec-1] INFO  com.example.controller.FileController - 文件下载 - flag: 1619974758837, 文件: 1619974758837-613bd821af28f1f79b8bbf028ab06b77.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:35:02.306 [http-nio-9999-exec-6] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619007548868, dirPath: upload
+2026-04-29 23:35:02.308 [http-nio-9999-exec-6] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:35:04.024 [http-nio-9999-exec-9] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619007548868, dirPath: upload
+2026-04-29 23:35:04.027 [http-nio-9999-exec-9] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:35:06.669 [http-nio-9999-exec-3] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619007548868, dirPath: upload
+2026-04-29 23:35:06.670 [http-nio-9999-exec-3] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:35:12.852 [http-nio-9999-exec-7] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619007548868, dirPath: upload
+2026-04-29 23:35:12.854 [http-nio-9999-exec-7] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:35:15.788 [http-nio-9999-exec-10] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619007548868, dirPath: upload
+2026-04-29 23:35:15.789 [http-nio-9999-exec-10] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:35:23.570 [http-nio-9999-exec-9] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619007548868, dirPath: upload
+2026-04-29 23:35:23.572 [http-nio-9999-exec-9] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:35:24.838 [http-nio-9999-exec-5] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619007548868, dirPath: upload
+2026-04-29 23:35:24.839 [http-nio-9999-exec-5] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:35:44.276 [http-nio-9999-exec-3] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619007548868, dirPath: upload
+2026-04-29 23:35:44.278 [http-nio-9999-exec-3] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:35:50.244 [http-nio-9999-exec-10] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619007548868, dirPath: upload
+2026-04-29 23:35:50.246 [http-nio-9999-exec-10] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:35:51.755 [http-nio-9999-exec-4] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619007548868, dirPath: upload
+2026-04-29 23:35:51.756 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:35:56.301 [http-nio-9999-exec-8] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619007548868, dirPath: upload
+2026-04-29 23:35:56.303 [http-nio-9999-exec-8] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:37:23.312 [http-nio-9999-exec-6] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619007548868, dirPath: upload
+2026-04-29 23:37:23.315 [http-nio-9999-exec-6] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:37:23.316 [http-nio-9999-exec-8] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 87004
+2026-04-29 23:37:23.316 [http-nio-9999-exec-2] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 91537
+2026-04-29 23:37:23.317 [http-nio-9999-exec-8] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 91559
+2026-04-29 23:37:23.317 [http-nio-9999-exec-2] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 91558
+2026-04-29 23:37:23.317 [http-nio-9999-exec-8] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 91559
+2026-04-29 23:37:23.933 [http-nio-9999-exec-4] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619007548868, dirPath: upload
+2026-04-29 23:37:23.935 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:37:26.322 [http-nio-9999-exec-2] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619007548868, dirPath: upload
+2026-04-29 23:37:26.324 [http-nio-9999-exec-2] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:37:32.688 [http-nio-9999-exec-3] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619007548868, dirPath: upload
+2026-04-29 23:37:32.691 [http-nio-9999-exec-3] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:37:56.387 [http-nio-9999-exec-7] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-29 23:37:56.389 [http-nio-9999-exec-7] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:38:02.123 [http-nio-9999-exec-2] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-29 23:38:02.125 [http-nio-9999-exec-2] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:38:03.572 [http-nio-9999-exec-7] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-29 23:38:03.573 [http-nio-9999-exec-7] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:38:05.295 [http-nio-9999-exec-9] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-29 23:38:05.295 [http-nio-9999-exec-9] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:38:05.330 [http-nio-9999-exec-4] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1619980059403, dirPath: upload
+2026-04-29 23:38:05.332 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1619980059403, 文件: 1619980059403-613bd821af28f1f79b8bbf028ab06b77.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:38:06.675 [http-nio-9999-exec-8] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-29 23:38:06.677 [http-nio-9999-exec-8] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:38:07.923 [http-nio-9999-exec-9] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-29 23:38:07.924 [http-nio-9999-exec-9] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:38:08.639 [http-nio-9999-exec-3] ERROR com.example.controller.FileController - 文件读取异常 - flag: 1, dirPath: upload
+2026-04-29 23:38:08.641 [http-nio-9999-exec-3] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 1616271628207-微信图片_20200806093953.jpg, IP: 0:0:0:0:0:0:0:1
+2026-04-29 23:38:08.672 [http-nio-9999-exec-8] INFO  com.example.component.WebSocketServer - 有新用户加入，username=2396706066, 当前在线人数为：1
+2026-04-29 23:38:08.673 [http-nio-9999-exec-8] INFO  com.example.component.WebSocketServer - 服务端给客户端[0]发送消息{"users":[{"username":"2396706066"}]}

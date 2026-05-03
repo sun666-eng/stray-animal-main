@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 
 @Data
 @TableName("t_account")
+@lombok.EqualsAndHashCode(callSuper = false)
 public class Account extends Model<Account> {
     /**
       * 主键

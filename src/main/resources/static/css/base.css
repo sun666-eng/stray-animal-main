@@ -100,10 +100,10 @@ input[type='file'] {
     transition: 0s;
 }
 .el-menu a {
-    color: white;
+    color: inherit;
 }
 .el-menu .is-active a {
-    color: #ffd04b;
+    color: inherit;
 }
 .el-input__icon {
     line-height: 30px;

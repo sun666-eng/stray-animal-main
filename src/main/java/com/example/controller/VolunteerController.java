@@ -1,7 +1,6 @@
 package com.example.controller;
 
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.io.IoUtil;
 import cn.hutool.poi.excel.ExcelUtil;
 import cn.hutool.poi.excel.ExcelWriter;
 import com.example.common.Result;
@@ -128,7 +127,6 @@ public class VolunteerController {
         ServletOutputStream out = response.getOutputStream();
         writer.flush(out, true);
         writer.close();
-        IoUtil.close(System.out);
     }
 
 
