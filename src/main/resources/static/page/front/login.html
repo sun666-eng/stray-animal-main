@@ -1,13 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>登录</title>
     <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/theme.css">
     <link rel="stylesheet" href="../../css/element.css">
 </head>
 <body>
-<a href='/page/end/index.html' style='position:fixed;right:20px;top:20px;z-index:9999;display:inline-block;padding:10px 16px;background:#5f8cff;color:#fff;border-radius:8px;text-decoration:none;box-shadow:0 6px 16px rgba(95,140,255,.25);'>返回首页</a>
+<a href='/page/end/index.html' style='position:fixed;right:20px;top:20px;z-index:9999;display:inline-block;padding:10px 16px;background:#2563EB;color:#fff;border-radius:8px;text-decoration:none;box-shadow:0 6px 16px rgba(37, 99, 235,.25);'>返回首页</a>
 
 <div id="wrapper">
     <div class="icon-block">
@@ -77,7 +78,7 @@
         <button class="icon-block__replay btn" type="button">Replay</button>
     </div>
     <div style="width: 500px; margin: 150px auto; background-color:#b3e19d; border-radius: 10px">
-        <div style="width: 100%; height: 100px; font-size: 30px;line-height: 100px; text-align: center; color: darkblue">欢迎登录流浪动物救助管理系统</div>
+        <div style="width: 100%; height: 100px; font-size: 30px;line-height: 100px; text-align: center; color: #1D4ED8">欢迎登录流浪动物救助管理系统</div>
         <div style="margin-top: 25px; width: 100%; height: 320px;">
             <div style="width: 60%; margin: 0 auto">
                 <input v-model="user.username" type="text" style="border: 1px solid #ccc; height: 40px; padding: 10px; width: 100%" placeholder="请输入账号">
@@ -87,13 +88,13 @@
                     <div id="picyzm" style="display: inline-block; height: 35px; vertical-align: middle;"></div>
                 </div>
 
-                <button @click="login" style="height: 40px; padding: 10px; width: 100%; margin-top: 25px; background-color: steelblue; color: white">登录</button>
-                <a style="width: 100%; text-align: right; display: inline-block; margin-top: 25px; color: darkblue" href="register.html">还没账号？去注册</a>
-                <a style="width: 100%; text-align: right; display: inline-block; margin-top: 10px; color: darkblue" href="animal_browse.html">先看看可领养动物</a>
-                <a style="width: 100%; text-align: right; display: inline-block; margin-top: 10px; color: darkblue" href="my_adopt.html">查看我的领养申请</a>
-                <a style="width: 100%; text-align: right; display: inline-block; margin-top: 10px; color: darkblue" href="volunteer_apply.html">我要报名义工</a>
-                <a style="width: 100%; text-align: right; display: inline-block; margin-top: 10px; color: darkblue" href="my_volunteer.html">查看我的义工申请</a>
-                <a style="width: 100%; text-align: right; display: inline-block; margin-top: 10px; color: darkblue" href="notice_list.html">查看系统公告</a>
+                <button @click="login" style="height: 40px; padding: 10px; width: 100%; margin-top: 25px; background-color: #2563EB; color: white">登录</button>
+                <a style="width: 100%; text-align: right; display: inline-block; margin-top: 25px; color: #1D4ED8" href="register.html">还没账号？去注册</a>
+                <a style="width: 100%; text-align: right; display: inline-block; margin-top: 10px; color: #1D4ED8" href="animal_browse.html">先看看可领养动物</a>
+                <a style="width: 100%; text-align: right; display: inline-block; margin-top: 10px; color: #1D4ED8" href="my_adopt.html">查看我的领养申请</a>
+                <a style="width: 100%; text-align: right; display: inline-block; margin-top: 10px; color: #1D4ED8" href="volunteer_apply.html">我要报名义工</a>
+                <a style="width: 100%; text-align: right; display: inline-block; margin-top: 10px; color: #1D4ED8" href="my_volunteer.html">查看我的义工申请</a>
+                <a style="width: 100%; text-align: right; display: inline-block; margin-top: 10px; color: #1D4ED8" href="notice_list.html">查看系统公告</a>
             </div>
 
         </div>
@@ -179,6 +180,7 @@
     })
 
 </script>
+<script src="../../js/dark-mode.js"></script>
 </body>
 </html>
 

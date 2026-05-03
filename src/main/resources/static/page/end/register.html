@@ -4,14 +4,15 @@
     <meta charset="UTF-8">
     <title>注册</title>
     <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/theme.css">
     <link rel="stylesheet" href="../../css/element.css">
 
 </head>
-<body style="background-color:lightsteelblue; ">
+<body style="background-color:#FFFBEB; ">
 <div id="wrapper">
-    <div style="width: 500px; margin: 150px auto; background-color:floralwhite; border-radius: 50px;">
+    <div style="width: 500px; margin: 150px auto; background-color:#FFFFFF; border-radius: 50px;">
         <!--        <div style="width: 80%; height: 100px; font-size: 30px;line-height: 100px; text-align: center; color: darkblue">login</div>-->
-        <div class="svgContainer" style="width: 100px; margin: 30px auto;padding: 10px; background-color:lightgoldenrodyellow; border-radius: 100px; ">
+        <div class="svgContainer" style="width: 100px; margin: 30px auto;padding: 10px; background-color:#EFF6FF; border-radius: 100px; ">
             <div>
                 <svg class="mySVG" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 200 200">
                     <defs>
@@ -118,7 +119,7 @@
                 <input v-model="user.password" type="password" style="border: 2px solid lightslategray;border-radius: 10px; height: 36px; padding: 15px; width: 60%; margin-top: 20px" placeholder="请输入密码">
                 <input v-model="user.email" type="text" style="border: 2px solid lightslategray;border-radius: 10px; height: 36px; padding: 15px; width: 60%;  margin-top: 20px" placeholder="请输入邮箱">
                 <input v-model="user.phone" type="text" style="border: 2px solid lightslategray;border-radius: 10px; height: 36px; padding: 15px; width: 60%;  margin-top: 20px" placeholder="请输入电话">
-                <button @click="register"  style="height: 40px; padding: 15px; width: 60%;border-radius: 10px; margin-top: 25px; background-color: steelblue; color: white">注册</button>
+                <button @click="register"  style="height: 40px; padding: 15px; width: 60%;border-radius: 10px; margin-top: 25px; background-color: #2563EB; color: white">注册</button>
 
                 <div style="margin-top: 25px">
                     <a style="width: 60%; text-align: right; display: inline-block; color: mediumpurple" href="login.html">已有账号，去登录</a>
@@ -185,6 +186,7 @@
             }
         })
     </script>
+<script src="../../js/dark-mode.js"></script>
 </body>
 </html>
 
