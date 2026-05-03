@@ -1,30 +1,19 @@
 package com.example.controller;
 
-import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.io.IoUtil;
-import cn.hutool.poi.excel.ExcelUtil;
-import cn.hutool.poi.excel.ExcelWriter;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.common.AuditLog;
 import com.example.common.Result;
 import com.example.entity.Adopt;
 import com.example.entity.Animal;
-import com.example.entity.User;
 import com.example.service.AdoptService;
 import com.example.service.AnimalService;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.net.URLEncoder;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/adopt")
@@ -33,7 +22,8 @@ public class AdoptController {
      private AdoptService adoptService;
     @Resource
     private AnimalService animalService;
-     HttpServletRequest request;
+
+    @AuditLog(module = "领养管理", action = "提交领养申请")
     @PostMapping
     public Result<?> save(@RequestBody Adopt adopt) {
         if (adopt.getVstate() == null) {
@@ -46,6 +36,7 @@ public class AdoptController {
         return Result.success(saved);
     }
 
+    @AuditLog(module = "领养管理", action = "更新领养申请")
     @PutMapping("/{aid}/{uid}")
     public Result<?> update(@RequestBody Adopt adopt,@PathVariable Long aid,@PathVariable Long uid) {
         QueryWrapper<Adopt> queryWrapper = new QueryWrapper<>();
@@ -54,6 +45,7 @@ public class AdoptController {
         return Result.success(adoptService.update(adopt,queryWrapper));
     }
 
+    @AuditLog(module = "领养管理", action = "删除领养申请")
     @DeleteMapping("/{aid}/{uid}")
     public Result<?> delete(@PathVariable Long aid,@PathVariable Long uid) {
 
@@ -67,6 +59,7 @@ public class AdoptController {
         return Result.success(removed);
     }
 
+    @AuditLog(module = "领养管理", action = "审核领养申请")
     @PutMapping("/audit/{aid}/{uid}/{state}")
     public Result<?> audit(@PathVariable Long aid, @PathVariable Long uid, @PathVariable Integer state) {
         if (state == null || state < 0 || state > 3) {

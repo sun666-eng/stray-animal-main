@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn compile *)",
+      "Bash(mvn test *)",
+      "Bash(git rm *)",
+      "Bash(grep -E '\\(\\\\.iml$|^target/\\)')",
+      "Bash(python3 -c ' *)",
+      "Bash(python -c ' *)",
+      "Bash(DB_PASSWORD=123456 mvn spring-boot:run)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill *)",
+      "Bash(cmd *)",
+      "Bash(mvn clean *)"
+    ]
+  }
+}

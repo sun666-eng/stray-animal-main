@@ -169,9 +169,10 @@
                                 message: "注册成功",
                                 type: "success"
                             });
-                            sessionStorage.setItem("user", JSON.stringify(res.data));
+                            sessionStorage.setItem("user", JSON.stringify(res.data.user));
+                            sessionStorage.setItem("token", res.data.token);
                             setTimeout(() => {
-                                location.href= "/index.html"
+                                location.href= "/page/end/index.html"
                             }, 1000)
                         } else {
                             this.$message({
@@ -186,3 +187,4 @@
     </script>
 </body>
 </html>
+
