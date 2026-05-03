@@ -5,18 +5,18 @@
     <title>用户资料</title>
     <link rel="stylesheet" href="../../css/element.css">
     <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/theme.css">
     <link rel="stylesheet" href="../../css/index.css">
 </head>
-<body style="background-color: whitesmoke">
+<body>
 <div id="wrapper" v-cloak>
     <el-container>
-        <el-aside :width="isCollapse ? '64px' : '200px'" style="background-color: #76becc; transition:width .5s;min-height: 100vh;">
-            <div style="background-color: #76becc; height: 100px; line-height: 60px; text-align: center;
-                color: white; font-size: 20px;">
+        <el-aside :width="isCollapse ? '64px' : '200px'" class="admin-sidebar">
+            <div class="sidebar-logo-area">
                 <transition name="el-fade-in-linear">
                     <span name="fade" v-show="!isCollapse">
                         <a href="page/end/index.html">
-                        <div class="svgContainer" style="width: 100px; padding: 5px;margin: 20px auto;  border-radius: 50px; ">
+                        <div class="svgContainer">
                             <div>
                                 <svg class="mySVG" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 200 200">
                                     <defs>
@@ -115,7 +115,7 @@
                                         </g>
 
                                     </g>
-                                     <text x="15" y="195" font-size="30"font-weight="bold" style="fill:slategrey">流浪动物救助</text>
+                                     <text x="15" y="195" font-size="30" font-weight="bold" fill="#6B7280">流浪动物救助</text>
                                 </svg>
                             </div>
                         </div>
@@ -124,8 +124,8 @@
                     </span>
                 </transition>
             </div>
-            <el-menu :default-openeds="['1']" style="border: none;" background-color="#76becc" text-color="#fffaf4" active-text-color="#dfd7d7"
-                     default-active="user"
+            <el-menu :default-openeds="['1']" style="border: none;" background-color="transparent" text-color="#6B7280" active-text-color="#2563EB"
+                     default-active="role"
                      class="el-menu-vertical-demo" :collapse="isCollapse">
                 <a href="/page/end/index.html">
                     <el-menu-item index="home">
@@ -148,29 +148,29 @@
             </el-menu>
         </el-aside>
         <el-container>
-            <el-header style="background-color: #76becc; line-height: 60px; color: white;">
+            <el-header class="admin-header">
                 <el-row>
                     <el-col :span="1">
                         <i style="font-size: 22px; cursor: pointer"
                            :class="[isCollapse ? 'el-icon-s-unfold' : 'el-icon-s-fold']" @click="handleCollapse"></i>
                     </el-col>
                     <el-col :span="5" :offset="18" style="text-align: right">
-                        <span style="color: white; margin-right: 12px; font-size: 18px; font-weight: 600;">{{user.username}}</span>
+                        <span style="color:#111827; margin-right: 12px; font-size: 18px; font-weight: 600;">{{user.username}}</span>
                         <el-dropdown>
                             <img :src=`/api/files/${user.avatar}`
                                  style="width: 46px; height: 46px; margin-right: 10px; border-radius: 50%; cursor: pointer; vertical-align: middle;">
                             <el-dropdown-menu slot="dropdown">
                                 <a href="/page/end/person.html"
-                                   style="display:block; padding: 8px 0; min-width: 120px; text-align: center; font-size: 16px; color: #24324a; text-decoration: none;">个人信息</a>
+                                   style="display:block; padding: 8px 0; min-width: 120px; text-align: center; font-size: 16px; color: #1C1917; text-decoration: none;">个人信息</a>
                                 <a @click="logout" href="#"
-                                   style="display:block; padding: 8px 0; min-width: 120px; text-align: center; font-size: 16px; color: #c73636; text-decoration: none;">退出</a>
+                                   style="display:block; padding: 8px 0; min-width: 120px; text-align: center; font-size: 16px; color: #DC2626; text-decoration: none;">退出</a>
                             </el-dropdown-menu>
                         </el-dropdown>
                     </el-col>
                 </el-row>
             </el-header>
             <!-- 主体区域 -->
-            <el-main>
+            <el-main class="admin-body">
                 <div style="color: black; font-size: 20px; margin: 10px 0">角色管理</div>
                 <div style="height: 1px; background-color: white"></div>
                 <el-input v-model="search" style="width: 20%;"size="mini" suffix-icon="el-icon-search" placeholder="请输入名称按回车搜索"
@@ -374,6 +374,7 @@
         }
     })
 </script>
+<script src="../../js/dark-mode.js"></script>
 </body>
 </html>
 

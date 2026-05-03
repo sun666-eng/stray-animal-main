@@ -1,17 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <title>救助咨询</title>
     <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/theme.css">
     <link rel="stylesheet" href="../../css/element.css">
     <style>
-        body { margin: 0; background: #f5f7fb; color: #24324a; }
+        body { margin: 0; background: #F9FAFB; color: #24324a; }
         .page-shell { max-width: 900px; margin: 0 auto; padding: 28px 20px 60px; }
         .nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
         .nav-links, .nav-user { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        .chip { display: inline-flex; align-items: center; height: 38px; padding: 0 14px; border-radius: 999px; background: #fff; color: #3552a6; text-decoration: none; box-shadow: 0 8px 20px rgba(25, 43, 77, 0.06); }
-        .hero { background: linear-gradient(135deg, #ff9a76 0%, #f96d5c 100%); color: #fff; border-radius: 20px; padding: 28px 30px; box-shadow: 0 12px 30px rgba(249, 109, 92, 0.2); margin-bottom: 22px; }
+        .chip { display: inline-flex; align-items: center; height: 38px; padding: 0 14px; border-radius: 999px; background: #fff; color: #1D4ED8; text-decoration: none; box-shadow: 0 8px 20px rgba(25, 43, 77, 0.06); }
+        .hero { background: linear-gradient(135deg, #93C5FD 0%, #3B82F6 100%); color: #fff; border-radius: 20px; padding: 28px 30px; box-shadow: 0 12px 30px rgba(37, 99, 235, 0.2); margin-bottom: 22px; }
         .hero h1 { margin: 0 0 8px; font-size: 30px; }
         .hero p { margin: 0; opacity: 0.95; }
         .panel { background: #fff; border-radius: 18px; box-shadow: 0 10px 30px rgba(25, 43, 77, 0.08); padding: 24px; }
@@ -23,11 +24,11 @@
         .input { height: 44px; padding: 0 14px; }
         .textarea { min-height: 120px; padding: 12px 14px; resize: vertical; }
         .upload-zone { display: flex; align-items: center; gap: 12px; }
-        .upload-zone img { width: 120px; height: 90px; object-fit: cover; border-radius: 10px; background: #eef3ff; }
+        .upload-zone img { width: 120px; height: 90px; object-fit: cover; border-radius: 10px; background: #F0F9FF; }
         .actions { display: flex; gap: 12px; margin-top: 26px; flex-wrap: wrap; }
         .btn { height: 44px; padding: 0 22px; border: 0; border-radius: 12px; cursor: pointer; font-size: 15px; }
-        .btn-primary { background: #f96d5c; color: #fff; }
-        .btn-ghost { background: #eef3ff; color: #3552a6; }
+        .btn-primary { background: #2563EB; color: #fff; }
+        .btn-ghost { background: #F0F9FF; color: #1D4ED8; }
         .tips { padding: 12px 14px; border-radius: 12px; background: #fff4e8; color: #b25f00; font-size: 13px; margin-bottom: 20px; }
         .empty { background: #fff; border-radius: 18px; padding: 60px 20px; text-align: center; color: #70809a; box-shadow: 0 10px 30px rgba(25, 43, 77, 0.08); }
     </style>
@@ -35,19 +36,19 @@
 <body>
 <div id="user-toolbar" style="position:fixed;right:20px;top:20px;z-index:9999;display:flex;align-items:center;gap:0;background:#fff;border-radius:14px;box-shadow:0 8px 24px rgba(25,43,77,0.12);">
   <div id="toolbar-trigger" onclick="document.getElementById('toolbar-dropdown').classList.toggle('show')" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 14px;border-radius:14px;">
-    <svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#f96d5c"/><circle cx="20" cy="14" r="8" fill="#fff" opacity=".95"/><ellipse cx="20" cy="37" rx="15" ry="11" fill="#fff" opacity=".95"/></svg>
+    <svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#2563EB"/><circle cx="20" cy="14" r="8" fill="#fff" opacity=".95"/><ellipse cx="20" cy="37" rx="15" ry="11" fill="#fff" opacity=".95"/></svg>
     <span style="color:#24324a;font-size:16px;font-weight:600;" id="toolbar-username">未登录</span>
     <svg width="14" height="14" viewBox="0 0 14 14" style="flex-shrink:0;margin-left:2px;"><path d="M3.5 5.25L7 8.75l3.5-3.5" fill="none" stroke="#637089" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </div>
   <div id="toolbar-dropdown" style="display:none;position:absolute;right:0;top:64px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(25,43,77,0.15);min-width:140px;padding:6px 0;">
     <a href="/page/end/person.html" style="display:block;padding:10px 18px;font-size:15px;color:#24324a;text-decoration:none;">个人信息</a>
-    <a href="/page/end/index.html" style="display:block;padding:10px 18px;font-size:15px;color:#3552a6;text-decoration:none;">管理后台</a>
+    <a href="/page/end/index.html" style="display:block;padding:10px 18px;font-size:15px;color:#1D4ED8;text-decoration:none;">管理后台</a>
     <a href="javascript:void(0)" onclick="handleLogout()" style="display:block;padding:10px 18px;font-size:15px;color:#c73636;text-decoration:none;">退出登录</a>
   </div>
 </div>
 <style>
 #toolbar-dropdown.show { display:block !important; }
-#toolbar-dropdown a:hover { background:#f5f7fb; }
+#toolbar-dropdown a:hover { background:#F9FAFB; }
 </style>
 <script>
 document.addEventListener('click', function(e) {
@@ -65,13 +66,13 @@ document.addEventListener('click', function(e) {
             <a class="chip" href="./animal_browse.html">动物浏览</a>
             <a class="chip" href="./my_adopt.html">我的领养申请</a>
             <a class="chip" href="./volunteer_apply.html">义工申请</a>
-            <a class="chip" href="./rescue_apply.html" style="background:#f96d5c;color:#fff;">救助咨询</a>
+            <a class="chip" href="./rescue_apply.html" style="background:#2563EB;color:#fff;">救助咨询</a>
             <a class="chip" href="./my_rescue.html">我的救助</a>
             <a class="chip" href="./notice_list.html">公告中心</a>
         </div>
         <div class="nav-user">
             <span class="chip">{{ user.username || '未登录' }}</span>
-            <a class="chip" href="./login.html">登录页</a>
+            <a class="chip" href="./login.html" v-if="!user.id">登录页</a>
         </div>
     </div>
     <div class="hero">
@@ -81,7 +82,7 @@ document.addEventListener('click', function(e) {
     <div v-if="submitted" class="empty">
         <div style="font-size:48px;margin-bottom:12px;">&#x2705;</div>
         <div style="font-size:20px;font-weight:600;margin-bottom:8px;">提交成功</div>
-        <div>救助请求已提交，请前往<a href="./my_rescue.html" style="color:#f96d5c;">我的救助</a>查看处理进度。</div>
+        <div>救助请求已提交，请前往<a href="./my_rescue.html" style="color:#2563EB;">我的救助</a>查看处理进度。</div>
         <div style="margin-top:18px;"><button class="btn btn-primary" @click="resetForm">继续提交</button></div>
     </div>
     <div v-else-if="!user.id" class="empty">请先登录后再提交救助请求。</div>
@@ -92,15 +93,15 @@ document.addEventListener('click', function(e) {
         </div>
         <div class="tips">请尽量提供详细的信息和清晰的现场照片，以便我们更快速地开展救助。</div>
         <div class="field">
-            <label>求助标题 <span style="color:#f96d5c">*</span></label>
+            <label>求助标题 <span style="color:#2563EB">*</span></label>
             <input class="input" v-model.trim="form.title" type="text" placeholder="例如：小区门口发现一只受伤的流浪猫">
         </div>
         <div class="field">
-            <label>详细描述 <span style="color:#f96d5c">*</span></label>
+            <label>详细描述 <span style="color:#2563EB">*</span></label>
             <textarea class="textarea" v-model.trim="form.description" placeholder="请描述动物的状况、大小、毛色等特征，以及是否需要紧急医疗救助"></textarea>
         </div>
         <div class="field">
-            <label>发现地点 <span style="color:#f96d5c">*</span></label>
+            <label>发现地点 <span style="color:#2563EB">*</span></label>
             <input class="input" v-model.trim="form.location" type="text" placeholder="请输入详细地址，如：XX市XX区XX路XX号附近">
         </div>
         <div class="field">
@@ -110,7 +111,7 @@ document.addEventListener('click', function(e) {
         <div class="field">
             <label>现场照片</label>
             <div class="upload-zone">
-                <img :src="form.pic ? '/api/files/' + form.pic : 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%2290%22%3E%3Crect fill=%22%23eef3ff%22 width=%22120%22 height=%2290%22/%3E%3Ctext x=%2235%22 y=%2250%22 fill=%22%238899aa%22%3E暂无图片%3C/text%3E%3C/svg%3E'" alt="">
+                <img :src="form.pic ? '/api/files/' + form.pic : 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%2290%22%3E%3Crect fill=%22%23FFF7ED%22 width=%22120%22 height=%2290%22/%3E%3Ctext x=%2235%22 y=%2250%22 fill=%22%238899aa%22%3E暂无图片%3C/text%3E%3C/svg%3E'" alt="">
                 <input type="file" id="rescue-pic" accept="image/*" @change="uploadPic">
             </div>
         </div>
@@ -184,5 +185,6 @@ new Vue({
     }
 });
 </script>
+<script src="../../js/dark-mode.js"></script>
 </body>
 </html>

@@ -1,10 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>救助管理</title>
     <link rel="stylesheet" href="../../css/element.css">
     <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/theme.css">
     <link rel="stylesheet" href="../../css/index.css">
     <style>
         .chat-box { height: 400px; overflow-y: auto; padding: 12px; background: #fafafa; border: 1px solid #eee; border-radius: 6px; margin-bottom: 10px; }
@@ -23,16 +24,15 @@
         .chat-input-row textarea { flex: 1; height: 50px; resize: none; border: 1px solid #ddd; border-radius: 6px; padding: 8px; font-size: 14px; }
     </style>
 </head>
-<body style="background-color: whitesmoke">
+<body>
 <div id="wrapper" v-cloak>
     <el-container>
-        <el-aside :width="isCollapse ? '64px' : '200px'" style="background-color: #76becc; transition:width .5s;min-height: 100vh;">
-            <div style="background-color: #76becc; height: 100px; line-height: 60px; text-align: center;
-                color: white; font-size: 20px;">
+        <el-aside :width="isCollapse ? '64px' : '200px'" class="admin-sidebar">
+            <div class="sidebar-logo-area">
                 <transition name="el-fade-in-linear">
                     <span name="fade" v-show="!isCollapse">
                         <a href="/page/end/index.html">
-                        <div class="svgContainer" style="width: 100px; padding: 5px;margin: 20px auto;  border-radius: 50px; ">
+                        <div class="svgContainer">
                             <div>
                                 <svg class="mySVG" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 200 200">
                                     <defs><circle id="armMaskPath" cx="100" cy="100" r="100"/></defs>
@@ -43,7 +43,7 @@
                                     <g class="eyeL"><circle cx="85.5" cy="78.5" r="3.5" fill="#3a5e77"/></g>
                                     <g class="eyeR"><circle cx="114.5" cy="78.5" r="3.5" fill="#3a5e77"/></g>
                                     <path class="nose" d="M97.7 79.9h4.7c1.9 0 3 2.2 1.9 3.7l-2.3 3.3c-.9 1.3-2.9 1.3-3.8 0l-2.3-3.3c-1.3-1.6-.2-3.7 1.8-3.7z" fill="#3a5e77"/>
-                                    <text x="15" y="195" font-size="30" font-weight="bold" style="fill:slategrey">流浪动物救助</text>
+                                    <text x="15" y="195" font-size="30" font-weight="bold" fill="#6B7280">流浪动物救助</text>
                                 </svg>
                             </div>
                         </div>
@@ -51,7 +51,7 @@
                     </span>
                 </transition>
             </div>
-            <el-menu :default-openeds="['1']" style="border: none;" background-color="#76becc" text-color="#fffaf4" active-text-color="#dfd7d7"
+            <el-menu :default-openeds="['1']" style="border: none;" background-color="transparent" text-color="#6B7280" active-text-color="#2563EB"
                      default-active="help" class="el-menu-vertical-demo" :collapse="isCollapse">
                 <a href="/page/end/index.html">
                     <el-menu-item index="home"><i class="el-icon-data-line"></i><span slot="title">首页</span></el-menu-item>
@@ -65,7 +65,7 @@
             </el-menu>
         </el-aside>
         <el-container>
-            <el-header style="background-color: #76becc; line-height: 60px; color: white;">
+            <el-header class="admin-header">
                 <el-row>
                     <el-col :span="1">
                         <i style="font-size: 22px; cursor: pointer" :class="[isCollapse ? 'el-icon-s-unfold' : 'el-icon-s-fold']" @click="handleCollapse"></i>
@@ -73,18 +73,18 @@
                     <el-col :span="6" :offset="17" style="text-align: right">
                         <el-dropdown trigger="click">
                             <span style="display:inline-flex;align-items:center;gap:12px;cursor:pointer;height:60px;">
-                                <span style="font-size:20px;font-weight:700;">{{user.username}}</span>
-                                <img :src="'/api/files/' + user.avatar" style="width:50px;height:50px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.45);">
+                                <span style="font-size:20px;font-weight:700;color:#111827;">{{user.username}}</span>
+                                <img :src="'/api/files/' + user.avatar" style="width:50px;height:50px;border-radius:50%;object-fit:cover;border:2px solid #E5E7EB;">
                             </span>
                             <el-dropdown-menu slot="dropdown">
-                                <el-dropdown-item><a href="/page/end/person.html" style="display:block;padding:4px 12px;font-size:17px;color:#24324a;text-decoration:none;">个人信息</a></el-dropdown-item>
-                                <el-dropdown-item><a @click="logout" href="#" style="display:block;padding:4px 12px;font-size:17px;color:#c73636;text-decoration:none;">退出</a></el-dropdown-item>
+                                <el-dropdown-item><a href="/page/end/person.html" style="display:block;padding:4px 12px;font-size:17px;color:#1C1917;text-decoration:none;">个人信息</a></el-dropdown-item>
+                                <el-dropdown-item><a @click="logout" href="#" style="display:block;padding:4px 12px;font-size:17px;color:#DC2626;text-decoration:none;">退出</a></el-dropdown-item>
                             </el-dropdown-menu>
                         </el-dropdown>
                     </el-col>
                 </el-row>
             </el-header>
-            <el-main>
+            <el-main class="admin-body">
                 <el-tabs v-model="activeTab" type="card">
                     <!-- 聊天室 Tab -->
                     <el-tab-pane label="救助聊天室" name="chat">
@@ -368,5 +368,6 @@
         }
     });
 </script>
+<script src="../../js/dark-mode.js"></script>
 </body>
 </html>

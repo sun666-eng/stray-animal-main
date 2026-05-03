@@ -1,0 +1,56 @@
+2026-05-03 23:36:43.941 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 6.2.5.Final
+2026-05-03 23:36:43.951 [main] INFO  com.example.Application - Starting Application using Java 21.0.9 on LAPTOP-93TNPJPV with PID 75200 (D:\2026.4.7\Myproject\stray-animal-main\target\classes started by lvjun in D:\2026.4.7\Myproject\stray-animal-main)
+2026-05-03 23:36:43.952 [main] INFO  com.example.Application - No active profile set, falling back to 1 default profile: "default"
+2026-05-03 23:36:44.450 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-05-03 23:36:44.452 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-03 23:36:44.468 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 7 ms. Found 0 JPA repository interfaces.
+2026-05-03 23:36:44.480 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-05-03 23:36:44.480 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-05-03 23:36:44.492 [main] INFO  o.s.d.r.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 3 ms. Found 0 Redis repository interfaces.
+2026-05-03 23:36:45.101 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 9999 (http)
+2026-05-03 23:36:45.107 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-9999"]
+2026-05-03 23:36:45.109 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-05-03 23:36:45.109 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.83]
+2026-05-03 23:36:45.212 [main] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-05-03 23:36:45.213 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1223 ms
+2026-05-03 23:36:45.356 [main] INFO  org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-05-03 23:36:45.393 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 5.6.15.Final
+2026-05-03 23:36:45.500 [main] INFO  org.hibernate.annotations.common.Version - HCANN000001: Hibernate Commons Annotations {5.1.2.Final}
+2026-05-03 23:36:45.672 [main] INFO  com.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2026-05-03 23:36:45.837 [main] INFO  org.hibernate.dialect.Dialect - HHH000400: Using dialect: org.hibernate.dialect.MySQL8Dialect
+2026-05-03 23:36:45.953 [main] INFO  o.h.e.t.jta.platform.internal.JtaPlatformInitiator - HHH000490: Using JtaPlatform implementation: [org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform]
+2026-05-03 23:36:45.961 [main] INFO  o.s.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-03 23:36:46.166 [main] INFO  com.example.component.WebSocketServer - Redis pub/sub模式: 禁用(使用本地广播)
+2026-05-03 23:36:46.282 [main] WARN  c.b.mybatisplus.core.metadata.TableInfoHelper - Can not find table primary key in Class: "java.lang.Void".
+2026-05-03 23:36:46.284 [main] WARN  c.b.mybatisplus.core.injector.DefaultSqlInjector - class java.lang.Void ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2026-05-03 23:36:46.362 [main] WARN  c.b.mybatisplus.core.metadata.TableInfoHelper - Can not find table primary key in Class: "com.example.entity.Adopt".
+2026-05-03 23:36:46.362 [main] WARN  c.b.mybatisplus.core.injector.DefaultSqlInjector - class com.example.entity.Adopt ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.
+2026-05-03 23:36:46.694 [main] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-05-03 23:36:46.968 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-9999"]
+2026-05-03 23:36:46.984 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port(s): 9999 (http) with context path ''
+2026-05-03 23:36:46.988 [main] INFO  com.example.Application - Started Application in 3.455 seconds (JVM running for 3.738)
+2026-05-03 23:37:09.910 [http-nio-9999-exec-1] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-05-03 23:37:09.911 [http-nio-9999-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-05-03 23:37:09.912 [http-nio-9999-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-05-03 23:37:32.059 [http-nio-9999-exec-7] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 58c77a8475f8477fa3de72b1742aac21-0fa3343dc8b14dce635be7a9c28f60092b622.jpg, IP: 0:0:0:0:0:0:0:1
+2026-05-03 23:37:50.674 [http-nio-9999-exec-3] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 58c77a8475f8477fa3de72b1742aac21-0fa3343dc8b14dce635be7a9c28f60092b622.jpg, IP: 0:0:0:0:0:0:0:1
+2026-05-03 23:37:50.698 [http-nio-9999-exec-7] INFO  com.example.component.WebSocketServer - 有新用户加入，username=999, 当前在线人数为：1
+2026-05-03 23:37:53.408 [http-nio-9999-exec-2] INFO  com.example.component.WebSocketServer - 有一连接关闭，移除username=999的用户session, 当前在线人数为：0
+2026-05-03 23:37:56.582 [http-nio-9999-exec-1] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 58c77a8475f8477fa3de72b1742aac21-0fa3343dc8b14dce635be7a9c28f60092b622.jpg, IP: 0:0:0:0:0:0:0:1
+2026-05-03 23:37:56.724 [http-nio-9999-exec-7] INFO  com.example.controller.FileController - 文件下载 - flag: 58c77a8475f8477fa3de72b1742aac21, 文件: 58c77a8475f8477fa3de72b1742aac21-0fa3343dc8b14dce635be7a9c28f60092b622.jpg, IP: 0:0:0:0:0:0:0:1
+2026-05-03 23:56:47.288 [http-nio-9999-exec-1] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 1130640
+2026-05-03 23:56:47.289 [http-nio-9999-exec-1] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 1136609
+2026-05-03 23:56:47.293 [http-nio-9999-exec-3] INFO  com.example.controller.FileController - 文件下载 - flag: 1, 文件: 58c77a8475f8477fa3de72b1742aac21-0fa3343dc8b14dce635be7a9c28f60092b622.jpg, IP: 0:0:0:0:0:0:0:1
+2026-05-03 23:56:47.332 [http-nio-9999-exec-7] INFO  com.example.controller.FileController - 文件下载 - flag: 58c77a8475f8477fa3de72b1742aac21, 文件: 58c77a8475f8477fa3de72b1742aac21-0fa3343dc8b14dce635be7a9c28f60092b622.jpg, IP: 0:0:0:0:0:0:0:1
+2026-05-03 23:57:17.378 [http-nio-9999-exec-5] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-05-03 23:57:19.743 [http-nio-9999-exec-3] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-05-03 23:57:21.887 [http-nio-9999-exec-7] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-05-03 23:57:25.061 [http-nio-9999-exec-5] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-05-03 23:57:25.677 [http-nio-9999-exec-3] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-05-03 23:57:28.215 [http-nio-9999-exec-4] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-05-03 23:58:44.029 [http-nio-9999-exec-6] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 75787
+2026-05-03 23:58:44.029 [http-nio-9999-exec-5] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 75811
+2026-05-03 23:58:44.029 [http-nio-9999-exec-3] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 75810
+2026-05-03 23:58:44.029 [http-nio-9999-exec-2] WARN  com.alibaba.druid.pool.DruidAbstractDataSource - discard long time none received connection. , jdbcUrl : jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8, version : 1.2.2, lastPacketReceivedIdleMillis : 75811
+2026-05-03 23:58:44.041 [http-nio-9999-exec-10] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1
+2026-05-03 23:58:45.762 [http-nio-9999-exec-6] INFO  com.example.controller.FileController - 文件下载 - flag: 1619007548868, 文件: 1619007548868-v2-da81b32117040e545c3e728cdbaaebb4_1440w.jpg, IP: 0:0:0:0:0:0:0:1

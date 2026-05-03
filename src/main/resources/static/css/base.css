@@ -8,12 +8,15 @@ ul,li{
 }
 a {
     text-decoration: none;
-    color: white;
+    color: inherit;
 }
 body {
-    font-size:4px;
-    color:#333;
-    background-color: #ffffff;
+    font-size: 14px;
+    color: #111827;
+    background-color: #F9FAFB;
+    font-family: 'Noto Sans SC', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
 }
 img {
     border: none;
@@ -69,19 +72,19 @@ input[type='file'] {
     border: 8px solid;
 }
 .right {
-    background-color:#76BECC;
+    background-color: #E5E7EB;
 }
 .left {
-    background-color:#8CC7B5;
+    background-color: #DBEAFE;
 }
 .left:after {
-    border-right-color: #8CC7B5;
+    border-right-color: #DBEAFE;
     top: 50%;
     right: 100%;
     margin-top: -9px;
 }
 .right:after {
-    border-left-color: #76BECC;
+    border-left-color: #E5E7EB;
     left: 100%;
     top: 50%;
     margin-top: -7px;

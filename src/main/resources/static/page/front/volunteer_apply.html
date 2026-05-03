@@ -1,16 +1,17 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <title>义工申请</title>
     <link rel="stylesheet" href="../../css/base.css">
+    <link rel="stylesheet" href="../../css/theme.css">
     <link rel="stylesheet" href="../../css/element.css">
     <style>
-        body { margin: 0; background: #f5f7fb; color: #24324a; }
+        body { margin: 0; background: #F9FAFB; color: #24324a; }
         .page-shell { max-width: 1080px; margin: 0 auto; padding: 28px 20px 60px; }
         .nav { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
-        .chip { display: inline-flex; align-items: center; height: 38px; padding: 0 14px; border-radius: 999px; background: #fff; color: #3552a6; text-decoration: none; box-shadow: 0 8px 20px rgba(25, 43, 77, 0.06); }
-        .hero { background: linear-gradient(135deg, #7ce0b8 0%, #41b883 100%); color: #fff; border-radius: 20px; padding: 28px 30px; box-shadow: 0 12px 30px rgba(65, 184, 131, 0.2); margin-bottom: 24px; }
+        .chip { display: inline-flex; align-items: center; height: 38px; padding: 0 14px; border-radius: 999px; background: #fff; color: #1D4ED8; text-decoration: none; box-shadow: 0 8px 20px rgba(25, 43, 77, 0.06); }
+        .hero { background: linear-gradient(135deg, #93C5FD 0%, #3B82F6 100%); color: #fff; border-radius: 20px; padding: 28px 30px; box-shadow: 0 12px 30px rgba(37, 99, 235, 0.2); margin-bottom: 24px; }
         .hero h1 { margin: 0 0 8px; font-size: 30px; }
         .panel { background: #fff; border-radius: 18px; box-shadow: 0 8px 24px rgba(25, 43, 77, 0.08); padding: 24px; }
         .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 22px; }
@@ -21,27 +22,27 @@
         .textarea { min-height: 120px; padding: 12px 14px; resize: vertical; }
         .actions { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
         .btn { height: 44px; padding: 0 22px; border: 0; border-radius: 12px; cursor: pointer; }
-        .btn-primary { background: #41b883; color: #fff; }
-        .btn-ghost { background: #edf8f3; color: #22845c; }
+        .btn-primary { background: #2563EB; color: #fff; }
+        .btn-ghost { background: #F0F9FF; color: #1D4ED8; }
         @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 <div id="user-toolbar" style="position:fixed;right:20px;top:20px;z-index:9999;display:flex;align-items:center;gap:0;background:#fff;border-radius:14px;box-shadow:0 8px 24px rgba(25,43,77,0.12);">
   <div id="toolbar-trigger" onclick="document.getElementById('toolbar-dropdown').classList.toggle('show')" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 14px;border-radius:14px;">
-    <svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#5f8cff"/><circle cx="20" cy="14" r="8" fill="#fff" opacity=".95"/><ellipse cx="20" cy="37" rx="15" ry="11" fill="#fff" opacity=".95"/></svg>
+    <svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#2563EB"/><circle cx="20" cy="14" r="8" fill="#fff" opacity=".95"/><ellipse cx="20" cy="37" rx="15" ry="11" fill="#fff" opacity=".95"/></svg>
     <span style="color:#24324a;font-size:16px;font-weight:600;" id="toolbar-username">未登录</span>
     <svg width="14" height="14" viewBox="0 0 14 14" style="flex-shrink:0;margin-left:2px;"><path d="M3.5 5.25L7 8.75l3.5-3.5" fill="none" stroke="#637089" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </div>
   <div id="toolbar-dropdown" style="display:none;position:absolute;right:0;top:64px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(25,43,77,0.15);min-width:140px;padding:6px 0;">
     <a href="/page/end/person.html" style="display:block;padding:10px 18px;font-size:15px;color:#24324a;text-decoration:none;">个人信息</a>
-    <a href="/page/end/index.html" style="display:block;padding:10px 18px;font-size:15px;color:#3552a6;text-decoration:none;">管理后台</a>
+    <a href="/page/end/index.html" style="display:block;padding:10px 18px;font-size:15px;color:#1D4ED8;text-decoration:none;">管理后台</a>
     <a href="javascript:void(0)" onclick="handleLogout()" style="display:block;padding:10px 18px;font-size:15px;color:#c73636;text-decoration:none;">退出登录</a>
   </div>
 </div>
 <style>
 #toolbar-dropdown.show { display:block !important; }
-#toolbar-dropdown a:hover { background:#f5f7fb; }
+#toolbar-dropdown a:hover { background:#F9FAFB; }
 </style>
 <script>
 document.addEventListener('click', function(e) {
@@ -62,7 +63,7 @@ document.addEventListener('click', function(e) {
             <a class="chip" href="./my_rescue.html">我的救助</a>
         <a class="chip" href="./my_volunteer.html">我的义工申请</a>
         <a class="chip" href="./notice_list.html">公告中心</a>
-        <a class="chip" href="./login.html">登录页</a>
+        <a class="chip" href="./login.html" v-if="!user.id">登录页</a>
     </div>
     <div class="hero">
         <h1>义工申请</h1>
@@ -180,6 +181,7 @@ function handleLogout() {
   });
 }
 </script>
+<script src="../../js/dark-mode.js"></script>
 </body>
 </html>
 
