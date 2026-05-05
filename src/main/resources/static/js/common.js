@@ -538,9 +538,9 @@ axios.interceptors.response.use(
         if (error.response) {
             switch (error.response.status) {
                 case 401:
-                    // 返回 401 清除token信息并跳转到登录页面
-                    //alert("未登录");
-                   window.location="/login.html";
+                    // 返回 401 清除token信息并跳转到统一登录页面
+                    window.location="/page/end/login.html?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
+                    break;
                 case 404:
                     // //
                     // alert("服务错误！");
