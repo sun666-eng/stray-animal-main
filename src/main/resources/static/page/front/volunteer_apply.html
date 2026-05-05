@@ -59,9 +59,9 @@ document.addEventListener('click', function(e) {
         <a class="chip" href="./animal_browse.html">动物浏览</a>
         <a class="chip" href="./my_adopt.html">我的领养申请</a>
         <a class="chip" href="./volunteer_apply.html">义工申请</a>
-            <a class="chip" href="./rescue_apply.html" style="background:#f96d5c;color:#fff;">救助咨询</a>
-            <a class="chip" href="./my_rescue.html">我的救助</a>
         <a class="chip" href="./my_volunteer.html">我的义工申请</a>
+            <a class="chip" href="./rescue_apply.html">救助咨询</a>
+            <a class="chip" href="./my_rescue.html">我的救助</a>
         <a class="chip" href="./notice_list.html">公告中心</a>
         <a class="chip" href="./login.html" v-if="!user.id">登录页</a>
     </div>
@@ -177,11 +177,13 @@ new Vue({
 function handleLogout() {
   $.ajax({ url: '/api/user/logout', type: 'GET' }).always(function(){
     sessionStorage.removeItem('user');
-    location.href = '/page/front/login.html';
+    location.href = '/page/end/login.html';
   });
 }
 </script>
+<script src="../../js/front-nav.js?v=20260504"></script>
 <script src="../../js/dark-mode.js"></script>
 </body>
 </html>
+
 
