@@ -290,7 +290,7 @@
                 vm.onlineCount = data.users.length;
             } else if (data.type === 'chat') {
                 var isSelf = (data.from === vm.user.username);
-                appendMessage(data.from, data.text, isSelf);
+                appendMessage(data.from, data.text, isSelf, data.time);
             } else if (data.type === 'join') {
                 vm.onlineCount++;
                 appendSystemMsg(data.username + ' 加入了聊天室');
@@ -309,9 +309,32 @@
 
     var defaultAvatar = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44"><circle cx="22" cy="22" r="22" fill="#ddd"/><text x="22" y="28" text-anchor="middle" fill="#999" font-size="14">@</text></svg>');
 
-    function appendMessage(username, text, isSelf) {
+    function formatChatTime(value) {
+        if (!value) {
+            value = new Date();
+        }
+        var normalized = typeof value === 'string' ? value.replace(' ', 'T') : value;
+        var date = new Date(normalized);
+        if (isNaN(date.getTime())) {
+            return value;
+        }
+        var now = new Date();
+        var isToday = date.getFullYear() === now.getFullYear()
+            && date.getMonth() === now.getMonth()
+            && date.getDate() === now.getDate();
+        var hhmm = date.toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'});
+        if (isToday) {
+            return hhmm;
+        }
+        var yyyy = date.getFullYear();
+        var mm = String(date.getMonth() + 1).padStart(2, '0');
+        var dd = String(date.getDate()).padStart(2, '0');
+        return yyyy + '-' + mm + '-' + dd + ' ' + hhmm;
+    }
+
+    function appendMessage(username, text, isSelf, timeValue) {
         var avatarUrl = isSelf ? ('/api/files/' + vm.user.avatar) : defaultAvatar;
-        var time = new Date().toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'});
+        var time = formatChatTime(timeValue);
         var cls = isSelf ? 'msg-item self' : 'msg-item';
         var html = '<div class="' + cls + '">'
             + '<img class="msg-avatar" src="' + avatarUrl + '" onerror="this.src=defaultAvatar">'
@@ -373,7 +396,7 @@
                         for (var i = 0; i < records.length; i++) {
                             var item = records[i];
                             var isSelf = (item.uname === self.user.username);
-                            appendMessage(item.uname, item.description, isSelf);
+                            appendMessage(item.uname, item.description, isSelf, item.createTime);
                         }
                     }
                 });
@@ -431,7 +454,8 @@
                         description: msg
                     })
                 }).then(function(res) {
-                    socket.send(JSON.stringify({ text: msg }));
+                    var saved = res.data || {};
+                    socket.send(JSON.stringify({ text: msg, time: saved.createTime }));
                     self.text = '';
                 });
             },

@@ -108,10 +108,12 @@ new Vue({
 function handleLogout() {
   $.ajax({ url: '/api/user/logout', type: 'GET' }).always(function(){
     sessionStorage.removeItem('user');
-    location.href = '/page/front/login.html';
+    location.href = '/page/end/login.html';
   });
 }
 </script>
+<script src="../../js/front-nav.js?v=20260504"></script>
 <script src="../../js/dark-mode.js"></script>
 </body>
 </html>
+

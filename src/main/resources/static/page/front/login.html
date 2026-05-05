@@ -3,12 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <title>登录</title>
+    <script>
+        const redirect = new URLSearchParams(location.search).get("redirect") || "/page/end/index.html";
+        location.replace("/page/end/login.html?redirect=" + encodeURIComponent(redirect));
+    </script>
     <link rel="stylesheet" href="../../css/base.css">
     <link rel="stylesheet" href="../../css/theme.css">
     <link rel="stylesheet" href="../../css/element.css">
 </head>
 <body>
-<a href='/page/end/index.html' style='position:fixed;right:20px;top:20px;z-index:9999;display:inline-block;padding:10px 16px;background:#2563EB;color:#fff;border-radius:8px;text-decoration:none;box-shadow:0 6px 16px rgba(37, 99, 235,.25);'>返回首页</a>
+<a href='/page/front/animal_browse.html' style='position:fixed;right:20px;top:20px;z-index:9999;display:inline-block;padding:10px 16px;background:#2563EB;color:#fff;border-radius:8px;text-decoration:none;box-shadow:0 6px 16px rgba(37, 99, 235,.25);'>返回动物浏览</a>
 
 <div id="wrapper">
     <div class="icon-block">
@@ -89,7 +93,7 @@
                 </div>
 
                 <button @click="login" style="height: 40px; padding: 10px; width: 100%; margin-top: 25px; background-color: #2563EB; color: white">登录</button>
-                <a style="width: 100%; text-align: right; display: inline-block; margin-top: 25px; color: #1D4ED8" href="register.html">还没账号？去注册</a>
+                <a style="width: 100%; text-align: right; display: inline-block; margin-top: 25px; color: #1D4ED8" href="/page/end/register.html">还没账号？去注册</a>
                 <a style="width: 100%; text-align: right; display: inline-block; margin-top: 10px; color: #1D4ED8" href="animal_browse.html">先看看可领养动物</a>
                 <a style="width: 100%; text-align: right; display: inline-block; margin-top: 10px; color: #1D4ED8" href="my_adopt.html">查看我的领养申请</a>
                 <a style="width: 100%; text-align: right; display: inline-block; margin-top: 10px; color: #1D4ED8" href="volunteer_apply.html">我要报名义工</a>
@@ -165,8 +169,12 @@
                         });
                         sessionStorage.setItem("user", JSON.stringify(res.data.user));
                         sessionStorage.setItem("token", res.data.token);
+                        const redirect = new URLSearchParams(location.search).get("redirect");
+                        const target = redirect && redirect.startsWith("/page/")
+                            ? redirect
+                            : "/page/end/index.html";
                         setTimeout(() => {
-                            location.href= "/page/end/index.html"
+                            location.href = target;
                         }, 1000)
                     } else {
                         this.$message({
@@ -180,7 +188,9 @@
     })
 
 </script>
+<script src="../../js/front-nav.js?v=20260504"></script>
 <script src="../../js/dark-mode.js"></script>
 </body>
 </html>
+
 

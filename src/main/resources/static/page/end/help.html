@@ -212,7 +212,7 @@
                 adminVm.onlineCount = data.users.length;
             } else if (data.type === 'chat') {
                 var isSelf = (data.from === adminVm.user.username);
-                appendAdminMessage(data.from, data.text, isSelf);
+                appendAdminMessage(data.from, data.text, isSelf, data.time);
             } else if (data.type === 'join') {
                 adminVm.onlineCount++;
                 appendAdminSystemMsg(data.username + ' 加入了聊天室');
@@ -223,9 +223,32 @@
         };
     }
 
-    function appendAdminMessage(username, text, isSelf) {
+    function formatAdminChatTime(value) {
+        if (!value) {
+            value = new Date();
+        }
+        var normalized = typeof value === 'string' ? value.replace(' ', 'T') : value;
+        var date = new Date(normalized);
+        if (isNaN(date.getTime())) {
+            return value;
+        }
+        var now = new Date();
+        var isToday = date.getFullYear() === now.getFullYear()
+            && date.getMonth() === now.getMonth()
+            && date.getDate() === now.getDate();
+        var hhmm = date.toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'});
+        if (isToday) {
+            return hhmm;
+        }
+        var yyyy = date.getFullYear();
+        var mm = String(date.getMonth() + 1).padStart(2, '0');
+        var dd = String(date.getDate()).padStart(2, '0');
+        return yyyy + '-' + mm + '-' + dd + ' ' + hhmm;
+    }
+
+    function appendAdminMessage(username, text, isSelf, timeValue) {
         var avatarUrl = isSelf ? ('/api/files/' + adminVm.user.avatar) : adminDefaultAvatar;
-        var time = new Date().toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'});
+        var time = formatAdminChatTime(timeValue);
         var cls = isSelf ? 'msg-item self' : 'msg-item';
         var html = '<div class="' + cls + '">'
             + '<img class="msg-avatar" src="' + avatarUrl + '" onerror="this.src=adminDefaultAvatar">'
@@ -296,8 +319,9 @@
                         uname: self.user.username,
                         description: msg
                     })
-                }).then(function() {
-                    adminSocket.send(JSON.stringify({ text: msg }));
+                }).then(function(res) {
+                    var saved = res.data || {};
+                    adminSocket.send(JSON.stringify({ text: msg, time: saved.createTime }));
                     self.chatText = '';
                 });
             },
@@ -309,7 +333,7 @@
                         for (var i = 0; i < records.length; i++) {
                             var item = records[i];
                             var isSelf = (item.uname === self.user.username);
-                            appendAdminMessage(item.uname, item.description, isSelf);
+                            appendAdminMessage(item.uname, item.description, isSelf, item.createTime);
                         }
                     }
                 });

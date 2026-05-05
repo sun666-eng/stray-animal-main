@@ -281,7 +281,8 @@
                 </div>
 
                 <el-dialog title="动物信息管理" :visible.sync="dialogFormVisible" width="30%"
-                           close-on-click-modal="false" close-on-press-escape="false" show-close="false">
+                           close-on-click-modal="false" close-on-press-escape="false" show-close="false"
+                           @closed="resetAnimalUpload">
                     <el-form :model="entity">
                         <el-form-item v-if="item.prop !== 'id'&&item.prop !== 'tsex'&&item.prop !== 'tpic'&&item.prop !== 'tbirthday'" :label="item.label" label-width="100px" v-for="item in props">
                             <el-input v-model="entity[item.prop]" autocomplete="off" style="width: 80%"></el-input>
@@ -301,11 +302,15 @@
                         </el-form-item>
                         <el-form-item v-if="item.prop == 'tpic'" :label="item.label" label-width="100px" v-for="item in props">
                             <el-upload
+                                    :key="'animal-image-upload-' + (entity.id || 'new')"
                                     class="upload-demo"
                                     action="/api/files/upload"
-                                    :file-list="fileList"
+                                    :file-list="animalFileList"
                                     list-type="picture"
-                                    :on-success="successUpload">
+                                    :limit="1"
+                                    :on-exceed="handleAnimalImageExceed"
+                                    :on-remove="removeAnimalImage"
+                                    :on-success="successAnimalImageUpload">
                                 <el-button size="small" type="primary">点击上传</el-button>
                                 <!--                        <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div>-->
                             </el-upload>
@@ -361,7 +366,7 @@
             isCollapse: false,
             search: '',
             uploadFile: '',
-            fileList: [],
+            animalFileList: [],
             options: [{
                 value: 0,
                 label: '待领养'
@@ -419,6 +424,7 @@
             },
             add() {
                 this.entity = {};
+                this.resetAnimalUpload();
                 this.dialogFormVisible = true;
             },
             save() {
@@ -441,7 +447,7 @@
                             type: "error"
                         })
                     }
-                    this.fileList=[];
+                    this.resetAnimalUpload();
                     this.dialogFormVisible = false;
                 })
             },
@@ -453,7 +459,8 @@
                 setTimeout(() => this.uploadErrorMsg = "", 2000);
             },
             edit(obj) {
-                this.entity = obj;
+                this.entity = Object.assign({}, obj);
+                this.animalFileList = this.buildAnimalFileList(this.entity.tpic);
                 this.dialogFormVisible = true;
             },
             del(id) {
@@ -498,10 +505,27 @@
                     }
                 })
             },
-            successUpload(res) {   // 文件上传成功的回调
+            buildAnimalFileList(flag) {
+                return flag ? [{ name: flag, url: "/api/files/" + flag }] : [];
+            },
+            resetAnimalUpload() {
+                this.animalFileList = [];
+            },
+            handleAnimalImageExceed(files) {
+                this.$message.warning("动物图片只能保留一张，请先移除当前图片后再上传。");
+            },
+            removeAnimalImage() {
+                this.entity.tpic = "";
+                this.animalFileList = [];
+            },
+            successAnimalImageUpload(res) {   // 动物图片上传成功的回调
                 // res.data = {flag: "xxx", fileName: "xxx.jpg"}
-                var flag = res.data.flag || res.data;
-                this.fileList.push({name: flag, url: "/api/files/" + flag})
+                var flag = res.data && (res.data.flag || res.data);
+                if (!flag) {
+                    this.$message.error("动物图片上传失败");
+                    return;
+                }
+                this.animalFileList = this.buildAnimalFileList(flag);
                 this.entity.tpic = flag;
             }
 

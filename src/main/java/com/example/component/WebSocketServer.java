@@ -14,6 +14,8 @@ import javax.annotation.PostConstruct;
 import javax.websocket.*;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -106,11 +108,16 @@ public class WebSocketServer {
         log.info("服务端收到用户username={}的消息:{}", username, message);
         JSONObject obj = JSONUtil.parseObj(message);
         String text = obj.getStr("text");
+        String time = obj.getStr("time");
+        if (time == null || time.trim().isEmpty()) {
+            time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+        }
 
         // 通过Redis广播消息
         JSONObject jsonObject = new JSONObject();
         jsonObject.set("from", username);
         jsonObject.set("text", text);
+        jsonObject.set("time", time);
         jsonObject.set("type", "chat");
         publishToRedis(JSONUtil.toJsonStr(jsonObject));
     }

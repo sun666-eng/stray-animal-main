@@ -200,8 +200,12 @@
                         });
                         sessionStorage.setItem("user", JSON.stringify(res.data.user));
                         sessionStorage.setItem("token", res.data.token);
+                        const redirect = new URLSearchParams(location.search).get("redirect");
+                        const target = redirect && redirect.startsWith("/page/")
+                            ? redirect
+                            : "/page/end/index.html";
                         setTimeout(() => {
-                            location.href= "/page/end/index.html"
+                            location.href = target
                         }, 1000)
                     } else {
                         this.$message({
@@ -218,4 +222,3 @@
 <script src="../../js/dark-mode.js"></script>
 </body>
 </html>
-

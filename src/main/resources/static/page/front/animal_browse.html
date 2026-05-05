@@ -63,7 +63,7 @@ document.addEventListener('click', function(e) {
     <div class="hero">
         <h1>流浪动物浏览</h1>
         <p>查看当前可领养动物，点击查看详情并发起领养申请。</p>
-        <p style="margin-top: 10px;"><a href="login.html" style="color:#fff;text-decoration: underline; margin-right: 14px;">返回登录页</a><a href="my_adopt.html" style="color:#fff;text-decoration: underline; margin-right: 14px;">我的领养申请</a><a href="volunteer_apply.html" style="color:#fff;text-decoration: underline; margin-right: 14px;">义工申请</a><a href="my_volunteer.html" style="color:#fff;text-decoration: underline; margin-right: 14px;">我的义工申请</a><a href="notice_list.html" style="color:#fff;text-decoration: underline;">公告中心</a>&nbsp;&nbsp;&nbsp;<a href="rescue_apply.html" style="color:#fff;text-decoration: underline;">救助咨询</a>&nbsp;&nbsp;&nbsp;<a href="my_rescue.html" style="color:#fff;text-decoration: underline;">我的救助</a></p>
+        <p style="margin-top: 10px;"><a href="/page/end/login.html" style="color:#fff;text-decoration: underline; margin-right: 14px;">返回登录页</a><a href="my_adopt.html" style="color:#fff;text-decoration: underline; margin-right: 14px;">我的领养申请</a><a href="volunteer_apply.html" style="color:#fff;text-decoration: underline; margin-right: 14px;">义工申请</a><a href="my_volunteer.html" style="color:#fff;text-decoration: underline; margin-right: 14px;">我的义工申请</a><a href="notice_list.html" style="color:#fff;text-decoration: underline;">公告中心</a>&nbsp;&nbsp;&nbsp;<a href="rescue_apply.html" style="color:#fff;text-decoration: underline;">救助咨询</a>&nbsp;&nbsp;&nbsp;<a href="my_rescue.html" style="color:#fff;text-decoration: underline;">我的救助</a></p>
     </div>
     <div class="toolbar">
         <input v-model="query" type="text" placeholder="输入动物描述或名称关键词搜索">
@@ -131,11 +131,13 @@ new Vue({
 function handleLogout() {
   $.ajax({ url: '/api/user/logout', type: 'GET' }).always(function(){
     sessionStorage.removeItem('user');
-    location.href = '/page/front/login.html';
+    location.href = '/page/end/login.html';
   });
 }
 </script>
+<script src="../../js/front-nav.js?v=20260504"></script>
 <script src="../../js/dark-mode.js"></script>
 </body>
 </html>
+
 
