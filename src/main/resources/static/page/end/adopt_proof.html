@@ -408,38 +408,6 @@
                     }
                 })
             },
-            upload() {
-                // let files = $("#file")[0].files;
-                // let formData = new FormData();
-                // for (let i = 0; i < files.length; i++) {
-                //     formData.append("files", files[i]);
-                // }
-                let formData = new FormData();
-                formData.append("file", $("#file")[0].files[0])
-                $.ajax({
-                    url: '/api/files/upload',
-                    processData: false,
-                    contentType: false,
-                    type: 'POST',
-                    data: formData
-                }).then(res => {
-                    if(res.code === '0') {
-                        this.$message({
-                            type: "success",
-                            message: "上传成功"
-                        });
-                        this.user.avatar = res.data.flag;
-                        sessionStorage.setItem("user", JSON.stringify(this.user))
-                        // 更新用户信息
-                        $.ajax({
-                            url: '/api/user',
-                            type: 'PUT',
-                            contentType: "application/json",
-                            data: JSON.stringify(this.user)
-                        });
-                    }
-                })
-            },
             successUpload(res) {   // 文件上传成功的回调
                 var flag = res.data.flag || res.data;
                 this.fileList.push({name: flag, url: "/api/files/" + flag})

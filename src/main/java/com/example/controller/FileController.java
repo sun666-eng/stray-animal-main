@@ -93,8 +93,8 @@ public class FileController {
                 }
 
                 String matched = Arrays.stream(fileNames)
-                        .filter(name -> name.contains(flag))
-                        .findAny().orElse("");
+                        .filter(name -> name.startsWith(flag + "-"))
+                        .findFirst().orElse("");
                 if (StrUtil.isEmpty(matched)) {
                     continue;
                 }

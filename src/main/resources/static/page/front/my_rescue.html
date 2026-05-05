@@ -65,8 +65,9 @@ document.addEventListener('click', function(e) {
             <a class="chip" href="./animal_browse.html">动物浏览</a>
             <a class="chip" href="./my_adopt.html">我的领养申请</a>
             <a class="chip" href="./volunteer_apply.html">义工申请</a>
+            <a class="chip" href="./my_volunteer.html">我的义工申请</a>
             <a class="chip" href="./rescue_apply.html">救助咨询</a>
-            <a class="chip" href="./my_rescue.html" style="background:#2563EB;color:#fff;">我的救助</a>
+            <a class="chip" href="./my_rescue.html">我的救助</a>
             <a class="chip" href="./notice_list.html">公告中心</a>
         </div>
         <div class="nav-user">
@@ -125,10 +126,22 @@ document.addEventListener('click', function(e) {
 <script src="../../js/vue.min.js"></script>
 
 <script>
+function ensureVolunteerEntry() {
+    var nav = document.querySelector(".nav-links");
+    if (!nav || nav.querySelector('a[href$="my_volunteer.html"]')) return;
+    var link = document.createElement("a");
+    link.className = "chip";
+    link.href = "./my_volunteer.html";
+    link.textContent = "我的义工申请";
+    var rescueLink = nav.querySelector('a[href$="rescue_apply.html"]');
+    nav.insertBefore(link, rescueLink || null);
+}
+ensureVolunteerEntry();
+
 function handleLogout() {
     $.get("/api/user/logout");
     sessionStorage.removeItem("user");
-    location.href = "./login.html";
+    location.href = "/page/end/login.html";
 }
 
 new Vue({
@@ -162,6 +175,8 @@ new Vue({
     }
 });
 </script>
+<script src="../../js/front-nav.js?v=20260504"></script>
 <script src="../../js/dark-mode.js"></script>
 </body>
 </html>
+

@@ -65,7 +65,10 @@ public class HelpController {
                                          @RequestParam(required = false, defaultValue = "1") Integer pageNum,
                                          @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
         return Result.success(helpService.page(new Page<>(pageNum, pageSize),
-                Wrappers.<Help>lambdaQuery().like(Help::getTitle, name).orderByDesc(Help::getCreateTime)));
+                Wrappers.<Help>lambdaQuery()
+                        .like(Help::getTitle, name)
+                        .ne(Help::getTitle, "聊天室消息")
+                        .orderByDesc(Help::getCreateTime)));
     }
 
     @GetMapping("/mine")
@@ -85,7 +88,8 @@ public class HelpController {
         help.setStatus(0);
         help.setCreateTime(new Date());
         help.setUpdateTime(new Date());
-        return Result.success(helpService.save(help));
+        helpService.save(help);
+        return Result.success(help);
     }
 
     @GetMapping("/chat/history")

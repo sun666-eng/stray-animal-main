@@ -6,6 +6,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URLEncoder;
 
 public class AuthInterceptor implements HandlerInterceptor {
 
@@ -40,8 +41,13 @@ public class AuthInterceptor implements HandlerInterceptor {
         if (user != null) {
             return true;
         }
-        response.sendRedirect("/page/end/login.html");
+        response.sendRedirect(buildLoginRedirect(path, request.getQueryString()));
         return false;
+    }
+
+    private String buildLoginRedirect(String path, String queryString) throws IOException {
+        String target = path + (queryString == null ? "" : "?" + queryString);
+        return "/page/end/login.html?redirect=" + URLEncoder.encode(target, "UTF-8");
     }
 
 }
