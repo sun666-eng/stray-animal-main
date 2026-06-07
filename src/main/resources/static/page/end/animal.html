@@ -176,7 +176,9 @@
                 <el-input v-model="search" style="width: 20%;"size="mini" suffix-icon="el-icon-search" placeholder="请输入动物ID按回车搜索"
                           @keyup.enter.native="loadTable"></el-input>
                 <el-button @click="add" type="primary" size="mini" style="margin: 10px 0">新增</el-button>
-<!--                 <el-button @click="exp" type="primary" size="mini" style="margin: 10px 0">导出</el-button>-->
+                <el-button @click="downloadTemplate" size="mini" style="margin: 10px 0">下载模板</el-button>
+                <el-button @click="openImport" size="mini" style="margin: 10px 0">批量导入</el-button>
+                <el-button @click="exp" type="primary" size="mini" style="margin: 10px 0">导出</el-button>
                 <el-table
                         :data="tableData"
                         border
@@ -324,6 +326,50 @@
                     </div>
                 </el-dialog>
 
+                <el-dialog title="批量导入动物" :visible.sync="dialogImportVisible" width="600px"
+                           close-on-click-modal="false" close-on-press-escape="false" show-close="false">
+                    <div v-if="!importResult">
+                        <p style="color:#606266;font-size:13px;">
+                            ① 没下载过模板？
+                            <el-button type="text" size="mini" @click="downloadTemplate">点击下载</el-button>
+                        </p>
+                        <p style="color:#606266;font-size:13px;">② 选择 Excel 文件（上限 500 行 / 10MB）：</p>
+                        <el-upload
+                                drag
+                                action=""
+                                :auto-upload="false"
+                                :limit="1"
+                                :file-list="importFileList"
+                                :on-change="onImportFileChange"
+                                :on-remove="onImportFileRemove"
+                                accept=".xlsx,.xls">
+                            <i class="el-icon-upload"></i>
+                            <div class="el-upload__text">把文件拖到这里 或 <em>点击上传</em></div>
+                        </el-upload>
+                        <div slot="footer" class="dialog-footer">
+                            <el-button @click="dialogImportVisible = false">取 消</el-button>
+                            <el-button type="primary" @click="submitImport" :loading="importLoading"
+                                       :disabled="!importFileList.length">开始导入</el-button>
+                        </div>
+                    </div>
+                    <div v-else>
+                        <p style="font-size:16px;">
+                            总计 {{importResult.total}} 条，
+                            <span style="color:#67C23A;">成功 {{importResult.successCount}}</span>，
+                            <span style="color:#F56C6C;">失败 {{importResult.total - importResult.successCount}}</span>
+                        </p>
+                        <el-table v-if="importResult.failed && importResult.failed.length"
+                                  :data="importResult.failed" border max-height="280" size="mini">
+                            <el-table-column prop="row" label="行号" width="80"></el-table-column>
+                            <el-table-column prop="reason" label="失败原因"></el-table-column>
+                        </el-table>
+                        <p v-else style="color:#67C23A;">✓ 全部成功，无失败行</p>
+                        <div slot="footer" class="dialog-footer">
+                            <el-button type="primary" @click="closeImport">关 闭</el-button>
+                        </div>
+                    </div>
+                </el-dialog>
+
             </el-main>
         </el-container>
     </el-container>
@@ -342,6 +388,7 @@
 </style>
 
 <script src="../../js/jquery.min.js"></script>
+<script src="../../js/admin-auth.js"></script>
 <script src="../../js/vue.min.js"></script>
 <script src="../../js/element.js"></script>
 <script src="../../js/tinymce/tinymce.min.js"></script>
@@ -367,6 +414,10 @@
             search: '',
             uploadFile: '',
             animalFileList: [],
+            dialogImportVisible: false,
+            importFileList: [],
+            importResult: null,
+            importLoading: false,
             options: [{
                 value: 0,
                 label: '待领养'
@@ -527,6 +578,54 @@
                 }
                 this.animalFileList = this.buildAnimalFileList(flag);
                 this.entity.tpic = flag;
+            },
+            downloadTemplate() {
+                window.open('/api/animal/template');
+            },
+            openImport() {
+                this.importFileList = [];
+                this.importResult = null;
+                this.dialogImportVisible = true;
+            },
+            onImportFileChange(file) {
+                if (file.size > 10 * 1024 * 1024) {
+                    this.$message.error('文件不能超过 10MB');
+                    this.importFileList = [];
+                    return;
+                }
+                this.importFileList = [file];
+            },
+            onImportFileRemove() {
+                this.importFileList = [];
+            },
+            submitImport() {
+                if (!this.importFileList.length) {
+                    this.$message.warning('请先选择文件');
+                    return;
+                }
+                const fd = new FormData();
+                fd.append('file', this.importFileList[0].raw);
+                this.importLoading = true;
+                $.ajax({
+                    url: '/api/animal/import',
+                    type: 'POST',
+                    data: fd,
+                    processData: false,
+                    contentType: false
+                }).then(res => {
+                    if (res.code === '0') {
+                        this.importResult = res.data;
+                        this.loadTable();
+                    } else {
+                        this.$message.error(res.msg || '导入失败');
+                    }
+                }).always(() => {
+                    this.importLoading = false;
+                });
+            },
+            closeImport() {
+                this.dialogImportVisible = false;
+                this.loadTable();
             }
 
         }
