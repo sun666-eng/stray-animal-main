@@ -15,7 +15,7 @@
             <div class="sidebar-logo-area">
                 <transition name="el-fade-in-linear">
                     <span name="fade" v-show="!isCollapse">
-                        <a href="page/end/index.html">
+                        <a href="/page/end/index.html">
                         <div class="svgContainer">
                             <div>
                                 <svg class="mySVG" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 200 200">
@@ -120,7 +120,7 @@
                             </div>
                         </div>
                     </a>
-                        <!--                        <a href="page/end/index.html">流浪动物领养管理</a>-->
+                        <!--                        <a href="/page/end/index.html">流浪动物领养管理</a>-->
                     </span>
                 </transition>
             </div>
@@ -175,8 +175,7 @@
                 <div style="height: 1px; background-color: white"></div>
                 <el-input v-model="search" style="width: 20%;"size="mini" suffix-icon="el-icon-search" placeholder="请输入相关领养者姓名按回车搜索"
                           @keyup.enter.native="loadTable"></el-input>
-<!--                <el-button @click="add" type="primary" size="mini" style="margin: 10px 0">新增</el-button>-->
-<!--                 <el-button @click="exp" type="primary" size="mini" style="margin: 10px 0">导出</el-button>-->
+                <el-button @click="exp" type="primary" size="mini" style="margin: 10px 0">导出</el-button>
                 <el-table
                         :data="tableData"
                         border
@@ -275,6 +274,7 @@
 </div>
 
 <script src="../../js/jquery.min.js"></script>
+<script src="../../js/admin-auth.js"></script>
 <script src="../../js/vue.min.js"></script>
 <script src="../../js/element.js"></script>
 <script src="../../js/tinymce/tinymce.min.js"></script>
@@ -356,10 +356,6 @@
             handleCurrentChange(pageNum) {
                 this.pageNum = pageNum;
                 this.loadTable();
-            },
-            add() {
-                this.entity = {};
-                this.dialogFormVisible = true;
             },
             save() {
                 let type = this.entity.id ? "PUT" : "POST";

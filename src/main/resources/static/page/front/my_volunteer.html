@@ -151,16 +151,19 @@ new Vue({
       this.loading = true;
       this.pageNum = page;
       $.ajax({
-        url: '/api/volunteer',
-        type: 'GET'
+        url: '/api/volunteer/mine',
+        type: 'GET',
+        data: {
+          username: this.user.username || '',
+          phone: this.user.phone || '',
+          email: this.user.email || '',
+          pageNum: this.pageNum,
+          pageSize: this.pageSize
+        }
       }).then(res => {
         if (res.code === '0' && res.data) {
-          const all = Array.isArray(res.data) ? res.data : [];
-          const mine = this.matchMine(all);
-          const start = (this.pageNum - 1) * this.pageSize;
-          const end = start + this.pageSize;
-          this.records = mine.slice(start, end);
-          this.totalPages = Math.max(1, Math.ceil(mine.length / this.pageSize));
+          this.records = res.data.records || [];
+          this.totalPages = Math.max(1, Math.ceil((res.data.total || 0) / this.pageSize));
         } else {
           this.$message.error(res.msg || '加载义工申请记录失败');
         }
@@ -168,14 +171,6 @@ new Vue({
         this.$message.error('网络异常，加载义工申请记录失败');
       }).always(() => {
         this.loading = false;
-      });
-    },
-    matchMine(list) {
-      return list.filter(item => {
-        const byName = this.user.username && item.name === this.user.username;
-        const byPhone = this.user.phone && item.tel === this.user.phone;
-        const byEmail = this.user.email && item.email === this.user.email;
-        return byName || byPhone || byEmail;
       });
     },
     resetQuery() { this.query = ''; this.loadList(1); },
@@ -192,7 +187,7 @@ new Vue({
 function handleLogout() {
   $.ajax({ url: '/api/user/logout', type: 'GET' }).always(function(){
     sessionStorage.removeItem('user');
-    location.href = '/page/end/login.html';
+    location.href = '/page/front/login.html';
   });
 }
 </script>

@@ -141,7 +141,7 @@ ensureVolunteerEntry();
 function handleLogout() {
     $.get("/api/user/logout");
     sessionStorage.removeItem("user");
-    location.href = "/page/end/login.html";
+    location.href = "/page/front/login.html";
 }
 
 new Vue({

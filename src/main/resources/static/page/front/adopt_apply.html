@@ -141,7 +141,7 @@ new Vue({
       if (!this.user || !this.user.id) {
         this.$message.error('请先登录后再提交领养申请');
         const redirect = encodeURIComponent(location.pathname + location.search);
-        setTimeout(() => { location.href = `/page/end/login.html?redirect=${redirect}`; }, 1000);
+        setTimeout(() => { location.href = `/page/front/login.html?redirect=${redirect}`; }, 1000);
         this.loading = false;
         return;
       }
@@ -266,7 +266,7 @@ new Vue({
 function handleLogout() {
   $.ajax({ url: '/api/user/logout', type: 'GET' }).always(function(){
     sessionStorage.removeItem('user');
-    location.href = '/page/end/login.html';
+    location.href = '/page/front/login.html';
   });
 }
 </script>

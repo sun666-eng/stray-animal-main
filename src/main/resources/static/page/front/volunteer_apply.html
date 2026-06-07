@@ -117,21 +117,19 @@ new Vue({
     loadMine() {
       if (!this.user.username && !this.user.phone && !this.user.email) return;
       $.ajax({
-        url: '/api/volunteer',
-        type: 'GET'
+        url: '/api/volunteer/mine',
+        type: 'GET',
+        data: {
+          username: this.user.username || '',
+          phone: this.user.phone || '',
+          email: this.user.email || '',
+          pageNum: 1,
+          pageSize: 1
+        }
       }).then(res => {
         if (res.code === '0' && res.data) {
-          const list = Array.isArray(res.data) ? res.data : [];
-          this.existingCount = this.matchMine(list).length;
+          this.existingCount = res.data.total || 0;
         }
-      });
-    },
-    matchMine(list) {
-      return list.filter(item => {
-        const byName = this.user.username && item.name === this.user.username;
-        const byPhone = this.user.phone && item.tel === this.user.phone;
-        const byEmail = this.user.email && item.email === this.user.email;
-        return byName || byPhone || byEmail;
       });
     },
     validateForm() {
@@ -177,7 +175,7 @@ new Vue({
 function handleLogout() {
   $.ajax({ url: '/api/user/logout', type: 'GET' }).always(function(){
     sessionStorage.removeItem('user');
-    location.href = '/page/end/login.html';
+    location.href = '/page/front/login.html';
   });
 }
 </script>

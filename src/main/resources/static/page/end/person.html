@@ -15,7 +15,7 @@
             <div class="sidebar-logo-area">
                 <transition name="el-fade-in-linear">
                     <span name="fade" v-show="!isCollapse">
-                        <a href="page/end/index.html">
+                        <a href="/page/end/index.html">
                         <div class="svgContainer">
                             <div>
                                 <svg class="mySVG" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 200 200">
@@ -120,7 +120,7 @@
                             </div>
                         </div>
                     </a>
-                        <!--                        <a href="page/end/index.html">流浪动物领养管理</a>-->
+                        <!--                        <a href="/page/end/index.html">流浪动物领养管理</a>-->
                     </span>
                 </transition>
             </div>
@@ -212,10 +212,10 @@
                close-on-click-modal="false" close-on-press-escape="false" show-close="false">
         <el-form :model="user">
             <el-form-item label="用户名" label-width="100px">
-                <el-input v-model="user.username" autocomplete="off" style="width: 80%"></el-input>
+                <span style="padding-left:8px; color:#1C1917;">{{ user.username }}</span>
             </el-form-item>
             <el-form-item label="用户密码" label-width="100px">
-                <el-input v-model="user.password" autocomplete="off" style="width: 80%"></el-input>
+                <el-input v-model="user.password" show-password autocomplete="new-password" style="width: 80%"></el-input>
             </el-form-item>
             <el-form-item label="邮箱" label-width="100px">
                 <el-input v-model="user.email" autocomplete="off" style="width: 80%"></el-input>
@@ -233,6 +233,7 @@
 </div>
 
 <script src="../../js/jquery.min.js"></script>
+<script src="../../js/admin-auth.js"></script>
 <script src="../../js/vue.min.js"></script>
 <script src="../../js/element.js"></script>
 <script src="../../js/base.js"></script>

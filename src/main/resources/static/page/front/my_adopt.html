@@ -188,7 +188,7 @@ new Vue({
 function handleLogout() {
   $.ajax({ url: '/api/user/logout', type: 'GET' }).always(function(){
     sessionStorage.removeItem('user');
-    location.href = '/page/end/login.html';
+    location.href = '/page/front/login.html';
   });
 }
 </script>

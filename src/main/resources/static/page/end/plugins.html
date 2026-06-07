@@ -93,6 +93,7 @@
 </div>
 
 <script src="../../js/jquery.min.js"></script>
+<script src="../../js/admin-auth.js"></script>
 <script src="../../js/vue.min.js"></script>
 <script src="../../js/element.js"></script>
 <script src="../../js/tinymce/tinymce.min.js"></script>
@@ -150,7 +151,20 @@
                 this.fileList.push({name: flag, url: "/api/files/" + flag})
             },
             print() {
-                console.log(tinymce.activeEditor.getContent())
+                const html = tinymce.activeEditor.getContent();
+                if (!html || !html.trim()) {
+                    this.$message({ type: 'warning', message: '请先在编辑器中输入内容' });
+                    return;
+                }
+                const w = window.open('', '_blank');
+                if (!w) {
+                    this.$message({ type: 'error', message: '打开打印窗口失败，请检查浏览器拦截设置' });
+                    return;
+                }
+                w.document.write('<html><head><meta charset="UTF-8"><title>打印</title></head><body>' + html + '</body></html>');
+                w.document.close();
+                w.focus();
+                w.print();
             },
             upload() {
                 // let files = $("#file")[0].files;

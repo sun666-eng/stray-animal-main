@@ -136,9 +136,11 @@
                                 <template slot-scope="scope">
                                     <el-button @click="showDetail(scope.row)" type="text" size="small">详情</el-button>
                                     <el-button @click="showReply(scope.row)" type="text" size="small">回复</el-button>
-                                    <el-select v-model="scope.row.status" placeholder="修改状态" size="mini" style="width: 90px; margin-left: 5px;" @change="changeStatus(scope.row)">
+                                    <el-select v-model="scope.row.status" placeholder="修改状态" size="mini" style="width: 100px; margin-left: 5px;" @change="changeStatus(scope.row)">
                                         <el-option :value="0" label="待处理"></el-option>
+                                        <el-option :value="1" label="处理中"></el-option>
                                         <el-option :value="2" label="已完成"></el-option>
+                                        <el-option :value="3" label="已关闭"></el-option>
                                     </el-select>
                                     <el-popconfirm @onConfirm="del(scope.row.id)" title="确定删除该救助请求？">
                                         <el-button type="text" size="small" slot="reference" style="color: #F56C6C; margin-left: 5px;">删除</el-button>
@@ -190,6 +192,7 @@
 </div>
 
 <script src="../../js/jquery.min.js"></script>
+<script src="../../js/admin-auth.js"></script>
 <script src="../../js/vue.min.js"></script>
 <script src="../../js/element.js"></script>
 

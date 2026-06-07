@@ -67,11 +67,17 @@ public class FileController {
         return Result.success(fileVOS);
     }
 
+    @GetMapping({"", "/"})
+    public void getRoot(HttpServletResponse response) {
+        // flag 缺省（前端 user.avatar 为空时拼出 /api/files/）：返回默认头像
+        writeDefaultAvatar(response);
+    }
+
     @GetMapping("/{flag}")
     public void getFile(@PathVariable String flag, HttpServletResponse response, HttpServletRequest request) {
-        if (!isValidFlag(flag)) {
-            log.warn("非法文件访问参数 - flag: {}, IP: {}", flag, request.getRemoteAddr());
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        // 兼容前端把 null/undefined 拼到 URL 上的情况
+        if (!isValidFlag(flag) || "null".equalsIgnoreCase(flag) || "undefined".equalsIgnoreCase(flag)) {
+            writeDefaultAvatar(response);
             return;
         }
 
@@ -126,8 +132,25 @@ public class FileController {
             }
         }
 
+        // 兜底：找不到文件就返回默认头像（避免前端头像位置出现 broken image）
         log.warn("文件未找到 - flag: {}, IP: {}", flag, request.getRemoteAddr());
-        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        writeDefaultAvatar(response);
+    }
+
+    /** 默认头像（灰色圆圈 + 用户剪影），用于 flag 缺失/非法/文件不存在的兜底 */
+    private void writeDefaultAvatar(HttpServletResponse response) {
+        String svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80' width='80' height='80'>"
+                + "<circle cx='40' cy='40' r='40' fill='#E5E7EB'/>"
+                + "<circle cx='40' cy='30' r='14' fill='#9CA3AF'/>"
+                + "<path d='M16 70 Q40 50 64 70 L64 80 L16 80 Z' fill='#9CA3AF'/>"
+                + "</svg>";
+        try {
+            response.setContentType("image/svg+xml;charset=UTF-8");
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.getWriter().write(svg);
+        } catch (Exception e) {
+            log.error("写默认头像失败", e);
+        }
     }
 
     private boolean isValidFlag(String flag) {
