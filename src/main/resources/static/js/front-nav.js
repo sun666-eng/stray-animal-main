@@ -38,10 +38,23 @@
 
   function loginUrl() {
     var redirect = currentPathWithQuery();
-    if (window.location.pathname === '/page/end/login.html') {
-      return '/page/end/login.html';
+    if (window.location.pathname === '/page/front/login.html') {
+      return '/page/front/login.html';
     }
-    return '/page/end/login.html?redirect=' + encodeURIComponent(redirect);
+    return '/page/front/login.html?redirect=' + encodeURIComponent(redirect);
+  }
+
+  // 管理员端的 admin flag 集合，与 end/index.html 的 hasAdminAccess 保持一致
+  var ADMIN_FLAGS = ['user','role','permission','animal','adopt','proof','visit','volunteer','account','notice','help'];
+
+  function userHasAdminAccess() {
+    var user = getUser();
+    if (!user || !user.id || !Array.isArray(user.permission)) return false;
+    for (var i = 0; i < user.permission.length; i++) {
+      var p = user.permission[i];
+      if (p && ADMIN_FLAGS.indexOf(p.flag) >= 0) return true;
+    }
+    return false;
   }
 
   function normalizeFrontHref(href) {
@@ -160,8 +173,15 @@
         link.href = user && user.id ? '/page/end/person.html' : loginUrl();
         link.textContent = user && user.id ? '个人信息' : '去登录';
       } else if (text === '管理后台' || text === '功能首页') {
-        link.href = user && user.id ? '/page/end/index.html' : FRONT_BASE + 'animal_browse.html';
-        link.textContent = user && user.id ? '功能首页' : '动物浏览';
+        // 只有具备任一 admin flag 的用户才看到后台入口，普通用户隐藏
+        var hasAdmin = userHasAdminAccess();
+        if (hasAdmin) {
+          link.style.display = 'block';
+          link.href = '/page/end/index.html';
+          link.textContent = '管理后台';
+        } else {
+          link.style.display = 'none';
+        }
       } else if (text === '退出登录') {
         link.style.display = user && user.id ? 'block' : 'none';
         link.setAttribute('href', 'javascript:void(0)');
@@ -177,7 +197,8 @@
     function goLogin() {
       sessionStorage.removeItem('user');
       sessionStorage.removeItem('token');
-      window.location.href = '/page/end/login.html';
+      localStorage.removeItem('token');
+      window.location.href = '/page/front/login.html';
     }
 
     if (window.jQuery) {
@@ -189,6 +210,16 @@
 
   function init() {
     injectStableLayoutStyles();
+    if (window.jQuery) {
+      window.jQuery.ajaxSetup({
+        beforeSend: function (xhr) {
+          var token = sessionStorage.getItem('token');
+          if (token) {
+            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+          }
+        }
+      });
+    }
     syncNavLinks();
     normalizeFrontLinks();
     highlightCurrentChip();
