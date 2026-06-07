@@ -69,12 +69,12 @@
                         <span slot="title">首页</span>
                     </el-menu-item>
                 </a>
-                <el-submenu index="1" v-if="user.permission && user.permission.length > 0">
+                <el-submenu index="1" v-if="menuPermissions.length > 0">
                     <template slot="title">
                         <i class="el-icon-menu"></i>
                         <span slot="title">功能区域</span>
                     </template>
-                    <a :href="item.path" v-for="item in user.permission" :key="item.id">
+                    <a :href="item.path" v-for="item in menuPermissions" :key="item.flag || item.path || item.name">
                         <el-menu-item :index="item.flag">
                             <i class="el-icon-s-data"></i>
                             <span slot="title">{{item.name}}</span>
@@ -107,25 +107,29 @@
                 <template v-if="hasAdminAccess()">
                     <el-divider content-position="left">管理员快捷入口</el-divider>
                     <div class="entry-grid">
-                        <a class="entry-card orange" href="/page/end/animal.html">
+                        <a v-if="hasFlag('animal')" class="entry-card orange" href="/page/end/animal.html">
                             <div class="entry-title">后台动物管理</div>
                             <div class="entry-desc">新增、编辑、删除动物档案并统一维护待领养、申请中、已领养状态。</div>
                         </a>
-                        <a class="entry-card teal" href="/page/end/adopt.html">
+                        <a v-if="hasFlag('adopt')" class="entry-card teal" href="/page/end/adopt.html">
                             <div class="entry-title">领养审核</div>
                             <div class="entry-desc">查看领养申请资料，执行待审核、通过、驳回、取消等状态流转。</div>
                         </a>
-                        <a class="entry-card indigo" href="/page/end/volunteer.html">
+                        <a v-if="hasFlag('volunteer')" class="entry-card indigo" href="/page/end/volunteer.html">
                             <div class="entry-title">义工审核</div>
                             <div class="entry-desc">统一查看义工报名数据并处理审核结果。</div>
                         </a>
-                        <a class="entry-card amber" href="/page/end/notice.html">
+                        <a v-if="hasFlag('notice')" class="entry-card amber" href="/page/end/notice.html">
                             <div class="entry-title">公告管理</div>
                             <div class="entry-desc">发布、修改、删除系统公告和活动通知。</div>
                         </a>
-                        <a class="entry-card rose" href="/page/end/rescue.html">
+                        <a v-if="hasFlag('help')" class="entry-card rose" href="/page/end/help.html">
                             <div class="entry-title">救助管理</div>
                             <div class="entry-desc">查看和处理用户提交的流浪动物救助请求。</div>
+                        </a>
+                        <a v-if="hasFlag('account')" class="entry-card blue" href="/page/end/account.html">
+                            <div class="entry-title">资金公示</div>
+                            <div class="entry-desc">登记和审阅救助款项的支出、收入与责任人信息。</div>
                         </a>
                     </div>
                 </template>
@@ -195,24 +199,58 @@
 </div>
 <script src="../../js/echarts.min.js"></script>
 <script src="../../js/jquery.min.js"></script>
+<script src="../../js/admin-auth.js"></script>
 <script src="../../js/vue.min.js"></script>
 <script src="../../js/element.js"></script>
 <script>
     $(document).ajaxError(function(event, xhr) {
         if (xhr.status === 401) { location.href = '/page/end/login.html'; }
     });
+    $.ajaxSetup({
+        beforeSend: function(xhr) {
+            const token = sessionStorage.getItem("token");
+            if (token) {
+                xhr.setRequestHeader("Authorization", "Bearer " + token);
+            }
+        }
+    });
     let pieOption = { title:{text:"支出统计"}, legend:{x:"left",y:"center",orient:"vertical",data:[]}, tooltip:{show:true}, xAxis:null, yAxis:null, series:[{type:"pie",radius:"55%",data:[]}] };
     let pieOption1 = { title:{text:"收入统计"}, legend:{x:"left",y:"center",orient:"vertical",data:[]}, tooltip:{show:true}, xAxis:null, yAxis:null, series:[{type:"pie",radius:"55%",data:[]}] };
     new Vue({
         el: "#wrapper",
         data: { active:0, users:[], animals:[], adopts:[], notices:[], volunteers:[], accounts:[], user:{}, tableData:[], pageNum:1, pageSize:10, total:0, total1:0, total2:0, total3:0, dialogFormVisible:false, entity:{}, isCollapse:false },
+        computed: {
+            menuPermissions() {
+                const list = (this.user && this.user.permission) ? this.user.permission : [];
+                const seen = new Set();
+                const out = [];
+                for (const item of list) {
+                    if (!item) continue;
+                    const key = (item.flag || '') + '|' + (item.path || '') + '|' + (item.name || '');
+                    if (seen.has(key)) continue;
+                    seen.add(key);
+                    out.push(item);
+                }
+                return out;
+            }
+        },
         created() {
             this.user = sessionStorage.getItem("user") ? JSON.parse(sessionStorage.getItem("user")) : {};
             if (!this.user.id) { location.href = "/page/end/login.html"; return; }
-            this.$nextTick(() => { this.load(); this.loadEcharts(); });
+            const error = new URLSearchParams(location.search).get("error");
+            if (error === "forbidden") {
+                this.$message.warning("当前账号没有访问该后台功能的权限");
+                history.replaceState(null, "", location.pathname);
+            }
+            this.refreshCurrentUser().always(() => {
+                this.$nextTick(() => { this.load(); this.loadEcharts(); });
+            });
         },
         methods: {
             loadEcharts() {
+                if (!this.hasFlag("account")) {
+                    return;
+                }
                 let pieChart = echarts.init(document.getElementById('main'));
                 $.get("/api/account").then(res => {
                     this.accounts = res.data.filter(v => v.avalue<0);
@@ -235,18 +273,38 @@
                 list.forEach(v => { const key = {}; keys.forEach(k => { key[k] = v[k]; }); let group = groups.find(v => v._key === JSON.stringify(key)); if (!group) { group = { _key:JSON.stringify(key), name:key.name, key:key }; groups.push(group); } if(callBack) { group.value = callBack(group.value,v); group.total = group.total||0; group.total++; } else { group.value = group.value||[]; group.value.push(v); } });
                 return groups;
             },
+            refreshCurrentUser() {
+                if (!this.user || !this.user.username) {
+                    return $.Deferred().resolve().promise();
+                }
+                return $.get("/api/user/detail/" + encodeURIComponent(this.user.username)).then(res => {
+                    if (res.code === "0" && res.data) {
+                        this.user = res.data;
+                        sessionStorage.setItem("user", JSON.stringify(res.data));
+                    }
+                });
+            },
             load() {
                 $.get("/api/notice/").then(res => { this.notices = res.data; });
-                $.get("/api/volunteer/").then(res => { this.volunteers = res.data; this.total3 = this.volunteers.length; });
-                $.get("/api/user/").then(res => { this.users = res.data; this.total = this.users.length; });
                 $.get("/api/animal/").then(res => { this.animals = res.data; this.total1 = this.animals.length; });
-                $.get("/api/adopt/").then(res => { this.adopts = res.data; this.total2 = this.adopts.length; });
+                if (this.hasFlag("volunteer")) {
+                    $.get("/api/volunteer/").then(res => { this.volunteers = res.data; this.total3 = this.volunteers.length; });
+                }
+                if (this.hasFlag("user")) {
+                    $.get("/api/user/").then(res => { this.users = res.data; this.total = this.users.length; });
+                }
+                if (this.hasFlag("adopt")) {
+                    $.get("/api/adopt/").then(res => { this.adopts = res.data; this.total2 = this.adopts.length; });
+                }
             },
             handleCollapse() { this.isCollapse = !this.isCollapse; },
             logout() { $.get("/api/user/logout"); sessionStorage.removeItem("user"); location.href = "/page/end/login.html"; },
             hasAdminAccess() {
-                const roles = this.user && this.user.role ? this.user.role : [];
-                return roles.some(item => { const roleName = (item&&item.name?item.name:'').toLowerCase(); const desc = (item&&item.description?item.description:'').toLowerCase(); return roleName.includes('admin')||roleName.includes('管理员')||desc.includes('admin')||desc.includes('管理员'); }) || this.user.username === 'admin' || this.user.username === 'superadmin';
+                return ["user", "role", "permission", "animal", "adopt", "proof", "visit", "volunteer", "account", "notice", "help", "rescue"].some(flag => this.hasFlag(flag));
+            },
+            hasFlag(flag) {
+                const permissions = this.user && this.user.permission ? this.user.permission : [];
+                return permissions.some(item => item && item.flag === flag);
             }
         }
     });
