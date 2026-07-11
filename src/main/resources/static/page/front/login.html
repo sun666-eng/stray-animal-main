@@ -296,16 +296,17 @@ function hasAdminAccess(user) {
 function resolveHome(user) {
     var redirect = new URLSearchParams(location.search).get('redirect');
     if (redirect && redirect.indexOf('/page/') === 0) {
-        // 旧书签 /page/end/login.html 不再作为登录页，管理员进后台首页
+        // 旧书签 /page/end/login.html 不再作为登录页
         if (redirect.indexOf('/page/end/login') === 0) {
-            return hasAdminAccess(user) ? '/page/end/index.html' : '/page/front/animal_browse.html';
+            return hasAdminAccess(user) ? '/page/end/index.html' : '/page/front/index.html';
         }
         if (redirect.indexOf('/page/end/') === 0 && !hasAdminAccess(user)) {
-            return '/page/front/animal_browse.html';
+            return '/page/front/index.html';
         }
         return redirect;
     }
-    return hasAdminAccess(user) ? '/page/end/index.html' : '/page/front/animal_browse.html';
+    // 管理员进后台首页；普通用户进用户端首页（非动物浏览列表）
+    return hasAdminAccess(user) ? '/page/end/index.html' : '/page/front/index.html';
 }
 
 new Vue({

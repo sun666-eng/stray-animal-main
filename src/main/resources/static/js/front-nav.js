@@ -1,6 +1,8 @@
 (function () {
   var FRONT_BASE = '/page/front/';
+  var FRONT_HOME = FRONT_BASE + 'index.html';
   var FRONT_PAGES = {
+    'index.html': true,
     'animal_browse.html': true,
     'animal_detail.html': true,
     'adopt_apply.html': true,
@@ -18,6 +20,7 @@
     'register.html': true
   };
   var NAV_ITEMS = [
+    { href: 'index.html', text: '首页' },
     { href: 'animal_browse.html', text: '动物浏览' },
     { href: 'my_adopt.html', text: '我的领养申请' },
     { href: 'my_visit.html', text: '我的回访' },
@@ -104,7 +107,7 @@
       '.page-shell { box-sizing: border-box; width: min(1180px, calc(100vw - 40px)); max-width: 1180px !important; margin-left: auto !important; margin-right: auto !important; padding-left: 20px !important; padding-right: 20px !important; }',
       '@media (max-width: 640px) { .page-shell { width: 100%; padding-left: 14px !important; padding-right: 14px !important; } }',
       '.nav, .nav-links { box-sizing: border-box; max-width: 100%; }',
-      '#front-home-button { position: fixed; left: 20px; top: 20px; z-index: 9998; display: inline-flex; align-items: center; height: 42px; padding: 0 16px; border-radius: 12px; background: #fff; color: #1D4ED8; text-decoration: none; font-size: 15px; font-weight: 700; box-shadow: 0 8px 24px rgba(25,43,77,0.12); border: 1px solid rgba(37,99,235,0.12); }',
+      '#front-home-button { position: fixed; left: 20px; top: 20px; z-index: 10002; display: inline-flex; align-items: center; height: 42px; padding: 0 16px; border-radius: 12px; background: #fff; color: #1D4ED8; text-decoration: none; font-size: 15px; font-weight: 700; box-shadow: 0 8px 24px rgba(25,43,77,0.12); border: 1px solid rgba(37,99,235,0.12); cursor: pointer; pointer-events: auto; }',
       '#front-home-button:hover { background: #EFF6FF; }',
       '@media (max-width: 640px) { #front-home-button { left: 14px; top: 14px; height: 38px; padding: 0 12px; font-size: 14px; } }'
     ].join('\n');
@@ -112,21 +115,33 @@
   }
 
   function injectHomeButton() {
-    var current = window.location.pathname.split('/').pop() || 'animal_browse.html';
-    if (current === 'login.html' || current === 'register.html' || document.getElementById(HOME_BUTTON_ID)) {
+    var current = window.location.pathname.split('/').pop() || 'index.html';
+    if (current === 'login.html' || current === 'register.html') {
       return;
     }
-    var button = document.createElement('a');
-    button.id = HOME_BUTTON_ID;
-    // 普通用户回用户首页；管理员可进后台
-    if (userHasAdminAccess()) {
-      button.href = '/page/end/index.html';
-      button.textContent = '管理后台';
-    } else {
-      button.href = FRONT_BASE + 'animal_browse.html';
-      button.textContent = '返回首页';
+    // 已在用户首页时不显示「返回首页」，避免点击无效果
+    if (current === 'index.html') {
+      var existingHome = document.getElementById(HOME_BUTTON_ID);
+      if (existingHome) {
+        existingHome.parentNode.removeChild(existingHome);
+      }
+      return;
     }
-    document.body.appendChild(button);
+    var button = document.getElementById(HOME_BUTTON_ID);
+    if (!button) {
+      button = document.createElement('a');
+      button.id = HOME_BUTTON_ID;
+      document.body.appendChild(button);
+    }
+    // 用户端固定回 front 首页（不是动物浏览）；管理后台入口在右上角下拉中
+    button.href = FRONT_HOME;
+    button.textContent = '返回首页';
+    button.setAttribute('title', '返回用户首页');
+    button.onclick = function (e) {
+      // 强制跳转，避免被其它脚本拦截
+      e.preventDefault();
+      window.location.href = FRONT_HOME;
+    };
   }
 
   function syncNavLinks() {
@@ -157,8 +172,9 @@
   }
 
   function highlightCurrentChip() {
-    var current = window.location.pathname.split('/').pop() || 'animal_browse.html';
-    var active = current === 'notice_detail.html' ? 'notice_list.html' : current;
+    var current = window.location.pathname.split('/').pop() || 'index.html';
+    var active = current === 'notice_detail.html' ? 'notice_list.html'
+      : (current === 'animal_detail.html' ? 'animal_browse.html' : current);
     var chips = document.querySelectorAll('a.chip[href]');
     Array.prototype.forEach.call(chips, function (chip) {
       var href = chip.getAttribute('href');
