@@ -2,165 +2,27 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>管理后台登录 - 流浪动物救助</title>
-    <link rel="stylesheet" href="../../css/base.css">
-    <link rel="stylesheet" href="../../css/theme.css">
-    <link rel="stylesheet" href="../../css/element.css">
-    <style>
-        body { margin: 0; min-height: 100vh; background: #F9FAFB; }
-        .wrap { max-width: 480px; margin: 80px auto; padding: 0 16px 40px; }
-        .card {
-            background: #fff;
-            border-radius: 16px;
-            box-shadow: 0 12px 40px rgba(25, 43, 77, 0.1);
-            padding: 36px 40px 40px;
-            border-top: 4px solid #2563EB;
+    <meta http-equiv="refresh" content="0;url=/page/front/login.html">
+    <title>跳转统一登录</title>
+    <script>
+        // 管理端与用户端共用同一登录页
+        var q = window.location.search || '';
+        // 若从后台某页被踢出，保留 redirect
+        if (!q && document.referrer) {
+            try {
+                var u = new URL(document.referrer);
+                if (u.pathname.indexOf('/page/end/') === 0) {
+                    q = '?redirect=' + encodeURIComponent(u.pathname + u.search);
+                }
+            } catch (e) {}
         }
-        .badge {
-            display: inline-block;
-            font-size: 12px;
-            font-weight: 700;
-            color: #1D4ED8;
-            background: #EFF6FF;
-            padding: 4px 10px;
-            border-radius: 999px;
-            margin-bottom: 12px;
-        }
-        h1 { margin: 0 0 8px; font-size: 24px; color: #111827; letter-spacing: 0; }
-        .sub { margin: 0 0 28px; color: #6B7280; font-size: 14px; line-height: 1.5; }
-        .field { margin-bottom: 16px; }
-        .field label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: #374151; }
-        .field input {
-            width: 100%; height: 44px; box-sizing: border-box;
-            border: 1px solid #D1D5DB; border-radius: 10px;
-            padding: 0 14px; font-size: 15px; outline: none;
-        }
-        .field input:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
-        .code-row { display: flex; gap: 10px; align-items: center; }
-        .code-row input { flex: 1; }
-        .btn {
-            width: 100%; height: 46px; margin-top: 8px; border: 0; border-radius: 10px;
-            background: #2563EB; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer;
-        }
-        .btn:disabled { opacity: 0.65; cursor: not-allowed; }
-        .links { margin-top: 20px; text-align: center; font-size: 14px; }
-        .links a { color: #1D4ED8; text-decoration: none; margin: 0 8px; }
-        .links a:hover { text-decoration: underline; }
-        .hint {
-            margin-top: 18px; padding: 12px 14px; background: #FFFBEB; border-radius: 10px;
-            font-size: 13px; color: #92400E; line-height: 1.5;
-        }
-    </style>
+        location.replace('/page/front/login.html' + q);
+    </script>
 </head>
 <body>
-<div id="wrapper" class="wrap" v-cloak>
-    <div class="card">
-        <div class="badge">ADMIN</div>
-        <h1>管理后台登录</h1>
-        <p class="sub">供管理员 / 志愿者处理领养审核、回访、义工与救助等业务。普通用户请使用用户端登录。</p>
-
-        <div class="field">
-            <label>账号</label>
-            <input v-model="user.username" type="text" placeholder="请输入管理员账号，如 admin" autocomplete="username">
-        </div>
-        <div class="field">
-            <label>密码</label>
-            <input v-model="user.password" type="password" placeholder="请输入密码" autocomplete="current-password">
-        </div>
-        <div class="field">
-            <label>验证码</label>
-            <div class="code-row">
-                <input v-model="user.code" type="text" placeholder="请输入验证码">
-                <div id="picyzm"></div>
-            </div>
-        </div>
-
-        <button type="button" class="btn" :disabled="loggingIn" @click.prevent="login">
-            {{ loggingIn ? '登录中...' : '登录后台' }}
-        </button>
-
-        <div class="links">
-            <a href="/page/front/login.html">用户端登录</a>
-            <a href="/page/front/animal_browse.html">浏览待领养动物</a>
-        </div>
-
-        <div class="hint">
-            提示：初始超级管理员一般为 <strong>admin</strong>。登录成功后进入后台首页，不是用户端动物浏览页。
-        </div>
-    </div>
-</div>
-
-<script src="../../js/jquery.min.js"></script>
-<script src="../../js/vue.min.js"></script>
-<script src="../../js/element.js"></script>
-<script src="../../js/gVerify.js"></script>
-<script>
-let verifyCode;
-new Vue({
-    el: "#wrapper",
-    data: {
-        user: {},
-        loggingIn: false
-    },
-    mounted() {
-        try {
-            verifyCode = new GVerify({ id: "picyzm", type: "blend" });
-        } catch (e) {
-            console.error("验证码初始化失败", e);
-            verifyCode = null;
-        }
-    },
-    methods: {
-        login() {
-            if (!this.user.username) {
-                this.$message({ message: "请输入用户名", type: "error" });
-                return;
-            }
-            if (!this.user.password) {
-                this.$message({ message: "请输入密码", type: "error" });
-                return;
-            }
-            if (!this.user.code) {
-                this.$message({ message: "请输入验证码", type: "error" });
-                return;
-            }
-            if (verifyCode && !verifyCode.validate(this.user.code)) {
-                this.$message({ message: "验证码错误", type: "error" });
-                return;
-            }
-            if (this.loggingIn) return;
-            this.loggingIn = true;
-            $.ajax({
-                url: "/api/user/login",
-                type: "POST",
-                contentType: "application/json",
-                data: JSON.stringify(this.user),
-                timeout: 8000
-            }).then(res => {
-                if (res.code === "0") {
-                    this.$message({ message: "登录成功", type: "success" });
-                    sessionStorage.setItem("user", JSON.stringify(res.data.user));
-                    sessionStorage.setItem("token", res.data.token);
-                    const redirect = new URLSearchParams(location.search).get("redirect");
-                    // 后台登录默认进管理首页；仅允许跳转到 /page/end/ 下的页面
-                    let target = "/page/end/index.html";
-                    if (redirect && redirect.startsWith("/page/end/")) {
-                        target = redirect;
-                    }
-                    setTimeout(() => { location.href = target; }, 600);
-                } else {
-                    this.$message({ message: res.msg || "登录失败", type: "error" });
-                }
-            }).fail(() => {
-                this.$message({ message: "网络异常，请稍后重试", type: "error" });
-            }).always(() => {
-                this.loggingIn = false;
-            });
-        }
-    }
-});
-</script>
-<script src="../../js/dark-mode.js"></script>
+<p style="font-family:sans-serif;text-align:center;margin-top:40px;color:#6B7280;">
+    正在进入统一登录页…
+    <a href="/page/front/login.html">点击这里</a>
+</p>
 </body>
 </html>

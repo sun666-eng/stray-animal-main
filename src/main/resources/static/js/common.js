@@ -539,7 +539,7 @@ axios.interceptors.response.use(
             switch (error.response.status) {
                 case 401:
                     // 返回 401 清除token信息并跳转到统一登录页面
-                    window.location="/page/end/login.html?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
+                    window.location="/page/front/login.html?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
                     break;
                 case 404:
                     // //

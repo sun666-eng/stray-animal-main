@@ -288,11 +288,8 @@ public class AuthInterceptor implements HandlerInterceptor {
 
     private String buildLoginRedirect(String path, String queryString) throws IOException {
         String target = path + (queryString == null ? "" : "?" + queryString);
-        // 按路径区分登录页：用户端页面跳用户端登录，后台页面（默认）跳后台登录
-        String loginPage = path != null && path.startsWith("/page/front/")
-                ? "/page/front/login.html"
-                : "/page/end/login.html";
-        return loginPage + "?redirect=" + URLEncoder.encode(target, "UTF-8");
+        // 用户端与管理端共用统一登录页，登录成功后再按权限分流
+        return "/page/front/login.html?redirect=" + URLEncoder.encode(target, "UTF-8");
     }
 
 }
