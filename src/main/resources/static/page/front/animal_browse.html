@@ -118,7 +118,7 @@ new Vue({
   mounted() {
     try {
       if (new URLSearchParams(location.search).get('error') === 'need_admin') {
-        this.$message.warning('当前账号没有后台管理权限，已回到用户端。请使用 admin 从后台登录页进入管理功能。');
+        this.$message.warning('当前账号没有后台管理权限，已回到用户端。请使用 admin 从统一登录页进入管理功能。');
         history.replaceState(null, '', location.pathname);
       }
     } catch (e) {}

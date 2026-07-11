@@ -220,7 +220,7 @@
 <script src="../../js/element.js"></script>
 <script>
     $(document).ajaxError(function(event, xhr) {
-        if (xhr.status === 401) { location.href = '/page/end/login.html'; }
+        if (xhr.status === 401) { location.href = '/page/front/login.html'; }
     });
     $.ajaxSetup({
         beforeSend: function(xhr) {
@@ -254,7 +254,7 @@
         },
         created() {
             this.user = sessionStorage.getItem("user") ? JSON.parse(sessionStorage.getItem("user")) : {};
-            if (!this.user.id) { location.href = "/page/end/login.html"; return; }
+            if (!this.user.id) { location.href = "/page/front/login.html"; return; }
             const error = new URLSearchParams(location.search).get("error");
             if (error === "forbidden") {
                 this.$message.warning("当前账号缺少该菜单权限。请确认已用管理员登录，并退出后重新登录以刷新权限。");
@@ -325,7 +325,7 @@
                 }
             },
             handleCollapse() { this.isCollapse = !this.isCollapse; },
-            logout() { $.get("/api/user/logout"); sessionStorage.removeItem("user"); location.href = "/page/end/login.html"; },
+            logout() { $.get("/api/user/logout"); sessionStorage.removeItem("user"); location.href = "/page/front/login.html"; },
             goStat(path, flag) {
                 if (this.hasFlag(flag)) {
                     location.href = path;

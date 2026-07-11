@@ -21,8 +21,7 @@
         // 与用户端共用统一登录页
         try {
             var current = window.location.pathname + window.location.search;
-            if (window.location.pathname === '/page/front/login.html'
-                || window.location.pathname === '/page/end/login.html') {
+            if (window.location.pathname === '/page/front/login.html') {
                 return '/page/front/login.html';
             }
             return '/page/front/login.html?redirect=' + encodeURIComponent(current);

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -492,7 +492,7 @@
         created() {
             this.user = sessionStorage.getItem("user") ? JSON.parse(sessionStorage.getItem("user")) : {};
             if (!this.user.id) {
-                location.href = "/page/end/login.html";
+                location.href = "/page/front/login.html";
                 return;
             }
             this.loadTable();
@@ -517,7 +517,7 @@
             logout() {
                 $.get("/api/user/logout");
                 sessionStorage.removeItem("user");
-                location.href = "/page/end/login.html";
+                location.href = "/page/front/login.html";
             },
             loadTable() {
                 $.get(urlBase + "/page?pageNum=" + this.pageNum + "&pageSize=" + this.pageSize + "&name=" + this.search).then(res => {

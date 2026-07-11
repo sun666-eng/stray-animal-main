@@ -11,7 +11,7 @@ const shotcut ={
         "                </span>\n" +
         "                <span style=\"float:right\">&nbsp; | &nbsp;</span>\n" +
         "                <span style=\"float:right\">\n" +
-        "                     <a href=\"login.html\">登录</a>\n" +
+        "                     <a href=\"/page/front/login.html\">登录</a>\n" +
         "                </span>\n" +
         "            </span>\n" +
         "            <span :style=\"loginShow\">\n" +

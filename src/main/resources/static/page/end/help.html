@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -307,14 +307,14 @@
         },
         created: function() {
             this.user = sessionStorage.getItem("user") ? JSON.parse(sessionStorage.getItem("user")) : {};
-            if (!this.user.id) { location.href = "/page/end/login.html"; return; }
+            if (!this.user.id) { location.href = "/page/front/login.html"; return; }
             openAdminSocket();
             this.loadChatHistory();
             this.loadTable();
         },
         methods: {
             handleCollapse: function() { this.isCollapse = !this.isCollapse; },
-            logout: function() { $.get("/api/user/logout"); sessionStorage.removeItem("user"); location.href = "/page/end/login.html"; },
+            logout: function() { $.get("/api/user/logout"); sessionStorage.removeItem("user"); location.href = "/page/front/login.html"; },
             sendChat: function() {
                 if (!this.chatText.trim()) return;
                 var self = this;

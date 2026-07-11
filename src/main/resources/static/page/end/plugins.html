@@ -121,7 +121,7 @@
         created() {
             this.user = sessionStorage.getItem("user") ? JSON.parse(sessionStorage.getItem("user")) : {};
             if (!this.user.id) {
-                location.href = "/page/end/login.html";
+                location.href = "/page/front/login.html";
                 return;
             }
 
@@ -199,7 +199,7 @@
             logout() {
                 $.get("/api/user/logout");
                 sessionStorage.removeItem("user");
-                location.href = "/page/end/login.html";
+                location.href = "/page/front/login.html";
             }
         }
     })

@@ -87,7 +87,7 @@ new Vue({
   created() {
     this.user = sessionStorage.getItem('user') ? JSON.parse(sessionStorage.getItem('user')) : {};
     this.aid = new URLSearchParams(location.search).get('aid');
-    if (!this.user.id) { location.href = './login.html?redirect=' + encodeURIComponent(location.pathname + location.search); return; }
+    if (!this.user.id) { location.href = '/page/front/login.html?redirect=' + encodeURIComponent(location.pathname + location.search); return; }
     if (!this.aid) { this.$message.error('缺少动物 ID，请从领养申请页进入'); return; }
     this.loadList();
   },

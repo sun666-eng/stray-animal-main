@@ -288,7 +288,7 @@
         created() {
             this.user = sessionStorage.getItem("user") ? JSON.parse(sessionStorage.getItem("user")) : {};
             if (!this.user.id) {
-                location.href = "/page/end/login.html";
+                location.href = "/page/front/login.html";
                 return;
             }
             this.loadTable();
@@ -305,7 +305,7 @@
                 // 请求退出接口
                 $.get("/api/user/logout");
                 localStorage.removeItem("user");
-                location.href = "/page/end/login.html";
+                location.href = "/page/front/login.html";
             },
             loadTable() {
                 $.get(urlBase + "/page?pageNum=" + this.pageNum + "&pageSize=" + this.pageSize + "&name=" + this.search).then(res => {

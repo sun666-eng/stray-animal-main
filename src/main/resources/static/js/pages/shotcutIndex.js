@@ -12,7 +12,7 @@ const shotcutIndex ={
         "                </span>\n" +
         "                <span style=\"float:right\">&nbsp; | &nbsp;</span>\n" +
         "                <span style=\"float:right\">\n" +
-        "                     <a href=\"login.html\">登录</a>\n" +
+        "                     <a href=\"/page/front/login.html\">登录</a>\n" +
         "                </span>\n" +
         "            </span>\n" +
         "            <span :style=\"loginShow\">\n" +
@@ -113,7 +113,7 @@ const shotcutIndex ={
         exit() {
             // 清湖localStorage中的内容
             localStorage.clear();
-            window.location.href = "login.html";
+            window.location.href = "/page/front/login.html";
         },
 
         changeShow() {
