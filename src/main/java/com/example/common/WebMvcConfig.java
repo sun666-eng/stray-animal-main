@@ -12,23 +12,35 @@ import java.io.File;
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
 
+    private final AuthInterceptor authInterceptor;
+
+    public WebMvcConfig(AuthInterceptor authInterceptor) {
+        this.authInterceptor = authInterceptor;
+    }
+
     @Value("${file.upload-dir:upload}")
     private String uploadDir;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new AuthInterceptor())
+        registry.addInterceptor(authInterceptor)
                 .addPathPatterns("/api/**", "/page/**")
                 .excludePathPatterns(
                     "/api/user/login",
                     "/api/user/register",
+                    "/page/end",
+                    "/page/end/",
                     "/page/end/login.html",
                     "/page/end/register.html",
+                    "/page/front",
+                    "/page/front/",
                     "/page/front/login.html",
+                    "/page/front/register.html",
                     "/page/front/animal_browse.html",
                     "/page/front/animal_detail.html",
                     "/page/front/notice_list.html",
-                    "/page/front/notice_detail.html"
+                    "/page/front/notice_detail.html",
+                    "/page/front/account_public.html"
                 );
     }
 

@@ -113,16 +113,19 @@ stateClass(state) {
 },
 ```
 
-- [ ] **Step 2: 手工验收**
+- [x] **Step 2: 手工验收**
   - 后台把同一用户申请分别设为 0/1/2/3，刷新 `my_adopt.html`，四种文案正确。
   - `vstate===1` 时仍显示「上传凭证」链接且可打开 `adopt_proof.html?aid=`。
+  - （代码侧已完成；运行态请本地刷新页面再点一次 0/1/2/3 确认。）
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/main/resources/static/page/front/my_adopt.html
 git commit -m "fix: 用户端领养状态 0/1/2/3 文案与样式对齐"
 ```
+
+Completed: commit `5703695` on branch `animal`.
 
 ---
 

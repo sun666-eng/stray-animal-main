@@ -30,14 +30,21 @@ public class FileController {
 
     private static final Log log = LogFactory.get();
     private static final Pattern SAFE_FLAG_PATTERN = Pattern.compile("^[a-zA-Z0-9\\-]{1,64}$");
+    private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList(
+            "jpg", "jpeg", "png", "gif", "webp", "pdf", "xls", "xlsx"
+    );
 
     @Value("${file.upload-dir:upload}")
     private String uploadDir;
 
     @PostMapping("/upload")
     public Result<FileVO> upload(MultipartFile file, HttpServletRequest request) {
-        log.info("文件上传请求 - 用户: {}, 文件名: {}, 大小: {}bytes",
-                request.getSession().getAttribute("user"),
+        if (!isValidUpload(file)) {
+            return Result.error("400", "文件不能为空或类型不允许");
+        }
+        Object userId = request.getAttribute("userId");
+        log.info("文件上传请求 - 用户ID: {}, 文件名: {}, 大小: {}bytes",
+                userId,
                 file.getOriginalFilename(),
                 file.getSize());
         FileVO fileVO = doUpload(file);
@@ -55,7 +62,7 @@ public class FileController {
         log.info("批量文件上传请求 - 文件数量: {}", files.size());
         List<FileVO> fileVOS = new ArrayList<>();
         for (MultipartFile file : files) {
-            if (file.isEmpty()) {
+            if (!isValidUpload(file)) {
                 continue;
             }
             FileVO fileVO = doUpload(file);
@@ -182,6 +189,18 @@ public class FileController {
             log.error("文件保存异常 - 原始文件名: {}", originalName, e);
             return null;
         }
+    }
+
+    private boolean isValidUpload(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return false;
+        }
+        String originalName = file.getOriginalFilename();
+        if (StrUtil.isBlank(originalName)) {
+            return false;
+        }
+        String ext = FileUtil.extName(originalName);
+        return ext != null && ALLOWED_EXTENSIONS.contains(ext.toLowerCase());
     }
 
     private String sanitizeFileName(String fileName) {

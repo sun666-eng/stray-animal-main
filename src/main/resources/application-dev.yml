@@ -1,0 +1,6 @@
+spring:
+  datasource:
+    # 兼容项目原有的本地 MySQL 配置；可用 DB_PASSWORD 覆盖。
+    password: ${DB_PASSWORD:123456}
+  redis:
+    password: ${REDIS_PASSWORD:123456}

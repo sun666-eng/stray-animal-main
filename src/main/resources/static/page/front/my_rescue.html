@@ -98,7 +98,7 @@ document.addEventListener('click', function(e) {
             </tr>
             </thead>
             <tbody>
-            <tr v-for="item in records" :key="item.id">
+            <tr v-for="item in records" :key="item.id" style="cursor:pointer" @click="detail = item">
                 <td><strong>{{ item.title }}</strong></td>
                 <td>{{ item.location }}</td>
                 <td>{{ item.phone }}</td>
@@ -110,7 +110,7 @@ document.addEventListener('click', function(e) {
         </table>
     </div>
     <div v-if="detail" class="detail-panel">
-        <h3>救助详情</h3>
+        <h3>救助详情 <button type="button" @click="detail = null" style="float:right;border:0;background:#eef2f7;border-radius:8px;padding:4px 10px;cursor:pointer;">关闭</button></h3>
         <div class="detail-grid">
             <p><strong>标题：</strong>{{ detail.title }}</p>
             <p><strong>地点：</strong>{{ detail.location }}</p>
@@ -118,6 +118,7 @@ document.addEventListener('click', function(e) {
             <p><strong>状态：</strong>{{ formatStatus(detail.status) }}</p>
             <p style="grid-column:1/-1;"><strong>描述：</strong>{{ detail.description }}</p>
             <p style="grid-column:1/-1;" v-if="detail.remark"><strong>管理员回复：</strong>{{ detail.remark }}</p>
+            <p style="grid-column:1/-1;" v-if="detail.pic"><strong>图片：</strong><img :src="'/api/files/' + detail.pic" alt="救助图" style="max-width:240px;border-radius:8px;margin-top:8px;"></p>
         </div>
     </div>
 </div>

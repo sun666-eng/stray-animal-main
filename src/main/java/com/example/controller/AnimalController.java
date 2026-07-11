@@ -6,6 +6,7 @@ import com.example.common.Result;
 import com.example.dto.ImportResult;
 import com.example.entity.Animal;
 import com.example.service.AnimalService;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -74,8 +75,14 @@ public class AnimalController {
     public Result<IPage<Animal>> findPage1(@RequestParam(required = false, defaultValue = "") String name,
                                           @RequestParam(required = false, defaultValue = "1") Integer pageNum,
                                           @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
-        return Result.success(animalService.page(new Page<>(pageNum, pageSize),
-                Wrappers.<Animal>lambdaQuery().like(Animal::getTdescribe, name).eq(Animal::getTstate, 0)));
+        LambdaQueryWrapper<Animal> wrapper = Wrappers.<Animal>lambdaQuery()
+                .eq(Animal::getTstate, 0)
+                .orderByDesc(Animal::getId);
+        if (name != null && !name.trim().isEmpty()) {
+            String keyword = name.trim();
+            wrapper.and(q -> q.like(Animal::getTname, keyword).or().like(Animal::getTdescribe, keyword));
+        }
+        return Result.success(animalService.page(new Page<>(pageNum, pageSize), wrapper));
     }
 
     @GetMapping("/export")

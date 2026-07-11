@@ -173,7 +173,8 @@
                             sessionStorage.setItem("user", JSON.stringify(res.data.user));
                             sessionStorage.setItem("token", res.data.token);
                             setTimeout(() => {
-                                location.href= "/page/end/index.html"
+                                // 公共注册默认普通用户，进入用户端首页
+                                location.href = "/page/front/animal_browse.html";
                             }, 1000)
                         } else {
                             this.$message({

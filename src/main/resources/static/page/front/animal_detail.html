@@ -67,7 +67,9 @@ document.addEventListener('click', function(e) {
                 <div class="meta">编号：{{ animal.id }}</div>
                 <div class="desc">{{ animal.tdescribe || '暂无详细描述' }}</div>
                 <div class="actions">
-                    <button class="btn btn-primary" @click="goAdopt">申请领养</button>
+                    <button class="btn btn-primary" :disabled="Number(animal.tstate) !== 0" @click="goAdopt">
+                        {{ Number(animal.tstate) === 0 ? '申请领养' : '暂不可领养' }}
+                    </button>
                     <button class="btn btn-ghost" @click="goBack">返回列表</button>
                 </div>
             </div>
@@ -91,10 +93,17 @@ new Vue({
         .catch(() => { this.$message.error('网络异常，加载详情失败'); })
         .always(() => { this.loading = false; });
     },
-    goAdopt() { if (!this.animal || !this.animal.id) return; location.href = `./adopt_apply.html?animalId=${this.animal.id}`; },
+    goAdopt() {
+      if (!this.animal || !this.animal.id) return;
+      if (Number(this.animal.tstate) !== 0) {
+        this.$message.error('该动物当前不可领养');
+        return;
+      }
+      location.href = `./adopt_apply.html?animalId=${this.animal.id}`;
+    },
     goBack() { history.back(); },
     formatDate(value) { if (!value) return '未知'; const date = new Date(value); if (Number.isNaN(date.getTime())) return value; const y = date.getFullYear(); const m = String(date.getMonth() + 1).padStart(2, '0'); const d = String(date.getDate()).padStart(2, '0'); return `${y}-${m}-${d}`; },
-    formatState(state) { if (state === 2) return '可领养'; if (state === 1) return '审核中'; if (state === 0) return '未发布'; return '未知状态'; },
+    formatState(state) { if (state === 0) return '待领养'; if (state === 1) return '申请中'; if (state === 2) return '已领养'; return '未知状态'; },
     resolveImage(path) { if (!path) return '/img/b1.jpg'; if (path.startsWith('http://') || path.startsWith('https://')) return path; if (path.startsWith('/')) return path; return `/api/files/${path}`; },
     handleImageError(e) { e.target.src = '/img/b1.jpg'; }
   }

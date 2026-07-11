@@ -1,27 +1,26 @@
 package com.example.controller;
 
-import cn.hutool.core.collection.CollUtil;
-import cn.hutool.poi.excel.ExcelUtil;
-import cn.hutool.poi.excel.ExcelWriter;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.common.AuditLog;
+import com.example.common.ExcelExportUtil;
 import com.example.common.JwtUtil;
+import com.example.common.PermissionUtil;
 import com.example.common.Result;
 import com.example.dto.LoginVO;
+import com.example.dto.RegisterRequest;
 import com.example.dto.UserDTO;
 import com.example.entity.User;
 import com.example.service.UserService;
+import com.example.component.WebSocketTicketService;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import javax.servlet.ServletOutputStream;
 import javax.validation.Valid;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,6 +35,9 @@ public class UserController {
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private WebSocketTicketService webSocketTicketService;
 
     @AuditLog(module = "用户管理", action = "用户登录")
     @PostMapping("/login")
@@ -52,10 +54,13 @@ public class UserController {
 
     @AuditLog(module = "用户管理", action = "用户注册")
     @PostMapping("/register")
-    public Result<LoginVO> register(@Valid @RequestBody User user, HttpServletRequest request) {
-        if (user.getPassword() == null) {
-            user.setPassword("123456");
-        }
+    public Result<LoginVO> register(@Valid @RequestBody RegisterRequest registration, HttpServletRequest request) {
+        User user = new User();
+        user.setUsername(registration.getUsername());
+        user.setPassword(registration.getPassword());
+        user.setEmail(registration.getEmail());
+        user.setPhone(registration.getPhone());
+        user.setAvatar(registration.getAvatar());
         User dbUser = userService.register(user);
         String token = JwtUtil.createToken(dbUser.getId(), dbUser.getUsername());
         request.getSession().setAttribute("user", dbUser);
@@ -79,6 +84,17 @@ public class UserController {
         return Result.success(MAP.values().stream().map(UserDTO::from).collect(Collectors.toList()));
     }
 
+    @PostMapping("/ws-ticket")
+    public Result<Map<String, String>> createWebSocketTicket(HttpServletRequest request) {
+        User user = (User) request.getSession().getAttribute("user");
+        if (user == null || user.getId() == null) {
+            return Result.error("401", "未登录或登录已过期");
+        }
+        Map<String, String> data = new LinkedHashMap<>();
+        data.put("ticket", webSocketTicketService.issue(user.getId()));
+        return Result.success(data);
+    }
+
     @AuditLog(module = "用户管理", action = "新增用户")
     @PostMapping
     public Result<?> save(@Valid @RequestBody User user) {
@@ -90,7 +106,14 @@ public class UserController {
 
     @AuditLog(module = "用户管理", action = "更新用户")
     @PutMapping
-    public Result<?> update(@RequestBody User user) {
+    public Result<?> update(@RequestBody User user, HttpServletRequest request) {
+        User currentUser = (User) request.getSession().getAttribute("user");
+        if (!PermissionUtil.hasFlag(currentUser, "user")) {
+            if (currentUser == null || currentUser.getId() == null || user.getId() == null || !currentUser.getId().equals(user.getId())) {
+                return Result.error("403", "只能修改自己的用户信息");
+            }
+            user.setRole(currentUser.getRole());
+        }
         return Result.success(userService.updateById(user));
     }
 
@@ -128,29 +151,15 @@ public class UserController {
 
     @GetMapping("/export")
     public void export(HttpServletResponse response) throws IOException {
-
-        List<Map<String, Object>> list = CollUtil.newArrayList();
-
-        List<User> all = userService.list();
-        for (User user : all) {
-            Map<String, Object> row1 = new LinkedHashMap<>();
-            row1.put("名称", user.getUsername());
-            row1.put("手机", user.getPhone());
-            row1.put("邮箱", user.getEmail());
-            list.add(row1);
-        }
-
-        // 2. 写excel
-        ExcelWriter writer = ExcelUtil.getWriter(true);
-        writer.write(list, true);
-
-        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8");
-        String fileName = URLEncoder.encode("用户信息", "UTF-8");
-        response.setHeader("Content-Disposition", "attachment;filename=" + fileName + ".xlsx");
-
-        ServletOutputStream out = response.getOutputStream();
-        writer.flush(out, true);
-        writer.close();
+        ExcelExportUtil.export(response, "用户信息", userService.list(), user -> {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("ID", user.getId());
+            row.put("名称", user.getUsername());
+            row.put("手机", user.getPhone());
+            row.put("邮箱", user.getEmail());
+            row.put("头像", user.getAvatar());
+            return row;
+        });
     }
 
 }

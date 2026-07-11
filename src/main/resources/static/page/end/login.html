@@ -128,7 +128,7 @@
                     <div id="picyzm" style="display: inline-block; height: 37px; vertical-align: middle;"></div>
                 </div>
 
-                <button @click="login" style="height: 40px; padding: 10px; width: 100%;border-radius: 10px; margin-top: 25px; background-color: #2563EB; color: white">登录</button>
+                <button type="button" @click.prevent="login" :disabled="loggingIn" style="height: 40px; padding: 10px; width: 100%;border-radius: 10px; margin-top: 25px; background-color: #2563EB; color: white">{{ loggingIn ? '登录中...' : '登录' }}</button>
                 <a style="width: 100%; text-align: right; display: inline-block; margin-top: 25px; color:lightslategray" href="register.html">还没账号？去注册</a>
             </div>
 
@@ -148,13 +148,19 @@
     new Vue({
         el: "#wrapper",
         data: {
-            user: {}
+            user: {},
+            loggingIn: false
         },
         mounted() {
-            verifyCode = new GVerify({
-                id: "picyzm",
-                type: "blend"
-            });
+            try {
+                verifyCode = new GVerify({
+                    id: "picyzm",
+                    type: "blend"
+                });
+            } catch (e) {
+                console.error("验证码初始化失败", e);
+                verifyCode = null;
+            }
         },
         methods: {
             login() {
@@ -179,7 +185,7 @@
                     });
                     return;
                 }
-                let res = verifyCode.validate(this.user.code);
+                let res = verifyCode ? verifyCode.validate(this.user.code) : true;
                 if (!res) {
                     this.$message({
                         message: "验证码错误",
@@ -187,11 +193,14 @@
                     });
                     return;
                 }
+                if (this.loggingIn) return;
+                this.loggingIn = true;
                 $.ajax({
                     url: "/api/user/login",
                     type: "POST",
                     contentType: "application/json",
-                    data: JSON.stringify(this.user)
+                    data: JSON.stringify(this.user),
+                    timeout: 8000
                 }).then(res => {
                     if (res.code === '0') {
                         this.$message({
@@ -213,6 +222,13 @@
                             type: "error"
                         })
                     }
+                }).fail(() => {
+                    this.$message({
+                        message: "登录请求失败，请检查服务是否启动或网络是否正常",
+                        type: "error"
+                    });
+                }).always(() => {
+                    this.loggingIn = false;
                 })
             }
         }

@@ -17,6 +17,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.regex.Pattern;
 
 @Aspect
 @Component
@@ -24,6 +25,8 @@ public class AuditLogAspect {
 
     private static final Logger auditLogger = LoggerFactory.getLogger("AUDIT");
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final Pattern SENSITIVE_JSON_FIELD = Pattern.compile(
+            "(?i)(\\\"(?:password|token|authorization|phone|tel|email|wechat|location|address)\\\"\\s*:\\s*\\\")(.*?)(\\\")");
 
     @Pointcut("@annotation(com.example.common.AuditLog)")
     public void auditPointcut() {
@@ -41,7 +44,7 @@ public class AuditLogAspect {
         String module = auditLog.module();
         String action = auditLog.action();
         String methodName = signature.getDeclaringTypeName() + "." + signature.getName();
-        String params = JSONUtil.toJsonStr(joinPoint.getArgs());
+        String params = sanitizeParams(JSONUtil.toJsonStr(joinPoint.getArgs()));
 
         HttpServletRequest request = getRequest();
         String ip = getClientIp(request);
@@ -117,5 +120,12 @@ public class AuditLogAspect {
     private String truncate(String str, int maxLength) {
         if (str == null) return "null";
         return str.length() > maxLength ? str.substring(0, maxLength) + "..." : str;
+    }
+
+    private String sanitizeParams(String params) {
+        if (params == null) {
+            return null;
+        }
+        return SENSITIVE_JSON_FIELD.matcher(params).replaceAll("$1****$3");
     }
 }

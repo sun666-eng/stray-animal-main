@@ -27,15 +27,18 @@ public class AuthInterceptor implements HandlerInterceptor {
 
     private static final Map<String, List<String>> API_FLAG_RULES = new HashMap<>();
     private static final Map<String, String> PAGE_FLAG_RULES = new HashMap<>();
+    private static final Map<String, String> LEGACY_PAGE_REDIRECTS = new HashMap<>();
     private static final Set<String> LOGIN_REQUIRED_PAGE_PATHS = new HashSet<>(Arrays.asList(
             "/page/end/index.html",
             "/page/end/person.html",
             "/page/front/adopt_apply.html",
             "/page/front/my_adopt.html",
+            "/page/front/adopt_proof.html",
             "/page/front/volunteer_apply.html",
             "/page/front/my_volunteer.html",
             "/page/front/rescue_apply.html",
-            "/page/front/my_rescue.html"
+            "/page/front/my_rescue.html",
+            "/page/front/my_visit.html"
     ));
 
     static {
@@ -49,7 +52,7 @@ public class AuthInterceptor implements HandlerInterceptor {
         API_FLAG_RULES.put("/api/volunteer", Arrays.asList("volunteer"));
         API_FLAG_RULES.put("/api/account", Arrays.asList("account"));
         API_FLAG_RULES.put("/api/notice", Arrays.asList("notice"));
-        API_FLAG_RULES.put("/api/help", Arrays.asList("help", "rescue"));
+        API_FLAG_RULES.put("/api/help", Arrays.asList("help"));
         API_FLAG_RULES.put("/api/files", Arrays.asList("animal", "adopt", "proof", "visit", "volunteer", "help", "rescue", "user", "my_proof", "apply", "im", "adopt_view"));
 
         PAGE_FLAG_RULES.put("/page/end/user.html", "user");
@@ -60,15 +63,18 @@ public class AuthInterceptor implements HandlerInterceptor {
         PAGE_FLAG_RULES.put("/page/end/proof.html", "proof");
         PAGE_FLAG_RULES.put("/page/end/visit.html", "visit");
         PAGE_FLAG_RULES.put("/page/end/volunteer.html", "volunteer");
-        PAGE_FLAG_RULES.put("/page/end/volunteer_apply.html", "apply");
         PAGE_FLAG_RULES.put("/page/end/account.html", "account");
         PAGE_FLAG_RULES.put("/page/end/notice.html", "notice");
         PAGE_FLAG_RULES.put("/page/end/help.html", "help");
         PAGE_FLAG_RULES.put("/page/end/rescue.html", "help");
-        PAGE_FLAG_RULES.put("/page/end/im.html", "im");
-        PAGE_FLAG_RULES.put("/page/end/adopt_view.html", "adopt_view");
-        PAGE_FLAG_RULES.put("/page/end/my_adopt.html", "my_adopt");
-        PAGE_FLAG_RULES.put("/page/end/adopt_proof.html", "my_proof");
+
+        LEGACY_PAGE_REDIRECTS.put("/page/end/im.html", "/page/front/rescue_apply.html");
+        LEGACY_PAGE_REDIRECTS.put("/page/end/adopt_view.html", "/page/front/animal_browse.html");
+        LEGACY_PAGE_REDIRECTS.put("/page/end/adopt_apply.html", "/page/front/adopt_apply.html");
+        LEGACY_PAGE_REDIRECTS.put("/page/end/my_adopt.html", "/page/front/my_adopt.html");
+        LEGACY_PAGE_REDIRECTS.put("/page/end/adopt_wait.html", "/page/front/my_adopt.html");
+        LEGACY_PAGE_REDIRECTS.put("/page/end/volunteer_apply.html", "/page/front/volunteer_apply.html");
+        LEGACY_PAGE_REDIRECTS.put("/page/end/adopt_proof.html", "/page/front/adopt_proof.html");
     }
 
     private final UserService userService;
@@ -80,6 +86,11 @@ public class AuthInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws IOException {
         String path = request.getRequestURI();
+
+        if (LEGACY_PAGE_REDIRECTS.containsKey(path)) {
+            response.sendRedirect(LEGACY_PAGE_REDIRECTS.get(path));
+            return false;
+        }
 
         if (path.startsWith("/api/")) {
             if (isPublicApi(path, request.getMethod())) {
@@ -102,7 +113,10 @@ public class AuthInterceptor implements HandlerInterceptor {
         User user = getCurrentUser(request);
         if (user != null) {
             String requiredFlag = PAGE_FLAG_RULES.get(path);
-            if (requiredFlag == null || hasPermissionFlag(user, requiredFlag)) {
+            if (requiredFlag != null && hasPermissionFlag(user, requiredFlag)) {
+                return true;
+            }
+            if (requiredFlag == null && isAllowedLoggedInPage(path)) {
                 return true;
             }
             response.sendRedirect("/page/end/index.html?error=forbidden");
@@ -114,6 +128,10 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
         response.sendRedirect(buildLoginRedirect(path, request.getQueryString()));
         return false;
+    }
+
+    private boolean isAllowedLoggedInPage(String path) {
+        return LOGIN_REQUIRED_PAGE_PATHS.contains(path);
     }
 
     private boolean isPublicApi(String path, String method) {
@@ -129,7 +147,23 @@ public class AuthInterceptor implements HandlerInterceptor {
         if (path.startsWith("/api/notice") && "GET".equalsIgnoreCase(method)) {
             return true;
         }
+        if (isPublicAccountRead(path, method)) {
+            return true;
+        }
+        if ("/api/dashboard/public-stats".equals(path) && "GET".equalsIgnoreCase(method)) {
+            return true;
+        }
         return false;
+    }
+
+    private boolean isPublicAccountRead(String path, String method) {
+        if (!"GET".equalsIgnoreCase(method)) {
+            return false;
+        }
+        if ("/api/account".equals(path) || "/api/account/page".equals(path) || "/api/account/public".equals(path)) {
+            return true;
+        }
+        return path.matches("^/api/account/\\d+$");
     }
 
     private User getCurrentUser(HttpServletRequest request) {
@@ -161,7 +195,8 @@ public class AuthInterceptor implements HandlerInterceptor {
     }
 
     private boolean hasApiPermission(User user, String path, String method) {
-        if (path.startsWith("/api/user/logout") || path.startsWith("/api/user/online")) {
+        if (path.startsWith("/api/user/logout") || path.startsWith("/api/user/online")
+                || path.startsWith("/api/user/ws-ticket")) {
             return true;
         }
         if (path.startsWith("/api/user/detail/")) {
@@ -179,28 +214,39 @@ public class AuthInterceptor implements HandlerInterceptor {
         if (path.startsWith("/api/help/mine") || path.startsWith("/api/help/chat")) {
             return hasAnyPermissionFlag(user, Arrays.asList("im", "help", "rescue"));
         }
+        if ("/api/help".equals(path) && "POST".equalsIgnoreCase(method)) {
+            return hasAnyPermissionFlag(user, Arrays.asList("help", "rescue"));
+        }
         if (path.startsWith("/api/adopt/page2")) {
             return hasAnyPermissionFlag(user, Arrays.asList("my_adopt", "adopt", "adopt_view"));
         }
         if (path.startsWith("/api/proof/page1")) {
             return hasAnyPermissionFlag(user, Arrays.asList("my_proof", "proof"));
         }
+        if (path.startsWith("/api/visit/mine")) {
+            // 归属校验在 VisitController；登录用户即可查自己的回访
+            return true;
+        }
         if (path.startsWith("/api/adopt") && "POST".equalsIgnoreCase(method)) {
             return hasAnyPermissionFlag(user, Arrays.asList("adopt_view", "my_adopt", "adopt"));
+        }
+        if (path.startsWith("/api/proof") && "POST".equalsIgnoreCase(method)) {
+            return hasAnyPermissionFlag(user, Arrays.asList("my_proof", "proof"));
+        }
+        if (path.matches("^/api/proof/\\d+$")
+                && ("PUT".equalsIgnoreCase(method) || "DELETE".equalsIgnoreCase(method))) {
+            return hasAnyPermissionFlag(user, Arrays.asList("my_proof", "proof"));
         }
         if (path.startsWith("/api/volunteer") && "POST".equalsIgnoreCase(method)) {
             return hasAnyPermissionFlag(user, Arrays.asList("apply", "volunteer"));
         }
-        if (path.startsWith("/api/help") && "POST".equalsIgnoreCase(method)) {
-            return hasAnyPermissionFlag(user, Arrays.asList("im", "help", "rescue"));
-        }
-
         for (Map.Entry<String, List<String>> entry : API_FLAG_RULES.entrySet()) {
             if (path.startsWith(entry.getKey())) {
                 return hasAnyPermissionFlag(user, entry.getValue());
             }
         }
-        return true;
+        // 未登记的接口默认拒绝，避免新增管理接口时因遗漏权限规则而被普通用户访问。
+        return false;
     }
 
     private boolean hasAnyPermissionFlag(User user, List<String> flags) {

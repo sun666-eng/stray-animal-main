@@ -31,4 +31,22 @@ public class JwtUtilTest {
         assertEquals(Long.valueOf(1L), JwtUtil.getUserId(token1));
         assertEquals(Long.valueOf(2L), JwtUtil.getUserId(token2));
     }
+
+    @Test
+    public void configuredSecretRejectsMissingWeakAndKnownSecrets() {
+        JwtUtil jwtUtil = new JwtUtil();
+        assertThrows(IllegalStateException.class, () -> jwtUtil.setConfiguredSecret(null));
+        assertThrows(IllegalStateException.class, () -> jwtUtil.setConfiguredSecret("short-secret"));
+        assertThrows(IllegalStateException.class,
+                () -> jwtUtil.setConfiguredSecret("animal-home-development-secret-please-change"));
+    }
+
+    @Test
+    public void configuredSecretAcceptsStrongSecret() {
+        JwtUtil jwtUtil = new JwtUtil();
+        jwtUtil.setConfiguredSecret("test-only-secret-with-at-least-32-characters");
+        String token = JwtUtil.createToken(7L, "secure-user");
+        assertTrue(JwtUtil.validate(token));
+        assertEquals(Long.valueOf(7L), JwtUtil.getUserId(token));
+    }
 }

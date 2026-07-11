@@ -88,13 +88,14 @@
                     <div id="picyzm" style="display: inline-block; height: 35px; vertical-align: middle;"></div>
                 </div>
 
-                <button @click="login" style="height: 40px; padding: 10px; width: 100%; margin-top: 25px; background-color: #2563EB; color: white">登录</button>
-                <a style="width: 100%; text-align: right; display: inline-block; margin-top: 25px; color: #1D4ED8" href="/page/end/register.html">还没账号？去注册</a>
+                <button type="button" @click.prevent="login" :disabled="loggingIn" style="height: 40px; padding: 10px; width: 100%; margin-top: 25px; background-color: #2563EB; color: white">{{ loggingIn ? '登录中...' : '登录' }}</button>
+                <a style="width: 100%; text-align: right; display: inline-block; margin-top: 25px; color: #1D4ED8" href="/page/front/register.html">还没账号？去注册</a>
                 <a style="width: 100%; text-align: right; display: inline-block; margin-top: 10px; color: #1D4ED8" href="animal_browse.html">先看看可领养动物</a>
                 <a style="width: 100%; text-align: right; display: inline-block; margin-top: 10px; color: #1D4ED8" href="my_adopt.html">查看我的领养申请</a>
                 <a style="width: 100%; text-align: right; display: inline-block; margin-top: 10px; color: #1D4ED8" href="volunteer_apply.html">我要报名义工</a>
                 <a style="width: 100%; text-align: right; display: inline-block; margin-top: 10px; color: #1D4ED8" href="my_volunteer.html">查看我的义工申请</a>
                 <a style="width: 100%; text-align: right; display: inline-block; margin-top: 10px; color: #1D4ED8" href="notice_list.html">查看系统公告</a>
+                <a style="width: 100%; text-align: right; display: inline-block; margin-top: 10px; color: #047857" href="account_public.html">查看信息公示</a>
             </div>
 
         </div>
@@ -113,13 +114,19 @@
     new Vue({
         el: "#wrapper",
         data: {
-            user: {}
+            user: {},
+            loggingIn: false
         },
         mounted() {
-            verifyCode = new GVerify({
-                id: "picyzm",
-                type: "blend"
-            });
+            try {
+                verifyCode = new GVerify({
+                    id: "picyzm",
+                    type: "blend"
+                });
+            } catch (e) {
+                console.error("验证码初始化失败", e);
+                verifyCode = null;
+            }
         },
         methods: {
             login() {
@@ -144,7 +151,7 @@
                     });
                     return;
                 }
-                let res = verifyCode.validate(this.user.code);
+                let res = verifyCode ? verifyCode.validate(this.user.code) : true;
                 if (!res) {
                     this.$message({
                         message: "验证码错误",
@@ -152,11 +159,14 @@
                     });
                     return;
                 }
+                if (this.loggingIn) return;
+                this.loggingIn = true;
                 $.ajax({
                     url: "/api/user/login",
                     type: "POST",
                     contentType: "application/json",
-                    data: JSON.stringify(this.user)
+                    data: JSON.stringify(this.user),
+                    timeout: 8000
                 }).then(res => {
                     if (res.code === '0') {
                         this.$message({
@@ -178,6 +188,13 @@
                             type: "error"
                         })
                     }
+                }).fail(() => {
+                    this.$message({
+                        message: "登录请求失败，请检查服务是否启动或网络是否正常",
+                        type: "error"
+                    });
+                }).always(() => {
+                    this.loggingIn = false;
                 })
             }
         }
@@ -188,5 +205,3 @@
 <script src="../../js/dark-mode.js"></script>
 </body>
 </html>
-
-

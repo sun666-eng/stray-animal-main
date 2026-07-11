@@ -7,9 +7,11 @@
     <link rel="stylesheet" href="../../css/theme.css">
     <link rel="stylesheet" href="../../css/element.css">
     <style>
-        body { background: #F9FAFB; }
+        body { margin: 0; background: #F9FAFB; color: #24324a; }
         .page-shell { max-width: 1200px; margin: 0 auto; padding: 30px 20px 60px; }
-        .hero { background: linear-gradient(135deg, #93C5FD 0%, #3B82F6 100%); color: #fff; border-radius: 18px; padding: 28px 30px; box-shadow: 0 12px 30px rgba(37, 99, 235, 0.18); margin-bottom: 24px; }
+        .nav { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+        .chip { display: inline-flex; align-items: center; height: 38px; padding: 0 14px; border-radius: 999px; background: #fff; color: #1D4ED8; text-decoration: none; box-shadow: 0 8px 20px rgba(25, 43, 77, 0.06); }
+        .hero { background: linear-gradient(135deg, #93C5FD 0%, #3B82F6 100%); color: #fff; border-radius: 20px; padding: 28px 30px; box-shadow: 0 12px 30px rgba(37, 99, 235, 0.18); margin-bottom: 24px; }
         .hero h1 { margin: 0 0 8px; font-size: 30px; }
         .hero p { margin: 0; opacity: 0.95; }
         .toolbar { display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
@@ -60,10 +62,19 @@ document.addEventListener('click', function(e) {
 </script>
 
 <div id="app" class="page-shell">
+    <div class="nav">
+        <a class="chip is-active" href="./animal_browse.html">动物浏览</a>
+        <a class="chip" href="./my_adopt.html">我的领养申请</a>
+        <a class="chip" href="./volunteer_apply.html">义工申请</a>
+        <a class="chip" href="./my_volunteer.html">我的义工申请</a>
+        <a class="chip" href="./rescue_apply.html">救助咨询</a>
+        <a class="chip" href="./my_rescue.html">我的救助</a>
+        <a class="chip" href="./notice_list.html">公告中心</a>
+        <a class="chip" href="./account_public.html">信息公示</a>
+    </div>
     <div class="hero">
         <h1>流浪动物浏览</h1>
         <p>查看当前可领养动物，点击查看详情并发起领养申请。</p>
-        <p style="margin-top: 10px;"><a href="/page/front/login.html" style="color:#fff;text-decoration: underline; margin-right: 14px;">返回登录页</a><a href="my_adopt.html" style="color:#fff;text-decoration: underline; margin-right: 14px;">我的领养申请</a><a href="volunteer_apply.html" style="color:#fff;text-decoration: underline; margin-right: 14px;">义工申请</a><a href="my_volunteer.html" style="color:#fff;text-decoration: underline; margin-right: 14px;">我的义工申请</a><a href="notice_list.html" style="color:#fff;text-decoration: underline;">公告中心</a>&nbsp;&nbsp;&nbsp;<a href="rescue_apply.html" style="color:#fff;text-decoration: underline;">救助咨询</a>&nbsp;&nbsp;&nbsp;<a href="my_rescue.html" style="color:#fff;text-decoration: underline;">我的救助</a></p>
     </div>
     <div class="toolbar">
         <input v-model="query" type="text" placeholder="输入动物描述或名称关键词搜索">
@@ -117,7 +128,7 @@ new Vue({
     openDetail(id) { location.href = `./animal_detail.html?id=${id}`; },
     goAdopt(id) { location.href = `./adopt_apply.html?animalId=${id}`; },
     formatDate(value) { if (!value) return '未知'; const date = new Date(value); if (Number.isNaN(date.getTime())) return value; const y = date.getFullYear(); const m = String(date.getMonth() + 1).padStart(2, '0'); const d = String(date.getDate()).padStart(2, '0'); return `${y}-${m}-${d}`; },
-    formatState(state) { if (state === 2) return '可领养'; if (state === 1) return '审核中'; if (state === 0) return '未发布'; return '未知状态'; },
+    formatState(state) { if (state === 0) return '待领养'; if (state === 1) return '申请中'; if (state === 2) return '已领养'; return '未知状态'; },
     resolveImage(path) { if (!path) return '/img/b1.jpg'; if (path.startsWith('http://') || path.startsWith('https://')) return path; if (path.startsWith('/')) return path; return `/api/files/${path}`; },
     handleImageError(e) { e.target.src = '/img/b1.jpg'; }
   }

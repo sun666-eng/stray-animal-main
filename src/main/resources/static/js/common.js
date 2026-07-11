@@ -513,15 +513,15 @@ const stringify = function(object, options) {
 
 /* 这里是axios 请求是设置的基础URL*/
 /* axios.defaults.baseURL = "http://api.leyou.com/api";  */
-axios.defaults.baseURL = "http://api.sa.com/stary-animals";
+axios.defaults.baseURL = "";
 axios.defaults.timeout = 5000;
 axios.defaults.withCredentials = true;
 /*设置axios拦截器,为每一个axios请求都加上token到header中，这里拦截的是request请求*/
 axios.interceptors.request.use(
     config => {
-        let token = localStorage.getItem("token");
+        let token = sessionStorage.getItem("token");
         if (token) {  // 判断是否存在token，如果存在的话，则每个http header都加上token
-            config.headers.token = `${token}`;
+            config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
     },

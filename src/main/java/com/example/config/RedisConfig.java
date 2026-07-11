@@ -36,7 +36,7 @@ public class RedisConfig {
     }
 
     @Bean
-    @ConditionalOnProperty(name = "redis.enabled", havingValue = "true")
+    @ConditionalOnProperty(name = "app.redis.enabled", havingValue = "true")
     public RedisMessageListenerContainer redisMessageListenerContainer(
             RedisConnectionFactory connectionFactory,
             MessageListenerAdapter listenerAdapter) {
@@ -47,7 +47,7 @@ public class RedisConfig {
     }
 
     @Bean
-    @ConditionalOnProperty(name = "redis.enabled", havingValue = "true")
+    @ConditionalOnProperty(name = "app.redis.enabled", havingValue = "true")
     public MessageListenerAdapter listenerAdapter(RedisMessageSubscriber subscriber) {
         return new MessageListenerAdapter(subscriber, "onMessage");
     }

@@ -3,13 +3,18 @@ package com.example.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.common.ExcelExportUtil;
 import com.example.common.Result;
 import com.example.entity.Role;
 import com.example.service.RoleService;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/role")
@@ -48,6 +53,18 @@ public class RoleController {
                                            @RequestParam(required = false, defaultValue = "1") Integer pageNum,
                                            @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
         return Result.success(roleService.page(new Page<>(pageNum, pageSize), Wrappers.<Role>lambdaQuery().like(Role::getName, name)));
+    }
+
+    @GetMapping("/export")
+    public void export(HttpServletResponse response) throws IOException {
+        ExcelExportUtil.export(response, "角色信息", roleService.list(), role -> {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("ID", role.getId());
+            row.put("名称", role.getName());
+            row.put("描述", role.getDescription());
+            row.put("权限数量", role.getPermission() == null ? 0 : role.getPermission().size());
+            return row;
+        });
     }
 
 }

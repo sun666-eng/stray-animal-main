@@ -1,30 +1,132 @@
-# 基于 web 的流浪动物救助管理系统的设计与开发
+# 基于 Web 的流浪动物救助管理系统的设计与开发
 
-## 介绍
-随着现代社会中流浪动物问题的愈演愈烈与广泛性动物福利意识的觉醒，一些热心人士组建了各种大大小小的动物救助机构，用自己微薄的力量贡献出一份爱心。然而，因为受物质和人力的限制，动物救助机构的能力有限。需要切实可行的方法提高动物的收养率，加快工作效率。流浪动物救助中心的需求较为确定，流程较为明了，适合于开发对应的信息系统，以加快领养流程，缓解相关人员的工作压力。
+## 项目介绍
 
-流浪动物救助管理系统是基于web开发的领养管理系统。相关的动物救助组织可以借助该系统，管理审核注册用户、动物、用户提交的领养申请、义工申请以及维护领养关系，普通用户可以查看待领养的动物的相关资料，提交领养申请、义工申请同时查看救助组织提供的公示信息。
+本项目是一个基于 Web 的流浪动物救助与领养管理系统。救助组织可以通过系统管理用户、动物信息、领养申请、义工申请、救助请求、回访记录、公告公示和收支记录；普通用户可以浏览待领养动物、提交领养申请、提交义工申请、提交救助请求并查看相关公示信息。
 
+## 技术栈
 
-## 软件架构
-![image.png](https://pic.rmb.bdstatic.com/bjh/69bf9110cf1b17aa3448fdd9f8671240.jpeg)
+客户端：Vue.js、Ajax、jQuery、Element UI。
 
-客户端使用的关键技术或框架为：Vue.js、ajax、jQuery、Element UI。
+服务端：Spring Boot 2.7.x、MyBatis Plus、MyBatis、JWT、BCrypt、WebSocket、Redis 可选。
 
-服务端使用的关键技术或框架为：Spring Boot、MyBatis Plus。
+数据库：MySQL。
 
-项目运行环境：
+构建工具：Maven。
 
-Java开发环境：JDK 1.8
+## 推荐运行环境
 
-依赖管理工具：Maven 3.6.1
+- JDK：8 或 17。当前项目按 Java 8 字节码目标编译，不建议在生产环境混用未验证的 JDK 版本。
+- Maven：3.6+
+- MySQL：5.7+ 或 8.x
+- Redis：可选，仅在启用多实例 WebSocket 广播时需要。
 
-数据库环境：MySQL 5.6.
+## 环境变量
 
-​    代码开发工具：Idea 2019.2.3
+启动前建议显式配置以下环境变量：
 
-数据库管理工具：Navicat for MySQL
+```text
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=test
+DB_USERNAME=root
+DB_PASSWORD=your_password
+JWT_SECRET=your-32-char-minimum-secret-value
+FILE_UPLOAD_DIR=D:/animal-home/upload
+REDIS_ENABLED=false
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=your_redis_password
+CORS_ALLOWED_ORIGIN_PATTERNS=http://localhost:*,http://127.0.0.1:*
+DATA_FIX_ENABLED=false
+```
 
-## 一些说明
+说明：
 
-本项目为本人的毕业设计。目前来看是一个非常标准的本科生垃圾毕设。如果你真的很好奇，运行后请http://localhost:9999/page/end，账户和密码都是admin。
+- `JWT_SECRET` 生产环境必须配置，长度至少 32 个字符。
+- `FILE_UPLOAD_DIR` 建议使用固定绝对路径，避免部署后文件写入不可预期目录。
+- `REDIS_ENABLED=false` 时 WebSocket 使用本机广播；多实例部署时可启用 Redis 广播。
+- 生产环境应将 `CORS_ALLOWED_ORIGIN_PATTERNS` 收紧为实际前端域名。
+
+## 配置说明
+
+主配置文件位于：
+
+```text
+src/main/resources/application.yml
+```
+
+重要配置：
+
+```yaml
+server:
+  port: 9999
+
+spring:
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:test}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2b8
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
+
+app:
+  redis:
+    enabled: ${REDIS_ENABLED:false}
+  jwt:
+    secret: ${JWT_SECRET:}
+```
+
+未显式指定 profile 时默认使用 `dev`，允许本地开发密钥直接启动。生产部署必须使用
+`--spring.profiles.active=prod` 并设置长度至少 32 个字符的 `JWT_SECRET`，否则应用会拒绝启动。
+
+## 启动方式
+
+编译：
+
+```bash
+mvn clean compile
+```
+
+运行测试：
+
+```bash
+mvn test
+```
+
+启动项目：
+
+```bash
+mvn spring-boot:run
+```
+
+启动后访问：
+
+```text
+http://localhost:9999/page/end
+```
+
+默认后台账号需以数据库初始化数据为准。若启用了 `DATA_FIX_ENABLED=true`，系统会尝试修复部分默认权限数据。
+
+## 安全注意事项
+
+- 不要在生产环境使用弱数据库密码或弱 Redis 密码。
+- 不要在生产环境使用默认 `JWT_SECRET`。
+- 上传目录不要指向项目源码目录或临时目录。
+- 生产环境必须收紧 CORS 允许来源。
+- WebSocket 聊天连接需要使用登录后获取的 JWT token。
+
+## 主要模块
+
+- 用户管理
+- 角色权限管理
+- 动物信息管理
+- 领养申请与审核
+- 义工申请管理
+- 救助请求与在线咨询
+- 回访记录管理
+- 领养凭证管理
+- 公告公示管理
+- 收支记录管理

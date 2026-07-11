@@ -172,6 +172,7 @@ new Vue({
     },
     validateForm() {
       if (!this.form.aid || !this.form.uid) return '申请信息缺失';
+      if (!this.animal || Number(this.animal.tstate) !== 0) return '该动物当前不可领养';
       if (!this.form.uname) return '请输入真实姓名';
       if (!this.form.gender) return '请选择性别';
       if (this.form.age === null || this.form.age === '' || Number(this.form.age) < 18) return '未满18周岁不可领养';
@@ -243,9 +244,9 @@ new Vue({
       return `${y}-${m}-${d}`;
     },
     formatState(state) {
-      if (state === 2) return '可领养';
-      if (state === 1) return '审核中';
-      if (state === 0) return '未发布';
+      if (state === 0) return '待领养';
+      if (state === 1) return '申请中';
+      if (state === 2) return '已领养';
       return '未知状态';
     },
     resolveImage(path) {

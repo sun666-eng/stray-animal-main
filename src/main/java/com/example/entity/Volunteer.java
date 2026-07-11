@@ -13,6 +13,11 @@ public class Volunteer extends Model<Volunteer> {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
+    private Long uid;
+
+    /** 本人免冠照文件 flag */
+    private String apic;
+
     private String company;
 
     private String email;

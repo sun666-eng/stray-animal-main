@@ -103,15 +103,15 @@ document.addEventListener('click', function(e) {
         <h1>救助咨询</h1>
         <p>发现流浪或受伤动物？请填写以下信息提交救助请求，我们会尽快处理。</p>
     </div>
-    <div v-else-if="!user.id" class="empty">请先登录后再提交救助请求。</div>
+    <div v-if="!user.id" class="empty">请先登录后再提交救助请求。</div>
     <div v-else class="rescue-layout">
         <div class="chat-panel">
             <div class="chat-head">
-                <span>救助咨询聊天室</span>
+                <span>救助公共聊天室</span>
                 <span class="online-count">在线 {{ onlineCount }} 人</span>
             </div>
             <div class="chat-messages" id="front-chat-box">
-                <div class="system-msg">欢迎来到救助咨询聊天室，您可以查看历史消息并实时交流。</div>
+                <div class="system-msg">公共聊天室（非一对一客服）。正式救助请提交下方「救助请求」表单，管理员会在「我的救助」中回复。</div>
             </div>
             <div class="chat-input-row">
                 <textarea v-model="chatText" placeholder="请输入聊天内容..." @keydown.enter.prevent="sendChat"></textarea>
@@ -191,16 +191,17 @@ function handleLogout() {
 
 function openFrontSocket() {
     var userText = sessionStorage.getItem("user");
-    if (!userText || typeof(WebSocket) == "undefined") return;
-    var username = JSON.parse(userText).username;
-    var protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    var socketUrl = protocol + "//" + location.host + "/api/imserver/" + username;
-    if (frontSocket != null) {
-        frontSocket.close();
-        frontSocket = null;
-    }
-    frontSocket = new WebSocket(socketUrl);
-    frontSocket.onmessage = function(msg) {
+    var token = sessionStorage.getItem("token");
+    if (!userText || !token || typeof(WebSocket) == "undefined") return;
+    fetch('/api/user/ws-ticket', {method: 'POST', headers: {'Authorization': 'Bearer ' + token}, credentials: 'same-origin'})
+      .then(function (response) { return response.json(); })
+      .then(function (result) {
+        if (!result || result.code !== '0' || !result.data || !result.data.ticket) return;
+        var protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        var socketUrl = protocol + "//" + location.host + "/api/imserver/" + encodeURIComponent(result.data.ticket);
+        if (frontSocket != null) frontSocket.close();
+        frontSocket = new WebSocket(socketUrl);
+        frontSocket.onmessage = function(msg) {
         var data = JSON.parse(msg.data);
         if (data.users) {
             frontVm.onlineCount = data.users.length;
@@ -213,7 +214,8 @@ function openFrontSocket() {
             frontVm.onlineCount = Math.max(0, frontVm.onlineCount - 1);
             appendFrontSystemMsg(data.username + ' 离开了聊天室');
         }
-    };
+        };
+      }).catch(function () { frontSocket = null; });
 }
 
 function formatFrontChatTime(value) {

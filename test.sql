@@ -167,19 +167,19 @@ CREATE TABLE `t_permission` (
 INSERT INTO `t_permission` VALUES ('1', '用户管理', '用户管理', '/page/end/user.html', 'user');
 INSERT INTO `t_permission` VALUES ('2', '角色管理', '角色管理', '/page/end/role.html', 'role');
 INSERT INTO `t_permission` VALUES ('3', '权限管理', '权限管理', '/page/end/permission.html', 'permission');
-INSERT INTO `t_permission` VALUES ('5', '救助咨询', '救助咨询', '/page/end/im.html', 'im');
+INSERT INTO `t_permission` VALUES ('5', '救助咨询', '用户端提交救助咨询和救助请求', '/page/front/rescue_apply.html', 'im');
 INSERT INTO `t_permission` VALUES ('6', '动物管理', '管理动物名单', '/page/end/animal.html', 'animal');
 INSERT INTO `t_permission` VALUES ('7', '回访管理', '管理动物领养后回访记录', '/page/end/visit.html', 'visit');
-INSERT INTO `t_permission` VALUES ('8', '领养管理', '管理领养信息以及完成相关审批', '/page/end/adopt.html', 'adopt');
+INSERT INTO `t_permission` VALUES ('8', '领养审核', '审核和管理领养申请', '/page/end/adopt.html', 'adopt');
 INSERT INTO `t_permission` VALUES ('9', '凭证管理', '管理上传凭证', '/page/end/proof.html', 'proof');
-INSERT INTO `t_permission` VALUES ('10', '自助申请', '提交表单', '/page/end/adopt_view.html', 'adopt_view');
-INSERT INTO `t_permission` VALUES ('11', '我的领养', '查看当前用户的领养申请数据', '/page/end/my_adopt.html', 'my_adopt');
-INSERT INTO `t_permission` VALUES ('12', '凭证录入', '自助凭证录入', '/page/end/adopt_view.html', 'my_proof');
-INSERT INTO `t_permission` VALUES ('13', '义工申请管理', '义工申请管理', '/page/end/volunteer.html', 'volunteer');
-INSERT INTO `t_permission` VALUES ('15', '义工申请', '查看审批义工申请', '/page/end/volunteer_apply.html', 'apply');
-INSERT INTO `t_permission` VALUES ('17', '资金公示管理', '资金公示管理', '/page/end/account.html', 'account');
-INSERT INTO `t_permission` VALUES ('43', '动物展示', '展示待领养的动物', '/page/end/adopt_view.html', 'adopt_view');
-INSERT INTO `t_permission` VALUES ('44', '通知管理', '管理系统公告', '/page/end/notice.html', 'notice');
+INSERT INTO `t_permission` VALUES ('10', '动物浏览', '用户端浏览可领养动物', '/page/front/animal_browse.html', 'adopt_view');
+INSERT INTO `t_permission` VALUES ('11', '我的领养申请', '用户端查看自己的领养申请', '/page/front/my_adopt.html', 'my_adopt');
+INSERT INTO `t_permission` VALUES ('12', '领养凭证入口', '用户端提交和管理自己的领养凭证', '/page/front/adopt_proof.html', 'my_proof');
+INSERT INTO `t_permission` VALUES ('13', '义工审核', '审核和管理义工申请', '/page/end/volunteer.html', 'volunteer');
+INSERT INTO `t_permission` VALUES ('15', '义工申请', '用户端提交义工申请', '/page/front/volunteer_apply.html', 'apply');
+INSERT INTO `t_permission` VALUES ('17', '资金公示管理', '管理资金收入、支出和公示数据', '/page/end/account.html', 'account');
+INSERT INTO `t_permission` VALUES ('43', '动物浏览', '用户端浏览可领养动物', '/page/front/animal_browse.html', 'adopt_view');
+INSERT INTO `t_permission` VALUES ('44', '公告管理', '管理系统公告和活动通知', '/page/end/notice.html', 'notice');
 INSERT INTO `t_permission` VALUES ('46', '救助管理', '管理救助请求及回复', '/page/end/help.html', 'help');
 
 -- ----------------------------
@@ -225,9 +225,9 @@ CREATE TABLE `t_role` (
 -- ----------------------------
 -- Records of t_role
 -- ----------------------------
-INSERT INTO `t_role` VALUES ('1', '超级管理员', '所有权限', '[{\"id\":3,\"name\":\"权限管理\",\"path\":\"/page/end/permission.html\",\"description\":\"权限管理\",\"flag\":\"permission\"},{\"id\":2,\"name\":\"角色管理\",\"path\":\"/page/end/role.html\",\"description\":\"角色管理\",\"flag\":\"role\"},{\"id\":1,\"name\":\"用户管理\",\"path\":\"/page/end/user.html\",\"description\":\"用户管理\",\"flag\":\"user\"}]');
-INSERT INTO `t_role` VALUES ('2', '志愿者', '部分权限', '[{"id":7,"name":"回访管理","path":"/page/end/visit.html","description":"管理动物领养后回访记录","flag":"visit"},{"id":6,"name":"动物管理","path":"/page/end/animal.html","description":"管理动物名单","flag":"animal"},{"id":8,"name":"领养管理","path":"/page/end/adopt.html","description":"管理领养信息以及完成相关审批","flag":"adopt"},{"id":9,"name":"凭证管理","path":"/page/end/proof.html","description":"管理上传凭证","flag":"proof"},{"id":44,"name":"通知管理","path":"/page/end/notice.html","description":"管理系统公告","flag":"notice"},{"id":13,"name":"义工申请管理","path":"/page/end/volunteer.html","description":"义工申请管理","flag":"volunteer"},{"id":17,"name":"资金公示管理","path":"/page/end/account.html","description":"资金公示管理","flag":"account"},{"id":5,"name":"救助咨询","path":"/page/end/im.html","description":"救助咨询","flag":"im"},{"id":46,"name":"救助管理","path":"/page/end/help.html","description":"管理救助请求及回复","flag":"help"}]');
-INSERT INTO `t_role` VALUES ('3', '普通用户', '部分非工作权限', '[{\"id\":5,\"name\":\"救助咨询\",\"path\":\"/page/end/im.html\",\"description\":\"救助咨询\",\"flag\":\"im\"},{\"id\":43,\"name\":\"动物展示\",\"path\":\"/page/end/adopt_view.html\",\"description\":\"展示待领养的动物\",\"flag\":\"adopt_view\"},{\"id\":11,\"name\":\"我的领养\",\"path\":\"/page/end/my_adopt.html\",\"description\":\"查看当前用户的领养申请数据\",\"flag\":\"my_adopt\"},{\"id\":15,\"name\":\"义工申请\",\"path\":\"/page/end/volunteer_apply.html\",\"description\":\"查看审批义工申请\",\"flag\":\"apply\"}]');
+INSERT INTO `t_role` VALUES ('1', '超级管理员', '所有权限', '[{"id":1,"name":"用户管理","path":"/page/end/user.html","description":"管理系统用户和角色分配","flag":"user"},{"id":2,"name":"角色管理","path":"/page/end/role.html","description":"管理角色及角色权限","flag":"role"},{"id":3,"name":"权限管理","path":"/page/end/permission.html","description":"管理后台权限菜单","flag":"permission"},{"id":6,"name":"动物管理","path":"/page/end/animal.html","description":"新增、编辑、删除动物档案","flag":"animal"},{"id":7,"name":"回访管理","path":"/page/end/visit.html","description":"管理动物领养后回访记录","flag":"visit"},{"id":8,"name":"领养审核","path":"/page/end/adopt.html","description":"审核和管理领养申请","flag":"adopt"},{"id":9,"name":"凭证管理","path":"/page/end/proof.html","description":"管理领养相关凭证","flag":"proof"},{"id":13,"name":"义工审核","path":"/page/end/volunteer.html","description":"审核和管理义工申请","flag":"volunteer"},{"id":17,"name":"资金公示管理","path":"/page/end/account.html","description":"管理资金收入、支出和公示数据","flag":"account"},{"id":44,"name":"公告管理","path":"/page/end/notice.html","description":"管理系统公告和活动通知","flag":"notice"},{"id":46,"name":"救助管理","path":"/page/end/help.html","description":"管理救助请求并回复用户","flag":"help"}]');
+INSERT INTO `t_role` VALUES ('2', '志愿者', '部分权限', '[{"id":7,"name":"回访管理","path":"/page/end/visit.html","description":"管理动物领养后回访记录","flag":"visit"},{"id":6,"name":"动物管理","path":"/page/end/animal.html","description":"新增、编辑、删除动物档案","flag":"animal"},{"id":8,"name":"领养审核","path":"/page/end/adopt.html","description":"审核和管理领养申请","flag":"adopt"},{"id":9,"name":"凭证管理","path":"/page/end/proof.html","description":"管理领养相关凭证","flag":"proof"},{"id":44,"name":"公告管理","path":"/page/end/notice.html","description":"管理系统公告和活动通知","flag":"notice"},{"id":13,"name":"义工审核","path":"/page/end/volunteer.html","description":"审核和管理义工申请","flag":"volunteer"},{"id":17,"name":"资金公示管理","path":"/page/end/account.html","description":"管理资金收入、支出和公示数据","flag":"account"},{"id":46,"name":"救助管理","path":"/page/end/help.html","description":"管理救助请求并回复用户","flag":"help"}]');
+INSERT INTO `t_role` VALUES ('3', '普通用户', '部分非工作权限', '[{"id":43,"name":"动物浏览","path":"/page/front/animal_browse.html","description":"用户端浏览可领养动物","flag":"adopt_view"},{"id":11,"name":"我的领养申请","path":"/page/front/my_adopt.html","description":"用户端查看自己的领养申请","flag":"my_adopt"},{"id":12,"name":"领养凭证入口","path":"/page/front/adopt_proof.html","description":"用户端提交和管理自己的领养凭证","flag":"my_proof"},{"id":15,"name":"义工申请","path":"/page/front/volunteer_apply.html","description":"用户端提交义工申请","flag":"apply"},{"id":5,"name":"救助咨询","path":"/page/front/rescue_apply.html","description":"用户端提交救助咨询和救助请求","flag":"im"}]');
 
 -- ----------------------------
 -- Table structure for `t_user`
@@ -252,7 +252,7 @@ INSERT INTO `t_user` VALUES ('1', 'admin', 'admin', '111124444@.com', '139787865
 INSERT INTO `t_user` VALUES ('11', 'tom', '123456', 'tom@qq.com', '13685249632', '1618665195702', '[{"id":2,"name":"志愿者","description":"部分权限","permission":[{"id":7,"name":"回访管理","path":"/page/end/visit.html","description":"管理动物领养后回访记录","flag":"visit"},{"id":6,"name":"动物管理","path":"/page/end/animal.html","description":"管理动物名单","flag":"animal"},{"id":8,"name":"领养管理","path":"/page/end/adopt.html","description":"管理领养信息以及完成相关审批","flag":"adopt"},{"id":9,"name":"凭证管理","path":"/page/end/proof.html","description":"管理上传凭证","flag":"proof"},{"id":44,"name":"通知管理","path":"/page/end/notice.html","description":"管理系统公告","flag":"notice"},{"id":13,"name":"义工申请管理","path":"/page/end/volunteer.html","description":"义工申请管理","flag":"volunteer"},{"id":17,"name":"资金公示管理","path":"/page/end/account.html","description":"资金公示管理","flag":"account"},{"id":5,"name":"救助咨询","path":"/page/end/im.html","description":"救助咨询","flag":"im"},{"id":46,"name":"救助管理","path":"/page/end/help.html","description":"管理救助请求及回复","flag":"help"}]}]');
 INSERT INTO `t_user` VALUES ('20', 'jerry', '123456', 'jerry@qq.com', '13698597854', '1616284768677', '[{\"id\":3,\"name\":\"普通用户\",\"description\":\"部分非工作权限\",\"permission\":[{\"id\":5,\"name\":\"救助咨询\",\"path\":\"/page/end/im.html\",\"description\":\"救助咨询\",\"flag\":\"im\"},{\"id\":43,\"name\":\"动物展示\",\"path\":\"/page/end/adopt_view.html\",\"description\":\"展示待领养的动物\",\"flag\":\"adopt_view\"},{\"id\":11,\"name\":\"我的领养\",\"path\":\"/page/end/my_adopt.html\",\"description\":\"查看当前用户的领养申请数据\",\"flag\":\"my_adopt\"},{\"id\":15,\"name\":\"义工申请\",\"path\":\"/page/end/volunteer_apply.html\",\"description\":\"查看审批义工申请\",\"flag\":\"apply\"}]}]');
 INSERT INTO `t_user` VALUES ('21', 'hello', '123456', 'hello@qq.com', '13695285412', '1619053076032', '[{\"id\":3,\"name\":\"普通用户\",\"description\":\"部分非工作权限\",\"permission\":[{\"id\":5,\"name\":\"救助咨询\",\"path\":\"/page/end/im.html\",\"description\":\"救助咨询\",\"flag\":\"im\"},{\"id\":29,\"name\":\"自助申请\",\"path\":\"/page/end/adopt_view.html\",\"description\":\"提交表单\",\"flag\":\"adopt_view\"}]}]');
-INSERT INTO `t_user` VALUES ('23', 'yes', '123456', '1QQQ35@.com', '11111', '1619053076032', '[{\"id\":3,\"name\":\"普通用户\",\"description\":\"部分非工作权限\",\"permission\":[{\"id\":5,\"name\":\"救助咨询\",\"path\":\"/page/end/im.html\",\"description\":\"救助咨询\",\"flag\":\"im\"},{\"id\":43,\"name\":\"动物展示\",\"path\":\"/page/end/adopt_view.html\",\"description\":\"展示待领养的动物\",\"flag\":\"adopt_view\"},{\"id\":11,\"name\":\"我的领养\",\"path\":\"/page/end/my_adopt.html\",\"description\":\"查看当前用户的领养申请数据\",\"flag\":\"my_adopt\"},{\"id\":15,\"name\":\"义工申请\",\"path\":\"/page/end/volunteer_apply.html\",\"description\":\"查看审批义工申请\",\"flag\":\"apply\"},{\"id\":12,\"name\":\"凭证录入\",\"path\":\"/page/end/adopt_view.html\",\"description\":\"自助凭证录入\",\"flag\":\"my_proof\"}]}]');
+INSERT INTO `t_user` VALUES ('23', 'yes', '123456', '1QQQ35@.com', '11111', '1619053076032', '[{\"id\":3,\"name\":\"普通用户\",\"description\":\"部分非工作权限\",\"permission\":[{\"id\":5,\"name\":\"救助咨询\",\"path\":\"/page/end/im.html\",\"description\":\"救助咨询\",\"flag\":\"im\"},{\"id\":43,\"name\":\"动物展示\",\"path\":\"/page/end/adopt_view.html\",\"description\":\"展示待领养的动物\",\"flag\":\"adopt_view\"},{\"id\":11,\"name\":\"我的领养\",\"path\":\"/page/end/my_adopt.html\",\"description\":\"查看当前用户的领养申请数据\",\"flag\":\"my_adopt\"},{\"id\":15,\"name\":\"义工申请\",\"path\":\"/page/end/volunteer_apply.html\",\"description\":\"查看审批义工申请\",\"flag\":\"apply\"},{\"id\":12,\"name\":\"凭证录入\",\"path\":\"/page/end/adopt_proof.html\",\"description\":\"自助凭证录入\",\"flag\":\"my_proof\"}]}]');
 INSERT INTO `t_user` VALUES ('32', 'jehh', '123345', '128372837@qq.com', '1111', '1619053076032', '[{\"id\":3,\"name\":\"普通用户\",\"description\":\"部分非工作权限\",\"permission\":[{\"id\":5,\"name\":\"救助咨询\",\"path\":\"/page/end/im.html\",\"description\":\"救助咨询\",\"flag\":\"im\"},{\"id\":43,\"name\":\"动物展示\",\"path\":\"/page/end/adopt_view.html\",\"description\":\"展示待领养的动物\",\"flag\":\"adopt_view\"},{\"id\":11,\"name\":\"我的领养\",\"path\":\"/page/end/my_adopt.html\",\"description\":\"查看当前用户的领养申请数据\",\"flag\":\"my_adopt\"},{\"id\":15,\"name\":\"义工申请\",\"path\":\"/page/end/volunteer_apply.html\",\"description\":\"查看审批义工申请\",\"flag\":\"apply\"}]}]');
 
 -- ----------------------------
@@ -299,14 +299,15 @@ CREATE TABLE `t_volunteer` (
   `moreability` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '更多技能',
   `sparetime` int(12) DEFAULT NULL COMMENT '空闲时间',
   `vstate` int(12) NOT NULL DEFAULT '0' COMMENT '审核状态',
+  `uid` bigint(20) DEFAULT NULL COMMENT '申请用户ID',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC COMMENT='角色表';
 
 -- ----------------------------
 -- Records of t_volunteer
 -- ----------------------------
-INSERT INTO `t_volunteer` VALUES ('1', '张文玥', '13', '1333333', '11111@.com', '1999vrr', '安徽省淮北市', '上海财经大学', '1', '愿意参加中心劳动、参与救助、临时安置动物；可以为救助活动提供交通工具；擅长摄影，可以参与基地的网络推广等等', '7', '0');
-INSERT INTO `t_volunteer` VALUES ('4', '陈学人', '21', '11112', '1122213@.qq.com', '1111', '上海市杨浦区', '上海财经大学', '1', '擅长写网络推广', '2', '0');
-INSERT INTO `t_volunteer` VALUES ('7', '张文玥', '21', '1111111', '1111@.com', '1111', '上海市', '上海财经大学', '1', '愿意参加动物救助', '2', '1');
-INSERT INTO `t_volunteer` VALUES ('8', '罗一舟', '21', '111', '11111', '11', '上海市', '上海财经大学', '1', '111', '111', '0');
-INSERT INTO `t_volunteer` VALUES ('9', '李光耀', '11', '11', '11', '1', '上海市', '上海财经大学', '0', '11', '11', '0');
+INSERT INTO `t_volunteer` VALUES ('1', '张文玥', '13', '1333333', '11111@.com', '1999vrr', '安徽省淮北市', '上海财经大学', '1', '愿意参加中心劳动、参与救助、临时安置动物；可以为救助活动提供交通工具；擅长摄影，可以参与基地的网络推广等等', '7', '0', NULL);
+INSERT INTO `t_volunteer` VALUES ('4', '陈学人', '21', '11112', '1122213@.qq.com', '1111', '上海市杨浦区', '上海财经大学', '1', '擅长写网络推广', '2', '0', NULL);
+INSERT INTO `t_volunteer` VALUES ('7', '张文玥', '21', '1111111', '1111@.com', '1111', '上海市', '上海财经大学', '1', '愿意参加动物救助', '2', '1', NULL);
+INSERT INTO `t_volunteer` VALUES ('8', '罗一舟', '21', '111', '11111', '11', '上海市', '上海财经大学', '1', '111', '111', '0', NULL);
+INSERT INTO `t_volunteer` VALUES ('9', '李光耀', '11', '11', '11', '1', '上海市', '上海财经大学', '0', '11', '11', '0', NULL);

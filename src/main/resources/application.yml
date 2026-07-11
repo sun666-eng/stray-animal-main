@@ -1,24 +1,23 @@
 server:
   port: 9999
 spring:
+  profiles:
+    default: dev
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:123456}
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:test}?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8
+    password: ${DB_PASSWORD:}
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:test}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2b8
     type: com.alibaba.druid.pool.DruidDataSource
-  jpa:
-    generate-ddl: false
-    hibernate:
-      ddl-auto: none
+
   servlet:
     multipart:
-      max-file-size: 100MB
-      max-request-size: 100MB
+      max-file-size: 10MB
+      max-request-size: 20MB
   redis:
     host: ${REDIS_HOST:localhost}
     port: ${REDIS_PORT:6379}
-    password: ${REDIS_PASSWORD:123456}
+    password: ${REDIS_PASSWORD:}
     database: 0
 
 mybatis:
@@ -27,3 +26,15 @@ mybatis:
 file:
   upload-dir: ${FILE_UPLOAD_DIR:upload}
 
+app:
+  redis:
+    enabled: ${REDIS_ENABLED:false}
+  jwt:
+    secret: ${JWT_SECRET:}
+  cors:
+    allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:*,http://127.0.0.1:*}
+  data-fix:
+    enabled: ${DATA_FIX_ENABLED:false}
+  volunteer:
+    # 义工审核通过后自动授予的角色 ID（test.sql 中志愿者=2）；设为 0 关闭
+    auto-grant-role-id: ${VOLUNTEER_ROLE_ID:2}

@@ -91,6 +91,10 @@ document.addEventListener('click', function(e) {
             <div class="field"><label>是否到过基地</label><select class="select" v-model.number="form.isvisit"><option :value="null">请选择</option><option :value="1">到过</option><option :value="0">未到过</option></select></div>
             <div class="field"><label>审核状态</label><input class="input" value="提交后默认为待审核" disabled></div>
             <div class="field full"><label>能力自述</label><textarea class="textarea" v-model.trim="form.moreability" placeholder="请描述自己的特长以及愿意参与的活动，例如救助、临时安置、摄影、线下活动支持等"></textarea></div>
+            <div class="field full"><label>本人免冠照（可选）</label>
+                <input type="file" accept="image/jpeg,image/png,image/webp" @change="selectApic">
+                <div v-if="form.apic" style="margin-top:8px;color:#18794e;font-size:13px;">已选择照片，提交时一并上传</div>
+            </div>
         </div>
         <div class="actions">
             <button class="btn btn-primary" :disabled="submitting" @click="submitApply">提交义工申请</button>
@@ -105,7 +109,7 @@ document.addEventListener('click', function(e) {
 <script>
 new Vue({
   el: '#app',
-  data: { user: {}, submitting: false, existingCount: 0, form: { company: '', email: '', age: null, isvisit: null, location: '', moreability: '', name: '', sparetime: null, tel: '', vstate: 0, wechat: '' } },
+  data: { user: {}, submitting: false, existingCount: 0, apicFile: null, form: { company: '', email: '', age: null, isvisit: null, location: '', moreability: '', name: '', sparetime: null, tel: '', vstate: 0, wechat: '', apic: '' } },
   mounted() {
     this.user = sessionStorage.getItem('user') ? JSON.parse(sessionStorage.getItem('user')) : {};
     if (this.user.username) this.form.name = this.user.username;
@@ -146,11 +150,29 @@ new Vue({
       if (!this.form.moreability) return '请填写能力自述';
       return '';
     },
+    selectApic(e) {
+      this.apicFile = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+      this.form.apic = this.apicFile ? '(待上传)' : '';
+    },
     submitApply() {
       const error = this.validateForm();
       if (error) { this.$message.error(error); return; }
       this.submitting = true;
-      $.ajax({ url: '/api/volunteer', type: 'POST', contentType: 'application/json', data: JSON.stringify(this.form) })
+      const doPost = (apicFlag) => {
+        const body = Object.assign({}, this.form, { apic: apicFlag || '' });
+        return $.ajax({ url: '/api/volunteer', type: 'POST', contentType: 'application/json', data: JSON.stringify(body) });
+      };
+      const uploadThenPost = () => {
+        if (!this.apicFile) return doPost('');
+        const fd = new FormData();
+        fd.append('file', this.apicFile);
+        return $.ajax({ url: '/api/files/upload', type: 'POST', data: fd, processData: false, contentType: false })
+          .then(up => {
+            if (up.code !== '0' || !up.data) return $.Deferred().reject(up.msg || '照片上传失败');
+            return doPost(up.data.flag || up.data);
+          });
+      };
+      uploadThenPost()
         .then(res => {
           if (res.code === '0' && res.data) {
             this.$message.success('义工申请提交成功');
@@ -159,7 +181,7 @@ new Vue({
             this.$message.error(res.msg || '义工申请提交失败');
           }
         })
-        .catch(() => { this.$message.error('网络异常，义工申请提交失败'); })
+        .catch(err => { this.$message.error(typeof err === 'string' ? err : '网络异常，义工申请提交失败'); })
         .always(() => { this.submitting = false; });
     },
     goMyVolunteer() { location.href = './my_volunteer.html'; },

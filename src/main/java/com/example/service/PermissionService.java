@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 
 @Service
@@ -36,20 +35,49 @@ public class PermissionService extends ServiceImpl<PermissionMapper, Permission>
         // 删除角色分配的菜单
         List<Role> list = roleService.list();
         for (Role role : list) {
-            List<Permission> permission = role.getPermission();
-            // 重新分配权限
+            List<?> permission = role.getPermission();
+            if (permission == null || permission.isEmpty()) {
+                continue;
+            }
+            // 重新分配权限：移除已删除的权限，类型安全地处理 Permission 和 Map 两种反序列化结果
             List<Permission> newP = new ArrayList<>();
             for (Object p : permission) {
-                LinkedHashMap map = (LinkedHashMap) p;
-                Object flag = map.get("flag");
-                if(!delPermission.getFlag().equals(flag)) {
-                    Permission p1 = new Permission();
-                    BeanUtil.copyProperties(map, p1);
-                    newP.add(p1);
+                String flag = extractFlag(p);
+                if (flag != null && !flag.equals(delPermission.getFlag())) {
+                    newP.add(toPermission(p));
                 }
             }
             role.setPermission(newP);
             roleService.updateById(role);
         }
+    }
+
+    /**
+     * 从 Permission 对象或 Map（JacksonTypeHandler 反序列化产物）中安全提取 flag
+     */
+    private String extractFlag(Object p) {
+        if (p instanceof Permission) {
+            return ((Permission) p).getFlag();
+        }
+        if (p instanceof java.util.Map) {
+            Object f = ((java.util.Map<?, ?>) p).get("flag");
+            return f instanceof String ? (String) f : null;
+        }
+        return null;
+    }
+
+    /**
+     * 将 Permission 对象或 Map 统一转换为 Permission 实体
+     */
+    private Permission toPermission(Object p) {
+        if (p instanceof Permission) {
+            return (Permission) p;
+        }
+        if (p instanceof java.util.Map) {
+            Permission p1 = new Permission();
+            BeanUtil.copyProperties(p, p1);
+            return p1;
+        }
+        return new Permission();
     }
 }

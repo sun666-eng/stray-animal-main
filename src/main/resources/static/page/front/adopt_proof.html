@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>领养凭证</title>
+  <link rel="stylesheet" href="../../css/element.css">
+  <link rel="stylesheet" href="../../css/base.css">
+  <link rel="stylesheet" href="../../css/theme.css">
+  <style>
+    body { margin: 0; background: #f6f8fc; color: #24324a; }
+    .shell { max-width: 980px; margin: 0 auto; padding: 28px 20px 60px; }
+    .nav { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .chip { display: inline-flex; align-items: center; height: 38px; padding: 0 14px; border-radius: 999px; background: #fff; color: #1d4ed8; text-decoration: none; box-shadow: 0 6px 18px rgba(25,43,77,.07); }
+    .hero { padding: 26px 28px; color: #fff; background: #2563eb; border-radius: 8px; margin-bottom: 20px; }
+    .hero h1 { margin: 0 0 8px; font-size: 28px; letter-spacing: 0; }
+    .hero p { margin: 0; opacity: .92; }
+    .panel { background: #fff; padding: 24px; border-radius: 8px; box-shadow: 0 8px 24px rgba(25,43,77,.08); margin-bottom: 20px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .field label { display: block; margin-bottom: 8px; font-weight: 600; }
+    .field input, .field select { width: 100%; height: 42px; border: 1px solid #d6deec; border-radius: 6px; padding: 0 12px; box-sizing: border-box; background: #fff; }
+    .upload { grid-column: 1 / -1; }
+    .actions { grid-column: 1 / -1; display: flex; gap: 10px; }
+    button { border: 0; border-radius: 6px; height: 42px; padding: 0 18px; cursor: pointer; }
+    .primary { background: #2563eb; color: #fff; }
+    .secondary { background: #eef4ff; color: #1d4ed8; }
+    .proof-list { display: grid; gap: 12px; }
+    .proof { display: grid; grid-template-columns: 96px 1fr auto; gap: 16px; align-items: center; padding: 14px; border: 1px solid #e8edf5; border-radius: 8px; }
+    .proof img { width: 96px; height: 72px; object-fit: cover; border-radius: 6px; background: #eef2f7; }
+    .proof strong { display: block; margin-bottom: 6px; }
+    .meta { color: #748096; font-size: 13px; display: block; margin-top: 4px; }
+    .badge { display: inline-block; margin-top: 8px; padding: 2px 10px; border-radius: 999px; font-size: 12px; }
+    .badge-pending { background: #fff4df; color: #b26b00; }
+    .badge-pass { background: #e8f8ef; color: #18794e; }
+    .badge-reject { background: #ffe8e8; color: #c73636; }
+    .danger { color: #c73636; background: #fff0f0; }
+    .empty { color: #748096; text-align: center; padding: 28px; }
+    @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } .proof { grid-template-columns: 72px 1fr; } .proof img { width: 72px; height: 60px; } .proof button { grid-column: 1 / -1; } }
+  </style>
+</head>
+<body>
+<div id="app" class="shell" v-cloak>
+  <nav class="nav">
+    <a class="chip" href="./my_adopt.html">返回我的领养申请</a>
+    <a class="chip" href="/page/end/index.html">返回首页</a>
+  </nav>
+  <section class="hero">
+    <h1>领养凭证</h1>
+    <p>仅可为本人已经审核通过的领养申请提交证明材料。</p>
+  </section>
+  <section class="panel">
+    <div class="form-grid">
+      <div class="field"><label>动物 ID</label><input :value="aid || '未指定'" disabled></div>
+      <div class="field"><label>凭证类型</label><select v-model="form.ptitle"><option value="">请选择</option><option v-for="item in types" :key="item" :value="item">{{ item }}</option></select></div>
+      <div class="field upload"><label>凭证图片</label><input type="file" accept="image/jpeg,image/png,image/webp" @change="selectFile"></div>
+      <div class="actions"><button class="primary" :disabled="saving" @click="submit">{{ saving ? '提交中...' : '上传凭证' }}</button><button class="secondary" @click="loadList">刷新列表</button></div>
+    </div>
+  </section>
+  <section class="panel">
+    <h2 style="margin-top:0;font-size:20px;letter-spacing:0;">我的凭证</h2>
+    <div v-if="loading" class="empty">加载中...</div>
+    <div v-else-if="records.length === 0" class="empty">暂未上传凭证</div>
+    <div v-else class="proof-list">
+      <div class="proof" v-for="item in records" :key="item.id">
+        <img :src="fileUrl(item.ppic)" alt="凭证图片">
+        <div>
+          <strong>{{ item.ptitle || '未命名凭证' }}</strong>
+          <span class="meta">动物 ID：{{ item.paid }}</span>
+          <span class="badge" :class="statusClass(item.pstatus)">{{ statusText(item.pstatus) }}</span>
+        </div>
+        <button v-if="Number(item.pstatus) !== 1" class="danger" @click="remove(item)">删除</button>
+      </div>
+    </div>
+  </section>
+</div>
+<script src="../../js/jquery.min.js"></script>
+<script src="../../js/vue.min.js"></script>
+<script src="../../js/element.js"></script>
+<script>
+new Vue({
+  el: '#app',
+  data: {
+    user: {}, aid: null, file: null, records: [], loading: false, saving: false,
+    form: { ptitle: '' },
+    types: ['身份证-人像面', '阳台封闭图片-领养猫必须', '狗证-犬只到家后办理', '动物绝育证明', '房产证', '收入证明-工牌等']
+  },
+  created() {
+    this.user = sessionStorage.getItem('user') ? JSON.parse(sessionStorage.getItem('user')) : {};
+    this.aid = new URLSearchParams(location.search).get('aid');
+    if (!this.user.id) { location.href = './login.html?redirect=' + encodeURIComponent(location.pathname + location.search); return; }
+    if (!this.aid) { this.$message.error('缺少动物 ID，请从领养申请页进入'); return; }
+    this.loadList();
+  },
+  methods: {
+    selectFile(event) { this.file = event.target.files && event.target.files[0]; },
+    fileUrl(flag) { return flag ? '/api/files/' + flag : '/api/files/'; },
+    loadList() {
+      this.loading = true;
+      $.get('/api/proof/page1', { pageNum: 1, pageSize: 100, name: '', uid: this.user.id }).then(res => {
+        if (res.code === '0' && res.data) this.records = (res.data.records || []).filter(item => String(item.paid) === String(this.aid));
+        else this.$message.error(res.msg || '凭证加载失败');
+      }).fail(() => this.$message.error('凭证加载失败')).always(() => { this.loading = false; });
+    },
+    submit() {
+      if (!this.form.ptitle) { this.$message.warning('请选择凭证类型'); return; }
+      if (!this.file) { this.$message.warning('请选择凭证图片'); return; }
+      this.saving = true;
+      const upload = new FormData(); upload.append('file', this.file);
+      $.ajax({ url: '/api/files/upload', type: 'POST', data: upload, processData: false, contentType: false }).then(uploadRes => {
+        if (uploadRes.code !== '0' || !uploadRes.data) return $.Deferred().reject(uploadRes.msg || '图片上传失败');
+        const flag = uploadRes.data.flag || uploadRes.data;
+        return $.ajax({ url: '/api/proof', type: 'POST', contentType: 'application/json', data: JSON.stringify({ paid: Number(this.aid), ptitle: this.form.ptitle, ppic: flag }) });
+      }).then(res => {
+        if (res.code !== '0') { this.$message.error(res.msg || '凭证保存失败'); return; }
+        this.$message.success('凭证上传成功'); this.form.ptitle = ''; this.file = null; this.loadList();
+      }).fail(err => this.$message.error(typeof err === 'string' ? err : '上传失败，请稍后重试')).always(() => { this.saving = false; });
+    },
+    remove(item) {
+      if (Number(item.pstatus) === 1) {
+        this.$message.warning('已通过的凭证不可删除');
+        return;
+      }
+      this.$confirm('确定删除这条凭证吗？', '提示', { type: 'warning' }).then(() => {
+        $.ajax({ url: '/api/proof/' + item.id, type: 'DELETE' }).then(res => { if (res.code === '0') { this.$message.success('删除成功'); this.loadList(); } else this.$message.error(res.msg || '删除失败'); });
+      }).catch(() => {});
+    },
+    statusText(s) {
+      const n = Number(s);
+      if (n === 1) return '已通过';
+      if (n === 2) return '已驳回';
+      return '待审核';
+    },
+    statusClass(s) {
+      const n = Number(s);
+      if (n === 1) return 'badge-pass';
+      if (n === 2) return 'badge-reject';
+      return 'badge-pending';
+    }
+  }
+});
+</script>
+<script src="../../js/front-nav.js?v=20260628"></script>
+<script src="../../js/dark-mode.js"></script>
+</body>
+</html>

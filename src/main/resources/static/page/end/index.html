@@ -133,42 +133,58 @@
                         </a>
                     </div>
                 </template>
-                <el-divider content-position="left">用户快捷入口</el-divider>
+                <el-divider content-position="left">用户端快捷入口</el-divider>
                 <div class="entry-grid">
                     <a class="entry-card quick-entry-card" href="/page/front/animal_browse.html">
                         <div class="entry-title">浏览动物</div>
-                        <div class="entry-desc">查看当前可领养动物，进入详情页并发起领养申请。</div>
+                        <div class="entry-desc">以用户视角查看当前可领养动物，进入详情页并发起领养申请。</div>
                     </a>
                     <a class="entry-card quick-entry-card" href="/page/front/my_adopt.html">
                         <div class="entry-title">我的领养申请</div>
-                        <div class="entry-desc">查看个人领养申请记录、审核状态和后续凭证入口。</div>
+                        <div class="entry-desc">查看当前登录用户的领养申请记录、审核状态和凭证入口。</div>
                     </a>
                     <a class="entry-card quick-entry-card" href="/page/front/volunteer_apply.html">
                         <div class="entry-title">义工申请</div>
-                        <div class="entry-desc">在线填写义工报名信息并提交给工作人员审核。</div>
+                        <div class="entry-desc">以普通用户视角填写义工报名信息并提交审核。</div>
+                    </a>
+                    <a class="entry-card quick-entry-card" href="/page/front/my_volunteer.html">
+                        <div class="entry-title">我的义工申请</div>
+                        <div class="entry-desc">查看当前用户提交过的义工申请和审核结果。</div>
                     </a>
                     <a class="entry-card quick-entry-card" href="/page/front/notice_list.html">
                         <div class="entry-title">公告中心</div>
                         <div class="entry-desc">查看系统公告、活动通知和领养相关提醒。</div>
                     </a>
+                    <a class="entry-card quick-entry-card" href="/page/front/account_public.html">
+                        <div class="entry-title">信息公示</div>
+                        <div class="entry-desc">查看与后台资金公示同步的收入、支出和结余数据。</div>
+                    </a>
+                    <a class="entry-card quick-entry-card" href="/page/front/rescue_apply.html">
+                        <div class="entry-title">救助咨询</div>
+                        <div class="entry-desc">以用户身份提交救助咨询或救助请求。</div>
+                    </a>
+                    <a class="entry-card quick-entry-card" href="/page/front/my_rescue.html">
+                        <div class="entry-title">我的救助</div>
+                        <div class="entry-desc">查看当前用户提交的救助咨询记录和回复状态。</div>
+                    </a>
                 </div>
-                <el-divider content-position="left">信息公示</el-divider>
+                <el-divider content-position="left">平台数据统计</el-divider>
                 <div class="stat-grid">
-                    <div class="stat-card">
+                    <div class="stat-card stat-link" @click="goStat('/page/end/volunteer.html', 'volunteer')" title="查看已审核通过的义工，管理员可在义工审核中管理">
                         <div class="stat-icon purple"><i class="el-icon-user"></i></div>
-                        <div><div class="stat-value">{{total3}}</div><div class="stat-label">名义工</div></div>
+                        <div><div class="stat-value">{{total3}}</div><div class="stat-label">名义工</div><div class="stat-desc">已审核通过；后台在“义工审核”管理</div></div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card stat-link" @click="goStat('/page/end/animal.html', 'animal')" title="查看全部动物档案，用户端只展示待领养动物">
                         <div class="stat-icon orange"><i class="el-icon-sunrise"></i></div>
-                        <div><div class="stat-value">{{total1}}</div><div class="stat-label">只动物</div></div>
+                        <div><div class="stat-value">{{total1}}</div><div class="stat-label">只动物档案</div><div class="stat-desc">用户端在“浏览动物”查看；后台在“动物管理”维护</div></div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card stat-link" @click="goStat('/page/end/adopt.html', 'adopt')" title="查看领养申请，管理员可在领养审核中管理">
                         <div class="stat-icon teal"><i class="el-icon-star-off"></i></div>
-                        <div><div class="stat-value">{{total2}}</div><div class="stat-label">次领养</div></div>
+                        <div><div class="stat-value">{{total2}}</div><div class="stat-label">次领养申请</div><div class="stat-desc">用户端在“我的领养申请”查看；后台在“领养审核”管理</div></div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card stat-link" @click="goStat('/page/end/user.html', 'user')" title="查看注册用户，管理员可在用户管理中维护">
                         <div class="stat-icon blue"><i class="el-icon-s-custom"></i></div>
-                        <div><div class="stat-value">{{total}}</div><div class="stat-label">爱心用户</div></div>
+                        <div><div class="stat-value">{{total}}</div><div class="stat-label">爱心用户</div><div class="stat-desc">注册用户总数；后台在“用户管理”维护</div></div>
                     </div>
                 </div>
                 <el-row :gutter="16" style="padding: 8px 0">
@@ -222,10 +238,12 @@
         computed: {
             menuPermissions() {
                 const list = (this.user && this.user.permission) ? this.user.permission : [];
+                const adminFlags = ["user", "role", "permission", "animal", "adopt", "proof", "visit", "volunteer", "account", "notice", "help"];
                 const seen = new Set();
                 const out = [];
                 for (const item of list) {
                     if (!item) continue;
+                    if (!adminFlags.includes(item.flag)) continue;
                     const key = (item.flag || '') + '|' + (item.path || '') + '|' + (item.name || '');
                     if (seen.has(key)) continue;
                     seen.add(key);
@@ -252,16 +270,18 @@
                     return;
                 }
                 let pieChart = echarts.init(document.getElementById('main'));
-                $.get("/api/account").then(res => {
-                    this.accounts = res.data.filter(v => v.avalue<0);
+                $.get("/api/account/public?pageNum=1&pageSize=1&_=" + Date.now()).then(res => {
+                    const records = res.data && res.data.allRecords ? res.data.allRecords : [];
+                    this.accounts = records.filter(v => v.avalue<0);
                     pieOption.legend.data = this.accounts.map(v => v.alabel);
                     let arr = this.accounts.map(item => ({name:item.alabel, value:item.avalue}));
                     pieOption.series[0].data = this.GroupBy(arr,['name'],(d,v)=>{ d=d||0; return d+=v.value; });
                     pieChart.setOption(pieOption);
                 });
                 let pieChart1 = echarts.init(document.getElementById('bar'));
-                $.get("/api/account").then(res => {
-                    this.accounts = res.data.filter(v => v.avalue>0);
+                $.get("/api/account/public?pageNum=1&pageSize=1&_=" + Date.now()).then(res => {
+                    const records = res.data && res.data.allRecords ? res.data.allRecords : [];
+                    this.accounts = records.filter(v => v.avalue>0);
                     pieOption1.legend.data = this.accounts.map(v => v.alabel);
                     let arr = this.accounts.map(item => ({name:item.alabel, value:item.avalue}));
                     pieOption1.series[0].data = this.GroupBy(arr,['name'],(d,v)=>{ d=d||0; return d+=v.value; });
@@ -285,20 +305,34 @@
                 });
             },
             load() {
+                $.get("/api/dashboard/public-stats?_=" + Date.now()).then(res => {
+                    const stats = res.data || {};
+                    this.total3 = stats.volunteers || 0;
+                    this.total1 = stats.animals || 0;
+                    this.total2 = stats.adopts || 0;
+                    this.total = stats.users || 0;
+                });
                 $.get("/api/notice/").then(res => { this.notices = res.data; });
-                $.get("/api/animal/").then(res => { this.animals = res.data; this.total1 = this.animals.length; });
+                $.get("/api/animal/").then(res => { this.animals = res.data; });
                 if (this.hasFlag("volunteer")) {
-                    $.get("/api/volunteer/").then(res => { this.volunteers = res.data; this.total3 = this.volunteers.length; });
+                    $.get("/api/volunteer/approved").then(res => { this.volunteers = res.data || []; });
                 }
                 if (this.hasFlag("user")) {
-                    $.get("/api/user/").then(res => { this.users = res.data; this.total = this.users.length; });
+                    $.get("/api/user/").then(res => { this.users = res.data; });
                 }
                 if (this.hasFlag("adopt")) {
-                    $.get("/api/adopt/").then(res => { this.adopts = res.data; this.total2 = this.adopts.length; });
+                    $.get("/api/adopt/").then(res => { this.adopts = res.data; });
                 }
             },
             handleCollapse() { this.isCollapse = !this.isCollapse; },
             logout() { $.get("/api/user/logout"); sessionStorage.removeItem("user"); location.href = "/page/end/login.html"; },
+            goStat(path, flag) {
+                if (this.hasFlag(flag)) {
+                    location.href = path;
+                    return;
+                }
+                this.$message.info("当前账号没有该后台管理权限");
+            },
             hasAdminAccess() {
                 return ["user", "role", "permission", "animal", "adopt", "proof", "visit", "volunteer", "account", "notice", "help", "rescue"].some(flag => this.hasFlag(flag));
             },

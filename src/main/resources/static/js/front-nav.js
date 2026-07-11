@@ -5,24 +5,31 @@
     'animal_detail.html': true,
     'adopt_apply.html': true,
     'my_adopt.html': true,
+    'adopt_proof.html': true,
+    'my_visit.html': true,
     'volunteer_apply.html': true,
     'my_volunteer.html': true,
     'rescue_apply.html': true,
     'my_rescue.html': true,
     'notice_list.html': true,
     'notice_detail.html': true,
-    'login.html': true
+    'account_public.html': true,
+    'login.html': true,
+    'register.html': true
   };
   var NAV_ITEMS = [
     { href: 'animal_browse.html', text: '动物浏览' },
     { href: 'my_adopt.html', text: '我的领养申请' },
+    { href: 'my_visit.html', text: '我的回访' },
     { href: 'volunteer_apply.html', text: '义工申请' },
     { href: 'my_volunteer.html', text: '我的义工申请' },
     { href: 'rescue_apply.html', text: '救助咨询' },
     { href: 'my_rescue.html', text: '我的救助' },
-    { href: 'notice_list.html', text: '公告中心' }
+    { href: 'notice_list.html', text: '公告中心' },
+    { href: 'account_public.html', text: '信息公示' }
   ];
   var STABLE_LAYOUT_STYLE_ID = 'front-stable-layout-style';
+  var HOME_BUTTON_ID = 'front-home-button';
 
   function getUser() {
     try {
@@ -96,9 +103,24 @@
       'body { margin-left: 0 !important; margin-right: 0 !important; }',
       '.page-shell { box-sizing: border-box; width: min(1180px, calc(100vw - 40px)); max-width: 1180px !important; margin-left: auto !important; margin-right: auto !important; padding-left: 20px !important; padding-right: 20px !important; }',
       '@media (max-width: 640px) { .page-shell { width: 100%; padding-left: 14px !important; padding-right: 14px !important; } }',
-      '.nav, .nav-links { box-sizing: border-box; max-width: 100%; }'
+      '.nav, .nav-links { box-sizing: border-box; max-width: 100%; }',
+      '#front-home-button { position: fixed; left: 20px; top: 20px; z-index: 9998; display: inline-flex; align-items: center; height: 42px; padding: 0 16px; border-radius: 12px; background: #fff; color: #1D4ED8; text-decoration: none; font-size: 15px; font-weight: 700; box-shadow: 0 8px 24px rgba(25,43,77,0.12); border: 1px solid rgba(37,99,235,0.12); }',
+      '#front-home-button:hover { background: #EFF6FF; }',
+      '@media (max-width: 640px) { #front-home-button { left: 14px; top: 14px; height: 38px; padding: 0 12px; font-size: 14px; } }'
     ].join('\n');
     document.head.appendChild(style);
+  }
+
+  function injectHomeButton() {
+    var current = window.location.pathname.split('/').pop() || 'animal_browse.html';
+    if (current === 'login.html' || document.getElementById(HOME_BUTTON_ID)) {
+      return;
+    }
+    var button = document.createElement('a');
+    button.id = HOME_BUTTON_ID;
+    button.href = '/page/end/index.html';
+    button.textContent = '返回首页';
+    document.body.appendChild(button);
   }
 
   function syncNavLinks() {
@@ -223,6 +245,7 @@
     syncNavLinks();
     normalizeFrontLinks();
     highlightCurrentChip();
+    injectHomeButton();
     normalizeToolbar();
     if (window.jQuery) {
       window.jQuery(document).ajaxError(function (event, xhr) {
