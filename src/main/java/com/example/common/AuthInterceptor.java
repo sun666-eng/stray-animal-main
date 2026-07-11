@@ -119,6 +119,14 @@ public class AuthInterceptor implements HandlerInterceptor {
             if (requiredFlag == null && isAllowedLoggedInPage(path)) {
                 return true;
             }
+            // 无任何后台管理 flag 的用户误入 /page/end/* 管理页时，送回用户端，避免反复弹「无权限」
+            if (path.startsWith("/page/end/")
+                    && !path.endsWith("/login.html")
+                    && !path.endsWith("/register.html")
+                    && !hasAnyAdminPageAccess(user)) {
+                response.sendRedirect("/page/front/animal_browse.html?error=need_admin");
+                return false;
+            }
             response.sendRedirect("/page/end/index.html?error=forbidden");
             return false;
         }
@@ -132,6 +140,13 @@ public class AuthInterceptor implements HandlerInterceptor {
 
     private boolean isAllowedLoggedInPage(String path) {
         return LOGIN_REQUIRED_PAGE_PATHS.contains(path);
+    }
+
+    private boolean hasAnyAdminPageAccess(User user) {
+        return hasAnyPermissionFlag(user, Arrays.asList(
+                "user", "role", "permission", "animal", "adopt", "proof", "visit",
+                "volunteer", "account", "notice", "help", "rescue"
+        ));
     }
 
     private boolean isPublicApi(String path, String method) {

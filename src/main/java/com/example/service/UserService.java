@@ -76,64 +76,134 @@ public class UserService extends ServiceImpl<UserMapper, User> {
         return newUser;
     }
 
+    /**
+     * 从角色加载权限写入 user.permission（仅内存，不落库）。
+     * 加固点：
+     * 1) 角色 id 支持 Number/String；
+     * 2) 优先用 t_permission 全量行补齐 flag/path（避免角色 JSON 截断/缺字段）；
+     * 3) 超级管理员(roleId=1) 始终授予权限表全部条目。
+     */
     public User fillPermissions(User user) {
         if (user == null) {
             return null;
         }
-        // 按权限 ID 去重，避免多角色合并时同一权限重复出现（例如"救助管理"在超级管理员与志愿者角色中都存在）
         Map<Long, Permission> uniquePermissions = new LinkedHashMap<>();
+        boolean superAdmin = false;
         List<?> roles = user.getRole();
         if (roles != null && !roles.isEmpty()) {
             for (Object item : roles) {
-                Long roleId;
-                if (item instanceof Role) {
-                    roleId = ((Role) item).getId();
-                } else if (item instanceof Map) {
-                    roleId = ((Number) ((Map<?, ?>) item).get("id")).longValue();
-                } else {
+                Long roleId = extractRoleId(item);
+                if (roleId == null) {
                     continue;
                 }
-                if (roleId == null) continue;
-                Role fullRole = roleService.getById(roleId);
-                if (fullRole != null && fullRole.getPermission() != null) {
-                    for (Object perm : fullRole.getPermission()) {
-                        Permission p = null;
-                        if (perm instanceof Permission) {
-                            p = (Permission) perm;
-                        } else if (perm instanceof Map) {
-                            Map<?, ?> m = (Map<?, ?>) perm;
-                            p = new Permission();
-                            Object idObj = m.get("id");
-                            if (idObj instanceof Number) {
-                                p.setId(((Number) idObj).longValue());
-                            }
-                            p.setName((String) m.get("name"));
-                            p.setFlag((String) m.get("flag"));
-                            p.setPath((String) m.get("path"));
-                            p.setDescription((String) m.get("description"));
-                        }
-                        if (p != null && p.getId() != null) {
-                            uniquePermissions.putIfAbsent(p.getId(), p);
-                        }
-                    }
+                if (Long.valueOf(1L).equals(roleId)) {
+                    superAdmin = true;
                 }
-                if (uniquePermissions.isEmpty() && Long.valueOf(1L).equals(roleId)) {
-                    for (Permission p : permissionService.list()) {
-                        if (p.getId() != null) {
-                            uniquePermissions.putIfAbsent(p.getId(), p);
-                        }
+                Role fullRole = roleService.getById(roleId);
+                if (fullRole == null || fullRole.getPermission() == null) {
+                    continue;
+                }
+                for (Object perm : fullRole.getPermission()) {
+                    Permission resolved = resolvePermission(perm);
+                    if (resolved != null && resolved.getId() != null) {
+                        uniquePermissions.putIfAbsent(resolved.getId(), resolved);
                     }
                 }
             }
         }
-        // 兜底：再按 (name + path) 维度去重，防止历史脏数据（例如 flag=help 与遗留 flag=rescue 同名"救助管理"指向同一页面）在侧边栏渲染出多个相同按钮
+        // 超级管理员：始终拉全表权限，不依赖可能被 varchar 截断的角色 JSON
+        if (superAdmin) {
+            for (Permission p : permissionService.list()) {
+                if (p != null && p.getId() != null) {
+                    uniquePermissions.putIfAbsent(p.getId(), p);
+                }
+            }
+        }
+        // 若仍为空且角色 JSON 里只有 id=1 的摘要，再兜底一次
+        if (uniquePermissions.isEmpty() && roles != null) {
+            for (Object item : roles) {
+                if (Long.valueOf(1L).equals(extractRoleId(item))) {
+                    for (Permission p : permissionService.list()) {
+                        if (p != null && p.getId() != null) {
+                            uniquePermissions.putIfAbsent(p.getId(), p);
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        // 按 name+path 去重，避免侧边栏重复菜单
         Map<String, Permission> dedupByNamePath = new LinkedHashMap<>();
         for (Permission p : uniquePermissions.values()) {
+            if (p.getFlag() == null || p.getFlag().trim().isEmpty()) {
+                continue;
+            }
             String key = (p.getName() == null ? "" : p.getName()) + "|" + (p.getPath() == null ? "" : p.getPath());
             dedupByNamePath.putIfAbsent(key, p);
         }
         user.setPermission(new ArrayList<>(dedupByNamePath.values()));
         return user;
+    }
+
+    private Long extractRoleId(Object item) {
+        if (item instanceof Role) {
+            return ((Role) item).getId();
+        }
+        if (item instanceof Map) {
+            return toLong(((Map<?, ?>) item).get("id"));
+        }
+        return null;
+    }
+
+    private Long toLong(Object idObj) {
+        if (idObj instanceof Number) {
+            return ((Number) idObj).longValue();
+        }
+        if (idObj instanceof String) {
+            try {
+                return Long.parseLong(((String) idObj).trim());
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 将角色内嵌权限解析为完整 Permission：优先按 id 查表，保证 flag 正确。
+     */
+    private Permission resolvePermission(Object perm) {
+        if (perm instanceof Permission) {
+            Permission p = (Permission) perm;
+            if (p.getId() != null) {
+                Permission db = permissionService.getById(p.getId());
+                if (db != null) {
+                    return db;
+                }
+            }
+            return (p.getFlag() != null && !p.getFlag().trim().isEmpty()) ? p : null;
+        }
+        if (perm instanceof Map) {
+            Map<?, ?> m = (Map<?, ?>) perm;
+            Long id = toLong(m.get("id"));
+            if (id != null) {
+                Permission db = permissionService.getById(id);
+                if (db != null) {
+                    return db;
+                }
+            }
+            Permission p = new Permission();
+            p.setId(id);
+            p.setName(m.get("name") == null ? null : String.valueOf(m.get("name")));
+            p.setFlag(m.get("flag") == null ? null : String.valueOf(m.get("flag")));
+            p.setPath(m.get("path") == null ? null : String.valueOf(m.get("path")));
+            p.setDescription(m.get("description") == null ? null : String.valueOf(m.get("description")));
+            if (p.getFlag() == null || p.getFlag().trim().isEmpty()) {
+                return null;
+            }
+            return p;
+        }
+        return null;
     }
 
     public User getbyUsername(String username) {

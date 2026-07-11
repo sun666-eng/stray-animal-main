@@ -11,3 +11,7 @@ ALTER TABLE t_volunteer
 
 -- 历史凭证统一为待审核（新列默认已是 0，此句兼容旧数据）
 UPDATE t_proof SET pstatus = 0 WHERE pstatus IS NULL;
+
+-- 角色权限 JSON 过长时 varchar(2000) 会被截断，导致管理员权限加载失败
+ALTER TABLE t_role MODIFY COLUMN permission TEXT;
+ALTER TABLE t_user MODIFY COLUMN role TEXT;

@@ -257,7 +257,7 @@
             if (!this.user.id) { location.href = "/page/end/login.html"; return; }
             const error = new URLSearchParams(location.search).get("error");
             if (error === "forbidden") {
-                this.$message.warning("当前账号没有访问该后台功能的权限");
+                this.$message.warning("当前账号缺少该菜单权限。请确认已用管理员登录，并退出后重新登录以刷新权限。");
                 history.replaceState(null, "", location.pathname);
             }
             this.refreshCurrentUser().always(() => {

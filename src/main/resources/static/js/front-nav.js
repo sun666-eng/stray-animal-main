@@ -113,13 +113,19 @@
 
   function injectHomeButton() {
     var current = window.location.pathname.split('/').pop() || 'animal_browse.html';
-    if (current === 'login.html' || document.getElementById(HOME_BUTTON_ID)) {
+    if (current === 'login.html' || current === 'register.html' || document.getElementById(HOME_BUTTON_ID)) {
       return;
     }
     var button = document.createElement('a');
     button.id = HOME_BUTTON_ID;
-    button.href = '/page/end/index.html';
-    button.textContent = '返回首页';
+    // 普通用户回用户首页；管理员可进后台
+    if (userHasAdminAccess()) {
+      button.href = '/page/end/index.html';
+      button.textContent = '管理后台';
+    } else {
+      button.href = FRONT_BASE + 'animal_browse.html';
+      button.textContent = '返回首页';
+    }
     document.body.appendChild(button);
   }
 
