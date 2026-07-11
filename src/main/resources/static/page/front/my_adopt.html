@@ -122,7 +122,7 @@ document.addEventListener('click', function(e) {
                 <td><span class="state" :class="stateClass(item.vstate)">{{ stateText(item.vstate) }}</span></td>
                 <td class="actions">
                     <a :href="`./animal_detail.html?id=${item.aid}`">查看动物</a>
-                    <a v-if="Number(item.vstate) === 1" :href="`/page/end/adopt_proof.html?aid=${item.aid}&uid=${item.uid}`">上传凭证</a>
+                    <a v-if="Number(item.vstate) === 1" :href="`./adopt_proof.html?aid=${item.aid}`">上传凭证</a>
                 </td>
             </tr>
             </tbody>
@@ -173,8 +173,21 @@ new Vue({
         .always(() => { this.loading = false; });
     },
     resetQuery() { this.query = ''; this.loadList(1); },
-    stateText(state) { if (Number(state) === 1) return '审核通过'; if (Number(state) === 0) return '待审核/未通过'; return '待审核'; },
-    stateClass(state) { if (Number(state) === 1) return 'state-pass'; if (Number(state) === 0) return 'state-pending'; return 'state-reject'; },
+    stateText(state) {
+      const s = Number(state);
+      if (s === 0) return '待审核';
+      if (s === 1) return '已通过';
+      if (s === 2) return '已驳回';
+      if (s === 3) return '已取消';
+      return '未知状态';
+    },
+    stateClass(state) {
+      const s = Number(state);
+      if (s === 1) return 'state-pass';
+      if (s === 0) return 'state-pending';
+      if (s === 2 || s === 3) return 'state-reject';
+      return 'state-pending';
+    },
     resolveImage(path) { if (!path) return '/img/b1.jpg'; if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('/')) return path; return `/api/files/${path}`; },
     handleImageError(e) { e.target.src = '/img/b1.jpg'; }
   }
