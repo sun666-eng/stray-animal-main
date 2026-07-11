@@ -84,21 +84,47 @@ public class VolunteerController {
                                              @RequestParam(required = false, defaultValue = "10") Integer pageSize,
                                              HttpServletRequest request) {
         User user = (User) request.getSession().getAttribute("user");
-        final String queryUsername;
-        final String queryPhone;
-        final String queryEmail;
         if (!PermissionUtil.hasFlag(user, "volunteer")) {
-            if (user == null) {
+            if (user == null || user.getId() == null) {
                 return Result.error("403", "只能查看自己的义工申请");
             }
-            return Result.success(volunteerService.page(new Page<>(pageNum, pageSize),
-                    Wrappers.<Volunteer>lambdaQuery().eq(Volunteer::getUid, user.getId())
-                            .orderByDesc(Volunteer::getId)));
-        } else {
-            queryUsername = username;
-            queryPhone = phone;
-            queryEmail = email;
+            // 优先按 uid；兼容历史数据 uid 为空时用姓名/手机/邮箱匹配
+            String uname = safeValue(user.getUsername());
+            String utel = safeValue(user.getPhone());
+            String uemail = safeValue(user.getEmail());
+            LambdaQueryWrapper<Volunteer> mine = Wrappers.<Volunteer>lambdaQuery()
+                    .and(q -> {
+                        q.eq(Volunteer::getUid, user.getId());
+                        if (!uname.isEmpty()) {
+                            q.or().eq(Volunteer::getName, uname);
+                        }
+                        if (!utel.isEmpty()) {
+                            q.or().eq(Volunteer::getTel, utel);
+                        }
+                        if (!uemail.isEmpty()) {
+                            q.or().eq(Volunteer::getEmail, uemail);
+                        }
+                    })
+                    .orderByDesc(Volunteer::getId);
+            try {
+                return Result.success(volunteerService.page(new Page<>(pageNum, pageSize), mine));
+            } catch (Exception e) {
+                // 常见：旧库缺少 uid/apic 列 → Unknown column
+                String msg = e.getMessage() == null ? "" : e.getMessage();
+                Throwable cause = e.getCause();
+                String causeMsg = cause != null && cause.getMessage() != null ? cause.getMessage() : "";
+                if (msg.contains("Unknown column") || causeMsg.contains("Unknown column")
+                        || msg.contains("uid") || causeMsg.contains("uid")
+                        || msg.contains("apic") || causeMsg.contains("apic")) {
+                    return Result.error("500",
+                            "数据库义工表缺少 uid/apic 字段，请在 MySQL 执行 docs/sql/fix-volunteer-columns.sql 后重试");
+                }
+                throw e;
+            }
         }
+        String queryUsername = username;
+        String queryPhone = phone;
+        String queryEmail = email;
         if (queryUsername.trim().isEmpty() && queryPhone.trim().isEmpty() && queryEmail.trim().isEmpty()) {
             return Result.success(new Page<>(pageNum, pageSize));
         }
