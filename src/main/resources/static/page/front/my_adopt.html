@@ -123,7 +123,7 @@ document.addEventListener('click', function(e) {
                 <td class="actions">
                     <a :href="`./animal_detail.html?id=${item.aid}`">查看动物</a>
                     <a v-if="Number(item.vstate) === 1" :href="`./adopt_proof.html?aid=${item.aid}`">上传凭证</a>
-                    <a v-if="Number(item.vstate) === 1" :href="`./my_visit.html`">我的回访</a>
+                    <a v-if="Number(item.vstate) === 1" :href="`./my_visit.html?aid=${item.aid}`">我的回访</a>
                 </td>
             </tr>
             </tbody>

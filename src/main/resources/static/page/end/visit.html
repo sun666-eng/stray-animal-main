@@ -356,6 +356,22 @@
                 this.loadTable();
             },
             save() {
+                if (!this.entity.petId || !this.entity.uid) {
+                    this.$message({ message: "动物ID与饲主ID不能为空（请从已通过的领养录入，或补全关联）", type: "error" });
+                    return;
+                }
+                if (!this.entity.vtime) {
+                    this.$message({ message: "请选择回访日期", type: "error" });
+                    return;
+                }
+                if (!this.entity.state) {
+                    this.$message({ message: "请选择健康评分(1-5)", type: "error" });
+                    return;
+                }
+                if (!this.entity.vname) {
+                    this.$message({ message: "请填写回访人姓名", type: "error" });
+                    return;
+                }
                 let type = this.entity.id ? "PUT" : "POST";
                 $.ajax({
                     url: urlBase,
@@ -368,15 +384,17 @@
                             message: "保存成功",
                             type: "success"
                         });
+                        this.fileList=[];
+                        this.dialogFormVisible = false;
                         this.loadTable();
                     } else {
                         this.$message({
-                            message: res.msg,
+                            message: res.msg || "保存失败（需已通过的领养关系）",
                             type: "error"
                         })
                     }
-                    this.fileList=[];
-                    this.dialogFormVisible = false;
+                }).fail(() => {
+                    this.$message({ message: "网络异常，保存失败", type: "error" });
                 })
             },
             edit(obj) {

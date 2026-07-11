@@ -309,7 +309,9 @@
                             width="180">
                         <template slot-scope="scope">
                             <el-button @click="edit(scope.row)" type="text">编辑</el-button>
-                            <el-button @click="addvisit(scope.row.aid,scope.row.uid,scope.row.aname)" type="text">回访录入</el-button>
+                            <el-button v-if="Number(scope.row.vstate) === 1"
+                                       @click="addvisit(scope.row.aid,scope.row.uid,scope.row.aname)"
+                                       type="text">回访录入</el-button>
                             <el-popconfirm
                                     @onConfirm="del(scope.row.aid,scope.row.uid,scope.row.vstate)"
                                     title="确定删除？"
@@ -561,12 +563,12 @@
                 this.loadTable();
             },
             addvisit(aid,uid,aname) {
-
+                    // 仅已通过领养可录；最终以后端不变量为准
                     this.entity1 = {};
                     this.entity1.petId = aid;
                     this.entity1.uid = uid;
                     this.entity1.aname = aname;
-                    console.log(aname);
+                    this.fileList = [];
                     this.dialogVisitVisible = true;
             },
             save() {
@@ -618,6 +620,22 @@
                 })
             },
             save2() {
+                if (!this.entity1.petId || !this.entity1.uid) {
+                    this.$message({ message: "缺少动物或饲主信息", type: "error" });
+                    return;
+                }
+                if (!this.entity1.vtime) {
+                    this.$message({ message: "请选择回访日期", type: "error" });
+                    return;
+                }
+                if (!this.entity1.state) {
+                    this.$message({ message: "请选择健康评分", type: "error" });
+                    return;
+                }
+                if (!this.entity1.vname) {
+                    this.$message({ message: "请填写回访人姓名", type: "error" });
+                    return;
+                }
                 let type = this.entity1.id ? "PUT" : "POST";
                 $.ajax({
                     url: urlBase1,
@@ -630,14 +648,16 @@
                             message: "回访信息保存成功",
                             type: "success"
                         });
+                        this.fileList=[];
+                        this.dialogVisitVisible = false;
                     } else {
                         this.$message({
-                            message: res.msg,
+                            message: res.msg || "回访保存失败",
                             type: "error"
                         })
                     }
-                    this.fileList=[];
-                    this.dialogVisitVisible = false;
+                }).fail(() => {
+                    this.$message({ message: "网络异常，回访保存失败", type: "error" });
                 })
             },
             edit(obj) {

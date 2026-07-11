@@ -45,7 +45,10 @@
     </div>
     <div class="hero">
         <h1>我的回访记录</h1>
-        <p>查看救助组织对您领养动物的上门/电话回访结果。</p>
+        <p>查看救助组织对您领养动物的上门/电话回访结果。<span v-if="petId">当前筛选动物 ID：{{ petId }}</span></p>
+    </div>
+    <div class="nav" v-if="petId" style="margin-bottom:14px;">
+        <a class="chip" href="./my_visit.html">查看全部回访</a>
     </div>
     <div v-if="loading" class="empty">回访记录加载中...</div>
     <div v-else-if="!user.id" class="empty">请先登录后查看回访记录。</div>
@@ -90,7 +93,7 @@
 <script>
 new Vue({
   el: '#app',
-  data: { user: {}, records: [], loading: false, pageNum: 1, pageSize: 8, totalPages: 1 },
+  data: { user: {}, records: [], loading: false, pageNum: 1, pageSize: 8, totalPages: 1, petId: null },
   computed: {
     pageList() {
       const list = [];
@@ -102,6 +105,8 @@ new Vue({
   },
   mounted() {
     this.user = sessionStorage.getItem('user') ? JSON.parse(sessionStorage.getItem('user')) : {};
+    const aid = new URLSearchParams(location.search).get('aid');
+    this.petId = aid ? Number(aid) : null;
     if (this.user.id) this.loadList(1);
   },
   methods: {
@@ -109,7 +114,9 @@ new Vue({
       if (!this.user.id) return;
       this.loading = true;
       this.pageNum = page;
-      $.get('/api/visit/mine', { uid: this.user.id, pageNum: this.pageNum, pageSize: this.pageSize })
+      const params = { uid: this.user.id, pageNum: this.pageNum, pageSize: this.pageSize };
+      if (this.petId) params.petId = this.petId;
+      $.get('/api/visit/mine', params)
         .then(res => {
           if (res.code === '0' && res.data) {
             this.records = res.data.records || [];
