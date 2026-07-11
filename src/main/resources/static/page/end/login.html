@@ -5,24 +5,13 @@
     <meta http-equiv="refresh" content="0;url=/page/front/login.html">
     <title>跳转统一登录</title>
     <script>
-        // 管理端与用户端共用同一登录页
         var q = window.location.search || '';
-        // 若从后台某页被踢出，保留 redirect
-        if (!q && document.referrer) {
-            try {
-                var u = new URL(document.referrer);
-                if (u.pathname.indexOf('/page/end/') === 0) {
-                    q = '?redirect=' + encodeURIComponent(u.pathname + u.search);
-                }
-            } catch (e) {}
-        }
         location.replace('/page/front/login.html' + q);
     </script>
 </head>
 <body>
-<p style="font-family:sans-serif;text-align:center;margin-top:40px;color:#6B7280;">
-    正在进入统一登录页…
-    <a href="/page/front/login.html">点击这里</a>
+<p style="text-align:center;margin-top:40px;font-family:sans-serif;color:#64748B;">
+    正在进入登录页… <a href="/page/front/login.html">点击这里</a>
 </p>
 </body>
 </html>
