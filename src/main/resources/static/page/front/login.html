@@ -296,6 +296,10 @@ function hasAdminAccess(user) {
 function resolveHome(user) {
     var redirect = new URLSearchParams(location.search).get('redirect');
     if (redirect && redirect.indexOf('/page/') === 0) {
+        // 旧书签 /page/end/login.html 不再作为登录页，管理员进后台首页
+        if (redirect.indexOf('/page/end/login') === 0) {
+            return hasAdminAccess(user) ? '/page/end/index.html' : '/page/front/animal_browse.html';
+        }
         if (redirect.indexOf('/page/end/') === 0 && !hasAdminAccess(user)) {
             return '/page/front/animal_browse.html';
         }

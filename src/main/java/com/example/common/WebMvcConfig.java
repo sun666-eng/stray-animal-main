@@ -30,6 +30,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                     "/api/user/register",
                     "/page/end",
                     "/page/end/",
+                    // 旧管理端登录路径：由 PageController 301 到统一登录页，需放行拦截器
                     "/page/end/login.html",
                     "/page/end/register.html",
                     "/page/front",
