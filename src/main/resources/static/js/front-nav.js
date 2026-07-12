@@ -1,8 +1,8 @@
 (function () {
   var FRONT_BASE = '/page/front/';
-  var FRONT_HOME = FRONT_BASE + 'index.html';
+  // 与管理端共用 end/index 作为「首页」；普通用户只看到用户快捷入口（功能更少）
+  var USER_HOME = '/page/end/index.html';
   var FRONT_PAGES = {
-    'index.html': true,
     'animal_browse.html': true,
     'animal_detail.html': true,
     'adopt_apply.html': true,
@@ -20,7 +20,6 @@
     'register.html': true
   };
   var NAV_ITEMS = [
-    { href: 'index.html', text: '首页' },
     { href: 'animal_browse.html', text: '动物浏览' },
     { href: 'my_adopt.html', text: '我的领养申请' },
     { href: 'my_visit.html', text: '我的回访' },
@@ -115,14 +114,15 @@
   }
 
   function injectHomeButton() {
-    var current = window.location.pathname.split('/').pop() || 'index.html';
+    var path = window.location.pathname || '';
+    var current = path.split('/').pop() || 'animal_browse.html';
     if (current === 'login.html' || current === 'register.html') {
       return;
     }
-    // 已在用户首页时不显示「返回首页」，避免点击无效果
-    if (current === 'index.html') {
+    // 已在系统首页（end/index）时不显示，避免点击无效果
+    if (path === USER_HOME || path.indexOf('/page/end/index.html') === 0) {
       var existingHome = document.getElementById(HOME_BUTTON_ID);
-      if (existingHome) {
+      if (existingHome && existingHome.parentNode) {
         existingHome.parentNode.removeChild(existingHome);
       }
       return;
@@ -133,14 +133,25 @@
       button.id = HOME_BUTTON_ID;
       document.body.appendChild(button);
     }
-    // 用户端固定回 front 首页（不是动物浏览）；管理后台入口在右上角下拉中
-    button.href = FRONT_HOME;
+    // 固定回到 end/index：管理员看完整后台，普通用户只看用户快捷入口
+    button.href = USER_HOME;
     button.textContent = '返回首页';
-    button.setAttribute('title', '返回用户首页');
+    button.setAttribute('title', '返回系统首页');
     button.onclick = function (e) {
-      // 强制跳转，避免被其它脚本拦截
-      e.preventDefault();
-      window.location.href = FRONT_HOME;
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      // 未登录时先去登录，登录后回首页
+      var user = getUser();
+      if (!user || !user.id) {
+        window.location.assign(loginUrl().indexOf('redirect=') >= 0
+          ? '/page/front/login.html?redirect=' + encodeURIComponent(USER_HOME)
+          : '/page/front/login.html?redirect=' + encodeURIComponent(USER_HOME));
+        return false;
+      }
+      window.location.assign(USER_HOME);
+      return false;
     };
   }
 
@@ -172,7 +183,7 @@
   }
 
   function highlightCurrentChip() {
-    var current = window.location.pathname.split('/').pop() || 'index.html';
+    var current = window.location.pathname.split('/').pop() || 'animal_browse.html';
     var active = current === 'notice_detail.html' ? 'notice_list.html'
       : (current === 'animal_detail.html' ? 'animal_browse.html' : current);
     var chips = document.querySelectorAll('a.chip[href]');
@@ -216,13 +227,12 @@
       if (text === '个人信息') {
         link.href = user && user.id ? '/page/end/person.html' : loginUrl();
         link.textContent = user && user.id ? '个人信息' : '去登录';
-      } else if (text === '管理后台' || text === '功能首页') {
-        // 只有具备任一 admin flag 的用户才看到后台入口，普通用户隐藏
-        var hasAdmin = userHasAdminAccess();
-        if (hasAdmin) {
+      } else if (text === '管理后台' || text === '功能首页' || text === '系统首页') {
+        // 所有已登录用户都可进 end/index；普通用户只看用户入口
+        if (user && user.id) {
           link.style.display = 'block';
-          link.href = '/page/end/index.html';
-          link.textContent = '管理后台';
+          link.href = USER_HOME;
+          link.textContent = userHasAdminAccess() ? '管理后台' : '系统首页';
         } else {
           link.style.display = 'none';
         }
@@ -272,6 +282,12 @@
     if (window.jQuery) {
       window.jQuery(document).ajaxError(function (event, xhr) {
         if (xhr && xhr.status === 401) {
+          // 清掉本地“假登录”状态，避免页面显示已登录但接口全 401
+          try {
+            sessionStorage.removeItem('user');
+            sessionStorage.removeItem('token');
+            localStorage.removeItem('token');
+          } catch (e) { /* ignore */ }
           window.location.href = loginUrl();
         }
       });

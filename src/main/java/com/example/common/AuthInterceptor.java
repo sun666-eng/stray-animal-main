@@ -124,7 +124,8 @@ public class AuthInterceptor implements HandlerInterceptor {
                     && !path.endsWith("/login.html")
                     && !path.endsWith("/register.html")
                     && !hasAnyAdminPageAccess(user)) {
-                response.sendRedirect("/page/front/animal_browse.html?error=need_admin");
+                // 无管理权限：回系统首页（普通用户在 end/index 只看用户入口）
+                response.sendRedirect("/page/end/index.html?error=need_admin");
                 return false;
             }
             response.sendRedirect("/page/end/index.html?error=forbidden");
@@ -229,8 +230,9 @@ public class AuthInterceptor implements HandlerInterceptor {
         if (path.startsWith("/api/help/mine") || path.startsWith("/api/help/chat")) {
             return hasAnyPermissionFlag(user, Arrays.asList("im", "help", "rescue"));
         }
+        // 普通用户角色种子为 im；help/rescue 为管理端 flag。提交救助表单三者任一即可。
         if ("/api/help".equals(path) && "POST".equalsIgnoreCase(method)) {
-            return hasAnyPermissionFlag(user, Arrays.asList("help", "rescue"));
+            return hasAnyPermissionFlag(user, Arrays.asList("im", "help", "rescue"));
         }
         if (path.startsWith("/api/adopt/page2")) {
             return hasAnyPermissionFlag(user, Arrays.asList("my_adopt", "adopt", "adopt_view"));

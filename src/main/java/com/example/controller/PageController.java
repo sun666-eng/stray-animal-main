@@ -8,10 +8,10 @@ import javax.servlet.http.HttpServletRequest;
 @Controller
 public class PageController {
 
-    /** 站点根路径进入用户端首页 */
+    /** 站点根路径：未登录可先逛动物列表；登录后「返回首页」进 end/index */
     @GetMapping({"/"})
     public String siteRoot() {
-        return "redirect:/page/front/index.html";
+        return "redirect:/page/front/animal_browse.html";
     }
 
     /**
@@ -34,6 +34,6 @@ public class PageController {
 
     @GetMapping({"/page/front", "/page/front/"})
     public String frontEntry() {
-        return "redirect:/page/front/index.html";
+        return "redirect:/page/front/animal_browse.html";
     }
 }

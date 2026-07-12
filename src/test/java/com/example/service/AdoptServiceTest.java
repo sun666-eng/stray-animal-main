@@ -69,5 +69,23 @@ public class AdoptServiceTest {
         assertTrue(updated);
         assertEquals(Integer.valueOf(2), animal.getTstate());
         verify(animalService).updateById(animal);
+        // 通过审核 1 次 + 驳回竞争待审 1 次
+        verify(adoptMapper, org.mockito.Mockito.times(2)).update(any(Adopt.class), any());
+    }
+
+    @Test
+    public void auditRejected_doesNotRejectCompetitors() {
+        Animal animal = new Animal();
+        animal.setId(1L);
+        animal.setTstate(1);
+        when(adoptMapper.update(any(Adopt.class), any())).thenReturn(1);
+        when(adoptMapper.selectCount(any())).thenReturn(0L);
+        when(animalService.getById(1L)).thenReturn(animal);
+
+        boolean updated = adoptService.auditAdopt(1L, 2L, 2);
+
+        assertTrue(updated);
+        // 仅更新被驳回的那一条，不触发竞争驳回
+        verify(adoptMapper, org.mockito.Mockito.times(1)).update(any(Adopt.class), any());
     }
 }

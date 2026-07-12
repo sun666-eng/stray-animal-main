@@ -259,6 +259,9 @@
             if (error === "forbidden") {
                 this.$message.warning("当前账号缺少该菜单权限。请确认已用管理员登录，并退出后重新登录以刷新权限。");
                 history.replaceState(null, "", location.pathname);
+            } else if (error === "need_admin") {
+                this.$message.info("该功能需要管理权限，已返回系统首页。");
+                history.replaceState(null, "", location.pathname);
             }
             this.refreshCurrentUser().always(() => {
                 this.$nextTick(() => { this.load(); this.loadEcharts(); });

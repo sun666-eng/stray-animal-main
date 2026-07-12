@@ -26,7 +26,7 @@ public class VolunteerService extends ServiceImpl<VolunteerMapper, Volunteer> {
     private Long autoGrantRoleId;
 
     /**
-     * 更新义工申请；审核通过时为申请人追加志愿者角色（可配置 role id，默认 2）。
+     * 更新义工申请；审核通过时为申请人追加轻量「认证义工」角色（可配置 role id，默认 4，无后台管理权）。
      */
     @Transactional
     public boolean updateWithRoleSync(Volunteer volunteer) {

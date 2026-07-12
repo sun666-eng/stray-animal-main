@@ -37,7 +37,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
                     "/page/front/",
                     "/page/front/login.html",
                     "/page/front/register.html",
-                    "/page/front/index.html",
                     "/page/front/animal_browse.html",
                     "/page/front/animal_detail.html",
                     "/page/front/notice_list.html",

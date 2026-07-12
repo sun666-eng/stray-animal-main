@@ -24,7 +24,8 @@ mybatis:
   mapper-locations: classpath:mapper/*.xml
 
 file:
-  upload-dir: ${FILE_UPLOAD_DIR:upload}
+  # 默认落到用户主目录，避免相对路径随启动目录漂移导致图片全丢
+  upload-dir: ${FILE_UPLOAD_DIR:${user.home}/.stray-animal/upload}
 
 app:
   redis:
@@ -35,6 +36,15 @@ app:
     allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:*,http://127.0.0.1:*}
   data-fix:
     enabled: ${DATA_FIX_ENABLED:false}
+  # 启动时自动检查/补齐闭环必需库结构（pstatus、义工列、角色4、角色3的 my_proof）
+  schema-guard:
+    enabled: ${SCHEMA_GUARD_ENABLED:true}
+    auto-migrate: ${SCHEMA_GUARD_AUTO_MIGRATE:true}
+    fail-fast: ${SCHEMA_GUARD_FAIL_FAST:false}
+  # 启动时打印脏数据告警（不改数据）
+  data-health:
+    enabled: ${DATA_HEALTH_ENABLED:true}
   volunteer:
-    # 义工审核通过后自动授予的角色 ID（test.sql 中志愿者=2）；设为 0 关闭
-    auto-grant-role-id: ${VOLUNTEER_ROLE_ID:2}
+    # 义工审核通过后自动授予的角色 ID：默认 4=认证义工（无后台管理权）。
+    # 旧默认 2=志愿者后台角色权限过重；设为 0 关闭自动赋权。
+    auto-grant-role-id: ${VOLUNTEER_ROLE_ID:4}

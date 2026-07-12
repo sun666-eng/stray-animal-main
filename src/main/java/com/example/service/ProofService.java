@@ -36,11 +36,22 @@ public class ProofService extends ServiceImpl<ProofMapper, Proof> {
         if (proof == null) {
             throw new CustomException("400", "凭证不能为空");
         }
-        if (!canManageProof) {
+        // 客户端常不传 puid：缺省归属当前登录用户（含已获 proof 管理 flag 的义工自助提交）
+        if (proof.getPuid() == null) {
             proof.setPuid(user.getId());
+        }
+        if (proof.getUname() == null || proof.getUname().trim().isEmpty()) {
             proof.setUname(user.getUsername());
-            if (proof.getPaid() == null) {
-                throw new CustomException("400", "缺少领养动物ID");
+        }
+        if (proof.getPaid() == null) {
+            throw new CustomException("400", "缺少领养动物ID");
+        }
+
+        boolean selfSubmit = user.getId().equals(proof.getPuid());
+        if (!canManageProof || selfSubmit) {
+            // 自助上传：必须存在本人已通过的领养，且状态强制待审核
+            if (!user.getId().equals(proof.getPuid())) {
+                throw new CustomException("403", "只能为自己上传凭证");
             }
             QueryWrapper<Adopt> adoptQuery = new QueryWrapper<>();
             adoptQuery.eq("aid", proof.getPaid());
@@ -49,7 +60,6 @@ public class ProofService extends ServiceImpl<ProofMapper, Proof> {
             if (adoptService.count(adoptQuery) == 0) {
                 throw new CustomException("403", "只能为自己已审核通过的领养申请上传凭证");
             }
-            // 用户不可自设为已通过
             proof.setPstatus(STATUS_PENDING);
         } else if (proof.getPstatus() == null) {
             proof.setPstatus(STATUS_PENDING);

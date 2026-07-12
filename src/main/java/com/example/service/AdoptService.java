@@ -81,9 +81,29 @@ public class AdoptService extends ServiceImpl<AdoptMapper, Adopt> {
         adopt.setVstate(state);
         boolean updated = update(adopt, queryWrapper);
         if (updated) {
+            // 一人通过后，同动物其他待审申请自动驳回，避免僵尸待审与状态不一致
+            if (Integer.valueOf(ADOPT_APPROVED).equals(state)) {
+                rejectCompetingPending(aid, uid);
+            }
             syncAnimalState(aid);
         }
         return updated;
+    }
+
+    /**
+     * 将同一动物上除指定通过用户外的待审申请全部驳回。
+     */
+    private void rejectCompetingPending(Long aid, Long approvedUid) {
+        if (aid == null || approvedUid == null) {
+            return;
+        }
+        UpdateWrapper<Adopt> reject = new UpdateWrapper<>();
+        reject.eq("aid", aid)
+                .eq("vstate", ADOPT_PENDING)
+                .ne("uid", approvedUid);
+        Adopt patch = new Adopt();
+        patch.setVstate(ADOPT_REJECTED);
+        update(patch, reject);
     }
 
     @Transactional

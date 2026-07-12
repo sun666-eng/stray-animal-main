@@ -298,15 +298,17 @@ function resolveHome(user) {
     if (redirect && redirect.indexOf('/page/') === 0) {
         // 旧书签 /page/end/login.html 不再作为登录页
         if (redirect.indexOf('/page/end/login') === 0) {
-            return hasAdminAccess(user) ? '/page/end/index.html' : '/page/front/index.html';
+            return '/page/end/index.html';
         }
-        if (redirect.indexOf('/page/end/') === 0 && !hasAdminAccess(user)) {
-            return '/page/front/index.html';
+        // 普通用户不可进需要 admin flag 的管理子页，统一回系统首页
+        if (redirect.indexOf('/page/end/') === 0 && redirect.indexOf('/page/end/index') !== 0
+            && redirect.indexOf('/page/end/person') !== 0 && !hasAdminAccess(user)) {
+            return '/page/end/index.html';
         }
         return redirect;
     }
-    // 管理员进后台首页；普通用户进用户端首页（非动物浏览列表）
-    return hasAdminAccess(user) ? '/page/end/index.html' : '/page/front/index.html';
+    // 登录后统一进 end/index：管理员看完整后台，普通用户只看用户快捷入口
+    return '/page/end/index.html';
 }
 
 new Vue({
