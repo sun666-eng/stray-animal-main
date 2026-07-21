@@ -212,7 +212,8 @@ public class AuthInterceptor implements HandlerInterceptor {
 
     private boolean hasApiPermission(User user, String path, String method) {
         if (path.startsWith("/api/user/logout") || path.startsWith("/api/user/online")
-                || path.startsWith("/api/user/ws-ticket")) {
+                || path.startsWith("/api/user/ws-ticket")
+                || path.equals("/api/user/me") || path.startsWith("/api/user/me?")) {
             return true;
         }
         if (path.startsWith("/api/user/detail/")) {

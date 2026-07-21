@@ -355,8 +355,13 @@ new Vue({
             }).then(function (res) {
                 if (res.code === '0') {
                     self.$message({ message: '登录成功', type: 'success' });
-                    sessionStorage.setItem('user', JSON.stringify(res.data.user));
-                    sessionStorage.setItem('token', res.data.token);
+                    if (window.AuthSession) {
+                        window.AuthSession.saveSession(res.data.user, res.data.token);
+                    } else {
+                        sessionStorage.setItem('user', JSON.stringify(res.data.user));
+                        sessionStorage.setItem('token', res.data.token);
+                        try { localStorage.setItem('token', res.data.token); } catch (e) {}
+                    }
                     var target = resolveHome(res.data.user);
                     setTimeout(function () { location.href = target; }, 500);
                 } else {
@@ -371,5 +376,6 @@ new Vue({
     }
 });
 </script>
+<script src="../../js/auth-session.js?v=20260712a"></script>
 </body>
 </html>

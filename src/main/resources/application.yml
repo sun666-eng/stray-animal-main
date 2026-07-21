@@ -24,8 +24,11 @@ mybatis:
   mapper-locations: classpath:mapper/*.xml
 
 file:
-  # 默认落到用户主目录，避免相对路径随启动目录漂移导致图片全丢
+  # 默认落到用户主目录绝对路径；相对路径会被 FileStorage 锚定到 ~/.stray-animal/
+  # 生产请设置 FILE_UPLOAD_DIR=D:/data/stray-animal/upload 等固定盘符路径
   upload-dir: ${FILE_UPLOAD_DIR:${user.home}/.stray-animal/upload}
+  # 可选：额外只读目录（历史静态资源）；为空则仅用 upload-dir + 开发态 static/file
+  fallback-static-dir: ${FILE_FALLBACK_STATIC_DIR:}
 
 app:
   redis:
@@ -41,9 +44,20 @@ app:
     enabled: ${SCHEMA_GUARD_ENABLED:true}
     auto-migrate: ${SCHEMA_GUARD_AUTO_MIGRATE:true}
     fail-fast: ${SCHEMA_GUARD_FAIL_FAST:false}
-  # 启动时打印脏数据告警（不改数据）
+  # 启动时打印脏数据告警（建议在 data-state-guard 之后）
   data-health:
     enabled: ${DATA_HEALTH_ENABLED:true}
+  # 脏数据状态修复：待审僵尸/多通过/动物 tstate 与领养不一致
+  data-state-guard:
+    enabled: ${DATA_STATE_GUARD_ENABLED:true}
+    auto-fix: ${DATA_STATE_GUARD_AUTO_FIX:true}
+    fail-fast: ${DATA_STATE_GUARD_FAIL_FAST:false}
+  # 角色/权限契约：普通用户必备闭环 flags；认证义工不得带后台权
+  role-guard:
+    enabled: ${ROLE_GUARD_ENABLED:true}
+    auto-fix: ${ROLE_GUARD_AUTO_FIX:true}
+    fail-fast: ${ROLE_GUARD_FAIL_FAST:false}
+    demote-user-volunteer: ${ROLE_GUARD_DEMOTE_USER_VOLUNTEER:true}
   volunteer:
     # 义工审核通过后自动授予的角色 ID：默认 4=认证义工（无后台管理权）。
     # 旧默认 2=志愿者后台角色权限过重；设为 0 关闭自动赋权。

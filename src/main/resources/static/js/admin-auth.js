@@ -1,42 +1,52 @@
-// 管理员端 jQuery ajax 鉴权全局拦截
-// 1) 每个请求自动带上 sessionStorage 里存的 JWT token
-// 2) 全局监听 401，触发统一跳登录
-// 必须在页面 Vue 初始化之前加载（即放在 jquery.min.js 后面、Vue/element/页面脚本之前）
+// 管理员端 jQuery ajax 鉴权 + 统一登录态（依赖可选 auth-session.js）
+// 必须在 jquery 之后、Vue 之前加载
 (function () {
     if (typeof window.jQuery === 'undefined') {
         return;
     }
     var $ = window.jQuery;
 
-    $.ajaxSetup({
-        beforeSend: function (xhr) {
-            var token = sessionStorage.getItem('token');
-            if (token) {
-                xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-            }
+    if (window.AuthSession) {
+        window.AuthSession.installAjaxAuth();
+        window.AuthSession.sanitizeLocalSession();
+        // 管理端页面必须有效会话
+        var path = window.location.pathname || '';
+        var isLogin = path.indexOf('login.html') >= 0;
+        if (!isLogin) {
+            window.AuthSession.revalidate(function (ok) {
+                if (!ok && !window.AuthSession.getToken()) {
+                    // 无 token 且 /me 失败 → 跳登录
+                    if (!window.AuthSession.getUser()) {
+                        window.location.href = window.AuthSession.loginUrl();
+                    }
+                }
+            });
         }
-    });
-
-    function buildLoginUrl() {
-        // 与用户端共用统一登录页
+    } else {
+        $.ajaxSetup({
+            xhrFields: { withCredentials: true },
+            beforeSend: function (xhr) {
+                var token = sessionStorage.getItem('token') || localStorage.getItem('token');
+                if (token) {
+                    xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+                }
+            }
+        });
+        $(document).ajaxError(function (event, xhr) {
+            if (xhr && xhr.status === 401) {
+                sessionStorage.removeItem('user');
+                sessionStorage.removeItem('token');
+                localStorage.removeItem('token');
+                var current = window.location.pathname + window.location.search;
+                window.location.href = '/page/front/login.html?redirect=' + encodeURIComponent(current);
+            }
+        });
         try {
-            var current = window.location.pathname + window.location.search;
-            if (window.location.pathname === '/page/front/login.html') {
-                return '/page/front/login.html';
+            if (sessionStorage.getItem('user') && !sessionStorage.getItem('token')) {
+                sessionStorage.removeItem('user');
             }
-            return '/page/front/login.html?redirect=' + encodeURIComponent(current);
-        } catch (e) {
-            return '/page/front/login.html';
-        }
+        } catch (e) { /* ignore */ }
     }
-
-    $(document).ajaxError(function (event, xhr) {
-        if (xhr && xhr.status === 401) {
-            sessionStorage.removeItem('user');
-            sessionStorage.removeItem('token');
-            window.location.href = buildLoginUrl();
-        }
-    });
 
     var ADMIN_FLAGS = {
         user: true,
@@ -61,8 +71,6 @@
         rescue: '/page/front/rescue_apply.html'
     };
 
-    // 3) 兜底：清理 sessionStorage.user.permission 里的重复项并修正旧路径。
-    //    后台侧边栏只保留真实管理功能，用户自助功能从首页快捷入口进入。
     function dedupePermissionsInSession() {
         try {
             var raw = sessionStorage.getItem('user');
@@ -77,7 +85,6 @@
                 if (LEGACY_FRONT_PATHS[p.flag]) {
                     p.path = LEGACY_FRONT_PATHS[p.flag];
                 }
-                // 同名 + 同 path 视为重复（兼容 flag 不同但实际指向同一页面的脏数据）
                 var key = (p.name || '') + '|' + (p.path || '');
                 if (seen[key]) continue;
                 seen[key] = true;
@@ -90,7 +97,7 @@
                 sessionStorage.setItem('user', JSON.stringify(user));
             }
         } catch (e) {
-            // 静默忽略：解析失败不应影响页面正常加载
+            // ignore
         }
     }
     dedupePermissionsInSession();

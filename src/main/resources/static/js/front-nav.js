@@ -249,9 +249,13 @@
 
   window.handleLogout = function () {
     function goLogin() {
-      sessionStorage.removeItem('user');
-      sessionStorage.removeItem('token');
-      localStorage.removeItem('token');
+      if (window.AuthSession) {
+        window.AuthSession.clearSession();
+      } else {
+        sessionStorage.removeItem('user');
+        sessionStorage.removeItem('token');
+        localStorage.removeItem('token');
+      }
       window.location.href = '/page/front/login.html';
     }
 
@@ -262,27 +266,42 @@
     fetch('/api/user/logout', { method: 'GET', credentials: 'same-origin' }).then(goLogin).catch(goLogin);
   };
 
+  function refreshToolbarFromSession() {
+    try {
+      if (window.AuthSession && window.AuthSession.getUser()) {
+        // getUser already from storage; fillPermissions refreshed via /me
+      }
+    } catch (e) { /* ignore */ }
+    normalizeToolbar();
+    var u = getUser();
+    var el = document.getElementById('toolbar-username');
+    if (el) {
+      el.textContent = u && u.username ? u.username : '未登录';
+    }
+  }
+
   function init() {
     injectStableLayoutStyles();
-    if (window.jQuery) {
+    // 统一 JWT + 401 清会话；静默 /api/user/me 消除假登录
+    if (window.AuthSession) {
+      window.AuthSession.bootstrap({
+        requireAuth: false,
+        onDone: function () {
+          refreshToolbarFromSession();
+        }
+      });
+    } else if (window.jQuery) {
       window.jQuery.ajaxSetup({
+        xhrFields: { withCredentials: true },
         beforeSend: function (xhr) {
-          var token = sessionStorage.getItem('token');
+          var token = sessionStorage.getItem('token') || localStorage.getItem('token');
           if (token) {
             xhr.setRequestHeader('Authorization', 'Bearer ' + token);
           }
         }
       });
-    }
-    syncNavLinks();
-    normalizeFrontLinks();
-    highlightCurrentChip();
-    injectHomeButton();
-    normalizeToolbar();
-    if (window.jQuery) {
       window.jQuery(document).ajaxError(function (event, xhr) {
         if (xhr && xhr.status === 401) {
-          // 清掉本地“假登录”状态，避免页面显示已登录但接口全 401
           try {
             sessionStorage.removeItem('user');
             sessionStorage.removeItem('token');
@@ -291,7 +310,20 @@
           window.location.href = loginUrl();
         }
       });
+      // 无 AuthSession 时的轻量假登录清理
+      try {
+        var u = sessionStorage.getItem('user');
+        var t = sessionStorage.getItem('token');
+        if (u && !t) {
+          sessionStorage.removeItem('user');
+        }
+      } catch (e2) { /* ignore */ }
     }
+    syncNavLinks();
+    normalizeFrontLinks();
+    highlightCurrentChip();
+    injectHomeButton();
+    refreshToolbarFromSession();
   }
 
   if (document.readyState === 'loading') {

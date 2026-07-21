@@ -1,6 +1,5 @@
 package com.example.common;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -8,18 +7,16 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.io.File;
 
-
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
 
     private final AuthInterceptor authInterceptor;
+    private final FileStorage fileStorage;
 
-    public WebMvcConfig(AuthInterceptor authInterceptor) {
+    public WebMvcConfig(AuthInterceptor authInterceptor, FileStorage fileStorage) {
         this.authInterceptor = authInterceptor;
+        this.fileStorage = fileStorage;
     }
-
-    @Value("${file.upload-dir:upload}")
-    private String uploadDir;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
@@ -30,7 +27,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
                     "/api/user/register",
                     "/page/end",
                     "/page/end/",
-                    // 旧管理端登录路径：由 PageController 301 到统一登录页，需放行拦截器
                     "/page/end/login.html",
                     "/page/end/register.html",
                     "/page/front",
@@ -47,11 +43,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        File dir = new File(uploadDir);
+        File dir = fileStorage.getRootFile();
         if (!dir.isDirectory()) {
+            //noinspection ResultOfMethodCallIgnored
             dir.mkdirs();
         }
+        String location = "file:" + fileStorage.getRootAbsolutePath() + File.separator;
         registry.addResourceHandler("/file/**")
-                .addResourceLocations("file:" + dir.getAbsolutePath() + File.separator);
+                .addResourceLocations(location);
     }
 }

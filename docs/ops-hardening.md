@@ -2,15 +2,24 @@
 
 没有银弹。彻底 = **工程防护 + 运维纪律 + 验收门禁**，而不是再改一两个业务 if。
 
+## 数据库漂移（已按契约闭环）
+
+| 层级 | 机制 |
+|------|------|
+| 基线 | `test.sql` 已含 `pstatus` / `apic` / TEXT / 角色4 |
+| 手工 | `docs/sql/bootstrap-all.sql` 幂等补齐旧库 |
+| 运行时 | `SchemaGuardRunner` 启动检查+自动 DDL+断言，写入 `app_schema_meta.schema_version=2026.07.12-loop-v2` |
+| 对抗验收 | `tools/adversarial-schema-test.ps1`：删列→重启→自愈→接口可用 |
+
 ## 五层防护（对应五类风险）
 
 | 风险 | 彻底做法 | 本仓库已落地 |
 |------|----------|--------------|
-| 库结构漂移 | 启动 SchemaGuard 自动补列/角色；统一 bootstrap SQL | `SchemaGuardRunner` + `docs/sql/bootstrap-all.sql` |
-| 权限改坏 | 固定三类账号冒烟；义工只用轻量角色 4 | `tools/smoke-test.ps1`；`VOLUNTEER_ROLE_ID=4` |
-| 脏状态数据 | 启动 DataHealth 告警；业务上通过时驳回竞争申请 | `DataHealthRunner`；`AdoptService.rejectCompetingPending` |
-| 登录态假死 | 前台统一带 JWT；401 清本地 user/token | `front-nav.js` / `admin-auth.js` |
-| 上传目录漂移 | 绝对路径默认 `${user.home}/.stray-animal/upload` | `application.yml` `file.upload-dir` |
+| 库结构漂移 | 启动 SchemaGuard 自动补列/角色；统一 bootstrap SQL | `SchemaGuardRunner` + `docs/sql/bootstrap-all.sql` + 对抗脚本 |
+| 权限改坏 | 角色契约 Guard + 冒烟 + 对抗脚本 | `RolePermissionGuardRunner` + `RoleContracts` + `tools/adversarial-permission-test.ps1` |
+| 脏状态数据 | DataStateGuard 启动修复 + DataHealth 复核 + 业务审核时驳回竞争 | `DataStateGuardRunner` + `DataHealthRunner` + `tools/adversarial-datastate-test.ps1` |
+| 登录态假死 | auth-session + `/api/user/me` 静默校验；JWT+Session 双通道；401 清本地 | `auth-session.js` + `UserController.me` + `tools/adversarial-auth-test.ps1` |
+| 上传目录漂移 | `FileStorage` 强制绝对路径+可写探针；meta 记录路径；相对路径锚定 home | `FileStorage` + `FileStorageHealthRunner` + `tools/adversarial-upload-test.ps1` |
 
 ## 每次部署必做（5 分钟）
 

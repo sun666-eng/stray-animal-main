@@ -79,6 +79,21 @@ public class UserController {
         return Result.success();
     }
 
+    /**
+     * 当前登录用户（Session 或 JWT 经拦截器回填 session）。
+     * 供前端探测「假登录」：本地有 user/token 但服务端已失效时返回 401。
+     */
+    @GetMapping("/me")
+    public Result<UserDTO> me(HttpServletRequest request) {
+        User user = (User) request.getSession().getAttribute("user");
+        if (user == null || user.getId() == null) {
+            return Result.error("401", "未登录或登录已过期");
+        }
+        userService.fillPermissions(user);
+        request.getSession().setAttribute("user", user);
+        return Result.success(UserDTO.from(user));
+    }
+
     @GetMapping("/online")
     public Result<Collection<UserDTO>> online() {
         return Result.success(MAP.values().stream().map(UserDTO::from).collect(Collectors.toList()));

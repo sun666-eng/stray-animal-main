@@ -4,9 +4,9 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.example.common.FileStorage;
 import com.example.common.Result;
 import com.example.dto.FileVO;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -34,8 +34,11 @@ public class FileController {
             "jpg", "jpeg", "png", "gif", "webp", "pdf", "xls", "xlsx"
     );
 
-    @Value("${file.upload-dir:upload}")
-    private String uploadDir;
+    private final FileStorage fileStorage;
+
+    public FileController(FileStorage fileStorage) {
+        this.fileStorage = fileStorage;
+    }
 
     @PostMapping("/upload")
     public Result<FileVO> upload(MultipartFile file, HttpServletRequest request) {
@@ -43,10 +46,11 @@ public class FileController {
             return Result.error("400", "文件不能为空或类型不允许");
         }
         Object userId = request.getAttribute("userId");
-        log.info("文件上传请求 - 用户ID: {}, 文件名: {}, 大小: {}bytes",
+        log.info("文件上传请求 - 用户ID: {}, 文件名: {}, 大小: {}bytes, root: {}",
                 userId,
                 file.getOriginalFilename(),
-                file.getSize());
+                file.getSize(),
+                fileStorage.getRootAbsolutePath());
         FileVO fileVO = doUpload(file);
         if (fileVO == null) {
             log.warn("文件上传失败 - 文件名: {}", file.getOriginalFilename());
@@ -76,22 +80,17 @@ public class FileController {
 
     @GetMapping({"", "/"})
     public void getRoot(HttpServletResponse response) {
-        // flag 缺省（前端 user.avatar 为空时拼出 /api/files/）：返回默认头像
         writeDefaultAvatar(response);
     }
 
     @GetMapping("/{flag}")
     public void getFile(@PathVariable String flag, HttpServletResponse response, HttpServletRequest request) {
-        // 兼容前端把 null/undefined 拼到 URL 上的情况
         if (!isValidFlag(flag) || "null".equalsIgnoreCase(flag) || "undefined".equalsIgnoreCase(flag)) {
             writeDefaultAvatar(response);
             return;
         }
 
-        List<String> searchDirs = Arrays.asList(
-                uploadDir,
-                System.getProperty("user.dir") + "/src/main/resources/static/file"
-        );
+        List<String> searchDirs = fileStorage.getReadSearchDirs();
 
         for (String dirPath : searchDirs) {
             try {
@@ -139,12 +138,10 @@ public class FileController {
             }
         }
 
-        // 兜底：找不到文件就返回默认头像（避免前端头像位置出现 broken image）
         log.warn("文件未找到 - flag: {}, IP: {}", flag, request.getRemoteAddr());
         writeDefaultAvatar(response);
     }
 
-    /** 默认头像（灰色圆圈 + 用户剪影），用于 flag 缺失/非法/文件不存在的兜底 */
     private void writeDefaultAvatar(HttpServletResponse response) {
         String svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80' width='80' height='80'>"
                 + "<circle cx='40' cy='40' r='40' fill='#E5E7EB'/>"
@@ -176,8 +173,9 @@ public class FileController {
         String safeName = sanitizeFileName(originalName);
         String storedName = flag + "-" + safeName;
         try {
-            File dir = new File(uploadDir);
+            File dir = fileStorage.getRootFile();
             if (!dir.isDirectory()) {
+                //noinspection ResultOfMethodCallIgnored
                 dir.mkdirs();
             }
             FileUtil.writeBytes(file.getBytes(), new File(dir, storedName));
@@ -186,7 +184,7 @@ public class FileController {
             vo.setFileName(originalName);
             return vo;
         } catch (Exception e) {
-            log.error("文件保存异常 - 原始文件名: {}", originalName, e);
+            log.error("文件保存异常 - 原始文件名: {}, root: {}", originalName, fileStorage.getRootAbsolutePath(), e);
             return null;
         }
     }
@@ -209,5 +207,4 @@ public class FileController {
         }
         return fileName.replaceAll("[^a-zA-Z0-9.\\-_\\u4e00-\\u9fa5]", "_");
     }
-
 }

@@ -189,6 +189,7 @@ DROP TABLE IF EXISTS `t_proof`;
 CREATE TABLE `t_proof` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '凭证ID',
   `ptitle` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '未知' COMMENT '凭证名称',
+  `pstatus` int NOT NULL DEFAULT 0 COMMENT '0待审核 1已通过 2已驳回',
   `ppic` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '凭证图片',
   `paid` bigint(20) NOT NULL COMMENT '领养ID',
   `puid` bigint(20) NOT NULL,
@@ -204,11 +205,11 @@ CREATE TABLE `t_proof` (
 -- ----------------------------
 -- Records of t_proof
 -- ----------------------------
-INSERT INTO `t_proof` VALUES ('2021000001', '狗证-犬只到家后办理', '1620649797076', '10003', '21', '默默', '张文玥');
-INSERT INTO `t_proof` VALUES ('2021000002', '身份证-人像面', '1620650915754', '10003', '21', '默默', '张文玥');
-INSERT INTO `t_proof` VALUES ('2021000003', '结婚证', '1620650987751', '10003', '21', '默默', '张文玥');
-INSERT INTO `t_proof` VALUES ('2021000004', '动物绝育证明', '1620650493897', '10003', '21', '默默', '张文玥');
-INSERT INTO `t_proof` VALUES ('2021000005', '房产证', '1620652269080', '10003', '21', '默默', '张文玥');
+INSERT INTO `t_proof` VALUES ('2021000001', '狗证-犬只到家后办理', '0', '1620649797076', '10003', '21', '默默', '张文玥');
+INSERT INTO `t_proof` VALUES ('2021000002', '身份证-人像面', '0', '1620650915754', '10003', '21', '默默', '张文玥');
+INSERT INTO `t_proof` VALUES ('2021000003', '结婚证', '0', '1620650987751', '10003', '21', '默默', '张文玥');
+INSERT INTO `t_proof` VALUES ('2021000004', '动物绝育证明', '0', '1620650493897', '10003', '21', '默默', '张文玥');
+INSERT INTO `t_proof` VALUES ('2021000005', '房产证', '0', '1620652269080', '10003', '21', '默默', '张文玥');
 
 -- ----------------------------
 -- Table structure for `t_role`
@@ -218,9 +219,9 @@ CREATE TABLE `t_role` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
   `name` varchar(255) DEFAULT NULL COMMENT '名称',
   `description` varchar(255) DEFAULT NULL COMMENT '描述',
-  `permission` varchar(2000) DEFAULT NULL COMMENT '权限列表',
+  `permission` text COMMENT '权限列表(JSON，须 TEXT 防截断)',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC COMMENT='角色表';
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC COMMENT='角色表';
 
 -- ----------------------------
 -- Records of t_role
@@ -228,6 +229,7 @@ CREATE TABLE `t_role` (
 INSERT INTO `t_role` VALUES ('1', '超级管理员', '所有权限', '[{"id":1,"name":"用户管理","path":"/page/end/user.html","description":"管理系统用户和角色分配","flag":"user"},{"id":2,"name":"角色管理","path":"/page/end/role.html","description":"管理角色及角色权限","flag":"role"},{"id":3,"name":"权限管理","path":"/page/end/permission.html","description":"管理后台权限菜单","flag":"permission"},{"id":6,"name":"动物管理","path":"/page/end/animal.html","description":"新增、编辑、删除动物档案","flag":"animal"},{"id":7,"name":"回访管理","path":"/page/end/visit.html","description":"管理动物领养后回访记录","flag":"visit"},{"id":8,"name":"领养审核","path":"/page/end/adopt.html","description":"审核和管理领养申请","flag":"adopt"},{"id":9,"name":"凭证管理","path":"/page/end/proof.html","description":"管理领养相关凭证","flag":"proof"},{"id":13,"name":"义工审核","path":"/page/end/volunteer.html","description":"审核和管理义工申请","flag":"volunteer"},{"id":17,"name":"资金公示管理","path":"/page/end/account.html","description":"管理资金收入、支出和公示数据","flag":"account"},{"id":44,"name":"公告管理","path":"/page/end/notice.html","description":"管理系统公告和活动通知","flag":"notice"},{"id":46,"name":"救助管理","path":"/page/end/help.html","description":"管理救助请求并回复用户","flag":"help"}]');
 INSERT INTO `t_role` VALUES ('2', '志愿者', '部分权限', '[{"id":7,"name":"回访管理","path":"/page/end/visit.html","description":"管理动物领养后回访记录","flag":"visit"},{"id":6,"name":"动物管理","path":"/page/end/animal.html","description":"新增、编辑、删除动物档案","flag":"animal"},{"id":8,"name":"领养审核","path":"/page/end/adopt.html","description":"审核和管理领养申请","flag":"adopt"},{"id":9,"name":"凭证管理","path":"/page/end/proof.html","description":"管理领养相关凭证","flag":"proof"},{"id":44,"name":"公告管理","path":"/page/end/notice.html","description":"管理系统公告和活动通知","flag":"notice"},{"id":13,"name":"义工审核","path":"/page/end/volunteer.html","description":"审核和管理义工申请","flag":"volunteer"},{"id":17,"name":"资金公示管理","path":"/page/end/account.html","description":"管理资金收入、支出和公示数据","flag":"account"},{"id":46,"name":"救助管理","path":"/page/end/help.html","description":"管理救助请求并回复用户","flag":"help"}]');
 INSERT INTO `t_role` VALUES ('3', '普通用户', '部分非工作权限', '[{"id":43,"name":"动物浏览","path":"/page/front/animal_browse.html","description":"用户端浏览可领养动物","flag":"adopt_view"},{"id":11,"name":"我的领养申请","path":"/page/front/my_adopt.html","description":"用户端查看自己的领养申请","flag":"my_adopt"},{"id":12,"name":"领养凭证入口","path":"/page/front/adopt_proof.html","description":"用户端提交和管理自己的领养凭证","flag":"my_proof"},{"id":15,"name":"义工申请","path":"/page/front/volunteer_apply.html","description":"用户端提交义工申请","flag":"apply"},{"id":5,"name":"救助咨询","path":"/page/front/rescue_apply.html","description":"用户端提交救助咨询和救助请求","flag":"im"}]');
+INSERT INTO `t_role` VALUES ('4', '认证义工', '义工审核通过标记，无后台管理权限', '[]');
 
 -- ----------------------------
 -- Table structure for `t_user`
@@ -240,7 +242,7 @@ CREATE TABLE `t_user` (
   `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '邮箱',
   `phone` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '手机号',
   `avatar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT '1' COMMENT '头像',
-  `role` varchar(2000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '权限',
+  `role` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '角色列表(JSON，须 TEXT 防截断)',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `uni` (`username`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='用户表';
@@ -300,14 +302,15 @@ CREATE TABLE `t_volunteer` (
   `sparetime` int(12) DEFAULT NULL COMMENT '空闲时间',
   `vstate` int(12) NOT NULL DEFAULT '0' COMMENT '审核状态',
   `uid` bigint(20) DEFAULT NULL COMMENT '申请用户ID',
+  `apic` varchar(255) DEFAULT NULL COMMENT '本人免冠照文件flag',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC COMMENT='角色表';
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC COMMENT='义工申请表';
 
 -- ----------------------------
 -- Records of t_volunteer
 -- ----------------------------
-INSERT INTO `t_volunteer` VALUES ('1', '张文玥', '13', '1333333', '11111@.com', '1999vrr', '安徽省淮北市', '上海财经大学', '1', '愿意参加中心劳动、参与救助、临时安置动物；可以为救助活动提供交通工具；擅长摄影，可以参与基地的网络推广等等', '7', '0', NULL);
-INSERT INTO `t_volunteer` VALUES ('4', '陈学人', '21', '11112', '1122213@.qq.com', '1111', '上海市杨浦区', '上海财经大学', '1', '擅长写网络推广', '2', '0', NULL);
-INSERT INTO `t_volunteer` VALUES ('7', '张文玥', '21', '1111111', '1111@.com', '1111', '上海市', '上海财经大学', '1', '愿意参加动物救助', '2', '1', NULL);
-INSERT INTO `t_volunteer` VALUES ('8', '罗一舟', '21', '111', '11111', '11', '上海市', '上海财经大学', '1', '111', '111', '0', NULL);
-INSERT INTO `t_volunteer` VALUES ('9', '李光耀', '11', '11', '11', '1', '上海市', '上海财经大学', '0', '11', '11', '0', NULL);
+INSERT INTO `t_volunteer` VALUES ('1', '张文玥', '13', '1333333', '11111@.com', '1999vrr', '安徽省淮北市', '上海财经大学', '1', '愿意参加中心劳动、参与救助、临时安置动物；可以为救助活动提供交通工具；擅长摄影，可以参与基地的网络推广等等', '7', '0', NULL, NULL);
+INSERT INTO `t_volunteer` VALUES ('4', '陈学人', '21', '11112', '1122213@.qq.com', '1111', '上海市杨浦区', '上海财经大学', '1', '擅长写网络推广', '2', '0', NULL, NULL);
+INSERT INTO `t_volunteer` VALUES ('7', '张文玥', '21', '1111111', '1111@.com', '1111', '上海市', '上海财经大学', '1', '愿意参加动物救助', '2', '1', NULL, NULL);
+INSERT INTO `t_volunteer` VALUES ('8', '罗一舟', '21', '111', '11111', '11', '上海市', '上海财经大学', '1', '111', '111', '0', NULL, NULL);
+INSERT INTO `t_volunteer` VALUES ('9', '李光耀', '11', '11', '11', '1', '上海市', '上海财经大学', '0', '11', '11', '0', NULL, NULL);
