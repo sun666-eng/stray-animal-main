@@ -419,7 +419,7 @@
                         <el-form-item v-if="item.prop == 'pic'" :label="item.label" label-width="100px" v-for="item in diaprops">
                             <el-upload
                                     class="upload-demo"
-                                    action="/api/files/upload"
+                                    action="/api/files/upload" :data="{ purpose: 'animal' }" :headers="uploadHeaders"
                                     :file-list="fileList"
                                     list-type="picture"
                                     :on-success="successUpload">
@@ -472,6 +472,7 @@
     new Vue({
         el: "#wrapper",
         data: {
+            uploadHeaders: {},
             user: {},
             tableData: [],
             pageNum: 1,
@@ -490,7 +491,7 @@
             diaprops: [{"label":"回访ID","prop":"id"},{"label":"动物ID","prop":"petId"},{"label":"回访时间","prop":"vtime"},{"label":"健康状态","prop":"state"},{"label":"回访评价","prop":"remark"},{"label":"饲主ID","prop":"uid"},{"label":"回访照片","prop":"pic"},{"label":"回访人姓名","prop":"vname"}]
 
         },
-        created() {
+        created() { this.refreshUploadHeaders();
             this.user = sessionStorage.getItem("user") ? JSON.parse(sessionStorage.getItem("user")) : {};
             if (!this.user.id) {
                 location.href = "/page/front/login.html";
@@ -499,6 +500,10 @@
             this.loadTable();
         },
         methods: {
+            refreshUploadHeaders: function() {
+                    this.uploadHeaders = (window.AuthSession && window.AuthSession.getUploadHeaders)
+                        ? window.AuthSession.getUploadHeaders() : {};
+                },
             changeState(obj){
                 $.ajax({
                     url: urlBase + "/audit/" + obj.aid + "/" + obj.uid + "/" + obj.vstate,
@@ -515,11 +520,7 @@
             handleCollapse() {
                 this.isCollapse = !this.isCollapse;
             },
-            logout() {
-                $.get("/api/user/logout");
-                sessionStorage.removeItem("user");
-                location.href = "/page/front/login.html";
-            },
+            logout() { if (window.AuthSession) { AuthSession.logout(); } else { location.href="/page/front/login.html"; } },
             loadTable() {
                 $.get(urlBase + "/page?pageNum=" + this.pageNum + "&pageSize=" + this.pageSize + "&name=" + this.search).then(res => {
                     this.tableData = res.data.records;
@@ -691,8 +692,7 @@
                 //     formData.append("files", files[i]);
                 // }
                 let formData = new FormData();
-                formData.append("file", $("#file")[0].files[0])
-                $.ajax({
+                formData.append("file", $("#file")[0].files[0]); formData.append('purpose', 'animal'); $.ajax({
                     url: '/api/files/upload',
                     processData: false,
                     contentType: false,

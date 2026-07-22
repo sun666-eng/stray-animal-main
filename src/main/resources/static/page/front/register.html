@@ -59,8 +59,13 @@ new Vue({
       }).then(res => {
         if (res.code === '0') {
           this.$message({ message: '注册成功', type: 'success' });
-          sessionStorage.setItem('user', JSON.stringify(res.data.user));
-          sessionStorage.setItem('token', res.data.token);
+          if (window.AuthSession) {
+            window.AuthSession.saveSession(res.data.user, null, res.data.csrfToken);
+          } else {
+            sessionStorage.setItem('user', JSON.stringify(res.data.user));
+            sessionStorage.removeItem('token');
+            if (res.data.csrfToken) sessionStorage.setItem('csrfToken', res.data.csrfToken);
+          }
           setTimeout(() => { location.href = '/page/end/index.html'; }, 800);
         } else {
           this.$message({ message: res.msg || '注册失败', type: 'error' });

@@ -200,7 +200,8 @@ new Vue({
   if (u && u.username) { document.getElementById('toolbar-username').textContent = u.username; }
 })();
 function handleLogout() {
-  $.ajax({ url: '/api/user/logout', type: 'GET' }).always(function(){
+  if (window.AuthSession) { AuthSession.logout(); return; }
+  $.ajax({ url: '/api/user/logout', type: 'POST', contentType: 'application/json', data: '{}', headers: { 'X-CSRF-Token': sessionStorage.getItem('csrfToken') || '' } }).always(function(){
     sessionStorage.removeItem('user');
     location.href = '/page/front/login.html';
   });

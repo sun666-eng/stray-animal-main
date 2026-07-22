@@ -1,15 +1,18 @@
 package com.example.service;
 
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.common.ExcelImportUtil;
 import com.example.dto.ImportResult;
 import com.example.entity.Animal;
+import com.example.entity.User;
 import com.example.exception.CustomException;
 import com.example.mapper.AnimalMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
@@ -27,6 +30,76 @@ public class AnimalService extends ServiceImpl<AnimalMapper, Animal> {
 
     @Resource
     private AnimalMapper animalMapper;
+
+    @Resource
+    private FileAssetService fileAssetService;
+
+    @Transactional
+    public boolean saveAnimal(Animal animal, User user) {
+        if (animal.getTstate() == null) {
+            animal.setTstate(0);
+        }
+        boolean ok = save(animal);
+        if (!ok) {
+            throw new CustomException("500", "动物信息保存失败");
+        }
+        if (animal.getTpic() != null && !animal.getTpic().trim().isEmpty()) {
+            fileAssetService.bindToBusiness(user, animal.getTpic(), "animal",
+                    "animal", animal.getId(), true);
+        }
+        return true;
+    }
+
+    @Transactional
+    public boolean updateAnimal(Animal animal, User user) {
+        if (animal == null || animal.getId() == null) {
+            throw new CustomException("400", "动物 ID 无效");
+        }
+        Animal existing = getOne(Wrappers.<Animal>lambdaQuery()
+                .eq(Animal::getId, animal.getId()).last("FOR UPDATE"));
+        if (existing == null) {
+            throw new CustomException("404", "动物不存在");
+        }
+        String oldPic = existing.getTpic();
+        String newPic = animal.getTpic();
+        if (newPic != null) {
+            String next = newPic.trim();
+            String prev = oldPic == null ? "" : oldPic.trim();
+            if (!next.isEmpty() && !next.equals(prev)) {
+                fileAssetService.bindToBusiness(user, next, "animal",
+                        "animal", animal.getId(), true);
+            }
+        }
+        if (!updateById(animal)) {
+            throw new CustomException("409", "业务记录已变化，请刷新后重试");
+        }
+        if (newPic != null) {
+            String next = newPic.trim();
+            String prev = oldPic == null ? "" : oldPic.trim();
+            if (next.isEmpty()) {
+                if (!prev.isEmpty()) {
+                    fileAssetService.unbindIfMatches(prev, "animal", animal.getId());
+                }
+            } else if (!next.equals(prev) && !prev.isEmpty()) {
+                fileAssetService.unbindIfMatches(prev, "animal", animal.getId());
+            }
+        }
+        return true;
+    }
+
+    @Transactional
+    public boolean deleteAnimal(Long id) {
+        Animal existing = getOne(Wrappers.<Animal>lambdaQuery()
+                .eq(Animal::getId, id).last("FOR UPDATE"));
+        if (existing == null) {
+            return true;
+        }
+        fileAssetService.unbindAllForBusiness("animal", id);
+        if (!removeById(id)) {
+            throw new CustomException("409", "删除失败，请刷新后重试");
+        }
+        return true;
+    }
 
     public ImportResult importFromExcel(MultipartFile file) throws IOException {
         if (file != null && file.getSize() > MAX_BYTES) {

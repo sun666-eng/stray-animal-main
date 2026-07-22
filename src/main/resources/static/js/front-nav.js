@@ -248,22 +248,28 @@
   }
 
   window.handleLogout = function () {
-    function goLogin() {
-      if (window.AuthSession) {
-        window.AuthSession.clearSession();
-      } else {
-        sessionStorage.removeItem('user');
-        sessionStorage.removeItem('token');
-        localStorage.removeItem('token');
-      }
-      window.location.href = '/page/front/login.html';
-    }
-
-    if (window.jQuery) {
-      window.jQuery.ajax({ url: '/api/user/logout', type: 'GET' }).always(goLogin);
+    if (window.AuthSession && typeof window.AuthSession.logout === 'function') {
+      window.AuthSession.logout();
       return;
     }
-    fetch('/api/user/logout', { method: 'GET', credentials: 'same-origin' }).then(goLogin).catch(goLogin);
+    if (window.jQuery) {
+      window.jQuery.ajax({
+        url: '/api/user/logout',
+        type: 'POST',
+        contentType: 'application/json',
+        data: '{}',
+        xhrFields: { withCredentials: true },
+        headers: { 'X-CSRF-Token': (sessionStorage.getItem('csrfToken') || '') }
+      }).always(function () {
+        sessionStorage.removeItem('user');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('csrfToken');
+        localStorage.removeItem('token');
+        window.location.href = '/page/front/login.html';
+      });
+      return;
+    }
+    window.location.href = '/page/front/login.html';
   };
 
   function refreshToolbarFromSession() {
@@ -282,7 +288,7 @@
 
   function init() {
     injectStableLayoutStyles();
-    // 统一 JWT + 401 清会话；静默 /api/user/me 消除假登录
+    // Session 权威 + 静默 /api/user/me
     if (window.AuthSession) {
       window.AuthSession.bootstrap({
         requireAuth: false,
@@ -293,10 +299,13 @@
     } else if (window.jQuery) {
       window.jQuery.ajaxSetup({
         xhrFields: { withCredentials: true },
-        beforeSend: function (xhr) {
-          var token = sessionStorage.getItem('token') || localStorage.getItem('token');
-          if (token) {
-            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+        beforeSend: function (xhr, settings) {
+          var method = (settings && settings.type ? settings.type : 'GET').toUpperCase();
+          if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+            var csrf = sessionStorage.getItem('csrfToken');
+            if (csrf) {
+              xhr.setRequestHeader('X-CSRF-Token', csrf);
+            }
           }
         }
       });
@@ -305,19 +314,12 @@
           try {
             sessionStorage.removeItem('user');
             sessionStorage.removeItem('token');
+            sessionStorage.removeItem('csrfToken');
             localStorage.removeItem('token');
           } catch (e) { /* ignore */ }
           window.location.href = loginUrl();
         }
       });
-      // 无 AuthSession 时的轻量假登录清理
-      try {
-        var u = sessionStorage.getItem('user');
-        var t = sessionStorage.getItem('token');
-        if (u && !t) {
-          sessionStorage.removeItem('user');
-        }
-      } catch (e2) { /* ignore */ }
     }
     syncNavLinks();
     normalizeFrontLinks();

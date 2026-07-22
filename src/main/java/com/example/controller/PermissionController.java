@@ -62,7 +62,14 @@ public class PermissionController {
     }
 
     @GetMapping("/export")
-    public void export(HttpServletResponse response) throws IOException {
+    public void export(javax.servlet.http.HttpServletRequest request, HttpServletResponse response) throws IOException {
+        com.example.entity.User user = (com.example.entity.User) request.getSession().getAttribute("user");
+        if (!com.example.common.PermissionUtil.hasFlag(user, "permission")) {
+            response.setStatus(403);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"code\":\"403\",\"msg\":\"无权导出权限\"}");
+            return;
+        }
         ExcelExportUtil.export(response, "权限信息", permissionService.list(), permission -> {
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("ID", permission.getId());

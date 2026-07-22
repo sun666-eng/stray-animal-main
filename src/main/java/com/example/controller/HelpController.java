@@ -9,6 +9,7 @@ import com.example.common.PermissionUtil;
 import com.example.common.Result;
 import com.example.entity.Help;
 import com.example.entity.User;
+import com.example.exception.CustomException;
 import com.example.service.HelpService;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,38 +34,54 @@ public class HelpController {
     @PostMapping
     public Result<?> save(@Valid @RequestBody Help help, HttpServletRequest request) {
         User user = (User) request.getSession().getAttribute("user");
-        if (user == null || user.getId() == null) {
-            return Result.error("401", "未登录或登录已过期");
+        try {
+            return Result.success(helpService.submitHelp(help, user));
+        } catch (CustomException e) {
+            return Result.error(e.getCode(), e.getMsg());
         }
-        help.setUid(user.getId());
-        help.setUname(user.getUsername());
-        help.setStatus(0);
-        help.setCreateTime(new Date());
-        help.setUpdateTime(new Date());
-        return Result.success(helpService.save(help));
     }
 
     @AuditLog(module = "救助咨询", action = "更新救助请求")
     @PutMapping
-    public Result<?> update(@RequestBody Help help) {
-        help.setUpdateTime(new Date());
-        return Result.success(helpService.updateById(help));
+    public Result<?> update(@RequestBody Help help, HttpServletRequest request) {
+        User user = (User) request.getSession().getAttribute("user");
+        try {
+            return Result.success(helpService.updateHelp(help, user));
+        } catch (CustomException e) {
+            return Result.error(e.getCode(), e.getMsg());
+        }
     }
 
     @AuditLog(module = "救助咨询", action = "删除救助请求")
     @DeleteMapping("/{id}")
     public Result<?> delete(@PathVariable Long id) {
-        helpService.removeById(id);
-        return Result.success();
+        try {
+            return Result.success(helpService.deleteHelp(id));
+        } catch (CustomException e) {
+            return Result.error(e.getCode(), e.getMsg());
+        }
     }
 
     @GetMapping("/{id}")
-    public Result<Help> findById(@PathVariable Long id) {
-        return Result.success(helpService.getById(id));
+    public Result<Help> findById(@PathVariable Long id, HttpServletRequest request) {
+        User user = (User) request.getSession().getAttribute("user");
+        Help help = helpService.getById(id);
+        if (help == null) {
+            return Result.error("404", "记录不存在");
+        }
+        boolean manage = PermissionUtil.hasFlag(user, "help") || PermissionUtil.hasFlag(user, "rescue");
+        if (!manage && (user == null || user.getId() == null || !user.getId().equals(help.getUid()))) {
+            return Result.error("403", "只能查看自己的救助请求");
+        }
+        return Result.success(help);
     }
 
     @GetMapping
-    public Result<List<Help>> findAll() {
+    public Result<List<Help>> findAll(HttpServletRequest request) {
+        User user = (User) request.getSession().getAttribute("user");
+        if (!PermissionUtil.hasFlag(user, "help") && !PermissionUtil.hasFlag(user, "rescue")) {
+            return Result.error("403", "无权查看全部救助请求");
+        }
         return Result.success(helpService.list(
             Wrappers.<Help>lambdaQuery()
                 .ne(Help::getTitle, "聊天室消息")
@@ -75,7 +92,12 @@ public class HelpController {
     @GetMapping("/page")
     public Result<IPage<Help>> findPage(@RequestParam(required = false, defaultValue = "") String name,
                                          @RequestParam(required = false, defaultValue = "1") Integer pageNum,
-                                         @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
+                                         @RequestParam(required = false, defaultValue = "10") Integer pageSize,
+                                         HttpServletRequest request) {
+        User user = (User) request.getSession().getAttribute("user");
+        if (!PermissionUtil.hasFlag(user, "help") && !PermissionUtil.hasFlag(user, "rescue")) {
+            return Result.error("403", "无权查看救助列表");
+        }
         return Result.success(helpService.page(new Page<>(pageNum, pageSize),
                 Wrappers.<Help>lambdaQuery()
                         .like(Help::getTitle, name)
@@ -108,6 +130,8 @@ public class HelpController {
         help.setTitle("聊天室消息");
         help.setLocation("在线聊天");
         help.setStatus(0);
+        // 聊天不支持附件，禁止 pic 绕过 Help 绑定
+        help.setPic(null);
         help.setCreateTime(new Date());
         help.setUpdateTime(new Date());
         helpService.save(help);
@@ -125,7 +149,14 @@ public class HelpController {
     }
 
     @GetMapping("/export")
-    public void export(HttpServletResponse response) throws IOException {
+    public void export(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        User user = (User) request.getSession().getAttribute("user");
+        if (!PermissionUtil.hasFlag(user, "help") && !PermissionUtil.hasFlag(user, "rescue")) {
+            response.setStatus(403);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"code\":\"403\",\"msg\":\"无权导出救助请求\"}");
+            return;
+        }
         ExcelExportUtil.export(response, "救助请求", helpService.list(
                 Wrappers.<Help>lambdaQuery().ne(Help::getTitle, "聊天室消息")
         ), help -> {

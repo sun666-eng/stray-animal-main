@@ -96,9 +96,27 @@ mvn clean compile
 mvn test
 ```
 
-启动项目：
+启动项目（**本地须显式 dev profile**）：
 
 ```bash
+# Windows PowerShell
+$env:SPRING_PROFILES_ACTIVE="dev"
+mvn spring-boot:run
+
+# 或
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+生产示例：
+
+```bash
+$env:SPRING_PROFILES_ACTIVE="prod"
+$env:JWT_SECRET="至少32位随机串-勿用开发密钥"
+$env:DB_PASSWORD="强库密"
+# 空库首启管理员（可选）：
+# $env:INITIAL_ADMIN_ENABLED="true"
+# $env:INITIAL_ADMIN_USERNAME="opsadmin"
+# $env:INITIAL_ADMIN_PASSWORD="长随机密码至少10位"
 mvn spring-boot:run
 ```
 
@@ -113,10 +131,24 @@ http://localhost:9999/page/end
 ## 安全注意事项
 
 - 不要在生产环境使用弱数据库密码或弱 Redis 密码。
-- 不要在生产环境使用默认 `JWT_SECRET`。
+- 不要在生产环境使用默认 / 开发 `JWT_SECRET`；`prod` 与 `prod,dev` 均强制生产密钥规则。
+- 本地开发请显式 `SPRING_PROFILES_ACTIVE=dev`（已取消默认 dev）。
 - 上传目录不要指向项目源码目录或临时目录。
 - 生产环境必须收紧 CORS 允许来源。
-- WebSocket 聊天连接需要使用登录后获取的 JWT token。
+- 状态变更 API 须带 `X-CSRF-Token`（登录响应或 `GET /api/user/csrf`）。
+- 文件上传建议带 `purpose`：`animal`/`avatar`/`notice`（公开），`proof`/`visit`/`volunteer`/`help`（私有）。
+- 上传走 `/api/files/{flag}`，**不要**再依赖 `/file/**` 直链上传目录。
+- WebSocket 聊天连接使用登录后 `/api/user/ws-ticket` 一次性票据。
+
+## 发布前检查
+
+```powershell
+$env:SPRING_PROFILES_ACTIVE="dev"
+# 终端1: mvn spring-boot:run
+# 终端2:
+powershell -ExecutionPolicy Bypass -File tools/pre-demo-check.ps1
+# 人工: docs/L4-manual-checklist.md
+```
 
 ## 主要模块
 

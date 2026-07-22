@@ -271,12 +271,12 @@
     var vm;
 
     function openSocket() {
-        var token = sessionStorage.getItem("token");
-        if (!token || typeof(WebSocket) == "undefined") {
+        var csrf = (window.AuthSession && AuthSession.getCsrfToken) ? AuthSession.getCsrfToken() : (sessionStorage.getItem("csrfToken") || "");
+        if (typeof(WebSocket) == "undefined") {
             console.log("您的浏览器不支持WebSocket");
             return;
         }
-        fetch('/api/user/ws-ticket', {method: 'POST', headers: {'Authorization': 'Bearer ' + token}, credentials: 'same-origin'})
+        fetch('/api/user/ws-ticket', {method: 'POST', headers: {'X-CSRF-Token': csrf, 'Content-Type': 'application/json'}, body: '{}', credentials: 'same-origin'})
           .then(function (response) { return response.json(); })
           .then(function (result) {
             if (!result || result.code !== '0' || !result.data || !result.data.ticket) return;
@@ -289,17 +289,25 @@
             };
             socket.onmessage = function (msg) {
             var data = JSON.parse(msg.data);
-            if (data.users) {
-                vm.onlineCount = data.users.length;
-            } else if (data.type === 'chat') {
+            // B4：仅用 onlineCount；users 恒为空数组（防枚举）
+            if (data.type === 'online' || typeof data.onlineCount === 'number') {
+                vm.onlineCount = data.onlineCount || 0;
+            }
+            if (data.type === 'chat') {
                 var isSelf = (data.from === vm.user.username);
                 appendMessage(data.from, data.text, isSelf, data.time);
             } else if (data.type === 'join') {
-                vm.onlineCount++;
-                appendSystemMsg(data.username + ' 加入了聊天室');
+                if (typeof data.onlineCount === 'number') {
+                    vm.onlineCount = data.onlineCount;
+                }
+                appendSystemMsg((data.username || '有人') + ' 加入了聊天室');
             } else if (data.type === 'leave') {
-                vm.onlineCount = Math.max(0, vm.onlineCount - 1);
-                appendSystemMsg(data.username + ' 离开了聊天室');
+                if (typeof data.onlineCount === 'number') {
+                    vm.onlineCount = data.onlineCount;
+                } else {
+                    vm.onlineCount = Math.max(0, vm.onlineCount - 1);
+                }
+                appendSystemMsg((data.username || '有人') + ' 离开了聊天室');
             }
             };
             socket.onclose = function () {
@@ -336,32 +344,61 @@
         return yyyy + '-' + mm + '-' + dd + ' ' + hhmm;
     }
 
+    /**
+     * A0.4：DOM + textContent，禁止 username 未转义拼 HTML（存储型 XSS）。
+     */
     function appendMessage(username, text, isSelf, timeValue) {
-        var avatarUrl = isSelf ? ('/api/files/' + vm.user.avatar) : defaultAvatar;
+        var avatarFlag = isSelf && vm.user && vm.user.avatar ? String(vm.user.avatar) : '';
+        if (!/^[a-zA-Z0-9_-]{1,64}$/.test(avatarFlag)) {
+            avatarFlag = '';
+        }
+        var avatarUrl = avatarFlag ? ('/api/files/' + avatarFlag) : defaultAvatar;
         var time = formatChatTime(timeValue);
-        var cls = isSelf ? 'msg-item self' : 'msg-item';
-        var html = '<div class="' + cls + '">'
-            + '<img class="msg-avatar" src="' + avatarUrl + '" onerror="this.src=defaultAvatar">'
-            + '<div class="msg-body">'
-            + '<div class="msg-username">' + username + '</div>'
-            + '<div class="msg-bubble">' + escapeHtml(text) + '</div>'
-            + '<div class="msg-time">' + time + '</div>'
-            + '</div></div>';
         var box = document.getElementById('chat-box');
-        box.insertAdjacentHTML('beforeend', html);
+        var item = document.createElement('div');
+        item.className = isSelf ? 'msg-item self' : 'msg-item';
+
+        var img = document.createElement('img');
+        img.className = 'msg-avatar';
+        img.src = avatarUrl;
+        img.onerror = function () { this.src = defaultAvatar; };
+
+        var body = document.createElement('div');
+        body.className = 'msg-body';
+
+        var nameEl = document.createElement('div');
+        nameEl.className = 'msg-username';
+        nameEl.textContent = username == null ? '' : String(username);
+
+        var bubble = document.createElement('div');
+        bubble.className = 'msg-bubble';
+        bubble.textContent = text == null ? '' : String(text);
+
+        var timeEl = document.createElement('div');
+        timeEl.className = 'msg-time';
+        timeEl.textContent = time == null ? '' : String(time);
+
+        body.appendChild(nameEl);
+        body.appendChild(bubble);
+        body.appendChild(timeEl);
+        item.appendChild(img);
+        item.appendChild(body);
+        box.appendChild(item);
         box.scrollTop = box.scrollHeight;
     }
 
     function appendSystemMsg(text) {
-        var html = '<div class="system-msg">' + text + '</div>';
         var box = document.getElementById('chat-box');
-        box.insertAdjacentHTML('beforeend', html);
+        var el = document.createElement('div');
+        el.className = 'system-msg';
+        el.textContent = text == null ? '' : String(text);
+        box.appendChild(el);
         box.scrollTop = box.scrollHeight;
     }
 
     function escapeHtml(str) {
         var div = document.createElement('div');
-        div.appendChild(document.createTextNode(str));
+        div.appendChild(document.createTextNode(str == null ? '' : String(str)));
         return div.innerHTML;
     }
 
@@ -420,15 +457,7 @@
                         var records = res.data.records;
                         for (var i = records.length - 1; i >= 0; i--) {
                             var item = records[i];
-                            var time = item.createTime || '';
-                            var html = '<div class="msg-item">'
-                                + '<img class="msg-avatar" src="' + defaultAvatar + '">'
-                                + '<div class="msg-body">'
-                                + '<div class="msg-username">' + (item.uname || '用户') + '</div>'
-                                + '<div class="msg-bubble">' + escapeHtml(item.description || item.title || '') + '</div>'
-                                + '<div class="msg-time">' + time + '</div>'
-                                + '</div></div>';
-                            document.getElementById('chat-box').insertAdjacentHTML('beforeend', html);
+                            appendMessage(item.uname || '用户', item.description || item.title || '', false, item.createTime);
                         }
                     }
                 });
@@ -436,11 +465,7 @@
             handleCollapse: function() {
                 this.isCollapse = !this.isCollapse;
             },
-            logout: function() {
-                $.get("/api/user/logout");
-                sessionStorage.removeItem("user");
-                location.href = "/page/front/login.html";
-            },
+            logout: function() { if (window.AuthSession) { AuthSession.logout(); } else { location.href="/page/front/login.html"; } },
             send: function() {
                 if (!this.text.trim()) {
                     this.$message({ type: 'warning', message: '请输入内容' });

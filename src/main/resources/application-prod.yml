@@ -1,0 +1,51 @@
+# 生产 profile：禁止默认开发行为；须配合环境变量启动
+# 启动：--spring.profiles.active=prod
+# 必填：JWT_SECRET（≥32 且非开发密钥）、DB_* 、建议 FILE_UPLOAD_DIR
+app:
+  jwt:
+    # 生产绝不允许开发密钥
+    allow-dev-secret: false
+    secret: ${JWT_SECRET:}
+  cors:
+    allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:}
+  data-fix:
+    enabled: false
+  schema-guard:
+    enabled: true
+    auto-migrate: false
+    fail-fast: true
+  data-health:
+    enabled: true
+  data-state-guard:
+    enabled: true
+    auto-fix: false
+    fail-fast: false
+  role-guard:
+    enabled: true
+    auto-fix: false
+    fail-fast: false
+  password:
+    allow-plaintext-login: false
+  login:
+    rate-limit:
+      enabled: true
+      max-attempts: 8
+      window-seconds: 300
+      lock-seconds: 900
+  bootstrap:
+    # 生产首个管理员仅通过环境变量创建，见 InitialAdminBootstrap
+    initial-admin-enabled: true
+
+server:
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        # 生产须 HTTPS；本地误用 prod 时需反向代理 TLS
+        secure: true
+        same-site: lax
+
+spring:
+  datasource:
+    # 生产建议开启 SSL（按云厂商调整）
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:test}?useUnicode=true&characterEncoding=utf-8&useSSL=${DB_USE_SSL:true}&serverTimezone=GMT%2b8

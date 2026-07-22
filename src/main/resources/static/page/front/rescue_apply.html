@@ -184,16 +184,16 @@ function ensureVolunteerEntry() {
 ensureVolunteerEntry();
 
 function handleLogout() {
-    $.get("/api/user/logout");
+    /* logout via AuthSession */ if (window.AuthSession) { AuthSession.logout(); return; }
     sessionStorage.removeItem("user");
     location.href = "/page/front/login.html";
 }
 
 function openFrontSocket() {
     var userText = sessionStorage.getItem("user");
-    var token = sessionStorage.getItem("token");
-    if (!userText || !token || typeof(WebSocket) == "undefined") return;
-    fetch('/api/user/ws-ticket', {method: 'POST', headers: {'Authorization': 'Bearer ' + token}, credentials: 'same-origin'})
+    var csrf = (window.AuthSession && AuthSession.getCsrfToken) ? AuthSession.getCsrfToken() : (sessionStorage.getItem("csrfToken") || "");
+    if (!userText || typeof(WebSocket) == "undefined") return;
+    fetch('/api/user/ws-ticket', {method: 'POST', headers: {'X-CSRF-Token': csrf, 'Content-Type': 'application/json'}, body: '{}', credentials: 'same-origin'})
       .then(function (response) { return response.json(); })
       .then(function (result) {
         if (!result || result.code !== '0' || !result.data || !result.data.ticket) return;
@@ -203,16 +203,24 @@ function openFrontSocket() {
         frontSocket = new WebSocket(socketUrl);
         frontSocket.onmessage = function(msg) {
         var data = JSON.parse(msg.data);
-        if (data.users) {
-            frontVm.onlineCount = data.users.length;
-        } else if (data.type === 'chat') {
+        // B4：仅用 onlineCount；users 恒为空数组（防枚举）
+        if (data.type === 'online' || typeof data.onlineCount === 'number') {
+            frontVm.onlineCount = data.onlineCount || 0;
+        }
+        if (data.type === 'chat') {
             appendFrontMessage(data.from, data.text, data.from === frontVm.user.username, data.time);
         } else if (data.type === 'join') {
-            frontVm.onlineCount++;
-            appendFrontSystemMsg(data.username + ' 加入了聊天室');
+            if (typeof data.onlineCount === 'number') {
+                frontVm.onlineCount = data.onlineCount;
+            }
+            appendFrontSystemMsg((data.username || '有人') + ' 加入了聊天室');
         } else if (data.type === 'leave') {
-            frontVm.onlineCount = Math.max(0, frontVm.onlineCount - 1);
-            appendFrontSystemMsg(data.username + ' 离开了聊天室');
+            if (typeof data.onlineCount === 'number') {
+                frontVm.onlineCount = data.onlineCount;
+            } else {
+                frontVm.onlineCount = Math.max(0, frontVm.onlineCount - 1);
+            }
+            appendFrontSystemMsg((data.username || '有人') + ' 离开了聊天室');
         }
         };
       }).catch(function () { frontSocket = null; });
@@ -333,7 +341,7 @@ frontVm = new Vue({
             var file = e.target.files[0];
             if (!file) return;
             var formData = new FormData();
-            formData.append("file", file);
+            formData.append("file", file); formData.append('purpose', 'help');
             var self = this;
             $.ajax({ url: '/api/files/upload', type: 'POST', data: formData, processData: false, contentType: false })
             .then(function(res) {

@@ -9,26 +9,25 @@
     if (window.AuthSession) {
         window.AuthSession.installAjaxAuth();
         window.AuthSession.sanitizeLocalSession();
-        // 管理端页面必须有效会话
         var path = window.location.pathname || '';
         var isLogin = path.indexOf('login.html') >= 0;
         if (!isLogin) {
             window.AuthSession.revalidate(function (ok) {
-                if (!ok && !window.AuthSession.getToken()) {
-                    // 无 token 且 /me 失败 → 跳登录
-                    if (!window.AuthSession.getUser()) {
-                        window.location.href = window.AuthSession.loginUrl();
-                    }
+                if (!ok && !window.AuthSession.getUser()) {
+                    window.location.href = window.AuthSession.loginUrl();
                 }
             });
         }
     } else {
         $.ajaxSetup({
             xhrFields: { withCredentials: true },
-            beforeSend: function (xhr) {
-                var token = sessionStorage.getItem('token') || localStorage.getItem('token');
-                if (token) {
-                    xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            beforeSend: function (xhr, settings) {
+                var method = (settings && settings.type ? settings.type : 'GET').toUpperCase();
+                if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+                    var csrf = sessionStorage.getItem('csrfToken');
+                    if (csrf) {
+                        xhr.setRequestHeader('X-CSRF-Token', csrf);
+                    }
                 }
             }
         });
@@ -36,16 +35,12 @@
             if (xhr && xhr.status === 401) {
                 sessionStorage.removeItem('user');
                 sessionStorage.removeItem('token');
+                sessionStorage.removeItem('csrfToken');
                 localStorage.removeItem('token');
                 var current = window.location.pathname + window.location.search;
                 window.location.href = '/page/front/login.html?redirect=' + encodeURIComponent(current);
             }
         });
-        try {
-            if (sessionStorage.getItem('user') && !sessionStorage.getItem('token')) {
-                sessionStorage.removeItem('user');
-            }
-        } catch (e) { /* ignore */ }
     }
 
     var ADMIN_FLAGS = {

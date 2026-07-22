@@ -18,6 +18,7 @@ Thumbs.db
 logs/
 upload/
 tmp/
+legacy-uploads/
 
 ### Office 临时锁文件 ###
 ~$*.docx

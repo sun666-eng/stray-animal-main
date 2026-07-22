@@ -224,10 +224,12 @@
         if (xhr.status === 401) { location.href = '/page/front/login.html'; }
     });
     $.ajaxSetup({
-        beforeSend: function(xhr) {
-            const token = sessionStorage.getItem("token");
-            if (token) {
-                xhr.setRequestHeader("Authorization", "Bearer " + token);
+        xhrFields: { withCredentials: true },
+        beforeSend: function(xhr, settings) {
+            var method = (settings && settings.type ? settings.type : 'GET').toUpperCase();
+            if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+                var csrf = sessionStorage.getItem('csrfToken');
+                if (csrf) { xhr.setRequestHeader('X-CSRF-Token', csrf); }
             }
         }
     });
@@ -273,22 +275,20 @@
                 if (!this.hasFlag("account")) {
                     return;
                 }
+                // B7：管理端收支分标签聚合，与 incomeTotal/expenseTotal 口径一致
                 let pieChart = echarts.init(document.getElementById('main'));
-                $.get("/api/account/public?pageNum=1&pageSize=1&_=" + Date.now()).then(res => {
-                    const records = res.data && res.data.allRecords ? res.data.allRecords : [];
-                    this.accounts = records.filter(v => v.avalue<0);
-                    pieOption.legend.data = this.accounts.map(v => v.alabel);
-                    let arr = this.accounts.map(item => ({name:item.alabel, value:item.avalue}));
-                    pieOption.series[0].data = this.GroupBy(arr,['name'],(d,v)=>{ d=d||0; return d+=v.value; });
-                    pieChart.setOption(pieOption);
-                });
                 let pieChart1 = echarts.init(document.getElementById('bar'));
-                $.get("/api/account/public?pageNum=1&pageSize=1&_=" + Date.now()).then(res => {
-                    const records = res.data && res.data.allRecords ? res.data.allRecords : [];
-                    this.accounts = records.filter(v => v.avalue>0);
-                    pieOption1.legend.data = this.accounts.map(v => v.alabel);
-                    let arr = this.accounts.map(item => ({name:item.alabel, value:item.avalue}));
-                    pieOption1.series[0].data = this.GroupBy(arr,['name'],(d,v)=>{ d=d||0; return d+=v.value; });
+                $.get("/api/account/stats/by-label?_=" + Date.now()).then(res => {
+                    if (res.code !== '0' || !res.data) return;
+                    const expense = (res.data.expenseByLabel || [])
+                        .map(v => ({ name: v.name, value: Number(v.value) || 0 }));
+                    const income = (res.data.incomeByLabel || [])
+                        .map(v => ({ name: v.name, value: Number(v.value) || 0 }));
+                    pieOption.legend.data = expense.map(v => v.name);
+                    pieOption.series[0].data = expense;
+                    pieChart.setOption(pieOption);
+                    pieOption1.legend.data = income.map(v => v.name);
+                    pieOption1.series[0].data = income;
                     pieChart1.setOption(pieOption1);
                 });
             },
@@ -329,7 +329,7 @@
                 }
             },
             handleCollapse() { this.isCollapse = !this.isCollapse; },
-            logout() { $.get("/api/user/logout"); sessionStorage.removeItem("user"); location.href = "/page/front/login.html"; },
+            logout() { if (window.AuthSession) { AuthSession.logout(); } else { location.href="/page/front/login.html"; } },
             goStat(path, flag) {
                 if (this.hasFlag(flag)) {
                     location.href = path;

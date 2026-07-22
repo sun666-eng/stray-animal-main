@@ -25,6 +25,9 @@ public class ProofServiceTest {
     @Mock
     AdoptService adoptService;
 
+    @Mock
+    FileAssetService fileAssetService;
+
     @InjectMocks
     ProofService proofService;
 

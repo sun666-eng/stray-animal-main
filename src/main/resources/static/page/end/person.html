@@ -256,11 +256,7 @@
             this.load();
         },
         methods: {
-            logout() {
-                $.get("/api/user/logout");
-                sessionStorage.removeItem("user");
-                location.href = "/page/front/login.html";
-            },
+            logout() { if (window.AuthSession) { AuthSession.logout(); } else { location.href="/page/front/login.html"; } },
             handleCollapse() {
                 this.isCollapse = !this.isCollapse;
             },
@@ -296,8 +292,7 @@
             },
             upload() {
                 let formData = new FormData();
-                formData.append("file", $("#avatar")[0].files[0])
-                $.ajax({
+                formData.append("file", $("#avatar")[0].files[0]); formData.append('purpose', 'avatar'); $.ajax({
                     url: '/api/files/upload',
                     processData: false,
                     contentType: false,

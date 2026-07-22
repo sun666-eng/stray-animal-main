@@ -97,15 +97,13 @@ document.addEventListener('click', function(e) {
             <thead>
             <tr>
                 <th>款项名称</th>
-                <th>经手人</th>
                 <th>金额</th>
                 <th>用途详情</th>
             </tr>
             </thead>
             <tbody>
-            <tr v-for="item in records" :key="item.id">
+            <tr v-for="(item, idx) in records" :key="idx">
                 <td>{{ item.alabel || '-' }}</td>
-                <td>{{ item.auname || '-' }}</td>
                 <td><span class="amount" :class="Number(item.avalue) >= 0 ? 'income' : 'expense'">{{ formatMoney(item.avalue) }}</span></td>
                 <td>{{ item.adescribe || '-' }}</td>
             </tr>
@@ -125,7 +123,7 @@ document.addEventListener('click', function(e) {
 <script>
 new Vue({
   el: '#app',
-  data: { user: {}, records: [], allRecords: [], query: '', loading: false, pageNum: 1, pageSize: 10, totalPages: 1, incomeTotal: 0, expenseTotal: 0, balance: 0 },
+  data: { user: {}, records: [], query: '', loading: false, pageNum: 1, pageSize: 10, totalPages: 1, incomeTotal: 0, expenseTotal: 0, balance: 0 },
   computed: {
     pageList() {
       var pages = [];
@@ -146,7 +144,6 @@ new Vue({
           if (res.code === '0' && res.data) {
             this.records = res.data.records || [];
             this.totalPages = res.data.pages || 1;
-            this.allRecords = res.data.allRecords || [];
             this.incomeTotal = Number(res.data.incomeTotal || 0);
             this.expenseTotal = Number(res.data.expenseTotal || 0);
             this.balance = Number(res.data.balance || 0);
@@ -172,7 +169,8 @@ new Vue({
   if (u && u.username) { document.getElementById('toolbar-username').textContent = u.username; }
 })();
 function handleLogout() {
-  $.ajax({ url: '/api/user/logout', type: 'GET' }).always(function(){
+  if (window.AuthSession) { AuthSession.logout(); return; }
+  $.ajax({ url: '/api/user/logout', type: 'POST', contentType: 'application/json', data: '{}', headers: { 'X-CSRF-Token': sessionStorage.getItem('csrfToken') || '' } }).always(function(){
     sessionStorage.removeItem('user');
     location.href = '/page/front/login.html';
   });

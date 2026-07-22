@@ -1,91 +1,108 @@
-# 对抗：上传目录绝对路径 + 上传后可按 flag 读回 + meta 记录
+# 对抗：上传 + purpose 元数据 + 私有文件权限 + /file/** 旁路不应直出私有盘
 param(
   [string]$BaseUrl = "http://localhost:9999",
-  [string]$Root = "D:\Documents\日期归档\2026\2026.4.7\Myproject\stray-animal-main",
-  [string]$Mysql = "D:\MySQL\MySQL Server 8.0\bin\mysql.exe"
+  [string]$UserName = "jerry",
+  [string]$UserPass = "123456"
 )
 
 $ErrorActionPreference = "Continue"
 $fail = 0
+. "$PSScriptRoot\lib-session.ps1"
+
 function Pass($n, $ok, $d) {
   if ($ok) { Write-Host "[PASS] $n :: $d" -ForegroundColor Green }
   else { Write-Host "[FAIL] $n :: $d" -ForegroundColor Red; $script:fail++ }
 }
 
-function EnsureApp {
-  try {
-    Invoke-WebRequest -Uri "$BaseUrl/api/dashboard/public-stats" -UseBasicParsing -TimeoutSec 3 | Out-Null
-    return
-  } catch {}
-  $conns = Get-NetTCPConnection -LocalPort 9999 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique
-  foreach ($procId in $conns) { if ($procId) { Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue } }
-  Start-Sleep 2
-  $env:JWT_SECRET = "dev-local-jwt-secret-change-me-32chars-min"
-  $env:DB_PASSWORD = "123456"
-  Start-Process -FilePath "mvn" -ArgumentList "-q","-DskipTests","spring-boot:run" -WorkingDirectory $Root -WindowStyle Hidden
-  for ($i = 0; $i -lt 40; $i++) {
-    Start-Sleep 2
-    try { Invoke-WebRequest -Uri "$BaseUrl/api/dashboard/public-stats" -UseBasicParsing -TimeoutSec 2 | Out-Null; return } catch {}
-  }
+Write-Host "=== Upload adversarial ===" -ForegroundColor Cyan
+
+try {
+  Invoke-WebRequest -Uri "$BaseUrl/api/animal/page1?pageNum=1&pageSize=1" -UseBasicParsing -TimeoutSec 3 | Out-Null
+} catch {
+  Write-Host "服务未启动，中止（请先 SPRING_PROFILES_ACTIVE=dev 启动）" -ForegroundColor Yellow
+  exit 1
 }
 
-EnsureApp
-
-Write-Host "=== 1) meta 中的 upload_root ===" -ForegroundColor Cyan
-$meta = & $Mysql -uroot -p123456 -N -e "USE test; SELECT meta_value FROM app_schema_meta WHERE meta_key='upload_root';" 2>&1 |
-  Where-Object { $_ -notmatch 'Using a password' }
-$meta = ($meta | Out-String).Trim()
-Pass "upload_root 已写入" ($meta.Length -gt 3) "meta=$meta"
-Pass "upload_root 为绝对路径" ($meta -match '^[A-Za-z]:\\' -or $meta.StartsWith('/') -or $meta -match '^[A-Za-z]:/') "meta=$meta"
-Pass "upload_root 含 stray-animal 或自定义" ($meta -match 'stray-animal|upload' -or $meta.Length -gt 5) "ok"
-
-Write-Host "=== 2) 登录并上传 ===" -ForegroundColor Cyan
-$s = New-Object Microsoft.PowerShell.Commands.WebRequestSession
-$login = Invoke-RestMethod -Uri "$BaseUrl/api/user/login" -Method POST -ContentType "application/json" `
-  -Body '{"username":"jerry","password":"123456"}' -WebSession $s
-$token = $login.data.token
-Pass "登录" ($login.code -eq "0" -and $token) "ok"
+$s = New-AppSession -BaseUrl $BaseUrl -Username $UserName -Password $UserPass
+Pass "登录" ($s.Login.code -eq "0") "ok"
+Pass "会话含 csrf" ([bool]$s.Csrf) "csrf=$([bool]$s.Csrf)"
 
 $pngPath = Join-Path $env:TEMP "adv-upload.png"
-# minimal 1x1 png
 [IO.File]::WriteAllBytes($pngPath, [Convert]::FromBase64String(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="))
 
-$form = @{
-  file = Get-Item $pngPath
-}
-try {
-  $resp = Invoke-RestMethod -Uri "$BaseUrl/api/files/upload" -Method POST -WebSession $s -Form $form
-  # PowerShell 5 may not support -Form; fallback curl
-} catch {
-  $resp = $null
-}
-if (-not $resp) {
-  $cookie = Join-Path $env:TEMP "adv-up-cookie.txt"
-  # login cookie jar
-  curl.exe -s -c $cookie -b $cookie -H "Content-Type: application/json" -d "{\"username\":\"jerry\",\"password\":\"123456\"}" "$BaseUrl/api/user/login" | Out-Null
-  $raw = curl.exe -s -b $cookie -H "Authorization: Bearer $token" -F "file=@$pngPath" "$BaseUrl/api/files/upload"
-  $resp = $raw | ConvertFrom-Json
-}
-Pass "上传成功" ($resp.code -eq "0" -and $resp.data.flag) "flag=$($resp.data.flag)"
-$flag = $resp.data.flag
+# curl 登录：用 body 文件避免 PS 转义问题
+$cookie = Join-Path $env:TEMP "adv-up-cookie.txt"
+$loginBody = Join-Path $env:TEMP "adv-up-login.json"
+Remove-Item $cookie -ErrorAction SilentlyContinue
+$utf8 = New-Object System.Text.UTF8Encoding $false
+[System.IO.File]::WriteAllText($loginBody, (@{ username = $UserName; password = $UserPass } | ConvertTo-Json -Compress), $utf8)
+$loginRaw = curl.exe -s -c $cookie -b $cookie -H "Content-Type: application/json" --data-binary "@$loginBody" "$BaseUrl/api/user/login"
+$loginObj = $null
+try { $loginObj = $loginRaw | ConvertFrom-Json } catch {}
+$csrf = if ($loginObj -and $loginObj.data) { $loginObj.data.csrfToken } else { $null }
+$loginJwt = $loginObj -and $loginObj.data -and $loginObj.data.token
+Pass "curl 登录拿 csrf" ([bool]$csrf -and -not $loginJwt) "csrf=$([bool]$csrf) jwt=$loginJwt"
 
-Write-Host "=== 3) 磁盘上文件存在于绝对目录 ===" -ForegroundColor Cyan
-$found = $false
-if ($meta -and (Test-Path $meta)) {
-  $hit = Get-ChildItem -Path $meta -Filter "$flag-*" -ErrorAction SilentlyContinue | Select-Object -First 1
-  $found = $null -ne $hit
-  Pass "落盘在 upload_root" $found "file=$($hit.FullName)"
+$raw = curl.exe -s -b $cookie -H "X-CSRF-Token: $csrf" `
+  -F "file=@$pngPath;type=image/png" -F "purpose=proof" "$BaseUrl/api/files/upload"
+$resp = $null
+try { $resp = $raw | ConvertFrom-Json } catch {}
+Pass "上传 proof purpose" ($resp -and $resp.code -eq "0" -and $resp.data.flag) "flag=$(if($resp -and $resp.data){$resp.data.flag}) raw=$raw"
+$flag = if ($resp -and $resp.data) { $resp.data.flag } else { $null }
+
+$expectedHash = (Get-FileHash -Path $pngPath -Algorithm SHA256).Hash
+if ($flag) {
+  try {
+    $anon = Invoke-WebRequest -Uri "$BaseUrl/api/files/$flag" -UseBasicParsing
+    Pass "匿名读私有 proof 应拒绝" ($anon.StatusCode -eq 403) "http=$($anon.StatusCode)"
+  } catch {
+    $st = 0
+    if ($_.Exception.Response) { $st = [int]$_.Exception.Response.StatusCode }
+    Pass "匿名读私有 proof 应拒绝" ($st -eq 403) "http=$st"
+  }
+
+  $ownPath = Join-Path $env:TEMP "own-proof.bin"
+  $ownCode = curl.exe -s -o $ownPath -w "%{http_code}" -b $cookie "$BaseUrl/api/files/$flag"
+  $ownLen = 0
+  $actualHash = ""
+  if (Test-Path $ownPath) {
+    $ownLen = (Get-Item $ownPath).Length
+    $actualHash = (Get-FileHash -Path $ownPath -Algorithm SHA256).Hash
+  }
+  Pass "owner 可读且内容一致" ($ownCode -eq "200" -and $actualHash -eq $expectedHash) "http=$ownCode len=$ownLen hashMatch=$($actualHash -eq $expectedHash)"
+
+  # /file/** 旁路：用真实 stored_name（上传格式 flag-原名）
+  $storedGuess = "$flag-adv-upload.png"
+  try {
+    $bypass = Invoke-WebRequest -Uri "$BaseUrl/file/$storedGuess" -UseBasicParsing
+    Pass "/file 旁路不直出真实文件" ($bypass.StatusCode -ne 200 -or $bypass.RawContentLength -lt 5) "http=$($bypass.StatusCode) len=$($bypass.RawContentLength)"
+  } catch {
+    $st = 0
+    if ($_.Exception.Response) { $st = [int]$_.Exception.Response.StatusCode }
+    Pass "/file 旁路不直出真实文件" ($st -ne 200) "http=$st"
+  }
 } else {
-  Pass "落盘在 upload_root" $false "meta path missing: $meta"
+  Pass "匿名读私有 proof 应拒绝" $false "no flag"
+  Pass "owner 可读且内容一致" $false "no flag"
+  Pass "/file 旁路不直出真实文件" $false "no flag"
 }
 
-Write-Host "=== 4) 按 flag 读回 ===" -ForegroundColor Cyan
+# 普通用户声明 animal 必须 403（成功即提权 FAIL）
+$raw2 = curl.exe -s -b $cookie -H "X-CSRF-Token: $csrf" `
+  -F "file=@$pngPath;type=image/png" -F "purpose=animal" "$BaseUrl/api/files/upload"
+$resp2 = $null
+try { $resp2 = $raw2 | ConvertFrom-Json } catch {}
+if ($resp2 -and $resp2.code -eq "0") {
+  Pass "普通用户不可声明 animal purpose" $false "SECURITY: upload succeeded code=0 flag=$(if($resp2.data){$resp2.data.flag})"
+} else {
+  Pass "普通用户不可声明 animal purpose" ($resp2 -and $resp2.code -eq "403") "code=$(if($resp2){$resp2.code}) raw=$raw2"
+}
 try {
-  $get = Invoke-WebRequest -Uri "$BaseUrl/api/files/$flag" -UseBasicParsing -WebSession $s
-  Pass "读回 HTTP 200" ($get.StatusCode -eq 200 -and $get.RawContentLength -gt 10) "len=$($get.RawContentLength)"
+  $pub = Invoke-WebRequest -Uri "$BaseUrl/api/files/1619999075860" -UseBasicParsing
+  Pass "匿名可读已有 animal 公开图" ($pub.StatusCode -eq 200) "http=$($pub.StatusCode)"
 } catch {
-  Pass "读回 HTTP 200" $false $_.Exception.Message
+  Pass "匿名可读已有 animal 公开图" $false $_.Exception.Message
 }
 
 Write-Host "=== DONE fail=$fail ===" -ForegroundColor Cyan

@@ -272,11 +272,7 @@
             handleCollapse() {
                 this.isCollapse = !this.isCollapse;
             },
-            logout() {
-                $.get("/api/user/logout");
-                sessionStorage.removeItem("user");
-                location.href = "/page/front/login.html";
-            },
+            logout() { if (window.AuthSession) { AuthSession.logout(); } else { location.href="/page/front/login.html"; } },
             loadTable() {
                 $.get(urlBase + "/page?pageNum=" + this.pageNum + "&pageSize=" + this.pageSize + "&name=" + this.search).then(res => {
                     this.tableData = res.data.records;

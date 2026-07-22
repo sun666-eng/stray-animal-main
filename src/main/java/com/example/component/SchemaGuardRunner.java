@@ -31,7 +31,7 @@ import java.util.Map;
 public class SchemaGuardRunner implements ApplicationRunner {
 
     /** 结构契约版本：变更闭环必需列/角色时递增，并写入 app_schema_meta */
-    public static final String SCHEMA_VERSION = "2026.07.12-loop-v2";
+    public static final String SCHEMA_VERSION = "2026.07.21-file-v1";
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -79,6 +79,8 @@ public class SchemaGuardRunner implements ApplicationRunner {
             ensureColumnsPresent("t_proof", Arrays.asList("id", "paid", "puid", "ptitle", "ppic", "pstatus"), errors);
             ensureColumnsPresent("t_volunteer", Arrays.asList("id", "name", "vstate", "uid", "apic"), errors);
 
+            ensureFileAssetTable(errors);
+
             ensureTextColumn("t_role", "permission", errors);
             ensureTextColumn("t_user", "role", errors);
             ensureLightVolunteerRole(errors);
@@ -114,6 +116,40 @@ public class SchemaGuardRunner implements ApplicationRunner {
                         + "meta_value VARCHAR(255) NOT NULL,"
                         + "updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
                         + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+
+    private void ensureFileAssetTable(List<String> errors) {
+        if (tableExists("t_file_asset")) {
+            return;
+        }
+        if (!autoMigrate) {
+            errors.add("缺少表 t_file_asset 且 auto-migrate=false（见 docs/sql/2026-07-21-file-asset.sql）");
+            return;
+        }
+        log.warn("SchemaGuard 自动创建 t_file_asset");
+        try {
+            jdbcTemplate.execute(
+                    "CREATE TABLE IF NOT EXISTS t_file_asset ("
+                            + "id BIGINT NOT NULL AUTO_INCREMENT,"
+                            + "flag VARCHAR(64) NOT NULL,"
+                            + "stored_name VARCHAR(512) NOT NULL,"
+                            + "original_name VARCHAR(512) DEFAULT NULL,"
+                            + "owner_id BIGINT DEFAULT NULL,"
+                            + "purpose VARCHAR(32) NOT NULL DEFAULT 'private',"
+                            + "visibility VARCHAR(16) NOT NULL DEFAULT 'private',"
+                            + "business_type VARCHAR(32) DEFAULT NULL,"
+                            + "business_id BIGINT DEFAULT NULL,"
+                            + "content_type VARCHAR(128) DEFAULT NULL,"
+                            + "size_bytes BIGINT DEFAULT NULL,"
+                            + "created_at DATETIME DEFAULT CURRENT_TIMESTAMP,"
+                            + "bound_at DATETIME DEFAULT NULL,"
+                            + "deleted TINYINT NOT NULL DEFAULT 0,"
+                            + "PRIMARY KEY (id),"
+                            + "UNIQUE KEY uk_file_flag (flag)"
+                            + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        } catch (Exception e) {
+            errors.add("创建 t_file_asset 失败: " + e.getMessage());
+        }
     }
 
     private void writeSchemaVersion() {

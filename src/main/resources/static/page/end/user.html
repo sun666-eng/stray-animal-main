@@ -304,7 +304,7 @@
             },
             logout() {
                 // 请求退出接口
-                $.get("/api/user/logout");
+                /* logout via AuthSession */ if (window.AuthSession) { AuthSession.logout(); return; }
                 localStorage.removeItem("user");
                 location.href = "/page/front/login.html";
             },

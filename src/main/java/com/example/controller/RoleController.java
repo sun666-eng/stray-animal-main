@@ -56,7 +56,14 @@ public class RoleController {
     }
 
     @GetMapping("/export")
-    public void export(HttpServletResponse response) throws IOException {
+    public void export(javax.servlet.http.HttpServletRequest request, HttpServletResponse response) throws IOException {
+        com.example.entity.User user = (com.example.entity.User) request.getSession().getAttribute("user");
+        if (!com.example.common.PermissionUtil.hasFlag(user, "role")) {
+            response.setStatus(403);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"code\":\"403\",\"msg\":\"无权导出角色\"}");
+            return;
+        }
         ExcelExportUtil.export(response, "角色信息", roleService.list(), role -> {
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("ID", role.getId());

@@ -331,7 +331,7 @@
                         <el-form-item v-if="item.prop == 'apic'" :label="item.label" label-width="100px" v-for="item in props">
                             <el-upload
                                     class="upload-demo"
-                                    action="/api/files/upload"
+                                    action="/api/files/upload" :data="{ purpose: 'volunteer' }" :headers="uploadHeaders"
                                     :file-list="fileList"
                                     list-type="picture"
                                     :limit="1"
@@ -367,6 +367,7 @@
     new Vue({
         el: "#wrapper",
         data: {
+            uploadHeaders: {},
             user: {},
             tableData: [],
             pageNum: 1,
@@ -392,7 +393,7 @@
             props: [{"label":"工作单位","prop":"company"},{"label":"电子邮件","prop":"email"},{"label":"年龄","prop":"age"},{"label":"是否到过基地","prop":"isvisit"},{"label":"现住址","prop":"location"},{"label":"能力自述","prop":"moreability"},{"label":"姓名","prop":"name"},{"label":"空闲时间","prop":"sparetime"},{"label":"手机","prop":"tel"},{"label":"审核状态","prop":"vstate"},{"label":"微信号","prop":"wechat"},{"label":"本人免冠照","prop":"apic"}],
             dialogProps: [{"label":"工作单位","prop":"company"},{"label":"电子邮件","prop":"email"},{"label":"年龄","prop":"age"},{"label":"是否到过基地","prop":"isvisit"},{"label":"现住址","prop":"location"},{"label":"能力自述","prop":"moreability"},{"label":"姓名","prop":"name"},{"label":"空闲时间","prop":"sparetime"},{"label":"手机","prop":"tel"},{"label":"审核状态","prop":"vstate"},{"label":"微信号","prop":"wechat"},{"label":"本人免冠照","prop":"apic"}]
         },
-        created() {
+        created() { this.refreshUploadHeaders();
             this.user = sessionStorage.getItem("user") ? JSON.parse(sessionStorage.getItem("user")) : {};
             if (!this.user.id) {
                 location.href = "/page/front/login.html";
@@ -403,6 +404,10 @@
 
         },
         methods: {
+            refreshUploadHeaders: function() {
+                    this.uploadHeaders = (window.AuthSession && window.AuthSession.getUploadHeaders)
+                        ? window.AuthSession.getUploadHeaders() : {};
+                },
             handleCollapse() {
                 this.isCollapse = !this.isCollapse;
             },
@@ -410,11 +415,7 @@
                 this.entity = obj;
                 this.save();
             },
-            logout() {
-                $.get("/api/user/logout");
-                sessionStorage.removeItem("user");
-                location.href = "/page/front/login.html";
-            },
+            logout() { if (window.AuthSession) { AuthSession.logout(); } else { location.href="/page/front/login.html"; } },
             loadTable() {
                 $.get(urlBase + "/page?pageNum=" + this.pageNum + "&pageSize=" + this.pageSize + "&name=" + this.search).then(res => {
                     this.tableData = res.data.records;
@@ -476,8 +477,7 @@
                 //     formData.append("files", files[i]);
                 // }
                 let formData = new FormData();
-                formData.append("file", $("#file")[0].files[0])
-                $.ajax({
+                formData.append("file", $("#file")[0].files[0]); formData.append('purpose', 'volunteer'); $.ajax({
                     url: '/api/files/upload',
                     processData: false,
                     contentType: false,

@@ -38,17 +38,12 @@ public class ProofController {
 
     @PutMapping
     public Result<?> update(@RequestBody Proof proof, HttpServletRequest request) {
-        Result<?> denied = verifyOwnerMutable(proof.getId(), request);
-        if (denied != null) {
-            return denied;
-        }
         User user = (User) request.getSession().getAttribute("user");
-        if (!PermissionUtil.hasFlag(user, "proof")) {
-            // 普通用户不可通过更新把状态改成已通过
-            proof.setPstatus(ProofService.STATUS_PENDING);
-            proof.setPuid(user.getId());
+        try {
+            return Result.success(proofService.updateProof(proof, user, PermissionUtil.hasFlag(user, "proof")));
+        } catch (CustomException e) {
+            return Result.error(e.getCode(), e.getMsg());
         }
-        return Result.success(proofService.updateById(proof));
     }
 
     @PutMapping("/audit/{id}/{state}")
@@ -66,17 +61,27 @@ public class ProofController {
 
     @DeleteMapping("/{id}")
     public Result<?> delete(@PathVariable Long id, HttpServletRequest request) {
-        Result<?> denied = verifyOwnerMutable(id, request);
-        if (denied != null) {
-            return denied;
+        User user = (User) request.getSession().getAttribute("user");
+        try {
+            // 授权与状态校验在同一 Service 事务内（防 TOCTOU）
+            return Result.success(proofService.deleteProof(id, user, PermissionUtil.hasFlag(user, "proof")));
+        } catch (CustomException e) {
+            return Result.error(e.getCode(), e.getMsg());
         }
-        proofService.removeById(id);
-        return Result.success();
     }
 
     @GetMapping("/{id}")
-    public Result<Proof> findById(@PathVariable Long id) {
-        return Result.success(proofService.getById(id));
+    public Result<Proof> findById(@PathVariable Long id, HttpServletRequest request) {
+        User user = (User) request.getSession().getAttribute("user");
+        Proof proof = proofService.getById(id);
+        if (proof == null) {
+            return Result.error("404", "凭证不存在");
+        }
+        if (!PermissionUtil.hasFlag(user, "proof")
+                && (user == null || user.getId() == null || !user.getId().equals(proof.getPuid()))) {
+            return Result.error("403", "只能查看自己的凭证");
+        }
+        return Result.success(proof);
     }
 
     /**
@@ -106,14 +111,23 @@ public class ProofController {
     }
 
     @GetMapping
-    public Result<List<Proof>> findAll() {
+    public Result<List<Proof>> findAll(HttpServletRequest request) {
+        User user = (User) request.getSession().getAttribute("user");
+        if (!PermissionUtil.hasFlag(user, "proof")) {
+            return Result.error("403", "无权查看全部凭证");
+        }
         return Result.success(proofService.list());
     }
 
     @GetMapping("/page")
     public Result<IPage<Proof>> findPage(@RequestParam(required = false, defaultValue = "") String name,
                                            @RequestParam(required = false, defaultValue = "1") Integer pageNum,
-                                           @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
+                                           @RequestParam(required = false, defaultValue = "10") Integer pageSize,
+                                           HttpServletRequest request) {
+        User user = (User) request.getSession().getAttribute("user");
+        if (!PermissionUtil.hasFlag(user, "proof")) {
+            return Result.error("403", "无权查看凭证列表");
+        }
         return Result.success(proofService.page(new Page<>(pageNum, pageSize), Wrappers.<Proof>lambdaQuery().like(Proof::getUname, name)));
     }
 
@@ -131,7 +145,14 @@ public class ProofController {
     }
 
     @GetMapping("/export")
-    public void export(HttpServletResponse response) throws IOException {
+    public void export(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        User user = (User) request.getSession().getAttribute("user");
+        if (!PermissionUtil.hasFlag(user, "proof")) {
+            response.setStatus(403);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"code\":\"403\",\"msg\":\"无权导出凭证\"}");
+            return;
+        }
         ExcelExportUtil.export(response, "领养凭证", proofService.list(), proof -> {
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("ID", proof.getId());

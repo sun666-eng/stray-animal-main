@@ -3,6 +3,7 @@ package com.example.service;
 import com.example.entity.Adopt;
 import com.example.entity.Animal;
 import com.example.entity.User;
+import com.example.exception.CustomException;
 import com.example.mapper.AdoptMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -38,7 +40,8 @@ public class AdoptServiceTest {
         when(animalService.getById(1L)).thenReturn(animal);
         when(animalService.update(any())).thenReturn(true);
         when(adoptMapper.insert(any(Adopt.class))).thenReturn(1);
-        when(adoptMapper.selectCount(any())).thenReturn(0L, 1L);
+        // approvedCount=0 for submit check; then sync counts
+        when(adoptMapper.selectCount(any())).thenReturn(0L, 0L, 1L);
 
         Adopt adopt = new Adopt();
         adopt.setAid(1L);
@@ -60,8 +63,14 @@ public class AdoptServiceTest {
         Animal animal = new Animal();
         animal.setId(1L);
         animal.setTstate(1);
+
+        Adopt existing = new Adopt();
+        existing.setAid(1L);
+        existing.setUid(2L);
+        existing.setVstate(0);
+        when(adoptMapper.selectOne(any(), any(boolean.class))).thenReturn(existing);
+        when(adoptMapper.selectCount(any())).thenReturn(0L, 1L, 0L);
         when(adoptMapper.update(any(Adopt.class), any())).thenReturn(1);
-        when(adoptMapper.selectCount(any())).thenReturn(1L);
         when(animalService.getById(1L)).thenReturn(animal);
 
         boolean updated = adoptService.auditAdopt(1L, 2L, 1);
@@ -69,23 +78,51 @@ public class AdoptServiceTest {
         assertTrue(updated);
         assertEquals(Integer.valueOf(2), animal.getTstate());
         verify(animalService).updateById(animal);
-        // 通过审核 1 次 + 驳回竞争待审 1 次
-        verify(adoptMapper, org.mockito.Mockito.times(2)).update(any(Adopt.class), any());
+        // CAS 通过 + 驳回竞争 + enforceSingleApproved
+        verify(adoptMapper, org.mockito.Mockito.atLeast(2)).update(any(Adopt.class), any());
     }
 
     @Test
-    public void auditRejected_doesNotRejectCompetitors() {
+    public void auditRejected_fromPending() {
         Animal animal = new Animal();
         animal.setId(1L);
         animal.setTstate(1);
+        Adopt existing = new Adopt();
+        existing.setAid(1L);
+        existing.setUid(2L);
+        existing.setVstate(0);
+        when(adoptMapper.selectOne(any(), any(boolean.class))).thenReturn(existing);
         when(adoptMapper.update(any(Adopt.class), any())).thenReturn(1);
-        when(adoptMapper.selectCount(any())).thenReturn(0L);
+        when(adoptMapper.selectCount(any())).thenReturn(0L, 0L);
         when(animalService.getById(1L)).thenReturn(animal);
 
         boolean updated = adoptService.auditAdopt(1L, 2L, 2);
 
         assertTrue(updated);
-        // 仅更新被驳回的那一条，不触发竞争驳回
         verify(adoptMapper, org.mockito.Mockito.times(1)).update(any(Adopt.class), any());
+    }
+
+    @Test
+    public void auditApproved_whenAlreadyTerminal_throws() {
+        Adopt existing = new Adopt();
+        existing.setAid(1L);
+        existing.setUid(2L);
+        existing.setVstate(1);
+        when(adoptMapper.selectOne(any(), any(boolean.class))).thenReturn(existing);
+
+        assertThrows(CustomException.class, () -> adoptService.auditAdopt(1L, 2L, 2));
+    }
+
+    @Test
+    public void auditApproved_whenOtherAlreadyApproved_throws() {
+        Adopt existing = new Adopt();
+        existing.setAid(1L);
+        existing.setUid(2L);
+        existing.setVstate(0);
+        when(adoptMapper.selectOne(any(), any(boolean.class))).thenReturn(existing);
+        when(adoptMapper.selectCount(any())).thenReturn(1L);
+
+        CustomException ex = assertThrows(CustomException.class, () -> adoptService.auditAdopt(1L, 2L, 1));
+        assertEquals("400", ex.getCode());
     }
 }

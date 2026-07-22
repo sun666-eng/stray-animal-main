@@ -140,7 +140,7 @@ function ensureVolunteerEntry() {
 ensureVolunteerEntry();
 
 function handleLogout() {
-    $.get("/api/user/logout");
+    /* logout via AuthSession */ if (window.AuthSession) { AuthSession.logout(); return; }
     sessionStorage.removeItem("user");
     location.href = "/page/front/login.html";
 }

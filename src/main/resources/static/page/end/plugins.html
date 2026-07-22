@@ -71,7 +71,7 @@
                 <div style="margin: 10px 0">
                     <el-upload
                             class="upload-demo"
-                            action="/api/files/upload"
+                            action="/api/files/upload" :data="{ purpose: 'private' }" :headers="uploadHeaders"
                             :file-list="fileList"
                             list-type="picture"
                             :on-success="successUpload">
@@ -114,12 +114,13 @@
     new Vue({
         el: "#wrapper",
         data: {
+            uploadHeaders: {},
             user: {},
             isCollapse: false,
             uploadFile: '',
             fileList: []
         },
-        created() {
+        created() { this.refreshUploadHeaders();
             this.user = sessionStorage.getItem("user") ? JSON.parse(sessionStorage.getItem("user")) : {};
             if (!this.user.id) {
                 location.href = "/page/front/login.html";
@@ -147,6 +148,10 @@
             })
         },
         methods: {
+            refreshUploadHeaders: function() {
+                    this.uploadHeaders = (window.AuthSession && window.AuthSession.getUploadHeaders)
+                        ? window.AuthSession.getUploadHeaders() : {};
+                },
             successUpload(res) {   // 文件上传成功的回调
                 var flag = res.data.flag || res.data;
                 this.fileList.push({name: flag, url: "/api/files/" + flag})
@@ -174,8 +179,7 @@
                 //     formData.append("files", files[i]);
                 // }
                 let formData = new FormData();
-                formData.append("file", $("#file")[0].files[0])
-                $.ajax({
+                formData.append("file", $("#file")[0].files[0]); formData.append('purpose', 'private'); $.ajax({
                     url: '/api/files/upload',
                     processData: false,
                     contentType: false,
@@ -197,11 +201,7 @@
             handleCollapse() {
                 this.isCollapse = !this.isCollapse;
             },
-            logout() {
-                $.get("/api/user/logout");
-                sessionStorage.removeItem("user");
-                location.href = "/page/front/login.html";
-            }
+            logout() { if (window.AuthSession) { AuthSession.logout(); } else { location.href="/page/front/login.html"; } }
         }
     })
 </script>

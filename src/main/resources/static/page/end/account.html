@@ -380,15 +380,16 @@
             handleCollapse() {
                 this.isCollapse = !this.isCollapse;
             },
-            logout() {
-                $.get("/api/user/logout");
-                sessionStorage.removeItem("user");
-                location.href = "/page/front/login.html";
-            },
+            logout() { if (window.AuthSession) { AuthSession.logout(); } else { location.href="/page/front/login.html"; } },
             loadTable() {
-                $.get(urlBase + "/public?pageNum=" + this.pageNum + "&pageSize=" + this.pageSize + "&name=" + encodeURIComponent(this.search || "") + "&_=" + Date.now()).then(res => {
-                    this.tableData = res.data.records;
-                    this.total = res.data.total;
+                // 管理端必须用鉴权分页接口（含 id/auname），禁止读公开 DTO
+                $.get(urlBase + "/page?pageNum=" + this.pageNum + "&pageSize=" + this.pageSize + "&name=" + encodeURIComponent(this.search || "") + "&_=" + Date.now()).then(res => {
+                    if (res.code !== '0' || !res.data) {
+                        this.$message.error(res.msg || '加载资金列表失败');
+                        return;
+                    }
+                    this.tableData = res.data.records || [];
+                    this.total = res.data.total || 0;
                 })
             },
             filterTag(value, row) {

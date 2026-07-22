@@ -101,10 +101,13 @@ public class FileStorage {
         if (!fallbackStaticDir.isEmpty()) {
             dirs.add(Paths.get(fallbackStaticDir).toAbsolutePath().normalize().toString());
         }
-        String devStatic = System.getProperty("user.dir") + File.separator
-                + "src" + File.separator + "main" + File.separator + "resources"
-                + File.separator + "static" + File.separator + "file";
-        dirs.add(devStatic);
+        // 不再搜索 classpath static/file（会经 /file/** 匿名暴露且含历史敏感证照）。
+        // 可选：项目根 legacy-uploads（仅 FileController 经鉴权后可读，不在 static 下）
+        String legacy = System.getProperty("user.dir") + File.separator + "legacy-uploads";
+        File legacyDir = new File(legacy);
+        if (legacyDir.isDirectory()) {
+            dirs.add(legacyDir.getAbsolutePath());
+        }
         return Collections.unmodifiableList(dirs);
     }
 

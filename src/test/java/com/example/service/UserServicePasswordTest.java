@@ -98,4 +98,57 @@ public class UserServicePasswordTest {
         assertThrows(com.example.exception.CustomException.class, () -> userService.register(request));
         verify(userMapper, times(0)).insert(any(User.class));
     }
+
+    @Test
+    public void register_rejectsXssUsername() {
+        User request = new User();
+        request.setUsername("<img src=x onerror=alert(1)>");
+        request.setPassword("password123");
+
+        assertThrows(com.example.exception.CustomException.class, () -> userService.register(request));
+        verify(userMapper, times(0)).insert(any(User.class));
+    }
+
+    @Test
+    public void save_rejectsEmptyPassword() {
+        User user = new User();
+        user.setUsername("admin2");
+        user.setPassword(null);
+        assertThrows(com.example.exception.CustomException.class, () -> userService.save(user));
+    }
+
+    @Test
+    public void login_plaintextRejectedWhenSwitchOff() {
+        userService.setAllowPlaintextLogin(false);
+        User stored = new User();
+        stored.setId(1L);
+        stored.setUsername("legacy");
+        stored.setPassword("plain-password");
+        when(userMapper.selectOne(any(), anyBoolean())).thenReturn(stored);
+
+        User req = new User();
+        req.setUsername("legacy");
+        req.setPassword("plain-password");
+        assertThrows(com.example.exception.CustomException.class, () -> userService.login(req));
+    }
+
+    @Test
+    public void login_plaintextUpgradedWhenSwitchOn() {
+        userService.setAllowPlaintextLogin(true);
+        User stored = new User();
+        stored.setId(1L);
+        stored.setUsername("legacy");
+        stored.setPassword("plain-password");
+        when(userMapper.selectOne(any(), anyBoolean())).thenReturn(stored);
+        when(userMapper.updateById(any(User.class))).thenReturn(1);
+
+        User req = new User();
+        req.setUsername("legacy");
+        req.setPassword("plain-password");
+        User logged = userService.login(req);
+        assertEquals("legacy", logged.getUsername());
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(userMapper).updateById(captor.capture());
+        assertTrue(captor.getValue().getPassword().startsWith("$2"));
+    }
 }

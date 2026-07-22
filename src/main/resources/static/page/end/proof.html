@@ -263,7 +263,7 @@
                         <el-form-item v-if="item.prop == 'ppic'" :label="item.label" label-width="100px" v-for="item in props">
                             <el-upload
                                     class="upload-demo"
-                                    action="/api/files/upload"
+                                    action="/api/files/upload" :data="{ purpose: 'proof' }" :headers="uploadHeaders"
                                     :file-list="fileList"
                                     list-type="picture"
                                     :on-success="successUpload">
@@ -298,6 +298,7 @@
     new Vue({
         el: "#wrapper",
         data: {
+            uploadHeaders: {},
             user: {},
             tableData: [],
             pageNum: 1,
@@ -333,7 +334,7 @@
             ],
             props: [{"label":"凭证ID","prop":"id"},{"label":"凭证图片","prop":"ppic"},{"label":"凭证名称","prop":"ptitle"}]
         },
-        created() {
+        created() { this.refreshUploadHeaders();
             this.user = sessionStorage.getItem("user") ? JSON.parse(sessionStorage.getItem("user")) : {};
             if (!this.user.id) {
                 location.href = "/page/front/login.html";
@@ -344,14 +345,14 @@
 
         },
         methods: {
+            refreshUploadHeaders: function() {
+                    this.uploadHeaders = (window.AuthSession && window.AuthSession.getUploadHeaders)
+                        ? window.AuthSession.getUploadHeaders() : {};
+                },
             handleCollapse() {
                 this.isCollapse = !this.isCollapse;
             },
-            logout() {
-                $.get("/api/user/logout");
-                sessionStorage.removeItem("user");
-                location.href = "/page/front/login.html";
-            },
+            logout() { if (window.AuthSession) { AuthSession.logout(); } else { location.href="/page/front/login.html"; } },
             loadTable() {
                 $.get(urlBase + "/page?pageNum=" + this.pageNum + "&pageSize=" + this.pageSize + "&name=" + this.search).then(res => {
                     this.tableData = res.data.records;
@@ -419,8 +420,7 @@
                 //     formData.append("files", files[i]);
                 // }
                 let formData = new FormData();
-                formData.append("file", $("#file")[0].files[0])
-                $.ajax({
+                formData.append("file", $("#file")[0].files[0]); formData.append('purpose', 'proof'); $.ajax({
                     url: '/api/files/upload',
                     processData: false,
                     contentType: false,

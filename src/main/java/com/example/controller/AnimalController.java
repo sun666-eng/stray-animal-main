@@ -5,6 +5,8 @@ import com.example.common.ExcelExportUtil;
 import com.example.common.Result;
 import com.example.dto.ImportResult;
 import com.example.entity.Animal;
+import com.example.entity.User;
+import com.example.exception.CustomException;
 import com.example.service.AnimalService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -17,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -33,24 +36,39 @@ public class AnimalController {
 
     @AuditLog(module = "动物管理", action = "新增动物")
     @PostMapping
-    public Result<?> save(@RequestBody Animal animal) {
-        if (animal.getTstate() == null) {
-            animal.setTstate(0);
+    public Result<?> save(@RequestBody Animal animal, HttpServletRequest request) {
+        User user = sessionUser(request);
+        try {
+            return Result.success(animalService.saveAnimal(animal, user));
+        } catch (CustomException e) {
+            return Result.error(e.getCode(), e.getMsg());
         }
-        return Result.success(animalService.save(animal));
     }
 
     @AuditLog(module = "动物管理", action = "更新动物")
     @PutMapping
-    public Result<?> update(@RequestBody Animal animal) {
-        return Result.success(animalService.updateById(animal));
+    public Result<?> update(@RequestBody Animal animal, HttpServletRequest request) {
+        User user = sessionUser(request);
+        try {
+            return Result.success(animalService.updateAnimal(animal, user));
+        } catch (CustomException e) {
+            return Result.error(e.getCode(), e.getMsg());
+        }
+    }
+
+    private User sessionUser(HttpServletRequest request) {
+        Object u = request.getSession(false) == null ? null : request.getSession(false).getAttribute("user");
+        return u instanceof User ? (User) u : null;
     }
 
     @AuditLog(module = "动物管理", action = "删除动物")
     @DeleteMapping("/{id}")
     public Result<?> delete(@PathVariable Long id) {
-        animalService.removeById(id);
-        return Result.success();
+        try {
+            return Result.success(animalService.deleteAnimal(id));
+        } catch (CustomException e) {
+            return Result.error(e.getCode(), e.getMsg());
+        }
     }
 
     @GetMapping("/{id}")
@@ -86,7 +104,14 @@ public class AnimalController {
     }
 
     @GetMapping("/export")
-    public void export(HttpServletResponse response) throws IOException {
+    public void export(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        com.example.entity.User user = (com.example.entity.User) request.getSession().getAttribute("user");
+        if (!com.example.common.PermissionUtil.hasFlag(user, "animal")) {
+            response.setStatus(403);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"code\":\"403\",\"msg\":\"无权导出动物信息\"}");
+            return;
+        }
         ExcelExportUtil.export(response, "动物信息", animalService.list(), animal -> {
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("ID", animal.getId());

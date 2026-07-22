@@ -165,7 +165,7 @@ new Vue({
       const uploadThenPost = () => {
         if (!this.apicFile) return doPost('');
         const fd = new FormData();
-        fd.append('file', this.apicFile);
+        fd.append('file', this.apicFile); fd.append('purpose', 'volunteer');
         return $.ajax({ url: '/api/files/upload', type: 'POST', data: fd, processData: false, contentType: false })
           .then(up => {
             if (up.code !== '0' || !up.data) return $.Deferred().reject(up.msg || '照片上传失败');
@@ -195,7 +195,8 @@ new Vue({
   if (u && u.username) { document.getElementById('toolbar-username').textContent = u.username; }
 })();
 function handleLogout() {
-  $.ajax({ url: '/api/user/logout', type: 'GET' }).always(function(){
+  if (window.AuthSession) { AuthSession.logout(); return; }
+  $.ajax({ url: '/api/user/logout', type: 'POST', contentType: 'application/json', data: '{}', headers: { 'X-CSRF-Token': sessionStorage.getItem('csrfToken') || '' } }).always(function(){
     sessionStorage.removeItem('user');
     location.href = '/page/front/login.html';
   });

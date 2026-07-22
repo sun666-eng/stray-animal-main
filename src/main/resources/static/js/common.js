@@ -516,12 +516,15 @@ const stringify = function(object, options) {
 axios.defaults.baseURL = "";
 axios.defaults.timeout = 5000;
 axios.defaults.withCredentials = true;
-/*设置axios拦截器,为每一个axios请求都加上token到header中，这里拦截的是request请求*/
+/* Session 唯一权威：仅附带 CSRF，不再发送 JWT */
 axios.interceptors.request.use(
     config => {
-        let token = sessionStorage.getItem("token");
-        if (token) {  // 判断是否存在token，如果存在的话，则每个http header都加上token
-            config.headers.Authorization = `Bearer ${token}`;
+        const method = (config.method || 'get').toLowerCase();
+        if (method !== 'get' && method !== 'head' && method !== 'options') {
+            const csrf = sessionStorage.getItem('csrfToken');
+            if (csrf) {
+                config.headers['X-CSRF-Token'] = csrf;
+            }
         }
         return config;
     },

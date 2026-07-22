@@ -170,8 +170,13 @@
                                 message: "注册成功",
                                 type: "success"
                             });
-                            sessionStorage.setItem("user", JSON.stringify(res.data.user));
-                            sessionStorage.setItem("token", res.data.token);
+                            if (window.AuthSession) {
+                                window.AuthSession.saveSession(res.data.user, res.data.token, res.data.csrfToken);
+                            } else {
+                                sessionStorage.setItem("user", JSON.stringify(res.data.user));
+                                sessionStorage.setItem("token", res.data.token || "");
+                                if (res.data.csrfToken) sessionStorage.setItem("csrfToken", res.data.csrfToken);
+                            }
                             setTimeout(() => {
                                 // 公共注册默认普通用户，进入用户端首页
                                 location.href = "/page/front/animal_browse.html";

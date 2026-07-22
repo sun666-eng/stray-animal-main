@@ -6,6 +6,7 @@ import com.example.common.PermissionUtil;
 import com.example.common.Result;
 import com.example.entity.User;
 import com.example.entity.Volunteer;
+import com.example.exception.CustomException;
 import com.example.service.VolunteerService;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -29,27 +30,30 @@ public class VolunteerController {
     @PostMapping
     public Result<?> save(@RequestBody Volunteer volunteer, HttpServletRequest request) {
         User user = (User) request.getSession().getAttribute("user");
-        if (user == null || user.getId() == null) {
-            return Result.error("401", "未登录或登录已过期");
+        try {
+            return Result.success(volunteerService.submitVolunteer(volunteer, user));
+        } catch (CustomException e) {
+            return Result.error(e.getCode(), e.getMsg());
         }
-        volunteer.setUid(user.getId());
-        if (!PermissionUtil.hasFlag(user, "volunteer")) {
-            volunteer.setVstate(0);
-        } else if (volunteer.getVstate() == null) {
-            volunteer.setVstate(0);
-        }
-        return Result.success(volunteerService.save(volunteer));
     }
 
     @PutMapping
-    public Result<?> update(@RequestBody Volunteer volunteer) {
-        return Result.success(volunteerService.updateWithRoleSync(volunteer));
+    public Result<?> update(@RequestBody Volunteer volunteer, HttpServletRequest request) {
+        User user = (User) request.getSession().getAttribute("user");
+        try {
+            return Result.success(volunteerService.updateVolunteer(volunteer, user));
+        } catch (CustomException e) {
+            return Result.error(e.getCode(), e.getMsg());
+        }
     }
 
     @DeleteMapping("/{id}")
     public Result<?> delete(@PathVariable Long id) {
-        volunteerService.removeById(id);
-        return Result.success();
+        try {
+            return Result.success(volunteerService.deleteVolunteer(id));
+        } catch (CustomException e) {
+            return Result.error(e.getCode(), e.getMsg());
+        }
     }
 
     @GetMapping("/{id}")
@@ -88,23 +92,9 @@ public class VolunteerController {
             if (user == null || user.getId() == null) {
                 return Result.error("403", "只能查看自己的义工申请");
             }
-            // 优先按 uid；兼容历史数据 uid 为空时用姓名/手机/邮箱匹配
-            String uname = safeValue(user.getUsername());
-            String utel = safeValue(user.getPhone());
-            String uemail = safeValue(user.getEmail());
+            // 仅按 uid：禁止用可改手机/邮箱/姓名做所有权（水平越权）
             LambdaQueryWrapper<Volunteer> mine = Wrappers.<Volunteer>lambdaQuery()
-                    .and(q -> {
-                        q.eq(Volunteer::getUid, user.getId());
-                        if (!uname.isEmpty()) {
-                            q.or().eq(Volunteer::getName, uname);
-                        }
-                        if (!utel.isEmpty()) {
-                            q.or().eq(Volunteer::getTel, utel);
-                        }
-                        if (!uemail.isEmpty()) {
-                            q.or().eq(Volunteer::getEmail, uemail);
-                        }
-                    })
+                    .eq(Volunteer::getUid, user.getId())
                     .orderByDesc(Volunteer::getId);
             try {
                 return Result.success(volunteerService.page(new Page<>(pageNum, pageSize), mine));
@@ -156,7 +146,14 @@ public class VolunteerController {
         return value == null ? "" : value;
     }
     @GetMapping("/export")
-    public void export(HttpServletResponse response) throws IOException {
+    public void export(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        User user = (User) request.getSession().getAttribute("user");
+        if (!PermissionUtil.hasFlag(user, "volunteer")) {
+            response.setStatus(403);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"code\":\"403\",\"msg\":\"无权导出义工申请\"}");
+            return;
+        }
         ExcelExportUtil.export(response, "义工申请", volunteerService.list(), volunteer -> {
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("ID", volunteer.getId());

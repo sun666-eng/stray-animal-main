@@ -2,11 +2,13 @@ package com.example.service;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.common.UsernamePolicy;
 import com.example.entity.Permission;
 import com.example.entity.Role;
 import com.example.entity.User;
 import com.example.exception.CustomException;
 import com.example.mapper.UserMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,20 +33,46 @@ public class UserService extends ServiceImpl<UserMapper, User> {
     @Resource
     private PermissionService permissionService;
 
+    @Resource
+    private FileAssetService fileAssetService;
+
+    /**
+     * A2：是否允许明文密码登录并在成功后升级为 BCrypt。
+     * 生产默认 false；dev 可 true 过渡旧库。
+     */
+    @Value("${app.password.allow-plaintext-login:false}")
+    private boolean allowPlaintextLogin;
+
+    public void setAllowPlaintextLogin(boolean allowPlaintextLogin) {
+        this.allowPlaintextLogin = allowPlaintextLogin;
+    }
+
     public User login(User user) {
         User one = getOne(Wrappers.<User>lambdaQuery().eq(User::getUsername, user.getUsername()));
         if (one == null) {
-            throw new CustomException("-1", "账号或密码错误");
+            throw new CustomException("401", "账号或密码错误");
         }
-        // BCrypt + 明文兼容：先尝试验证 BCrypt，再回退明文
-        boolean match = ENCODER.matches(user.getPassword(), one.getPassword());
-        if (!match && !user.getPassword().equals(one.getPassword())) {
-            throw new CustomException("-1", "账号或密码错误");
+        String stored = one.getPassword();
+        String raw = user.getPassword();
+        boolean match = false;
+        if (isBcrypt(stored)) {
+            match = raw != null && ENCODER.matches(raw, stored);
+        } else if (allowPlaintextLogin) {
+            // A2：仅开关打开时允许明文 equals，且仅在登录成功后升级
+            match = raw != null && raw.equals(stored);
+            if (match) {
+                one.setPassword(ENCODER.encode(raw));
+                // 直接走 mapper 避免 updateById 再次 encode 逻辑歧义
+                updateById(one);
+            }
+        } else {
+            // 存储为明文但已关闭兼容：拒绝并提示需重置
+            if (stored != null && !isBcrypt(stored)) {
+                throw new CustomException("401", "账号或密码错误");
+            }
         }
-        // 明文密码自动升级为 BCrypt
-        if (!isBcrypt(one.getPassword())) {
-            one.setPassword(ENCODER.encode(one.getPassword()));
-            updateById(one);
+        if (!match) {
+            throw new CustomException("401", "账号或密码错误");
         }
         fillPermissions(one);
         return one;
@@ -52,17 +80,23 @@ public class UserService extends ServiceImpl<UserMapper, User> {
 
     @Transactional
     public User register(User user) {
+        if (user == null) {
+            throw new CustomException("400", "注册信息不能为空");
+        }
+        UsernamePolicy.requireValid(user.getUsername());
         User one = getOne((Wrappers.<User>lambdaQuery().eq(User::getUsername, user.getUsername())));
         if (one != null) {
             throw new CustomException("-1", "用户已注册");
         }
-        if (user.getPassword() == null) {
-            user.setPassword("123456");
+        if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
+            throw new CustomException("400", "密码不能为空");
         }
         user.setPassword(ENCODER.encode(user.getPassword()));
         // 注册角色只能由服务端决定，绝不信任公共注册请求中的 id/role/permission。
         user.setId(null);
         user.setPermission(null);
+        // 注册时尚无用户 ID，不能安全绑定 FileAsset：忽略客户端 avatar，注册后自行上传
+        user.setAvatar(null);
         Role defaultRole = roleService.getById(3L);
         if (defaultRole == null) {
             throw new CustomException("500", "普通用户角色未配置");
@@ -74,6 +108,50 @@ public class UserService extends ServiceImpl<UserMapper, User> {
         User newUser = getOne((Wrappers.<User>lambdaQuery().eq(User::getUsername, user.getUsername())));
         fillPermissions(newUser);
         return newUser;
+    }
+
+    /**
+     * 管理员新增用户：保存后同事务绑定头像（若有 flag）。
+     */
+    @Transactional
+    public boolean createWithAvatar(User user, User actor) {
+        if (user == null) {
+            throw new CustomException("400", "用户信息不能为空");
+        }
+        String avatarFlag = user.getAvatar();
+        // 先落库拿 ID；无 actor 或无 flag 时清空未绑定头像，避免悬挂 flag
+        if (avatarFlag == null || avatarFlag.trim().isEmpty() || actor == null || actor.getId() == null) {
+            user.setAvatar(null);
+            if (!save(user)) {
+                throw new CustomException("500", "用户保存失败");
+            }
+            return true;
+        }
+        user.setAvatar(null);
+        if (!save(user)) {
+            throw new CustomException("500", "用户保存失败");
+        }
+        user.setAvatar(avatarFlag.trim());
+        if (!updateById(user)) {
+            throw new CustomException("500", "用户头像写入失败");
+        }
+        fileAssetService.bindToBusiness(actor, avatarFlag.trim(), "avatar",
+                "user", user.getId(), true);
+        return true;
+    }
+
+    @Transactional
+    public boolean deleteUser(Long id) {
+        User existing = getOne(Wrappers.<User>lambdaQuery()
+                .eq(User::getId, id).last("FOR UPDATE"));
+        if (existing == null) {
+            return true;
+        }
+        fileAssetService.unbindAllForBusiness("user", id);
+        if (!removeById(id)) {
+            throw new CustomException("409", "删除失败，请刷新后重试");
+        }
+        return true;
     }
 
     /**
@@ -214,7 +292,14 @@ public class UserService extends ServiceImpl<UserMapper, User> {
 
     @Override
     public boolean save(User user) {
-        if (user.getPassword() != null && !isBcrypt(user.getPassword())) {
+        if (user == null) {
+            throw new CustomException("400", "用户信息不能为空");
+        }
+        UsernamePolicy.requireValid(user.getUsername());
+        if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
+            throw new CustomException("400", "密码不能为空");
+        }
+        if (!isBcrypt(user.getPassword())) {
             user.setPassword(ENCODER.encode(user.getPassword()));
         }
         return super.save(user);
@@ -230,6 +315,45 @@ public class UserService extends ServiceImpl<UserMapper, User> {
             }
         }
         return super.updateById(user);
+    }
+
+    /**
+     * 更新用户资料并在同一事务内处理头像三态：
+     * avatar==null 不改图；"" 清图解绑；非空且变更则绑新解旧。
+     */
+    @Transactional
+    public boolean updateWithAvatarBind(User user, User actor, String previousAvatar,
+                                        Long targetId, boolean allowAdmin) {
+        User locked = getOne(Wrappers.<User>lambdaQuery()
+                .eq(User::getId, targetId).last("FOR UPDATE"));
+        if (locked == null) {
+            throw new CustomException("404", "用户不存在");
+        }
+        // 以锁内最新头像为准，避免并发读旧 previousAvatar
+        String previous = previousAvatar != null ? previousAvatar : locked.getAvatar();
+        String newAvatar = user.getAvatar();
+        if (newAvatar != null) {
+            String next = newAvatar.trim();
+            String prev = previous == null ? "" : previous.trim();
+            if (!next.isEmpty() && !next.equals(prev)) {
+                fileAssetService.bindToBusiness(actor, next, "avatar", "user", targetId, allowAdmin);
+            }
+        }
+        if (!updateById(user)) {
+            throw new CustomException("409", "用户资料更新失败，请刷新后重试");
+        }
+        if (newAvatar != null) {
+            String next = newAvatar.trim();
+            String prev = previous == null ? "" : previous.trim();
+            if (next.isEmpty()) {
+                if (!prev.isEmpty()) {
+                    fileAssetService.unbindIfMatches(prev, "user", targetId);
+                }
+            } else if (!next.equals(prev) && !prev.isEmpty()) {
+                fileAssetService.unbindIfMatches(prev, "user", targetId);
+            }
+        }
+        return true;
     }
 
     /**

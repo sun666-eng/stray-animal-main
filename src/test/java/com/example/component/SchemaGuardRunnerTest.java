@@ -38,7 +38,7 @@ public class SchemaGuardRunnerTest {
 
     @Test
     public void schemaVersionConstant_isStable() {
-        assertEquals("2026.07.12-loop-v2", SchemaGuardRunner.SCHEMA_VERSION);
+        assertEquals("2026.07.21-file-v1", SchemaGuardRunner.SCHEMA_VERSION);
     }
 
     @Test

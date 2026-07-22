@@ -103,21 +103,17 @@ public class WebSocketServer {
         }
         log.info("有新用户加入，username={}, 当前在线人数为：{}", username, onlineCount.get());
 
-        // 向新用户发送在线列表
+        // B4：不向客户端下发完整在线用户名列表（防枚举）；仅下发人数
         JSONObject result = new JSONObject();
-        JSONArray array = new JSONArray();
-        result.set("users", array);
-        for (Object key : sessionMap.keySet()) {
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.set("username", key);
-            array.add(jsonObject);
-        }
+        result.set("type", "online");
+        result.set("onlineCount", onlineCount.get());
+        result.set("users", new JSONArray());
         sendMessage(JSONUtil.toJsonStr(result), session);
 
-        // 通过Redis广播加入事件
+        // 广播上下线仅通知人数变化，不暴露 username
         JSONObject joinNotice = new JSONObject();
         joinNotice.set("type", "join");
-        joinNotice.set("username", username);
+        joinNotice.set("onlineCount", onlineCount.get());
         publishToRedis(JSONUtil.toJsonStr(joinNotice));
     }
 
@@ -141,11 +137,11 @@ public class WebSocketServer {
         }
         log.info("有一连接关闭，移除username={}的用户session, 当前在线人数为：{}", actualUsername, onlineCount.get());
 
-        // 通过Redis广播离开事件
-        JSONObject leaveNotice = new JSONObject();
-        leaveNotice.set("type", "leave");
-        leaveNotice.set("username", actualUsername);
+        // 广播离开：仅人数，不暴露 username
         if (wentOffline.get()) {
+            JSONObject leaveNotice = new JSONObject();
+            leaveNotice.set("type", "leave");
+            leaveNotice.set("onlineCount", onlineCount.get());
             publishToRedis(JSONUtil.toJsonStr(leaveNotice));
         }
     }

@@ -105,7 +105,7 @@ new Vue({
       if (!this.form.ptitle) { this.$message.warning('请选择凭证类型'); return; }
       if (!this.file) { this.$message.warning('请选择凭证图片'); return; }
       this.saving = true;
-      const upload = new FormData(); upload.append('file', this.file);
+      const upload = new FormData(); upload.append('file', this.file); upload.append('purpose', 'proof');
       $.ajax({ url: '/api/files/upload', type: 'POST', data: upload, processData: false, contentType: false }).then(uploadRes => {
         if (uploadRes.code !== '0' || !uploadRes.data) return $.Deferred().reject(uploadRes.msg || '图片上传失败');
         const flag = uploadRes.data.flag || uploadRes.data;

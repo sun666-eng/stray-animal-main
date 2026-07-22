@@ -93,6 +93,11 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
 
         if (path.startsWith("/api/")) {
+            // 文件 GET：可选登录，但必须走 getCurrentUser 重载权限（A0.5），再允许匿名访问公开图
+            if (path.startsWith("/api/files/") && "GET".equalsIgnoreCase(request.getMethod())) {
+                getCurrentUser(request);
+                return true;
+            }
             if (isPublicApi(path, request.getMethod())) {
                 return true;
             }
@@ -154,13 +159,11 @@ public class AuthInterceptor implements HandlerInterceptor {
         if (PUBLIC_API_PATHS.contains(path)) {
             return true;
         }
-        if (path.startsWith("/api/files/") && "GET".equalsIgnoreCase(method)) {
+        // B2.1：精确路径 + 方法，禁止 startsWith 过宽公开
+        if ("GET".equalsIgnoreCase(method) && isExactPublicAnimalGet(path)) {
             return true;
         }
-        if (path.startsWith("/api/animal") && "GET".equalsIgnoreCase(method)) {
-            return true;
-        }
-        if (path.startsWith("/api/notice") && "GET".equalsIgnoreCase(method)) {
+        if ("GET".equalsIgnoreCase(method) && isExactPublicNoticeGet(path)) {
             return true;
         }
         if (isPublicAccountRead(path, method)) {
@@ -172,50 +175,92 @@ public class AuthInterceptor implements HandlerInterceptor {
         return false;
     }
 
+    private boolean isExactPublicAnimalGet(String path) {
+        if ("/api/animal".equals(path) || "/api/animal/page".equals(path) || "/api/animal/page1".equals(path)) {
+            return true;
+        }
+        // /api/animal/{id} 数字 ID
+        return path.matches("^/api/animal/\\d+$");
+    }
+
+    private boolean isExactPublicNoticeGet(String path) {
+        if ("/api/notice".equals(path) || "/api/notice/page".equals(path)) {
+            return true;
+        }
+        return path.matches("^/api/notice/\\d+$");
+    }
+
     private boolean isPublicAccountRead(String path, String method) {
         if (!"GET".equalsIgnoreCase(method)) {
             return false;
         }
-        if ("/api/account".equals(path) || "/api/account/page".equals(path) || "/api/account/public".equals(path)) {
-            return true;
-        }
-        return path.matches("^/api/account/\\d+$");
+        // 匿名仅 /api/account/public；按 id 查询需登录+account 权限（防枚举/脱敏绕过）
+        return "/api/account/public".equals(path);
     }
 
+    /**
+     * A0.5：浏览器唯一认证权威 = Session。
+     * <ul>
+     *   <li>仅从 Session 取 userId / User，再按 DB 重载权限</li>
+     *   <li><b>不再</b>从 Authorization JWT 回落并创建 Session（防登出后 token 重放）</li>
+     *   <li>用户不存在则 invalidate Session</li>
+     * </ul>
+     */
     private User getCurrentUser(HttpServletRequest request) {
-        User user = null;
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            if (JwtUtil.validate(token)) {
-                Long userId = JwtUtil.getUserId(token);
-                user = userService.getById(userId);
-                if (user != null) {
-                    userService.fillPermissions(user);
-                    request.setAttribute("userId", user.getId());
-                    request.setAttribute("username", user.getUsername());
-                    request.getSession().setAttribute("user", user);
-                }
+        Long userId = null;
+
+        Object sessionUser = request.getSession(false) == null
+                ? null
+                : request.getSession(false).getAttribute("user");
+        if (sessionUser instanceof User) {
+            userId = ((User) sessionUser).getId();
+        } else if (sessionUser instanceof Number) {
+            userId = ((Number) sessionUser).longValue();
+        } else {
+            Object sid = request.getSession(false) == null
+                    ? null
+                    : request.getSession(false).getAttribute("userId");
+            if (sid instanceof Number) {
+                userId = ((Number) sid).longValue();
             }
         }
+
+        if (userId == null) {
+            return null;
+        }
+
+        User user = userService.getById(userId);
         if (user == null) {
-            Object sessionUser = request.getSession().getAttribute("user");
-            if (sessionUser instanceof User) {
-                user = (User) sessionUser;
-                userService.fillPermissions(user);
-                request.setAttribute("userId", user.getId());
-                request.setAttribute("username", user.getUsername());
+            try {
+                if (request.getSession(false) != null) {
+                    request.getSession(false).invalidate();
+                }
+            } catch (IllegalStateException ignored) {
+                // already invalidated
             }
+            return null;
         }
+
+        userService.fillPermissions(user);
+        request.setAttribute("userId", user.getId());
+        request.setAttribute("username", user.getUsername());
+        request.getSession(true).setAttribute("user", user);
+        request.getSession(true).setAttribute("userId", user.getId());
         return user;
     }
 
     private boolean hasApiPermission(User user, String path, String method) {
-        if (path.startsWith("/api/user/logout") || path.startsWith("/api/user/online")
+        if (path.startsWith("/api/user/logout")
                 || path.startsWith("/api/user/ws-ticket")
+                || path.startsWith("/api/user/csrf")
                 || path.equals("/api/user/me") || path.startsWith("/api/user/me?")) {
             return true;
         }
+        // /online：须登录；是否可枚举用户名由 Controller 再判管理 flag
+        if (path.startsWith("/api/user/online")) {
+            return true;
+        }
+        // detail：须登录，细粒度归属在 UserController（本人或 user 管理）
         if (path.startsWith("/api/user/detail/")) {
             return true;
         }
@@ -231,8 +276,10 @@ public class AuthInterceptor implements HandlerInterceptor {
         if (path.startsWith("/api/help/mine") || path.startsWith("/api/help/chat")) {
             return hasAnyPermissionFlag(user, Arrays.asList("im", "help", "rescue"));
         }
-        // 普通用户角色种子为 im；help/rescue 为管理端 flag。提交救助表单三者任一即可。
-        if ("/api/help".equals(path) && "POST".equalsIgnoreCase(method)) {
+        // 普通用户角色种子为 im；help/rescue 为管理端 flag。提交/更新救助表单：im|help|rescue
+        // Service 层再做本人归属与状态校验。
+        if ("/api/help".equals(path)
+                && ("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method))) {
             return hasAnyPermissionFlag(user, Arrays.asList("im", "help", "rescue"));
         }
         if (path.startsWith("/api/adopt/page2")) {
@@ -248,14 +295,16 @@ public class AuthInterceptor implements HandlerInterceptor {
         if (path.startsWith("/api/adopt") && "POST".equalsIgnoreCase(method)) {
             return hasAnyPermissionFlag(user, Arrays.asList("adopt_view", "my_adopt", "adopt"));
         }
-        if (path.startsWith("/api/proof") && "POST".equalsIgnoreCase(method)) {
+        // Proof：Controller 为 PUT /api/proof（无 path id）；删除为 DELETE /api/proof/{id}
+        if ("/api/proof".equals(path)
+                && ("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method))) {
             return hasAnyPermissionFlag(user, Arrays.asList("my_proof", "proof"));
         }
-        if (path.matches("^/api/proof/\\d+$")
-                && ("PUT".equalsIgnoreCase(method) || "DELETE".equalsIgnoreCase(method))) {
+        if (path.matches("^/api/proof/\\d+$") && "DELETE".equalsIgnoreCase(method)) {
             return hasAnyPermissionFlag(user, Arrays.asList("my_proof", "proof"));
         }
-        if (path.startsWith("/api/volunteer") && "POST".equalsIgnoreCase(method)) {
+        if ("/api/volunteer".equals(path)
+                && ("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method))) {
             return hasAnyPermissionFlag(user, Arrays.asList("apply", "volunteer"));
         }
         for (Map.Entry<String, List<String>> entry : API_FLAG_RULES.entrySet()) {

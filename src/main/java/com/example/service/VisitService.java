@@ -1,9 +1,11 @@
 package com.example.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.entity.Adopt;
 import com.example.entity.Animal;
+import com.example.entity.User;
 import com.example.entity.Visit;
 import com.example.exception.CustomException;
 import com.example.mapper.VisitMapper;
@@ -27,28 +29,38 @@ public class VisitService extends ServiceImpl<VisitMapper, Visit> {
     @Resource
     private AnimalService animalService;
 
+    @Resource
+    private FileAssetService fileAssetService;
+
     /**
      * 新增回访：仅允许「已审核通过」的领养关系 (petId=aid, uid)。
      */
     @Transactional
-    public boolean createVisit(Visit visit) {
+    public boolean createVisit(Visit visit, User user) {
         validateAndNormalize(visit, true);
-        return save(visit);
+        if (!save(visit)) {
+            throw new CustomException("500", "回访保存失败");
+        }
+        if (visit.getPic() != null && !visit.getPic().trim().isEmpty()) {
+            fileAssetService.bindToBusiness(user, visit.getPic(), "visit",
+                    "visit", visit.getId(), true);
+        }
+        return true;
     }
 
     /**
-     * 更新回访：仍要求目标动物+饲主存在已通过领养。
+     * 更新回访：仍要求目标动物+饲主存在已通过领养；附件三态。
      */
     @Transactional
-    public boolean updateVisit(Visit visit) {
+    public boolean updateVisit(Visit visit, User user) {
         if (visit == null || visit.getId() == null) {
             throw new CustomException("400", "回访ID不能为空");
         }
-        Visit existing = getById(visit.getId());
+        Visit existing = getOne(Wrappers.<Visit>lambdaQuery()
+                .eq(Visit::getId, visit.getId()).last("FOR UPDATE"));
         if (existing == null) {
             throw new CustomException("404", "回访记录不存在");
         }
-        // 未传的关联字段沿用原记录，避免前端编辑时丢 petId/uid
         if (visit.getPetId() == null) {
             visit.setPetId(existing.getPetId());
         }
@@ -56,7 +68,46 @@ public class VisitService extends ServiceImpl<VisitMapper, Visit> {
             visit.setUid(existing.getUid());
         }
         validateAndNormalize(visit, false);
-        return updateById(visit);
+
+        String oldPic = existing.getPic();
+        String newPic = visit.getPic();
+        if (newPic != null) {
+            String next = newPic.trim();
+            String prev = oldPic == null ? "" : oldPic.trim();
+            if (!next.isEmpty() && !next.equals(prev)) {
+                fileAssetService.bindToBusiness(user, next, "visit",
+                        "visit", visit.getId(), true);
+            }
+        }
+        if (!updateById(visit)) {
+            throw new CustomException("409", "业务记录已变化，请刷新后重试");
+        }
+        if (newPic != null) {
+            String next = newPic.trim();
+            String prev = oldPic == null ? "" : oldPic.trim();
+            if (next.isEmpty()) {
+                if (!prev.isEmpty()) {
+                    fileAssetService.unbindIfMatches(prev, "visit", visit.getId());
+                }
+            } else if (!next.equals(prev) && !prev.isEmpty()) {
+                fileAssetService.unbindIfMatches(prev, "visit", visit.getId());
+            }
+        }
+        return true;
+    }
+
+    @Transactional
+    public boolean deleteVisit(Long id) {
+        Visit existing = getOne(Wrappers.<Visit>lambdaQuery()
+                .eq(Visit::getId, id).last("FOR UPDATE"));
+        if (existing == null) {
+            return true;
+        }
+        fileAssetService.unbindAllForBusiness("visit", id);
+        if (!removeById(id)) {
+            throw new CustomException("409", "删除失败，请刷新后重试");
+        }
+        return true;
     }
 
     private void validateAndNormalize(Visit visit, boolean creating) {
@@ -79,7 +130,6 @@ public class VisitService extends ServiceImpl<VisitMapper, Visit> {
             throw new CustomException("400", "回访人姓名不能为空");
         }
 
-        // 核心不变量：必须存在已通过的领养申请
         long approved = adoptService.count(new QueryWrapper<Adopt>()
                 .eq("aid", visit.getPetId())
                 .eq("uid", visit.getUid())
@@ -88,7 +138,6 @@ public class VisitService extends ServiceImpl<VisitMapper, Visit> {
             throw new CustomException("400", "仅可为已审核通过的领养申请录入回访");
         }
 
-        // 动物名称以档案为准，避免客户端脏数据
         Animal animal = animalService.getById(visit.getPetId());
         if (animal == null) {
             throw new CustomException("404", "动物信息不存在");

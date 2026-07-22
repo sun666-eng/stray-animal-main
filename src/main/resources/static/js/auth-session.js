@@ -1,11 +1,9 @@
 /**
- * 统一登录态：Session Cookie + JWT（sessionStorage.token）
- * - 请求自动带 Authorization: Bearer
+ * 统一登录态（A0.5 最终：Session 唯一权威）
+ * - 权威：HttpOnly JSESSIONID（withCredentials）
+ * - CSRF：X-CSRF-Token
+ * - 不再签发/存储/发送 JWT
  * - 401 清本地并跳登录
- * - 本地有 user 无 token → 视为假登录并清除
- * - 可选 /api/user/me 静默校验
- *
- * 在 jquery 之后加载；front-nav.js / admin-auth.js 会调用 install。
  */
 (function (global) {
   'use strict';
@@ -13,11 +11,12 @@
   var LOGIN_PATH = '/page/front/login.html';
   var KEY_USER = 'user';
   var KEY_TOKEN = 'token';
+  var KEY_CSRF = 'csrfToken';
   var KEY_LEGACY = 'x-auth-token';
 
-  function getToken() {
+  function getCsrfToken() {
     try {
-      return sessionStorage.getItem(KEY_TOKEN) || localStorage.getItem(KEY_TOKEN) || localStorage.getItem(KEY_LEGACY) || '';
+      return sessionStorage.getItem(KEY_CSRF) || '';
     } catch (e) {
       return '';
     }
@@ -32,14 +31,26 @@
     }
   }
 
-  function saveSession(user, token) {
+  /** 兼容旧调用签名 saveSession(user, token, csrf)；token 忽略并清除 */
+  function saveSession(user, tokenOrCsrf, csrfMaybe) {
     try {
       if (user) {
         sessionStorage.setItem(KEY_USER, typeof user === 'string' ? user : JSON.stringify(user));
       }
-      if (token) {
-        sessionStorage.setItem(KEY_TOKEN, token);
-        localStorage.setItem(KEY_TOKEN, token);
+      // 清除任何历史 JWT
+      sessionStorage.removeItem(KEY_TOKEN);
+      localStorage.removeItem(KEY_TOKEN);
+      localStorage.removeItem(KEY_LEGACY);
+      var csrf = csrfMaybe;
+      if (csrf == null && typeof tokenOrCsrf === 'string' && tokenOrCsrf.length < 80) {
+        // 旧调用 saveSession(user, csrf) 或 (user, token, csrf)
+        csrf = tokenOrCsrf;
+      }
+      if (arguments.length >= 3) {
+        csrf = csrfMaybe;
+      }
+      if (csrf) {
+        sessionStorage.setItem(KEY_CSRF, csrf);
       }
     } catch (e) { /* ignore */ }
   }
@@ -48,6 +59,7 @@
     try {
       sessionStorage.removeItem(KEY_USER);
       sessionStorage.removeItem(KEY_TOKEN);
+      sessionStorage.removeItem(KEY_CSRF);
       localStorage.removeItem(KEY_TOKEN);
       localStorage.removeItem(KEY_LEGACY);
     } catch (e) { /* ignore */ }
@@ -65,21 +77,14 @@
     }
   }
 
-  /**
-   * 本地一致性：有用户对象必须有 token，否则清掉（服务重启后最常见假登录形态）。
-   */
   function sanitizeLocalSession() {
+    try {
+      localStorage.removeItem(KEY_TOKEN);
+      localStorage.removeItem(KEY_LEGACY);
+      sessionStorage.removeItem(KEY_TOKEN);
+    } catch (e) { /* ignore */ }
     var user = getUser();
-    var token = getToken();
-    if (user && user.id && !token) {
-      clearSession();
-      return false;
-    }
-    if (!user && token) {
-      // 仅有 token 允许保留，由 /me 回填 user
-      return true;
-    }
-    return !!(user && user.id && token);
+    return !!(user && user.id);
   }
 
   function goLogin(forceRedirect) {
@@ -90,8 +95,79 @@
   }
 
   /**
-   * 安装 jQuery ajax 全局鉴权（幂等）。
+   * @param {function(boolean)} done
+   * @param {boolean} [forceRefresh]
    */
+  function ensureCsrf(done, forceRefresh) {
+    done = done || function () {};
+    if (forceRefresh) {
+      try { sessionStorage.removeItem(KEY_CSRF); } catch (e0) { /* ignore */ }
+    }
+    if (!forceRefresh && getCsrfToken()) {
+      done(true);
+      return;
+    }
+    if (!global.jQuery) {
+      done(false);
+      return;
+    }
+    global.jQuery.ajax({
+      url: '/api/user/csrf',
+      type: 'GET',
+      cache: false,
+      xhrFields: { withCredentials: true }
+    }).done(function (res) {
+      if (res && res.code === '0' && res.data && res.data.csrfToken) {
+        try {
+          sessionStorage.setItem(KEY_CSRF, res.data.csrfToken);
+        } catch (e) { /* ignore */ }
+        done(true);
+      } else {
+        done(false);
+      }
+    }).fail(function () {
+      done(false);
+    });
+  }
+
+  /**
+   * 统一退出：POST + CSRF，等待完成再清理并跳转。
+   */
+  function logout(opts) {
+    opts = opts || {};
+    var redirect = opts.redirect !== false;
+    function finish() {
+      clearSession();
+      if (redirect) {
+        global.location.href = LOGIN_PATH;
+      }
+    }
+    if (!global.jQuery) {
+      try {
+        global.fetch('/api/user/logout', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'X-CSRF-Token': getCsrfToken() || '', 'Content-Type': 'application/json' },
+          body: '{}'
+        }).finally(finish);
+      } catch (e) {
+        finish();
+      }
+      return;
+    }
+    var $ = global.jQuery;
+    ensureCsrf(function () {
+      $.ajax({
+        url: '/api/user/logout',
+        type: 'POST',
+        contentType: 'application/json',
+        data: '{}',
+        xhrFields: { withCredentials: true },
+        headers: { 'X-CSRF-Token': getCsrfToken() || '' }
+      }).always(finish);
+    }, false);
+  }
+
   function installAjaxAuth() {
     if (!global.jQuery) {
       return;
@@ -104,17 +180,22 @@
 
     $.ajaxSetup({
       xhrFields: { withCredentials: true },
-      beforeSend: function (xhr) {
-        var token = getToken();
-        if (token) {
-          xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+      beforeSend: function (xhr, settings) {
+        var method = (settings && settings.type ? settings.type : 'GET').toUpperCase();
+        if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+          var csrf = getCsrfToken();
+          if (csrf) {
+            xhr.setRequestHeader('X-CSRF-Token', csrf);
+          }
         }
       }
     });
 
     $(global.document).ajaxError(function (event, xhr) {
-      if (xhr && xhr.status === 401) {
-        // 登录接口本身的 401 不强制整页跳转（由表单处理）
+      if (!xhr) {
+        return;
+      }
+      if (xhr.status === 401) {
         var url = '';
         try {
           url = (xhr.responseURL || '') + '';
@@ -123,34 +204,37 @@
           return;
         }
         goLogin(true);
+        return;
+      }
+      if (xhr.status === 403) {
+        try {
+          var body = xhr.responseJSON || (xhr.responseText ? JSON.parse(xhr.responseText) : null);
+          var msg = body && body.msg ? String(body.msg) : '';
+          if (msg.indexOf('CSRF') >= 0 || (body && body.code === '403' && msg.indexOf('token') >= 0)) {
+            // 强制刷新 CSRF；故意不自动重放业务写请求（防非幂等重复提交）
+            ensureCsrf(function (ok) {
+              try {
+                global.document.dispatchEvent(new CustomEvent('auth-csrf-refreshed', { detail: { ok: ok } }));
+              } catch (e3) { /* ignore */ }
+            }, true);
+          }
+        } catch (e2) { /* ignore */ }
       }
     });
   }
 
-  /**
-   * 静默校验服务端会话；失败清本地。
-   * @param {function(boolean, object|null)} done (ok, user)
-   */
   function revalidate(done) {
     done = done || function () {};
     sanitizeLocalSession();
-    var token = getToken();
     var localUser = getUser();
-    if (!token && !localUser) {
-      done(false, null);
-      return;
-    }
-    if (!token) {
-      clearSession();
-      done(false, null);
-      return;
-    }
 
     function applyOk(user) {
       if (user) {
-        saveSession(user, token);
+        saveSession(user, null, getCsrfToken());
       }
-      done(true, user || localUser);
+      ensureCsrf(function () {
+        done(true, user || localUser);
+      });
     }
 
     function applyFail() {
@@ -163,7 +247,8 @@
         url: '/api/user/me',
         type: 'GET',
         cache: false,
-        timeout: 8000
+        timeout: 8000,
+        xhrFields: { withCredentials: true }
       }).done(function (res) {
         if (res && res.code === '0' && res.data) {
           applyOk(res.data);
@@ -174,19 +259,16 @@
         if (xhr && (xhr.status === 401 || xhr.status === 403)) {
           applyFail();
         } else {
-          // 网络错误：保留本地态，避免断网误踢
           done(!!localUser, localUser);
         }
       });
       return;
     }
 
-    // fetch 回退
     try {
       global.fetch('/api/user/me', {
         method: 'GET',
-        credentials: 'same-origin',
-        headers: token ? { Authorization: 'Bearer ' + token } : {}
+        credentials: 'same-origin'
       }).then(function (r) {
         if (r.status === 401 || r.status === 403) {
           applyFail();
@@ -208,15 +290,11 @@
     }
   }
 
-  /**
-   * 页面入口：装 ajax + 本地消毒 + 静默 revalidate。
-   * @param {{requireAuth?: boolean, onDone?: function}} opts
-   */
   function bootstrap(opts) {
     opts = opts || {};
     installAjaxAuth();
     var okLocal = sanitizeLocalSession();
-    if (opts.requireAuth && !okLocal && !getToken()) {
+    if (opts.requireAuth && !okLocal && !getUser()) {
       goLogin(true);
       return;
     }
@@ -230,20 +308,51 @@
       }
       try {
         global.document.dispatchEvent(new CustomEvent('auth-session-ready', { detail: { ok: ok, user: user } }));
-      } catch (e) { /* IE ignore */ }
+      } catch (e) { /* ignore */ }
     });
+  }
+
+  function getUploadHeaders() {
+    var h = {};
+    try {
+      var c = getCsrfToken();
+      if (c) {
+        h['X-CSRF-Token'] = c;
+      }
+    } catch (e) { /* ignore */ }
+    return h;
+  }
+
+  function appendUploadPurpose(formData, purpose) {
+    if (!formData || typeof formData.append !== 'function') {
+      return formData;
+    }
+    try {
+      formData.append('purpose', purpose || 'private');
+    } catch (e) { /* ignore */ }
+    return formData;
+  }
+
+  // 兼容旧代码 getToken()：恒为空，避免误带 Authorization
+  function getToken() {
+    return '';
   }
 
   global.AuthSession = {
     getToken: getToken,
+    getCsrfToken: getCsrfToken,
     getUser: getUser,
     saveSession: saveSession,
     clearSession: clearSession,
     loginUrl: loginUrl,
     goLogin: goLogin,
+    logout: logout,
     sanitizeLocalSession: sanitizeLocalSession,
     installAjaxAuth: installAjaxAuth,
+    ensureCsrf: ensureCsrf,
     revalidate: revalidate,
-    bootstrap: bootstrap
+    bootstrap: bootstrap,
+    getUploadHeaders: getUploadHeaders,
+    appendUploadPurpose: appendUploadPurpose
   };
 })(typeof window !== 'undefined' ? window : this);

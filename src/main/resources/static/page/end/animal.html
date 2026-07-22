@@ -306,7 +306,7 @@
                             <el-upload
                                     :key="'animal-image-upload-' + (entity.id || 'new')"
                                     class="upload-demo"
-                                    action="/api/files/upload"
+                                    action="/api/files/upload" :data="{ purpose: 'animal' }" :headers="uploadHeaders"
                                     :file-list="animalFileList"
                                     list-type="picture"
                                     :limit="1"
@@ -401,6 +401,7 @@
     new Vue({
         el: "#wrapper",
         data: {
+            uploadHeaders: {},
             user: {},
             tableData: [],
             uploadParams: {
@@ -431,7 +432,7 @@
             }],
             props: [{"label":"动物ID","prop":"id"},{"label":"动物名字","prop":"tname"},{"label":"动物品种","prop":"ttype"},{"label":"动物性别","prop":"tsex"},{"label":"动物生日","prop":"tbirthday"},{"label":"动物描述","prop":"tdescribe"},{"label":"动物图片","prop":"tpic"}]
         },
-        created() {
+        created() { this.refreshUploadHeaders();
             this.user = sessionStorage.getItem("user") ? JSON.parse(sessionStorage.getItem("user")) : {};
             if (!this.user.id) {
                 location.href = "/page/front/login.html";
@@ -442,6 +443,10 @@
 
         },
         methods: {
+            refreshUploadHeaders: function() {
+                    this.uploadHeaders = (window.AuthSession && window.AuthSession.getUploadHeaders)
+                        ? window.AuthSession.getUploadHeaders() : {};
+                },
             changeState(row) {
                 this.entity = row;
                 this.save();
@@ -449,11 +454,7 @@
             handleCollapse() {
                 this.isCollapse = !this.isCollapse;
             },
-            logout() {
-                $.get("/api/user/logout");
-                sessionStorage.removeItem("user");
-                location.href = "/page/front/login.html";
-            },
+            logout() { if (window.AuthSession) { AuthSession.logout(); } else { location.href="/page/front/login.html"; } },
             loadTable() {
                 $.get(urlBase + "/page?pageNum=" + this.pageNum + "&pageSize=" + this.pageSize + "&name=" + this.search).then(res => {
                     this.tableData = res.data.records;
@@ -541,8 +542,7 @@
                 //     formData.append("files", files[i]);
                 // }
                 let formData = new FormData();
-                formData.append("file", $("#file")[0].files[0])
-                $.ajax({
+                formData.append("file", $("#file")[0].files[0]); formData.append('purpose', 'animal'); $.ajax({
                     url: '/api/files/upload',
                     processData: false,
                     contentType: false,
@@ -605,7 +605,7 @@
                     return;
                 }
                 const fd = new FormData();
-                fd.append('file', this.importFileList[0].raw);
+                fd.append('file', this.importFileList[0].raw); fd.append('purpose', 'animal');
                 this.importLoading = true;
                 $.ajax({
                     url: '/api/animal/import',

@@ -1,6 +1,8 @@
 package com.example.service;
 
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.example.entity.Animal;
+import com.example.entity.User;
 import com.example.entity.Visit;
 import com.example.exception.CustomException;
 import com.example.mapper.VisitMapper;
@@ -16,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -32,8 +35,17 @@ public class VisitServiceTest {
     @Mock
     AnimalService animalService;
 
+    @Mock
+    FileAssetService fileAssetService;
+
     @InjectMocks
     VisitService visitService;
+
+    private User actor() {
+        User u = new User();
+        u.setId(1L);
+        return u;
+    }
 
     private Visit validDraft() {
         Visit v = new Visit();
@@ -57,7 +69,7 @@ public class VisitServiceTest {
         when(visitMapper.insert(any(Visit.class))).thenReturn(1);
 
         Visit v = validDraft();
-        assertTrue(visitService.createVisit(v));
+        assertTrue(visitService.createVisit(v, actor()));
         assertEquals("默默", v.getAname());
         verify(visitMapper).insert(any(Visit.class));
     }
@@ -67,7 +79,7 @@ public class VisitServiceTest {
         when(adoptService.count(any())).thenReturn(0L);
 
         CustomException ex = assertThrows(CustomException.class,
-                () -> visitService.createVisit(validDraft()));
+                () -> visitService.createVisit(validDraft(), actor()));
         assertEquals("400", ex.getCode());
         assertTrue(ex.getMsg().contains("已审核通过"));
         verify(visitMapper, never()).insert(any());
@@ -77,9 +89,8 @@ public class VisitServiceTest {
     public void create_missingRequiredFields_rejected() {
         Visit v = new Visit();
         v.setPetId(1L);
-        // missing uid, vtime, state, vname
         CustomException ex = assertThrows(CustomException.class,
-                () -> visitService.createVisit(v));
+                () -> visitService.createVisit(v, actor()));
         assertEquals("400", ex.getCode());
     }
 
@@ -88,7 +99,7 @@ public class VisitServiceTest {
         Visit v = validDraft();
         v.setState(0);
         CustomException ex = assertThrows(CustomException.class,
-                () -> visitService.createVisit(v));
+                () -> visitService.createVisit(v, actor()));
         assertEquals("400", ex.getCode());
         assertTrue(ex.getMsg().contains("健康评分"));
         verify(visitMapper, never()).insert(any());
@@ -96,11 +107,11 @@ public class VisitServiceTest {
 
     @Test
     public void update_whenRecordMissing_404() {
-        when(visitMapper.selectById(9L)).thenReturn(null);
+        when(visitMapper.selectOne(any(Wrapper.class), anyBoolean())).thenReturn(null);
         Visit v = validDraft();
         v.setId(9L);
         CustomException ex = assertThrows(CustomException.class,
-                () -> visitService.updateVisit(v));
+                () -> visitService.updateVisit(v, actor()));
         assertEquals("404", ex.getCode());
     }
 
@@ -108,7 +119,7 @@ public class VisitServiceTest {
     public void update_revalidatesApprovedAdopt() {
         Visit existing = validDraft();
         existing.setId(6L);
-        when(visitMapper.selectById(6L)).thenReturn(existing);
+        when(visitMapper.selectOne(any(Wrapper.class), anyBoolean())).thenReturn(existing);
         when(adoptService.count(any())).thenReturn(0L);
 
         Visit patch = new Visit();
@@ -116,10 +127,9 @@ public class VisitServiceTest {
         patch.setState(5);
         patch.setVname("乙");
         patch.setVtime(new Date());
-        // petId/uid 从 existing 补全后仍会校验领养
 
         CustomException ex = assertThrows(CustomException.class,
-                () -> visitService.updateVisit(patch));
+                () -> visitService.updateVisit(patch, actor()));
         assertEquals("400", ex.getCode());
     }
 }
