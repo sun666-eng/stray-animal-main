@@ -31,7 +31,7 @@ import java.util.Map;
 public class SchemaGuardRunner implements ApplicationRunner {
 
     /** 结构契约版本：变更闭环必需列/角色时递增，并写入 app_schema_meta */
-    public static final String SCHEMA_VERSION = "2026.07.24-file-collation-v3";
+    public static final String SCHEMA_VERSION = "2026.07.26-role-permission-v1";
 
     private static final String FILE_FLAG_COLLATION = "utf8mb4_unicode_ci";
 
@@ -106,6 +106,7 @@ public class SchemaGuardRunner implements ApplicationRunner {
 
             ensureTextColumn("t_role", "permission", errors);
             ensureTextColumn("t_user", "role", errors);
+            ensureRolePermissionTable(errors);
             ensureLightVolunteerRole(errors);
             ensureRole3HasMyProof(errors);
             ensurePermissionMyProof(errors);
@@ -148,6 +149,34 @@ public class SchemaGuardRunner implements ApplicationRunner {
                         + "meta_value VARCHAR(255) NOT NULL,"
                         + "updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
                         + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+
+    /**
+     * 角色权限规范化 Phase 1：role_permission 关联表。
+     * 数据回填由 RolePermissionSyncRunner（@Order(70)）在全部 JSON 写入者之后完成，
+     * 此处仅保证表结构存在。不加外键：历史库 t_role/t_permission 字符集不一，
+     * FK 创建失败会阻断启动；引用有效性由 SyncRunner 与运行期双写保证。
+     */
+    private void ensureRolePermissionTable(List<String> errors) {
+        if (tableExists("role_permission")) {
+            return;
+        }
+        if (!autoMigrate) {
+            errors.add("缺少表 role_permission 且 auto-migrate=false（见 docs/sql/2026-07-26-role-permission.sql）");
+            return;
+        }
+        log.warn("SchemaGuard 自动创建 role_permission");
+        try {
+            jdbcTemplate.execute(
+                    "CREATE TABLE IF NOT EXISTS role_permission ("
+                            + "role_id BIGINT NOT NULL,"
+                            + "permission_id BIGINT NOT NULL,"
+                            + "PRIMARY KEY (role_id, permission_id),"
+                            + "KEY idx_rp_permission (permission_id)"
+                            + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色-权限关联(规范化 Phase 1)'");
+        } catch (RuntimeException ex) {
+            errors.add("创建 role_permission 失败: " + ex.getMessage());
+        }
     }
 
     private void ensureFileAssetTable(List<String> errors) {

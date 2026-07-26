@@ -33,6 +33,8 @@ class PermissionServiceSecurityTest {
     UserMapper userMapper;
     @Mock
     com.example.common.AuthUserCache authUserCache;
+    @Mock
+    com.example.mapper.RolePermissionMapper rolePermissionMapper;
 
     @InjectMocks
     PermissionService permissionService;
@@ -108,10 +110,8 @@ class PermissionServiceSecurityTest {
         Permission stored = permission("visit", "/page/end/visit.html");
         stored.setId(7L);
         when(permissionMapper.selectById(7L)).thenReturn(stored);
-        Role role = new Role();
-        role.setPermission(Collections.singletonList(stored));
-        when(roleService.list(org.mockito.ArgumentMatchers.<com.baomidou.mybatisplus.core.conditions.Wrapper<Role>>any()))
-                .thenReturn(Collections.singletonList(role));
+        // 规范化 Phase 1：引用检查改查 role_permission 关联表
+        when(rolePermissionMapper.selectCount(any())).thenReturn(1L);
         Permission update = permission("visit", "/page/end/visit.html");
         update.setId(7L);
         update.setDescription("changed");

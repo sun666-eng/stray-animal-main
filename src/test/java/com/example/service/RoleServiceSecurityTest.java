@@ -35,6 +35,8 @@ class RoleServiceSecurityTest {
     UserMapper userMapper;
     @Mock
     com.example.common.AuthUserCache authUserCache;
+    @Mock
+    com.example.mapper.RolePermissionMapper rolePermissionMapper;
 
     @InjectMocks
     RoleService roleService;

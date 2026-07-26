@@ -27,8 +27,6 @@ import java.util.Set;
 
 @Service
 public class PermissionService extends ServiceImpl<PermissionMapper, Permission> {
-    private static final int MAX_REFERENCE_SCAN = 10000;
-
     private static final Set<String> KNOWN_FLAGS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             "user", "role", "permission", "animal", "adopt", "proof", "visit",
             "volunteer", "account", "notice", "help", "rescue", "im", "adopt_view",
@@ -54,21 +52,60 @@ public class PermissionService extends ServiceImpl<PermissionMapper, Permission>
     @Resource
     private com.example.common.AuthUserCache authUserCache;
 
+    @Resource
+    private com.example.mapper.RolePermissionMapper rolePermissionMapper;
+
     public List<Permission> getByRoles(List<Role> roles) {
-        List<Permission> permissions = new ArrayList<>();
-        if (roles == null) {
-            return permissions;
+        List<Long> roleIds = new ArrayList<>();
+        if (roles != null) {
+            for (Role role : roles) {
+                if (role != null && role.getId() != null && !roleIds.contains(role.getId())) {
+                    roleIds.add(role.getId());
+                }
+            }
         }
-        for (Role role : roles) {
-            if (role == null || role.getId() == null) {
+        return findByRoleIds(roleIds);
+    }
+
+    /**
+     * 规范化 Phase 1：按角色 ID 集合从 role_permission 关联表加载权限定义
+     * （替代逐角色读内嵌 JSON + 逐权限 getById 的 N+1）。
+     * 结果按 roleIds 顺序展开、按权限 ID 去重，权限内容一律以 t_permission 现行定义为准。
+     */
+    public List<Permission> findByRoleIds(java.util.Collection<Long> roleIds) {
+        List<Permission> result = new ArrayList<>();
+        if (roleIds == null || roleIds.isEmpty()) {
+            return result;
+        }
+        List<Long> permissionIds = new ArrayList<>();
+        for (Long roleId : roleIds) {
+            if (roleId == null) {
                 continue;
             }
-            Role r = roleService.getById(role.getId());
-            if (r != null && r.getPermission() != null) {
-                permissions.addAll(r.getPermission());
+            for (com.example.entity.RolePermission rp : rolePermissionMapper.selectList(
+                    Wrappers.<com.example.entity.RolePermission>query()
+                            .eq("role_id", roleId).orderByAsc("permission_id"))) {
+                if (rp.getPermissionId() != null && !permissionIds.contains(rp.getPermissionId())) {
+                    permissionIds.add(rp.getPermissionId());
+                }
             }
         }
-        return permissions;
+        if (permissionIds.isEmpty()) {
+            return result;
+        }
+        Map<Long, Permission> byId = new java.util.HashMap<>();
+        for (Permission p : listByIds(permissionIds)) {
+            if (p != null && p.getId() != null) {
+                byId.put(p.getId(), p);
+            }
+        }
+        for (Long pid : permissionIds) {
+            Permission p = byId.get(pid);
+            if (p != null) {
+                result.add(p);
+            }
+        }
+        return result;
     }
 
     @Transactional
@@ -225,21 +262,12 @@ public class PermissionService extends ServiceImpl<PermissionMapper, Permission>
         }
     }
 
+    /** 规范化 Phase 1：引用检查由全表 JSON 扫描改为关联表 COUNT，一致且 O(1)。 */
     private void assertNotReferenced(Long permissionId) {
-        List<Role> roles = roleService.list(new QueryWrapper<Role>()
-                .select("id", "permission").last("LIMIT " + (MAX_REFERENCE_SCAN + 1)));
-        if (roles.size() > MAX_REFERENCE_SCAN) {
-            throw new CustomException("409", "角色数量超过安全扫描上限，禁止修改权限定义");
-        }
-        for (Role role : roles) {
-            if (role == null || role.getPermission() == null) {
-                continue;
-            }
-            for (Object item : role.getPermission()) {
-                if (permissionId.equals(extractPermissionId(item))) {
-                    throw new CustomException("409", "权限已被角色引用，不能修改或删除");
-                }
-            }
+        Long refs = rolePermissionMapper.selectCount(
+                Wrappers.<com.example.entity.RolePermission>query().eq("permission_id", permissionId));
+        if (refs != null && refs > 0) {
+            throw new CustomException("409", "权限已被角色引用，不能修改或删除");
         }
     }
 
@@ -250,23 +278,4 @@ public class PermissionService extends ServiceImpl<PermissionMapper, Permission>
         }
     }
 
-    private Long extractPermissionId(Object item) {
-        if (item instanceof Permission) {
-            return ((Permission) item).getId();
-        }
-        if (item instanceof Map) {
-            Object id = ((Map<?, ?>) item).get("id");
-            if (id instanceof Number) {
-                return ((Number) id).longValue();
-            }
-            if (id instanceof String) {
-                try {
-                    return Long.valueOf(((String) id).trim());
-                } catch (NumberFormatException ignored) {
-                    return null;
-                }
-            }
-        }
-        return null;
-    }
 }

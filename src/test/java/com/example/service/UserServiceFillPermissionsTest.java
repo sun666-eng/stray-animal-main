@@ -18,8 +18,15 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * 规范化 Phase 1 后的 fillPermissions：权限来源为 role_permission 关联表
+ * （经 PermissionService.findByRoleIds），超管仍拉全表。
+ */
 @ExtendWith(MockitoExtension.class)
 public class UserServiceFillPermissionsTest {
 
@@ -35,25 +42,20 @@ public class UserServiceFillPermissionsTest {
     @InjectMocks
     UserService userService;
 
-    @Test
-    public void superAdmin_withNullRolePermissionJson_getsAllDbPermissions() {
-        Role role = new Role();
-        role.setId(1L);
-        role.setName("超级管理员");
-        role.setPermission(null);
-        when(roleService.getById(1L)).thenReturn(role);
+    private static Permission permission(long id, String flag, String name, String path) {
+        Permission p = new Permission();
+        p.setId(id);
+        p.setFlag(flag);
+        p.setName(name);
+        p.setPath(path);
+        return p;
+    }
 
-        Permission visit = new Permission();
-        visit.setId(7L);
-        visit.setName("回访管理");
-        visit.setFlag("visit");
-        visit.setPath("/page/end/visit.html");
-        Permission adopt = new Permission();
-        adopt.setId(8L);
-        adopt.setName("领养审核");
-        adopt.setFlag("adopt");
-        adopt.setPath("/page/end/adopt.html");
-        when(permissionService.list()).thenReturn(listOf(visit, adopt));
+    @Test
+    public void superAdmin_getsAllDbPermissions_withoutRelationQuery() {
+        when(permissionService.list()).thenReturn(java.util.Arrays.asList(
+                permission(7L, "visit", "回访管理", "/page/end/visit.html"),
+                permission(8L, "adopt", "领养审核", "/page/end/adopt.html")));
 
         User user = new User();
         user.setId(1L);
@@ -67,32 +69,20 @@ public class UserServiceFillPermissionsTest {
 
         assertTrue(user.getPermission().stream().anyMatch(p -> "visit".equals(p.getFlag())));
         assertTrue(user.getPermission().stream().anyMatch(p -> "adopt".equals(p.getFlag())));
+        // 超管无需再查关联表
+        verify(permissionService, never()).findByRoleIds(anyCollection());
     }
 
     @Test
     @SuppressWarnings({"rawtypes", "unchecked"})
-    public void rolePermissionIds_resolvedFromPermissionTable() {
-        Permission dbVisit = new Permission();
-        dbVisit.setId(7L);
-        dbVisit.setFlag("visit");
-        dbVisit.setName("回访管理");
-        dbVisit.setPath("/page/end/visit.html");
-
-        Map<String, Object> embedded = new HashMap<String, Object>();
-        embedded.put("id", 7);
-        // 故意不给 flag，模拟截断/脏 JSON
-
-        Role role = new Role();
-        role.setId(2L);
-        List rawPerms = new ArrayList();
-        rawPerms.add(embedded);
-        role.setPermission(rawPerms);
-
-        when(roleService.getById(2L)).thenReturn(role);
-        when(permissionService.getById(7L)).thenReturn(dbVisit);
+    public void roleIdFromDirtyJsonMap_resolvedViaRelationTable() {
+        // user.role 仍是 JSON（Phase 2 前不变）：兼容 Map 形态 + 数字 id
+        when(permissionService.findByRoleIds(java.util.Arrays.asList(2L)))
+                .thenReturn(Collections.singletonList(
+                        permission(7L, "visit", "回访管理", "/page/end/visit.html")));
 
         User user = new User();
-        Map<String, Object> roleMap = new HashMap<String, Object>();
+        Map<String, Object> roleMap = new HashMap<>();
         roleMap.put("id", 2);
         roleMap.put("name", "志愿者");
         List roles = new ArrayList();
@@ -106,17 +96,9 @@ public class UserServiceFillPermissionsTest {
 
     @Test
     public void normalUser_withoutAdminFlags_hasNoVisit() {
-        Permission browse = new Permission();
-        browse.setId(43L);
-        browse.setFlag("adopt_view");
-        browse.setName("动物浏览");
-        browse.setPath("/page/front/animal_browse.html");
-
-        Role role = new Role();
-        role.setId(3L);
-        role.setPermission(Collections.singletonList(browse));
-        when(roleService.getById(3L)).thenReturn(role);
-        when(permissionService.getById(43L)).thenReturn(browse);
+        when(permissionService.findByRoleIds(java.util.Arrays.asList(3L)))
+                .thenReturn(Collections.singletonList(
+                        permission(43L, "adopt_view", "动物浏览", "/page/front/animal_browse.html")));
 
         User user = new User();
         Role slim = new Role();
@@ -130,16 +112,11 @@ public class UserServiceFillPermissionsTest {
     }
 
     @Test
-    public void stalePermissionId_doesNotFallBackToEmbeddedFlagOrPath() {
-        Permission stale = new Permission();
-        stale.setId(999L);
-        stale.setFlag("role");
-        stale.setPath("/page/end/role.html");
-        Role role = new Role();
-        role.setId(2L);
-        role.setPermission(Collections.singletonList(stale));
-        when(roleService.getById(2L)).thenReturn(role);
-        when(permissionService.getById(999L)).thenReturn(null);
+    public void emptyRelationResult_yieldsNoPermissions() {
+        // 关联表只含仍存在于 t_permission 的 ID：陈旧引用不会出现在结果中
+        when(permissionService.findByRoleIds(java.util.Arrays.asList(2L)))
+                .thenReturn(Collections.emptyList());
+
         User user = new User();
         Role slim = new Role();
         slim.setId(2L);
@@ -147,13 +124,24 @@ public class UserServiceFillPermissionsTest {
 
         userService.fillPermissions(user);
 
-        assertFalse(user.getPermission().stream().anyMatch(p -> "role".equals(p.getFlag())));
         assertTrue(user.getPermission().isEmpty());
     }
 
-    private static List<Permission> listOf(Permission... items) {
-        List<Permission> list = new ArrayList<Permission>();
-        Collections.addAll(list, items);
-        return list;
+    @Test
+    public void blankFlagPermissions_areFilteredOut() {
+        when(permissionService.findByRoleIds(java.util.Arrays.asList(3L)))
+                .thenReturn(java.util.Arrays.asList(
+                        permission(43L, "adopt_view", "动物浏览", "/page/front/animal_browse.html"),
+                        permission(44L, "  ", "空flag", "/page/end/broken.html")));
+
+        User user = new User();
+        Role slim = new Role();
+        slim.setId(3L);
+        user.setRole(Collections.singletonList(slim));
+
+        userService.fillPermissions(user);
+
+        assertTrue(user.getPermission().stream().anyMatch(p -> "adopt_view".equals(p.getFlag())));
+        assertFalse(user.getPermission().stream().anyMatch(p -> "/page/end/broken.html".equals(p.getPath())));
     }
 }

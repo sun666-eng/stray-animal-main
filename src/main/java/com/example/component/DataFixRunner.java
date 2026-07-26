@@ -30,6 +30,7 @@ import java.util.Set;
  */
 @Slf4j
 @Component
+@org.springframework.core.annotation.Order(60)
 @ConditionalOnProperty(name = "app.data-fix.enabled", havingValue = "true")
 public class DataFixRunner implements CommandLineRunner {
 

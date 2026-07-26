@@ -209,57 +209,44 @@ public class UserService extends ServiceImpl<UserMapper, User> {
 
     /**
      * 从角色加载权限写入 user.permission（仅内存，不落库）。
-     * 加固点：
-     * 1) 角色 id 支持 Number/String；
-     * 2) 仅接受仍存在于 t_permission 的权限 ID，陈旧 JSON 一律失效；
+     * 规范化 Phase 1：权限来源由角色内嵌 JSON（逐角色 getById + 逐权限校验的 N+1）
+     * 改为 role_permission 关联表（PermissionService.findByRoleIds）。
+     * 加固点保留：
+     * 1) 角色 id 支持 Number/String（user.role 仍是 JSON，Phase 2 前不变）；
+     * 2) 关联表只含仍存在于 t_permission 的权限 ID，内容以现行定义为准；
      * 3) 超级管理员(roleId=1) 始终授予权限表全部条目。
      */
     public User fillPermissions(User user) {
         if (user == null) {
             return null;
         }
-        Map<Long, Permission> uniquePermissions = new LinkedHashMap<>();
+        List<Long> roleIds = new ArrayList<>();
         boolean superAdmin = false;
         List<?> roles = user.getRole();
         if (roles != null && !roles.isEmpty()) {
             for (Object item : roles) {
                 Long roleId = extractRoleId(item);
-                if (roleId == null) {
+                if (roleId == null || roleIds.contains(roleId)) {
                     continue;
                 }
+                roleIds.add(roleId);
                 if (Long.valueOf(1L).equals(roleId)) {
                     superAdmin = true;
                 }
-                Role fullRole = roleService.getById(roleId);
-                if (fullRole == null || fullRole.getPermission() == null) {
-                    continue;
-                }
-                for (Object perm : fullRole.getPermission()) {
-                    Permission resolved = resolvePermission(perm);
-                    if (resolved != null && resolved.getId() != null) {
-                        uniquePermissions.putIfAbsent(resolved.getId(), resolved);
-                    }
-                }
             }
         }
-        // 超级管理员：始终拉全表权限，不依赖可能被 varchar 截断的角色 JSON
+        Map<Long, Permission> uniquePermissions = new LinkedHashMap<>();
         if (superAdmin) {
+            // 超级管理员：始终拉全表权限（关联表内容必为其子集，无需再查）
             for (Permission p : permissionService.list()) {
                 if (p != null && p.getId() != null) {
                     uniquePermissions.putIfAbsent(p.getId(), p);
                 }
             }
-        }
-        // 若仍为空且角色 JSON 里只有 id=1 的摘要，再兜底一次
-        if (uniquePermissions.isEmpty() && roles != null) {
-            for (Object item : roles) {
-                if (Long.valueOf(1L).equals(extractRoleId(item))) {
-                    for (Permission p : permissionService.list()) {
-                        if (p != null && p.getId() != null) {
-                            uniquePermissions.putIfAbsent(p.getId(), p);
-                        }
-                    }
-                    break;
+        } else if (!roleIds.isEmpty()) {
+            for (Permission p : permissionService.findByRoleIds(roleIds)) {
+                if (p != null && p.getId() != null) {
+                    uniquePermissions.putIfAbsent(p.getId(), p);
                 }
             }
         }
@@ -303,18 +290,6 @@ public class UserService extends ServiceImpl<UserMapper, User> {
     /**
      * 将角色内嵌权限解析为完整 Permission：优先按 id 查表，保证 flag 正确。
      */
-    private Permission resolvePermission(Object perm) {
-        if (perm instanceof Permission) {
-            Permission p = (Permission) perm;
-            return p.getId() == null ? null : permissionService.getById(p.getId());
-        }
-        if (perm instanceof Map) {
-            Map<?, ?> m = (Map<?, ?>) perm;
-            Long id = toLong(m.get("id"));
-            return id == null ? null : permissionService.getById(id);
-        }
-        return null;
-    }
 
     public User getbyUsername(String username) {
         User one = getOne((Wrappers.<User>lambdaQuery().eq(User::getUsername, username)));

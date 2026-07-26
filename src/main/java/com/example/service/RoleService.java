@@ -36,6 +36,9 @@ public class RoleService extends ServiceImpl<RoleMapper, Role> {
     @Resource
     private com.example.common.AuthUserCache authUserCache;
 
+    @Resource
+    private com.example.mapper.RolePermissionMapper rolePermissionMapper;
+
     @Transactional
     public boolean createDefinition(Role role, User actor) {
         return RolePermissionWriteLock.execute(() -> createDefinitionLocked(role, actor));
@@ -51,6 +54,8 @@ public class RoleService extends ServiceImpl<RoleMapper, Role> {
         if (roleMapper.insert(role) != 1) {
             throw new CustomException("500", "角色保存失败");
         }
+        // 规范化 Phase 1 双写：JSON 列之外同步 role_permission 关联行（同事务）
+        syncRolePermissions(role.getId(), role.getPermission());
         return true;
     }
 
@@ -77,9 +82,33 @@ public class RoleService extends ServiceImpl<RoleMapper, Role> {
         if (roleMapper.updateById(role) != 1) {
             throw new CustomException("409", "角色更新失败，请刷新后重试");
         }
+        // 双写：仅当本次提交携带 permission（即 JSON 列被更新）时同步关联行
+        if (role.getPermission() != null) {
+            syncRolePermissions(role.getId(), role.getPermission());
+        }
         // 角色权限内容变更影响所有持有该角色的用户，无法反查，须全量失效鉴权缓存
         authUserCache.invalidateAll();
         return true;
+    }
+
+    /** 规范化 Phase 1：以 resolvePermissions 后的列表为准，整组重建该角色的关联行。 */
+    private void syncRolePermissions(Long roleId, List<Permission> resolved) {
+        rolePermissionMapper.delete(com.baomidou.mybatisplus.core.toolkit.Wrappers
+                .<com.example.entity.RolePermission>query().eq("role_id", roleId));
+        java.util.Set<Long> seen = new java.util.LinkedHashSet<>();
+        if (resolved != null) {
+            for (Permission p : resolved) {
+                if (p != null && p.getId() != null) {
+                    seen.add(p.getId());
+                }
+            }
+        }
+        for (Long permissionId : seen) {
+            com.example.entity.RolePermission rp = new com.example.entity.RolePermission();
+            rp.setRoleId(roleId);
+            rp.setPermissionId(permissionId);
+            rolePermissionMapper.insert(rp);
+        }
     }
 
     @Transactional
@@ -114,6 +143,9 @@ public class RoleService extends ServiceImpl<RoleMapper, Role> {
         if (roleMapper.deleteById(id) != 1) {
             throw new CustomException("409", "角色删除失败，请刷新后重试");
         }
+        // 双写：角色删除时清掉关联行
+        rolePermissionMapper.delete(com.baomidou.mybatisplus.core.toolkit.Wrappers
+                .<com.example.entity.RolePermission>query().eq("role_id", id));
         authUserCache.invalidateAll();
     }
 
