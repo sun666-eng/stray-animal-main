@@ -30,17 +30,18 @@ public class ExcelExportUtil {
             list.add(new LinkedHashMap<>(mapper.apply(row)));
         }
 
-        ExcelWriter writer = ExcelUtil.getWriter(true);
-        writer.write(list, true);
+        // try-with-resources：异常路径也释放 Workbook，避免内存/临时文件泄漏
+        try (ExcelWriter writer = ExcelUtil.getWriter(true)) {
+            writer.write(list, true);
 
-        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8");
-        response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
-        response.setHeader("Pragma", "no-cache");
-        String encodedFileName = URLEncoder.encode(fileName, "UTF-8");
-        response.setHeader("Content-Disposition", "attachment;filename=" + encodedFileName + ".xlsx");
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8");
+            response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+            response.setHeader("Pragma", "no-cache");
+            String encodedFileName = URLEncoder.encode(fileName, "UTF-8");
+            response.setHeader("Content-Disposition", "attachment;filename=" + encodedFileName + ".xlsx");
 
-        ServletOutputStream out = response.getOutputStream();
-        writer.flush(out, true);
-        writer.close();
+            ServletOutputStream out = response.getOutputStream();
+            writer.flush(out, true);
+        }
     }
 }

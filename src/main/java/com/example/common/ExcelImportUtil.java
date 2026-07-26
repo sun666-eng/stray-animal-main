@@ -20,8 +20,8 @@ public final class ExcelImportUtil {
         if (file == null || file.isEmpty()) {
             throw new CustomException("400", "请选择要导入的文件");
         }
-        try (InputStream in = file.getInputStream()) {
-            ExcelReader reader = ExcelUtil.getReader(in);
+        try (InputStream in = file.getInputStream();
+             ExcelReader reader = ExcelUtil.getReader(in)) {
             List<Map<String, Object>> rows = reader.readAll();
             if (rows.size() > maxRows) {
                 throw new CustomException("400", "导入行数不能超过 " + maxRows);

@@ -128,9 +128,14 @@ public class HelpController {
         }
         long safePageNum = pageNum == null ? 1 : Math.min(10_000, Math.max(1, pageNum));
         long safePageSize = pageSize == null ? 10 : Math.max(1, Math.min(50, pageSize));
+        String keyword = name == null ? "" : name.trim();
+        if (keyword.length() > 100) {
+            return Result.error("400", "查询关键词不能超过100个字符");
+        }
+        // 空关键词不拼 LIKE，避免 LIKE '%%' 全表扫描
         return Result.success(helpService.page(new Page<>(safePageNum, safePageSize),
                 Wrappers.<Help>lambdaQuery()
-                        .like(Help::getTitle, name)
+                        .like(!keyword.isEmpty(), Help::getTitle, keyword)
                         .ne(Help::getTitle, "聊天室消息")
                         .orderByDesc(Help::getCreateTime)));
     }

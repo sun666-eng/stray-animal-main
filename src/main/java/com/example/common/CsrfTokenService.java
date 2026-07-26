@@ -4,6 +4,8 @@ import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.UUID;
 
 /**
@@ -52,7 +54,10 @@ public class CsrfTokenService {
                 provided = request.getParameter(PARAM_NAME);
             }
         }
-        return expected != null && expected.equals(provided);
+        // 恒时比较，避免逐字符 equals 的计时侧信道
+        return provided != null && MessageDigest.isEqual(
+                expected.getBytes(StandardCharsets.UTF_8),
+                provided.getBytes(StandardCharsets.UTF_8));
     }
 
     public void rotate(HttpServletRequest request) {

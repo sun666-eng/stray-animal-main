@@ -106,7 +106,7 @@ public class UserService extends ServiceImpl<UserMapper, User> {
         if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
             throw new CustomException("400", "密码不能为空");
         }
-        requireBcryptLength(user.getPassword());
+        requirePasswordPolicy(user.getPassword());
         user.setPassword(ENCODER.encode(user.getPassword()));
         // 注册角色只能由服务端决定，绝不信任公共注册请求中的 id/role/permission。
         user.setId(null);
@@ -327,9 +327,9 @@ public class UserService extends ServiceImpl<UserMapper, User> {
         if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
             throw new CustomException("400", "密码不能为空");
         }
-        requireBcryptLength(user.getPassword());
         rejectDerivedRoleCreate(user.getRole());
         if (!isBcrypt(user.getPassword())) {
+            requirePasswordPolicy(user.getPassword());
             user.setPassword(ENCODER.encode(user.getPassword()));
         }
         return super.save(user);
@@ -350,7 +350,7 @@ public class UserService extends ServiceImpl<UserMapper, User> {
             if (user.getPassword().trim().isEmpty()) {
                 user.setPassword(null);
             } else if (!isBcrypt(user.getPassword())) {
-                requireBcryptLength(user.getPassword());
+                requirePasswordPolicy(user.getPassword());
                 user.setPassword(ENCODER.encode(user.getPassword()));
             }
         }
@@ -686,6 +686,14 @@ public class UserService extends ServiceImpl<UserMapper, User> {
     private void requireBcryptLength(String password) {
         if (password != null && password.getBytes(StandardCharsets.UTF_8).length > 72) {
             throw new CustomException("400", "密码 UTF-8 长度不能超过72字节");
+        }
+    }
+
+    /** 设置/修改密码时的强度下限；登录路径不调用，避免锁死历史短密码账号。 */
+    private void requirePasswordPolicy(String rawPassword) {
+        requireBcryptLength(rawPassword);
+        if (rawPassword != null && rawPassword.length() < 8) {
+            throw new CustomException("400", "密码长度不能少于8位");
         }
     }
 }

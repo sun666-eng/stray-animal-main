@@ -77,23 +77,34 @@ public class VolunteerController {
 
     @GetMapping
     public Result<List<Volunteer>> findAll() {
-        return Result.success(volunteerService.list());
+        return Result.success(volunteerService.list(Wrappers.<Volunteer>lambdaQuery()
+                .orderByDesc(Volunteer::getId)
+                .last("LIMIT " + ExcelExportUtil.MAX_EXPORT_ROWS)));
     }
 
     @GetMapping("/approved")
     public Result<List<Volunteer>> findApproved() {
         return Result.success(volunteerService.list(Wrappers.<Volunteer>lambdaQuery()
                 .eq(Volunteer::getVstate, 1)
-                .orderByDesc(Volunteer::getId)));
+                .orderByDesc(Volunteer::getId)
+                .last("LIMIT " + ExcelExportUtil.MAX_EXPORT_ROWS)));
     }
 
     @GetMapping("/page")
     public Result<IPage<Volunteer>> findPage(@RequestParam(required = false, defaultValue = "") String name,
                                                   @RequestParam(required = false, defaultValue = "1") Integer pageNum,
                                                   @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
-        long safePageNum = pageNum == null ? 1 : Math.max(1, pageNum);
+        long safePageNum = pageNum == null ? 1 : Math.min(10_000, Math.max(1, pageNum));
         long safePageSize = pageSize == null ? 10 : Math.max(1, Math.min(50, pageSize));
-        return Result.success(volunteerService.page(new Page<>(safePageNum, safePageSize), Wrappers.<Volunteer>lambdaQuery().like(Volunteer::getLocation, name)));
+        String keyword = name == null ? "" : name.trim();
+        if (keyword.length() > 100) {
+            throw new CustomException("400", "查询关键词不能超过100个字符");
+        }
+        // 空关键词不拼 LIKE，避免 LIKE '%%' 全表扫描
+        return Result.success(volunteerService.page(new Page<>(safePageNum, safePageSize),
+                Wrappers.<Volunteer>lambdaQuery()
+                        .like(!keyword.isEmpty(), Volunteer::getLocation, keyword)
+                        .orderByDesc(Volunteer::getId)));
     }
 
     @GetMapping("/mine")

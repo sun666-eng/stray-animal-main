@@ -145,7 +145,8 @@ public class AdoptController {
         Long targetUid = PermissionUtil.hasFlag(user, "adopt") && uid != null ? uid : user.getId();
         String keyword = safeQuery(name);
         return Result.success(adoptService.page(new Page<>(safePageNum(pageNum), safePageSize(pageSize)),
-                Wrappers.<Adopt>lambdaQuery().like(!keyword.isEmpty(), Adopt::getAid, keyword)
+                // 关键词按动物名匹配；aid 是数字主键，LIKE 语义错误且无法走索引
+                Wrappers.<Adopt>lambdaQuery().like(!keyword.isEmpty(), Adopt::getAname, keyword)
                         .eq(Adopt::getUid, targetUid).orderByDesc(Adopt::getAid)));
     }
 
