@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="归途计划流浪动物领养、救助与透明公示平台">
+    <title>归途计划 · 让每个生命都被认真对待</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260728">
+</head>
+<body>
+<div id="app" v-cloak>
+    <a class="sr-only" href="#main-content">跳到主要内容</a>
+    <header class="ui-header">
+        <div class="ui-header-inner">
+            <a class="ui-brand" href="./index.html" aria-label="归途计划首页"><span class="ui-brand-mark" aria-hidden="true">♡</span><span class="ui-brand-copy"><strong>归途计划</strong><small>PAWS ON THE WAY HOME</small></span></a>
+            <nav class="ui-nav" aria-label="主导航">
+                <a class="is-active" href="./index.html" aria-current="page">首页</a>
+                <a href="./animal_browse.html">等待一个家</a>
+                <a href="./notice_list.html">救助动态</a>
+                <a href="./account_public.html">透明公示</a>
+            </nav>
+            <div class="ui-header-actions">
+                <button class="ui-icon-button ui-mobile-toggle" type="button" aria-controls="homeMobileNav" :aria-expanded="String(mobileOpen)" :aria-label="mobileOpen?'关闭主导航':'打开主导航'" @click="mobileOpen=!mobileOpen">☰</button>
+                <div class="ui-account">
+                    <button class="ui-account-trigger" type="button" :aria-expanded="String(accountOpen)" @click.stop="accountOpen=!accountOpen">
+                        <span class="ui-avatar">{{ userInitial }}</span>
+                        <span class="ui-account-name">{{ user ? user.username : '登录' }}</span>
+                    </button>
+                    <div v-if="accountOpen" class="ui-account-menu" @click.stop>
+                        <template v-if="user">
+                            <a href="./my_adopt.html">我的领养</a>
+                            <a href="./my_rescue.html">我的救助</a>
+                            <a href="./my_volunteer.html">我的义工</a>
+                            <a href="/page/end/person.html">个人资料</a>
+                            <a v-if="isAdmin" href="/page/end/index.html">管理工作台</a>
+                            <button class="is-danger" type="button" @click="logout">退出登录</button>
+                        </template>
+                        <template v-else>
+                            <a href="./login.html">登录账户</a>
+                            <a href="./register.html">创建账户</a>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <nav id="homeMobileNav" class="ui-mobile-nav" :class="{'is-open':mobileOpen}" aria-label="移动端导航">
+            <a href="./index.html" aria-current="page">首页</a>
+            <a href="./animal_browse.html">等待一个家</a>
+            <a href="./notice_list.html">救助动态</a>
+            <a href="./rescue_apply.html">发起救助</a>
+            <a href="./account_public.html">透明公示</a>
+            <template v-if="user">
+                <a href="./my_adopt.html">我的领养</a>
+                <a href="./my_rescue.html">我的救助</a>
+                <a href="/page/end/person.html">个人资料</a>
+            </template>
+        </nav>
+    </header>
+
+    <main id="main-content">
+        <section class="ui-container ui-home-hero">
+            <div>
+                <p class="ui-eyebrow">ADOPT · RESCUE · CARE</p>
+                <h1 class="ui-home-title">让每个生命，<br>都被认真对待。</h1>
+                <p class="ui-home-lead">{{ user ? ('欢迎回来，' + user.username + '。从下方服务入口继续领养、救助或义工申请。') : '发现需要帮助的动物，了解正在等待领养的它们，并持续看到每一次善意的真实去向。' }}</p>
+                <div class="ui-home-actions">
+                    <a class="ui-button is-primary" href="./animal_browse.html">浏览待领养动物</a>
+                    <a class="ui-button is-ghost" :href="user ? './rescue_apply.html' : './login.html?redirect=' + encodeURIComponent('/page/front/rescue_apply.html')">{{ user ? '发起救助' : '登录后使用服务' }}</a>
+                </div>
+                <div class="ui-trust-row" :aria-busy="String(statsLoading)">
+                    <div class="ui-trust-item"><strong>{{ statsLoading?'—':stats.adoptedAnimals }}</strong><span>已找到新家</span></div>
+                    <div class="ui-trust-item"><strong>{{ statsLoading?'—':stats.approvedVolunteers }}</strong><span>已认证志愿者</span></div>
+                    <div class="ui-trust-item"><strong>{{ statsLoading?'—':stats.availableAnimals }}</strong><span>正在等待领养</span></div>
+                </div>
+                <p v-if="statsError" class="ui-field-error" role="status">统计数据暂时不可用，不影响浏览和申请。</p>
+            </div>
+            <div class="ui-home-visual"><div class="ui-home-photo"><img :src="heroImage" :alt="heroAnimal?displayName(heroAnimal)+'的照片':'等待领养动物的视觉占位图'" @error="imageFallback"><div class="ui-home-float"><strong>{{ heroAnimal?displayName(heroAnimal):'等待一个家' }}</strong><span v-if="heroAnimal">{{ heroAnimal.ttype||'类型待确认' }} · {{ heroAnimal.tsex||'性别待确认' }} · {{ formatAge(heroAnimal.tbirthday) }}<br>编号 #{{ heroAnimal.id }} · 正在等待领养</span><span v-else>动物资料正在更新，欢迎查看完整待领养列表。</span></div></div></div>
+        </section>
+
+        <section v-if="user" class="ui-home-section is-light" aria-labelledby="memberServicesTitle">
+            <div class="ui-container ui-service-section">
+                <div class="ui-section-head">
+                    <div>
+                        <p class="ui-eyebrow">MY SERVICES</p>
+                        <h2 id="memberServicesTitle">我的服务</h2>
+                        <p>这些是当前账号可以直接使用的用户端功能，不依赖后台管理权限。</p>
+                    </div>
+                </div>
+                <div v-for="group in serviceGroups" :key="group.id" class="ui-service-group">
+                    <div class="ui-service-group-head"><strong>{{ group.label }}</strong><span v-if="group.hint">{{ group.hint }}</span></div>
+                    <div v-if="group.style==='action'" class="ui-action-grid">
+                        <a v-for="item in group.items" :key="item.id" class="ui-action-card" :href="item.href">
+                            <span class="ui-action-mark" aria-hidden="true">{{ item.mark }}</span>
+                            <strong>{{ item.label }}</strong>
+                            <span>{{ item.desc }}</span>
+                            <em>{{ item.cta }} →</em>
+                        </a>
+                    </div>
+                    <div v-else-if="group.style==='record'" class="ui-record-grid">
+                        <a v-for="item in group.items" :key="item.id" class="ui-record-link" :href="item.href">
+                            <div><strong>{{ item.label }}</strong><span>{{ item.desc }}</span></div><i aria-hidden="true">→</i>
+                        </a>
+                    </div>
+                    <div v-else class="ui-platform-row">
+                        <a v-for="item in group.items" :key="item.id" class="ui-platform-link" :href="item.href">{{ item.label }} <small v-if="item.sub">{{ item.sub }}</small></a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="ui-home-section" :class="{'is-light': !user}"><div class="ui-container"><div class="ui-section-head"><div><p class="ui-eyebrow">WAITING FOR YOU</p><h2>也许，你们正在等待彼此</h2><p>以下内容直接来自当前公开的待领养动物记录。</p></div><a class="ui-button is-ghost" href="./animal_browse.html">查看全部动物</a></div><div v-if="animalsLoading" class="ui-card-grid" aria-label="正在加载动物"><article v-for="n in 3" :key="n" class="ui-animal-card ui-skeleton-card"><div class="ui-card-media ui-skeleton"></div><div class="ui-skeleton ui-skeleton-line short"></div></article></div><div v-else-if="animalsError" class="ui-state" role="alert"><div><span class="ui-state-mark">!</span><h2>动物资料暂时无法加载</h2><p>{{ animalsError }}</p><button class="ui-button is-dark" type="button" @click="loadAnimals">重新加载</button></div></div><div v-else-if="animals.length===0" class="ui-state"><div><span class="ui-state-mark">♡</span><h2>当前没有公开的待领养动物</h2><p>资料更新后会第一时间在这里出现。</p></div></div><div v-else class="ui-card-grid"><article v-for="item in animals" :key="item.id" class="ui-animal-card"><a class="ui-card-media" :href="detailUrl(item.id)"><img :src="imageUrl(item.tpic)" :alt="displayName(item)+'的照片'" loading="lazy" @error="imageFallback"><span class="ui-badge is-waiting">等待领养</span></a><div class="ui-card-body"><div class="ui-card-title-row"><h2>{{ displayName(item) }}</h2><span>#{{ item.id }}</span></div><div class="ui-card-meta"><span>{{ item.ttype||'类型待确认' }}</span><span>{{ item.tsex||'性别待确认' }}</span><span>{{ formatAge(item.tbirthday) }}</span></div><p class="ui-card-description">{{ item.tdescribe||'动物介绍正在完善。' }}</p><div class="ui-card-actions"><a class="ui-button is-ghost" :href="detailUrl(item.id)">了解更多</a><a class="ui-button is-primary" :href="adoptUrl(item.id)">申请领养</a></div></div></article></div></div></section>
+
+        <section class="ui-home-section"><div class="ui-container"><div class="ui-section-head"><div><p class="ui-eyebrow">HOW IT WORKS</p><h2>一份善意，四步抵达</h2><p>流程说明用于帮助理解平台协作方式，不代表具体请求的处理时限。</p></div></div><div class="ui-process-grid"><article v-for="step in steps" :key="step.number" class="ui-process-card"><span class="ui-eyebrow">STEP {{ step.number }}</span><strong>{{ step.title }}</strong><p>{{ step.description }}</p></article></div></div></section>
+    </main>
+
+    <footer class="ui-site-footer"><div class="ui-container ui-footer-inner"><div class="ui-footer-copy"><strong>归途计划</strong><span>© 2026 · 让每一次善意都有回音</span></div><nav class="ui-footer-nav" aria-label="页脚导航"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a href="./notice_list.html">救助动态</a><a href="./rescue_apply.html">发起救助</a><a href="./account_public.html">透明公示</a></nav></div></footer>
+</div>
+<script src="../../js/jquery.min.js"></script>
+<script src="../../js/vue.min.js"></script>
+<script src="../../js/auth-session.js?v=20260728"></script>
+<script src="../../js/user-workspace.js?v=20260728"></script>
+<script>
+new Vue({
+  el: '#app',
+  data: {
+    user: null,
+    mobileOpen: false,
+    accountOpen: false,
+    serviceGroups: window.UserWorkspace ? UserWorkspace.serviceGroups() : [],
+    stats: { availableAnimals: 0, adoptedAnimals: 0, approvedVolunteers: 0 },
+    statsLoading: true,
+    statsError: '',
+    animals: [],
+    animalsLoading: true,
+    animalsError: '',
+    steps: [
+      { number: '01', title: '发现与上报', description: '通过救助表单提供位置、照片和现场情况。' },
+      { number: '02', title: '响应与安置', description: '工作人员评估信息，协调接驳、检查和临时安置。' },
+      { number: '03', title: '领养与审核', description: '充分了解、双向沟通，并完成必要的申请审核。' },
+      { number: '04', title: '回访与陪伴', description: '持续回访，让新的家庭关系更稳定。' }
+    ]
+  },
+  computed: {
+    userInitial: function () {
+      return this.user && this.user.username ? this.user.username.slice(0, 1).toUpperCase() : '↗';
+    },
+    isAdmin: function () {
+      return window.UserWorkspace ? UserWorkspace.hasAdminAccess(this.user) : false;
+    },
+    heroAnimal: function () { return this.animals.length ? this.animals[0] : null; },
+    heroImage: function () {
+      return this.heroAnimal ? this.imageUrl(this.heroAnimal.tpic) : '/prototype-assets/editorial-02.svg';
+    }
+  },
+  mounted: function () {
+    var vm = this;
+    document.addEventListener('click', function () { vm.accountOpen = false; });
+    if (window.AuthSession) {
+      AuthSession.bootstrap({
+        requireAuth: false,
+        allowCachedOnNetworkError: false,
+        onDone: function (ok, user) { vm.user = ok ? user : null; }
+      });
+    }
+    this.loadStats();
+    this.loadAnimals();
+  },
+  methods: {
+    logout: function () { if (window.AuthSession) AuthSession.logout(); },
+    loadStats: function () {
+      var vm = this;
+      vm.statsLoading = true;
+      vm.statsError = '';
+      $.get('/api/dashboard/home-stats').done(function (res) {
+        if (res && res.code === '0' && res.data) vm.stats = res.data;
+        else vm.statsError = (res && res.msg) || '统计数据读取失败';
+      }).fail(function () { vm.statsError = '请稍后刷新查看'; }).always(function () { vm.statsLoading = false; });
+    },
+    loadAnimals: function () {
+      var vm = this;
+      vm.animalsLoading = true;
+      vm.animalsError = '';
+      $.get('/api/animal/page1', { pageNum: 1, pageSize: 3 }).done(function (res) {
+        if (res && res.code === '0' && res.data) vm.animals = res.data.records || [];
+        else vm.animalsError = (res && res.msg) || '服务返回了无法识别的数据';
+      }).fail(function () { vm.animalsError = '请检查网络连接后重试。'; }).always(function () { vm.animalsLoading = false; });
+    },
+    displayName: function (item) { return item && item.tname ? item.tname : '未命名动物'; },
+    detailUrl: function (id) { return './animal_detail.html?id=' + encodeURIComponent(id); },
+    adoptUrl: function (id) { return './adopt_apply.html?animalId=' + encodeURIComponent(id); },
+    imageUrl: function (flag) {
+      return /^[a-zA-Z0-9-]{1,64}$/.test(flag || '') ? '/api/files/' + encodeURIComponent(flag) : '/prototype-assets/editorial-01.svg';
+    },
+    imageFallback: function (event) { event.target.onerror = null; event.target.src = '/prototype-assets/editorial-01.svg'; },
+    formatAge: function (value) {
+      if (!value) return '年龄未知';
+      var birth = new Date(value);
+      if (Number.isNaN(birth.getTime())) return '年龄未知';
+      var months = Math.max(0, Math.floor((Date.now() - birth.getTime()) / 2629800000));
+      return months < 12 ? Math.max(1, months) + ' 个月' : Math.floor(months / 12) + ' 岁';
+    }
+  }
+});
+</script>
+</body>
+</html>

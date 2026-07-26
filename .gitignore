@@ -1,3 +1,46 @@
+### IDE / Build ###
 .idea/
 target/
+build/
+out/
 *.iml
+.m2/
+.vscode/
+*.classpath
+*.project
+.settings/
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### 项目运行时产物 ###
+logs/
+upload/
+tmp/
+legacy-uploads/
+
+### 本地杂项（聊天导出、生成产物、IDE 状态、一次性脚本） ###
+_chat_export*/
+output/
+outputs/
+report_render/
+figures/
+.cate/
+_patch_end.py
+/*.pdf
+
+### Office 临时锁文件 ###
+~$*.docx
+~$*.xlsx
+~$*.pptx
+
+### Word/Excel/PPT 直接放仓库不合适（按需 LFS） ###
+*.docx
+*.xlsx
+*.pptx
+!docs/**/*.docx
+!docs/**/*.xlsx
+
+### Claude Code 本地配置（不纳入版本） ###
+.claude/settings.local.json

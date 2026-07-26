@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e4ddd6"/><stop offset="1" stop-color="#8b8179"/></linearGradient><filter id="b"><feGaussianBlur stdDeviation="52"/></filter></defs>
+  <rect width="1200" height="900" fill="#bbb5af"/>
+  <rect x="700" y="-120" width="510" height="1050" rx="250" fill="#ebe8e3" transform="rotate(12 700 -120)"/>
+  <circle cx="252" cy="212" r="260" fill="#736d67" opacity=".55" filter="url(#b)"/>
+  <g transform="translate(250 160)"><path d="M152 208L70 0q163 31 231 165M467 168Q541 41 658 0l-98 225" fill="#333331"/><ellipse cx="355" cy="330" rx="245" ry="215" fill="url(#g)"/><path d="M193 300q46-38 95 0M417 300q46-38 95 0" fill="none" stroke="#2a2a29" stroke-width="24" stroke-linecap="round"/><path d="M329 365q27-18 55 0-5 38-28 38t-27-38" fill="#292928"/><path d="M355 403q-11 59-73 40M355 403q11 59 73 40" fill="none" stroke="#292928" stroke-width="17" stroke-linecap="round"/></g>
+  <text x="62" y="78" fill="#fff" font-family="Arial,sans-serif" font-size="22" letter-spacing="8">PET PROFILE / 02</text>
+</svg>

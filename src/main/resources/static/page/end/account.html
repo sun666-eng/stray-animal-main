@@ -1,461 +1,310 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>用户资料</title>
-    <link rel="stylesheet" href="../../css/element.css">
-    <link rel="stylesheet" href="../../css/base.css">
-    <link rel="stylesheet" href="../../css/index.css">
-</head>
-<body style="background-color: whitesmoke">
-<div id="wrapper" v-cloak>
-    <el-container>
-        <el-aside :width="isCollapse ? '64px' : '200px'" style="background-color: #76becc; transition:width .5s;min-height: 100vh;">
-            <div style="background-color: #76becc; height: 100px; line-height: 60px; text-align: center;
-                color: white; font-size: 20px;">
-                <transition name="el-fade-in-linear">
-                    <span name="fade" v-show="!isCollapse">
-                        <a href="page/end/index.html">
-                        <div class="svgContainer" style="width: 100px; padding: 5px;margin: 20px auto;  border-radius: 50px; ">
-                            <div>
-                                <svg class="mySVG" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 200 200">
-                                    <defs>
-                                        <circle id="armMaskPath" cx="100" cy="100" r="100"/>
-                                    </defs>
-                                    <clipPath id="armMask">
-                                        <use xlink:href="#armMaskPath" overflow="visible"/>
-                                    </clipPath>
-                                    <circle cx="100" cy="100" r="100" fill="#a9ddf3"/>
-                                    <g class="body">
-                                        <path class="bodyBGchanged" style="display: none;" fill="#FFFFFF" d="M200,122h-35h-14.9V72c0-27.6-22.4-50-50-50s-50,22.4-50,50v50H35.8H0l0,91h200L200,122z"/>
-                                        <path class="bodyBGnormal" stroke="#3A5E77" stroke-width="2.5" stroke-linecap="round" stroke-linejoinn="round" fill="#FFFFFF" d="M200,158.5c0-20.2-14.8-36.5-35-36.5h-14.9V72.8c0-27.4-21.7-50.4-49.1-50.8c-28-0.5-50.9,22.1-50.9,50v50 H35.8C16,122,0,138,0,157.8L0,213h200L200,158.5z"/>
-                                        <path fill="#DDF1FA" d="M100,156.4c-22.9,0-43,11.1-54.1,27.7c15.6,10,34.2,15.9,54.1,15.9s38.5-5.8,54.1-15.9 C143,167.5,122.9,156.4,100,156.4z"/>
-                                    </g>
-                                    <g class="earL">
-                                        <g class="outerEar" fill="#ddf1fa" stroke="#3a5e77" stroke-width="2.5">
-                                            <circle cx="47" cy="83" r="11.5"/>
-                                            <path d="M46.3 78.9c-2.3 0-4.1 1.9-4.1 4.1 0 2.3 1.9 4.1 4.1 4.1" stroke-linecap="round" stroke-linejoin="round"/>
-                                        </g>
-                                        <g class="earHair">
-                                            <rect x="51" y="64" fill="#FFFFFF" width="15" height="35"/>
-                                            <path d="M53.4 62.8C48.5 67.4 45 72.2 42.8 77c3.4-.1 6.8-.1 10.1.1-4 3.7-6.8 7.6-8.2 11.6 2.1 0 4.2 0 6.3.2-2.6 4.1-3.8 8.3-3.7 12.5 1.2-.7 3.4-1.4 5.2-1.9" fill="#fff" stroke="#3a5e77" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                        </g>
-                                    </g>
-                                    <g class="earR">
-                                        <g class="outerEar">
-                                            <circle fill="#DDF1FA" stroke="#3A5E77" stroke-width="2.5" cx="153" cy="83" r="11.5"/>
-                                            <path fill="#DDF1FA" stroke="#3A5E77" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M153.7,78.9 c2.3,0,4.1,1.9,4.1,4.1c0,2.3-1.9,4.1-4.1,4.1"/>
-                                        </g>
-                                        <g class="earHair">
-                                            <rect x="134" y="64" fill="#FFFFFF" width="15" height="35"/>
-                                            <path fill="#FFFFFF" stroke="#3A5E77" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M146.6,62.8 c4.9,4.6,8.4,9.4,10.6,14.2c-3.4-0.1-6.8-0.1-10.1,0.1c4,3.7,6.8,7.6,8.2,11.6c-2.1,0-4.2,0-6.3,0.2c2.6,4.1,3.8,8.3,3.7,12.5 c-1.2-0.7-3.4-1.4-5.2-1.9"/>
-                                        </g>
-                                    </g>
-                                    <path class="chin" d="M84.1 121.6c2.7 2.9 6.1 5.4 9.8 7.5l.9-4.5c2.9 2.5 6.3 4.8 10.2 6.5 0-1.9-.1-3.9-.2-5.8 3 1.2 6.2 2 9.7 2.5-.3-2.1-.7-4.1-1.2-6.1" fill="none" stroke="#3a5e77" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                    <path class="face" fill="#DDF1FA" d="M134.5,46v35.5c0,21.815-15.446,39.5-34.5,39.5s-34.5-17.685-34.5-39.5V46"/>
-                                    <path class="hair" fill="#FFFFFF" stroke="#3A5E77" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M81.457,27.929 c1.755-4.084,5.51-8.262,11.253-11.77c0.979,2.565,1.883,5.14,2.712,7.723c3.162-4.265,8.626-8.27,16.272-11.235 c-0.737,3.293-1.588,6.573-2.554,9.837c4.857-2.116,11.049-3.64,18.428-4.156c-2.403,3.23-5.021,6.391-7.852,9.474"/>
-                                    <g class="eyebrow">
-                                        <path fill="#FFFFFF" d="M138.142,55.064c-4.93,1.259-9.874,2.118-14.787,2.599c-0.336,3.341-0.776,6.689-1.322,10.037 c-4.569-1.465-8.909-3.222-12.996-5.226c-0.98,3.075-2.07,6.137-3.267,9.179c-5.514-3.067-10.559-6.545-15.097-10.329 c-1.806,2.889-3.745,5.73-5.816,8.515c-7.916-4.124-15.053-9.114-21.296-14.738l1.107-11.768h73.475V55.064z"/>
-                                        <path fill="#FFFFFF" stroke="#3A5E77" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M63.56,55.102 c6.243,5.624,13.38,10.614,21.296,14.738c2.071-2.785,4.01-5.626,5.816-8.515c4.537,3.785,9.583,7.263,15.097,10.329 c1.197-3.043,2.287-6.104,3.267-9.179c4.087,2.004,8.427,3.761,12.996,5.226c0.545-3.348,0.986-6.696,1.322-10.037 c4.913-0.481,9.857-1.34,14.787-2.599"/>
-                                    </g>
-                                    <g class="eyeL">
-                                        <circle cx="85.5" cy="78.5" r="3.5" fill="#3a5e77"/>
-                                        <circle cx="84" cy="76" r="1" fill="#fff"/>
-                                    </g>
-                                    <g class="eyeR">
-                                        <circle cx="114.5" cy="78.5" r="3.5" fill="#3a5e77"/>
-                                        <circle cx="113" cy="76" r="1" fill="#fff"/>
-                                    </g>
-                                    <g class="mouth">
-                                        <path class="mouthBG" fill="#617E92" d="M100.2,101c-0.4,0-1.4,0-1.8,0c-2.7-0.3-5.3-1.1-8-2.5c-0.7-0.3-0.9-1.2-0.6-1.8 c0.2-0.5,0.7-0.7,1.2-0.7c0.2,0,0.5,0.1,0.6,0.2c3,1.5,5.8,2.3,8.6,2.3s5.7-0.7,8.6-2.3c0.2-0.1,0.4-0.2,0.6-0.2 c0.5,0,1,0.3,1.2,0.7c0.4,0.7,0.1,1.5-0.6,1.9c-2.6,1.4-5.3,2.2-7.9,2.5C101.7,101,100.5,101,100.2,101z"/>
-                                        <path style="display: none;" class="mouthSmallBG" fill="#617E92" d="M100.2,101c-0.4,0-1.4,0-1.8,0c-2.7-0.3-5.3-1.1-8-2.5c-0.7-0.3-0.9-1.2-0.6-1.8 c0.2-0.5,0.7-0.7,1.2-0.7c0.2,0,0.5,0.1,0.6,0.2c3,1.5,5.8,2.3,8.6,2.3s5.7-0.7,8.6-2.3c0.2-0.1,0.4-0.2,0.6-0.2 c0.5,0,1,0.3,1.2,0.7c0.4,0.7,0.1,1.5-0.6,1.9c-2.6,1.4-5.3,2.2-7.9,2.5C101.7,101,100.5,101,100.2,101z"/>
-                                        <path style="display: none;" class="mouthMediumBG" d="M95,104.2c-4.5,0-8.2-3.7-8.2-8.2v-2c0-1.2,1-2.2,2.2-2.2h22c1.2,0,2.2,1,2.2,2.2v2 c0,4.5-3.7,8.2-8.2,8.2H95z"/>
-                                        <path style="display: none;" class="mouthLargeBG" d="M100 110.2c-9 0-16.2-7.3-16.2-16.2 0-2.3 1.9-4.2 4.2-4.2h24c2.3 0 4.2 1.9 4.2 4.2 0 9-7.2 16.2-16.2 16.2z" fill="#617e92" stroke="#3a5e77" stroke-linejoin="round" stroke-width="2.5"/>
-                                        <defs>
-                                            <path id="mouthMaskPath" d="M100.2,101c-0.4,0-1.4,0-1.8,0c-2.7-0.3-5.3-1.1-8-2.5c-0.7-0.3-0.9-1.2-0.6-1.8 c0.2-0.5,0.7-0.7,1.2-0.7c0.2,0,0.5,0.1,0.6,0.2c3,1.5,5.8,2.3,8.6,2.3s5.7-0.7,8.6-2.3c0.2-0.1,0.4-0.2,0.6-0.2 c0.5,0,1,0.3,1.2,0.7c0.4,0.7,0.1,1.5-0.6,1.9c-2.6,1.4-5.3,2.2-7.9,2.5C101.7,101,100.5,101,100.2,101z"/>
-                                        </defs>
-                                        <clipPath id="mouthMask">
-                                            <use xlink:href="#mouthMaskPath" overflow="visible"/>
-                                        </clipPath>
-                                        <g clip-path="url(#mouthMask)">
-                                            <g class="tongue">
-                                                <circle cx="100" cy="107" r="8" fill="#cc4a6c"/>
-                                                <ellipse class="tongueHighlight" cx="100" cy="100.5" rx="3" ry="1.5" opacity=".1" fill="#fff"/>
-                                            </g>
-                                        </g>
-                                        <path clip-path="url(#mouthMask)" class="tooth" style="fill:#FFFFFF;" d="M106,97h-4c-1.1,0-2-0.9-2-2v-2h8v2C108,96.1,107.1,97,106,97z"/>
-                                        <path class="mouthOutline" fill="none" stroke="#3A5E77" stroke-width="2.5" stroke-linejoin="round" d="M100.2,101c-0.4,0-1.4,0-1.8,0c-2.7-0.3-5.3-1.1-8-2.5c-0.7-0.3-0.9-1.2-0.6-1.8 c0.2-0.5,0.7-0.7,1.2-0.7c0.2,0,0.5,0.1,0.6,0.2c3,1.5,5.8,2.3,8.6,2.3s5.7-0.7,8.6-2.3c0.2-0.1,0.4-0.2,0.6-0.2 c0.5,0,1,0.3,1.2,0.7c0.4,0.7,0.1,1.5-0.6,1.9c-2.6,1.4-5.3,2.2-7.9,2.5C101.7,101,100.5,101,100.2,101z"/>
-                                    </g>
-                                    <path class="nose" d="M97.7 79.9h4.7c1.9 0 3 2.2 1.9 3.7l-2.3 3.3c-.9 1.3-2.9 1.3-3.8 0l-2.3-3.3c-1.3-1.6-.2-3.7 1.8-3.7z" fill="#3a5e77"/>
-                                    <g class="arms" clip-path="url(#armMask)">
-                                        <g class="armL" style="visibility: hidden;">
-                                            <polygon fill="#DDF1FA" stroke="#3A5E77" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" points="121.3,98.4 111,59.7 149.8,49.3 169.8,85.4"/>
-                                            <path fill="#DDF1FA" stroke="#3A5E77" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" d="M134.4,53.5l19.3-5.2c2.7-0.7,5.4,0.9,6.1,3.5v0c0.7,2.7-0.9,5.4-3.5,6.1l-10.3,2.8"/>
-                                            <path fill="#DDF1FA" stroke="#3A5E77" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" d="M150.9,59.4l26-7c2.7-0.7,5.4,0.9,6.1,3.5v0c0.7,2.7-0.9,5.4-3.5,6.1l-21.3,5.7"/>
-
-                                            <g class="twoFingers">
-                                                <path fill="#DDF1FA" stroke="#3A5E77" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" d="M158.3,67.8l23.1-6.2c2.7-0.7,5.4,0.9,6.1,3.5v0c0.7,2.7-0.9,5.4-3.5,6.1l-23.1,6.2"/>
-                                                <path fill="#A9DDF3" d="M180.1,65l2.2-0.6c1.1-0.3,2.2,0.3,2.4,1.4v0c0.3,1.1-0.3,2.2-1.4,2.4l-2.2,0.6L180.1,65z"/>
-                                                <path fill="#DDF1FA" stroke="#3A5E77" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" d="M160.8,77.5l19.4-5.2c2.7-0.7,5.4,0.9,6.1,3.5v0c0.7,2.7-0.9,5.4-3.5,6.1l-18.3,4.9"/>
-                                                <path fill="#A9DDF3" d="M178.8,75.7l2.2-0.6c1.1-0.3,2.2,0.3,2.4,1.4v0c0.3,1.1-0.3,2.2-1.4,2.4l-2.2,0.6L178.8,75.7z"/>
-                                            </g>
-                                            <path fill="#A9DDF3" d="M175.5,55.9l2.2-0.6c1.1-0.3,2.2,0.3,2.4,1.4v0c0.3,1.1-0.3,2.2-1.4,2.4l-2.2,0.6L175.5,55.9z"/>
-                                            <path fill="#A9DDF3" d="M152.1,50.4l2.2-0.6c1.1-0.3,2.2,0.3,2.4,1.4v0c0.3,1.1-0.3,2.2-1.4,2.4l-2.2,0.6L152.1,50.4z"/>
-                                            <path fill="#FFFFFF" stroke="#3A5E77" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M123.5,97.8 c-41.4,14.9-84.1,30.7-108.2,35.5L1.2,81c33.5-9.9,71.9-16.5,111.9-21.8"/>
-                                            <path fill="#FFFFFF" stroke="#3A5E77" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M108.5,60.4 c7.7-5.3,14.3-8.4,22.8-13.2c-2.4,5.3-4.7,10.3-6.7,15.1c4.3,0.3,8.4,0.7,12.3,1.3c-4.2,5-8.1,9.6-11.5,13.9 c3.1,1.1,6,2.4,8.7,3.8c-1.4,2.9-2.7,5.8-3.9,8.5c2.5,3.5,4.6,7.2,6.3,11c-4.9-0.8-9-0.7-16.2-2.7"/>
-                                            <path fill="#FFFFFF" stroke="#3A5E77" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M94.5,103.8 c-0.6,4-3.8,8.9-9.4,14.7c-2.6-1.8-5-3.7-7.2-5.7c-2.5,4.1-6.6,8.8-12.2,14c-1.9-2.2-3.4-4.5-4.5-6.9c-4.4,3.3-9.5,6.9-15.4,10.8 c-0.2-3.4,0.1-7.1,1.1-10.9"/>
-                                            <path fill="#FFFFFF" stroke="#3A5E77" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M97.5,63.9 c-1.7-2.4-5.9-4.1-12.4-5.2c-0.9,2.2-1.8,4.3-2.5,6.5c-3.8-1.8-9.4-3.1-17-3.8c0.5,2.3,1.2,4.5,1.9,6.8c-5-0.6-11.2-0.9-18.4-1 c2,2.9,0.9,3.5,3.9,6.2"/>
-                                        </g>
-                                        <g class="armR" style="visibility: hidden;">
-                                            <path fill="#ddf1fa" stroke="#3a5e77" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="2.5" d="M265.4 97.3l10.4-38.6-38.9-10.5-20 36.1z"/>
-                                            <path fill="#ddf1fa" stroke="#3a5e77" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="2.5" d="M252.4 52.4L233 47.2c-2.7-.7-5.4.9-6.1 3.5-.7 2.7.9 5.4 3.5 6.1l10.3 2.8M226 76.4l-19.4-5.2c-2.7-.7-5.4.9-6.1 3.5-.7 2.7.9 5.4 3.5 6.1l18.3 4.9M228.4 66.7l-23.1-6.2c-2.7-.7-5.4.9-6.1 3.5-.7 2.7.9 5.4 3.5 6.1l23.1 6.2M235.8 58.3l-26-7c-2.7-.7-5.4.9-6.1 3.5-.7 2.7.9 5.4 3.5 6.1l21.3 5.7"/>
-                                            <path fill="#a9ddf3" d="M207.9 74.7l-2.2-.6c-1.1-.3-2.2.3-2.4 1.4-.3 1.1.3 2.2 1.4 2.4l2.2.6 1-3.8zM206.7 64l-2.2-.6c-1.1-.3-2.2.3-2.4 1.4-.3 1.1.3 2.2 1.4 2.4l2.2.6 1-3.8zM211.2 54.8l-2.2-.6c-1.1-.3-2.2.3-2.4 1.4-.3 1.1.3 2.2 1.4 2.4l2.2.6 1-3.8zM234.6 49.4l-2.2-.6c-1.1-.3-2.2.3-2.4 1.4-.3 1.1.3 2.2 1.4 2.4l2.2.6 1-3.8z"/>
-                                            <path fill="#fff" stroke="#3a5e77" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M263.3 96.7c41.4 14.9 84.1 30.7 108.2 35.5l14-52.3C352 70 313.6 63.5 273.6 58.1"/>
-                                            <path fill="#fff" stroke="#3a5e77" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M278.2 59.3l-18.6-10 2.5 11.9-10.7 6.5 9.9 8.7-13.9 6.4 9.1 5.9-13.2 9.2 23.1-.9M284.5 100.1c-.4 4 1.8 8.9 6.7 14.8 3.5-1.8 6.7-3.6 9.7-5.5 1.8 4.2 5.1 8.9 10.1 14.1 2.7-2.1 5.1-4.4 7.1-6.8 4.1 3.4 9 7 14.7 11 1.2-3.4 1.8-7 1.7-10.9M314 66.7s5.4-5.7 12.6-7.4c1.7 2.9 3.3 5.7 4.9 8.6 3.8-2.5 9.8-4.4 18.2-5.7.1 3.1.1 6.1 0 9.2 5.5-1 12.5-1.6 20.8-1.9-1.4 3.9-2.5 8.4-2.5 8.4"/>
-                                        </g>
-
-                                    </g>
-                                     <text x="15" y="195" font-size="30"font-weight="bold" style="fill:slategrey">流浪动物救助</text>
-                                </svg>
-                            </div>
-                        </div>
-                    </a>
-                        <!--                        <a href="page/end/index.html">流浪动物领养管理</a>-->
-                    </span>
-                </transition>
-            </div>
-            <el-menu :default-openeds="['1']" style="border: none;" background-color="#76becc" text-color="#fffaf4" active-text-color="#dfd7d7"
-                     default-active="user"
-                     class="el-menu-vertical-demo" :collapse="isCollapse">
-                <a href="/page/end/index.html">
-                    <el-menu-item index="home">
-                        <i class="el-icon-data-line"></i>
-                        <span slot="title">首页</span>
-                    </el-menu-item>
-                </a>
-                <el-submenu index="1" v-if="user.permission && user.permission.length > 0">
-                    <template slot="title">
-                        <i class="el-icon-menu"></i>
-                        <span slot="title">功能区域</span>
-                    </template>
-                    <a :href=`${item.path}` v-for="item in user.permission" :key="item.id">
-                        <el-menu-item :index="item.flag">
-                            <i class="el-icon-s-data"></i>
-                            <span slot="title">{{item.name}}</span>
-                        </el-menu-item>
-                    </a>
-                </el-submenu>
-            </el-menu>
-        </el-aside>
-        <el-container>
-            <el-header style="background-color: #76becc; line-height: 60px; color: white;">
-                <el-row>
-                    <el-col :span="1">
-                        <i style="font-size: 22px; cursor: pointer"
-                           :class="[isCollapse ? 'el-icon-s-unfold' : 'el-icon-s-fold']" @click="handleCollapse"></i>
-                    </el-col>
-                    <el-col :span="5" :offset="18" style="text-align: right">
-                        <span style="color: white; margin-right: 12px; font-size: 18px; font-weight: 600;">{{user.username}}</span>
-                        <el-dropdown>
-                            <img :src=`/api/files/${user.avatar}`
-                                 style="width: 46px; height: 46px; margin-right: 10px; border-radius: 50%; cursor: pointer; vertical-align: middle;">
-                            <el-dropdown-menu slot="dropdown">
-                                <a href="/page/end/person.html"
-                                   style="display:block; padding: 8px 0; min-width: 120px; text-align: center; font-size: 16px; color: #24324a; text-decoration: none;">个人信息</a>
-                                <a @click="logout" href="#"
-                                   style="display:block; padding: 8px 0; min-width: 120px; text-align: center; font-size: 16px; color: #c73636; text-decoration: none;">退出</a>
-                            </el-dropdown-menu>
-                        </el-dropdown>
-                    </el-col>
-                </el-row>
-            </el-header>
-            <!-- 主体区域 -->
-            <el-main>
-                <div style="color: black; font-size: 20px; margin: 10px 0">资金公示管理</div>
-                <div style="height: 1px; background-color: white"></div>
-                <el-input v-model="search" size="mini"style="width: 20%;" suffix-icon="el-icon-search" placeholder="请输入责任人按回车搜索"
-                          @keyup.enter.native="loadTable"></el-input>
-                <el-button @click="add" type="primary" size="mini" style="margin: 10px 0">新增</el-button>
-                <!-- <el-button @click="exp" type="primary" size="mini" style="margin: 10px 0">导出</el-button> -->
-                <el-table
-                        :data="tableData"
-                        border
-                        show-summary
-                        style="width: 100%">
-                        
-                    <el-table-column
-                            :filters="[{
-                                    value: '救助-接驳',
-                                    text: '救助-接驳'
-                                }, {
-                                    value: '安置-场地租赁',
-                                    text: '安置-场地租赁'
-                                }, {
-                                    value: '安置-狗/猫粮',
-                                    text: '安置-狗/猫粮'
-                                }, {
-                                    value: '人员-城际交通',
-                                    text: '人员-城际交通'
-                                }, {
-                                    value: '人员-食宿',
-                                    text: '人员-食宿'
-                                },{
-                                    value: '医疗-费用',
-                                    text: '医疗-费用'
-                                },{
-                                    value: '收入-领养费',
-                                    text: '收入-领养费'
-                                },{
-                                    value: '收入-社会捐赠',
-                                    text: '收入-社会捐赠'
-                                }]"
-                            :filter-method="filterTag"
-                            prop="alabel"
-                            label="款项标签"
-                    >
-                    </el-table-column>
-                    <el-table-column
-                            prop="auname"
-                            label="责任人"
-                    >
-                    </el-table-column>
-                    <el-table-column
-                            prop="avalue"
-                            label="款项金额"
-                            sortable
-                    >
-                    </el-table-column>
-                    <el-table-column
-                            prop="adescribe"
-                            label="款项描述"
-                    >
-                    </el-table-column>
-                    <el-table-column
-                            fixed="right"
-                            label="操作"
-                            width="100">
-                        <template slot-scope="scope">
-                            <el-button @click="edit(scope.row)" type="text">编辑</el-button>
-                            <el-popconfirm
-                                    @onConfirm="del(scope.row.id)"
-                                    title="确定删除？"
-                            >
-                                <el-button type="text" slot="reference">删除</el-button>
-                            </el-popconfirm>
-                        </template>
-                    </el-table-column>
-                </el-table>
-                <!-- 分页 -->
-                <div style="background-color: white">
-                    <el-pagination
-                            @size-change="handleSizeChange"
-                            @current-change="handleCurrentChange"
-                            :current-page="pageNum"
-                            :page-sizes="[5, 10, 20, 40]"
-                            :page-size="pageSize"
-                            layout="total, sizes, prev, pager, next, jumper"
-                            :total="total">
-                    </el-pagination>
-                </div>
-
-                <el-dialog title="资金公示管理信息" :visible.sync="dialogFormVisible" width="30%"
-                           close-on-click-modal="false" close-on-press-escape="false" show-close="false">
-                    <el-form :model="entity">
-                        <el-form-item v-if="item.prop == 'alabel'" :label="item.label" label-width="100px" v-for="item in props">
-                            <el-select v-model="entity[item.prop]" placeholder="下拉选择"style="width: 80%"filterable
-                                       allow-create>
-                                <el-option
-                                        v-for="item in options"
-                                        :key="item.value"
-                                        :label="item.label"
-                                        :value="item.value">
-                                </el-option>
-                            </el-select>
-                        </el-form-item>
-                        <el-form-item v-if="item.prop == 'auname'" :label="item.label" label-width="100px" v-for="item in props">
-                            <el-input
-                                    type="text"
-                                    placeholder="请输入姓名"
-                                    v-model="entity[item.prop]"
-                                    maxlength="8"
-                                    show-word-limit
-                                    style="width: 80%"
-                            >
-                            </el-input>
-                        </el-form-item>
-                        <el-form-item v-if="item.prop == 'avalue'" :label="item.label" label-width="100px" v-for="item in props">
-                            <el-input
-                                    type="text"
-                                    placeholder="请输入金额"
-                                    v-model="entity[item.prop]"
-                                    show-word-limit
-                                    style="width: 80%"
-                            >
-                            </el-input>
-                        </el-form-item>
-                        <el-form-item v-if="item.prop == 'adescribe'" :label="item.label" label-width="100px" v-for="item in props">
-                            <el-input
-                                    type="textarea"
-                                    :rows="2"
-                                    placeholder="请输入内容"
-                                    style="width: 80%"
-                                    v-model="entity[item.prop]">
-                            </el-input>
-                        </el-form-item>
-                    </el-form>
-                    <div slot="footer" class="dialog-footer">
-                        <el-button @click="dialogFormVisible = false">取 消</el-button>
-                        <el-button type="primary" @click="save">确 定</el-button>
-                    </div>
-                </el-dialog>
-
-            </el-main>
-        </el-container>
-    </el-container>
-</div>
-
-<script src="../../js/jquery.min.js"></script>
-<script src="../../js/vue.min.js"></script>
-<script src="../../js/element.js"></script>
-<script src="../../js/tinymce/tinymce.min.js"></script>
-
-
-<script>
-
-    let urlBase = "/api/account";
-    new Vue({
-        el: "#wrapper",
-        data: {
-            user: {},
-            tableData: [],
-            pageNum: 1,
-            pageSize: 10,
-            total: 0,
-            dialogFormVisible: false,
-            entity: {},
-            isCollapse: false,
-            search: '',
-            options: [{
-                value: '救助-接驳',
-                label: '救助-接驳'
-            }, {
-                value: '安置-场地租赁',
-                label: '安置-场地租赁'
-            }, {
-                value: '安置-狗/猫粮',
-                label: '安置-狗/猫粮'
-            }, {
-                value: '人员-城际交通',
-                label: '人员-城际交通'
-            }, {
-                value: '人员-食宿',
-                label: '人员-食宿'
-            },{
-                value: '医疗-费用',
-                label: '医疗-费用'
-            },{
-                value: '收入-领养费',
-                label: '收入-领养费'
-            },{
-                value: '收入-社会捐赠',
-                label: '收入-社会捐赠'
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>资金公示 · 归途计划管理</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>"><link rel="stylesheet" href="../../css/product-ui.css?v=20260728"><link rel="stylesheet" href="../../css/admin-workspace.css?v=20260728"></head><body><div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div><div id="workspace" class="admin-shell" v-cloak @keyup.esc="closeTopLayer"><header class="ui-header admin-header"><div class="ui-header-inner"><a class="ui-brand" href="/page/end/index.html" aria-label="返回管理工作台"><span class="ui-brand-mark" aria-hidden="true">爪</span><span class="ui-brand-copy"><strong>归途计划</strong><small>RESCUE WORKSPACE</small></span><span class="admin-brand-note">管理工作台</span></a><nav class="ui-nav admin-desktop-nav" aria-label="管理功能"><a href="/page/end/index.html">概览</a><a v-for="item in menuItems" :key="item.flag" :class="{'is-active':item.flag==='account'}" :aria-current="item.flag==='account'?'page':null" :href="item.href">{{ item.label }}</a></nav><div class="ui-header-actions"><button class="ui-icon-button ui-mobile-toggle" type="button" aria-controls="adminMobileNav" :aria-expanded="String(mobileOpen)" aria-label="打开或关闭管理导航" @click="mobileOpen=!mobileOpen">{{ mobileOpen ? '关闭' : '菜单' }}</button><div class="ui-account"><button class="ui-account-trigger admin-account-trigger" type="button" aria-controls="adminAccountMenu" :aria-expanded="String(accountOpen)" @click="accountOpen=!accountOpen"><img class="admin-account-photo" :src="avatarUrl(user.avatar)" alt="" @error="avatarFallback"><span class="ui-account-name">{{ user.username }}</span><span aria-hidden="true">更多</span></button><div id="adminAccountMenu" class="ui-account-menu admin-account-menu" :hidden="!accountOpen"><a href="/page/end/person.html">个人资料</a><a href="/page/front/account_public.html">访问公开公示</a><button class="is-danger" type="button" @click="logout">退出登录</button></div></div></div><nav id="adminMobileNav" class="ui-mobile-nav admin-mobile-nav" :class="{'is-open':mobileOpen}" aria-label="移动端管理功能"><a href="/page/end/index.html">工作台概览</a><strong v-if="menuItems.length">管理功能</strong><a v-for="item in menuItems" :key="'mobile-'+item.flag" :href="item.href" :aria-current="item.flag==='account'?'page':null">{{ item.label }}</a><strong>常用入口</strong><a href="/page/end/person.html">个人资料</a><a href="/page/front/account_public.html">访问公开公示</a><button class="ui-button is-ghost" type="button" @click="logout">退出登录</button></nav></div></header><main class="admin-main"><section class="admin-hero" aria-labelledby="accountTitle"><div><p class="admin-kicker">Signed amounts</p><h1 id="accountTitle">资金公示</h1><p>每条记录只维护款项标签、经手人、带符号金额和用途详情。正数计入收入，负数计入支出，零值会被拒绝。</p></div><div class="admin-hero-meta"><span>统计范围</span><strong>完整数据集</strong></div></section><section class="admin-account-summary" aria-labelledby="accountTotalsTitle"><div class="admin-section-head"><div><h2 id="accountTotalsTitle">全量汇总</h2><p>汇总来自专用聚合接口，不是当前页相加；支出保留负数语义。</p></div></div><div v-if="statsLoading" class="admin-status admin-status-compact" role="status">正在读取全量汇总...</div><div v-else-if="statsError" class="admin-status is-error admin-status-compact" role="alert"><div>{{ statsError }}<br><button class="ui-button is-ghost" type="button" @click="loadStats">重新加载汇总</button></div></div><div v-else class="admin-account-totals admin-account-totals-large"><div class="admin-account-total is-income"><span>全量正数合计（收入）</span><strong>{{ signed(stats.incomeTotal) }}</strong></div><div class="admin-account-total is-expense"><span>全量负数合计（支出）</span><strong>{{ signed(stats.expenseTotal) }}</strong></div><div class="admin-account-total"><span>全量代数和（结余）</span><strong>{{ signed(stats.balance) }}</strong></div></div></section><section class="admin-section" aria-labelledby="accountListTitle"><div class="admin-section-head"><div><h2 id="accountListTitle">资金记录</h2><p>搜索可匹配标签、经手人或用途详情；每次只读取当前页。</p></div><button class="ui-button is-primary" type="button" @click="openCreate">新增记录</button></div><form class="ui-toolbar admin-review-toolbar" role="search" @submit.prevent="load(1)"><label class="ui-search"><span aria-hidden="true">搜索</span><span class="sr-only">搜索资金记录</span><input v-model.trim="search" type="search" maxlength="100" placeholder="搜索标签、经手人或用途"></label><button class="ui-button is-dark" type="submit" :disabled="loading">查询</button><button v-if="search" class="ui-button is-ghost" type="button" @click="resetSearch">清除</button></form><div v-if="message" class="admin-inline-message" :class="{'is-error':messageType==='error','is-success':messageType==='success'}" :role="messageType==='error'?'alert':'status'" aria-live="polite">{{ message }}</div><div v-if="loading" class="admin-status" role="status">正在读取当前页资金记录...</div><div v-else-if="loadError" class="admin-status is-error" role="alert"><div><strong>资金记录暂时无法读取</strong><br>{{ loadError }}<br><button class="ui-button is-ghost" type="button" @click="load(pageNum)">重新加载</button></div></div><div v-else-if="!records.length" class="admin-status">当前筛选条件下没有资金记录。</div><template v-else><div class="admin-record-table admin-account-table" aria-label="资金记录桌面列表"><table><thead><tr><th scope="col">标签</th><th scope="col">经手人</th><th scope="col">带符号金额</th><th scope="col">用途详情</th><th scope="col">操作</th></tr></thead><tbody><tr v-for="item in records" :key="item.id"><td><strong>{{ item.alabel || '-' }}</strong><small>#{{ item.id }}</small></td><td>{{ item.auname || '-' }}</td><td><strong class="admin-signed-value" :class="amountClass(item.avalue)">{{ signed(item.avalue) }}</strong><small>{{ amountMeaning(item.avalue) }}</small></td><td class="admin-cell-summary">{{ item.adescribe || '-' }}</td><td><div class="admin-row-actions"><button type="button" @click="openDetail(item)">详情</button><button class="is-primary" type="button" @click="openEdit(item)">编辑</button><button class="is-danger" type="button" @click="askDelete(item)">删除</button></div></td></tr></tbody></table></div><div class="admin-record-cards admin-account-cards" aria-label="资金记录移动端列表"><article v-for="item in records" :key="'card-'+item.id" class="admin-record-card"><div class="admin-record-card-head"><div><span>记录 #{{ item.id }} · {{ item.auname || '未填写经手人' }}</span><h3>{{ item.alabel || '未填写标签' }}</h3><p>{{ item.adescribe || '未填写用途详情' }}</p></div><strong class="admin-signed-value" :class="amountClass(item.avalue)">{{ signed(item.avalue) }}</strong></div><small class="admin-amount-meaning">{{ amountMeaning(item.avalue) }}</small><div class="admin-card-actions"><button class="ui-button is-ghost" type="button" @click="openDetail(item)">查看详情</button><button class="ui-button is-dark" type="button" @click="openEdit(item)">编辑记录</button></div></article></div></template><div v-if="!loading&&!loadError&&totalPages>1" class="ui-pagination admin-pagination"><span>第 {{ pageNum }} 页，共 {{ total }} 条</span><div class="ui-page-buttons"><button type="button" :disabled="pageNum===1" @click="load(pageNum-1)">上一页</button><button v-for="page in pages" :key="page" type="button" :class="{'is-current':page===pageNum}" :aria-current="page===pageNum?'page':null" @click="load(page)">{{ page }}</button><button type="button" :disabled="pageNum===totalPages" @click="load(pageNum+1)">下一页</button></div></div></section></main><div v-if="detailItem" class="admin-dialog-backdrop" @click.self="closeDetail"><section class="admin-dialog admin-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="accountDetailTitle"><div class="admin-dialog-head"><div><span>资金记录 #{{ detailItem.id }}</span><h2 id="accountDetailTitle">{{ detailItem.alabel || '未填写标签' }}</h2></div><button ref="detailClose" type="button" aria-label="关闭资金记录详情" @click="closeDetail">关闭</button></div><dl class="admin-detail-grid"><div><dt>经手人</dt><dd>{{ detailItem.auname || '-' }}</dd></div><div><dt>带符号金额</dt><dd class="admin-signed-value" :class="amountClass(detailItem.avalue)">{{ signed(detailItem.avalue) }}</dd></div><div><dt>金额语义</dt><dd>{{ amountMeaning(detailItem.avalue) }}</dd></div></dl><div class="admin-detail-statement"><strong>用途详情</strong><p>{{ detailItem.adescribe || '未填写' }}</p></div><div class="admin-dialog-actions"><button class="ui-button is-ghost" type="button" @click="closeDetail">关闭</button><button class="ui-button is-dark" type="button" @click="editFromDetail">编辑记录</button></div></section></div><div v-if="editOpen" class="admin-dialog-backdrop" @click.self="cancelEdit"><section class="admin-dialog" role="dialog" aria-modal="true" aria-labelledby="accountEditTitle"><div class="admin-dialog-head"><div><span>{{ form.id ? '记录 #'+form.id : '新记录' }}</span><h2 id="accountEditTitle">{{ form.id ? '编辑资金记录' : '新增资金记录' }}</h2></div><button type="button" aria-label="取消编辑资金记录" @click="cancelEdit">关闭</button></div><form class="admin-edit-form" @submit.prevent="save"><div class="ui-form-field"><label for="accountLabel">款项标签 <small>必填</small></label><input id="accountLabel" ref="editFirst" v-model.trim="form.alabel" class="ui-form-input" maxlength="100" required></div><div class="ui-form-field"><label for="accountHandler">经手人</label><input id="accountHandler" class="ui-form-input" :value="user.username" readonly aria-describedby="accountHandlerHint"><p id="accountHandlerHint" class="ui-password-hint">经手人以当前登录账号为准，不可修改。</p></div><div class="ui-form-field"><label for="accountValue">带符号金额 <small>必填</small></label><input id="accountValue" v-model="form.avalue" class="ui-form-input" type="text" inputmode="decimal" pattern="^-?[0-9]+(\.[0-9]{1,2})?$" required><p class="ui-field-hint">正数表示收入，负数表示支出；零值会被拒绝。金额以十进制字符串提交，系统不推断币种。</p></div><div class="ui-form-field"><label for="accountDescription">用途详情</label><textarea id="accountDescription" v-model.trim="form.adescribe" class="ui-form-textarea" maxlength="355" rows="5"></textarea></div><div v-if="editError" class="admin-inline-message is-error" role="alert">{{ editError }}</div><div class="admin-dialog-actions"><button class="ui-button is-ghost" type="button" :disabled="saving" @click="cancelEdit">取消</button><button class="ui-button is-primary" type="submit" :disabled="saving||!form.alabel||form.avalue===''">{{ saving ? '正在保存...' : '保存资金记录' }}</button></div></form></section></div><div v-if="deleteItem" class="admin-dialog-backdrop" @click.self="cancelDelete"><section class="admin-dialog" role="alertdialog" aria-modal="true" aria-labelledby="accountDeleteTitle"><div class="admin-dialog-head"><div><span>将影响全量汇总</span><h2 id="accountDeleteTitle">删除资金记录 #{{ deleteItem.id }}？</h2></div></div><p class="admin-dialog-copy">将删除“{{ deleteItem.alabel || '未填写标签' }}”的 {{ signed(deleteItem.avalue) }} 记录。删除后全量收入、支出和结余会重新聚合。</p><div v-if="deleteError" class="admin-inline-message is-error" role="alert">{{ deleteError }}</div><div class="admin-dialog-actions"><button class="ui-button is-ghost" type="button" :disabled="deleting" @click="cancelDelete">取消</button><button class="ui-button is-danger" type="button" :disabled="deleting" @click="confirmDelete">{{ deleting ? '正在删除...' : '确认删除' }}</button></div></section></div></div><script src="../../js/jquery.min.js"></script><script src="../../js/auth-session.js?v=20260728"></script><script src="../../js/admin-auth.js?v=20260728"></script><script src="../../js/vue.min.js"></script><script src="../../js/decimal-money.js?v=20260728"></script><script>(function () {
+        "use strict";
+        AuthSession.bootstrap({
+          requireAuth: true,
+          allowCachedOnNetworkError: false,
+          onDone: function (ok, authenticatedUser) {
+            if (!ok || !authenticatedUser) return;
+            if (!AdminWorkspace.hasFlag(authenticatedUser, "account")) {
+              window.location.replace("/page/end/index.html?error=forbidden");
+              return;
             }
-            ],
-            props: [{"label":"款项名称","prop":"alabel"},{"label":"经手人名字","prop":"auname"},{"label":"款项金额","prop":"avalue"},{"label":"款项用途详情","prop":"adescribe"}],
-            dialogProps: [{"label":"款项名称","prop":"alabel"},{"label":"经手人名字","prop":"auname"},{"label":"款项金额","prop":"avalue"},{"label":"款项用途详情","prop":"adescribe"}]
-        },
-        created() {
-            this.user = sessionStorage.getItem("user") ? JSON.parse(sessionStorage.getItem("user")) : {};
-            if (!this.user.id) {
-                location.href = "/page/end/login.html";
-                return;
-            }
-            this.loadTable();
-
-
-        },
-        methods: {
-            handleCollapse() {
-                this.isCollapse = !this.isCollapse;
-            },
-            logout() {
-                $.get("/api/user/logout");
-                sessionStorage.removeItem("user");
-                location.href = "/page/end/login.html";
-            },
-            loadTable() {
-                $.get(urlBase + "/page?pageNum=" + this.pageNum + "&pageSize=" + this.pageSize + "&name=" + this.search).then(res => {
-                    this.tableData = res.data.records;
-                    this.total = res.data.total;
-                })
-            },
-            filterTag(value, row) {
-                return row.alabel === value;
-            },
-            exp() {
-                window.open(urlBase + "/export");
-            },
-            handleSizeChange(pageSize) {
-                this.pageSize = pageSize;
-                this.loadTable();
-            },
-            handleCurrentChange(pageNum) {
-                this.pageNum = pageNum;
-                this.loadTable();
-            },
-            add() {
-                this.entity = {};
-                this.dialogFormVisible = true;
-            },
-            save() {
-                let type = this.entity.id ? "PUT" : "POST";
-                $.ajax({
-                    url: urlBase,
-                    type: type,
+            document.getElementById("authWait").hidden = true;
+            new Vue({
+              el: "#workspace",
+              data: {
+                user: authenticatedUser,
+                menuItems: AdminWorkspace.navigation(
+                  authenticatedUser.permission,
+                ),
+                mobileOpen: false,
+                accountOpen: false,
+                search: "",
+                records: [],
+                loading: true,
+                loadError: "",
+                message: "",
+                messageType: "",
+                pageNum: 1,
+                pageSize: 12,
+                total: 0,
+                totalPages: 1,
+                statsLoading: true,
+                statsError: "",
+                stats: { incomeTotal: "0.00", expenseTotal: "0.00", balance: "0.00" },
+                detailItem: null,
+                editOpen: false,
+                form: {},
+                saving: false,
+                editError: "",
+                deleteItem: null,
+                deleting: false,
+                deleteError: "",
+              },
+              computed: {
+                pages: function () {
+                  var result = [];
+                  var start = Math.max(1, this.pageNum - 2);
+                  var end = Math.min(this.totalPages, start + 4);
+                  start = Math.max(1, end - 4);
+                  for (var page = start; page <= end; page += 1)
+                    result.push(page);
+                  return result;
+                },
+              },
+              created: function () {
+                this.load(1);
+                this.loadStats();
+              },
+              methods: {
+                avatarUrl: function (flag) {
+                  return AdminWorkspace.avatarUrl(flag);
+                },
+                avatarFallback: function (event) {
+                  event.target.src = "/api/files/";
+                },
+                logout: function () {
+                  AuthSession.logout();
+                },
+                closeTopLayer: function () {
+                  if (this.deleteItem) this.cancelDelete();
+                  else if (this.editOpen) this.cancelEdit();
+                  else if (this.detailItem) this.closeDetail();
+                  else {
+                    this.mobileOpen = false;
+                    this.accountOpen = false;
+                  }
+                },
+                signed: function (value) {
+                  return DecimalMoney.format(value, { signed: true, currency: false });
+                },
+                amountMeaning: function (value) {
+                  var sign = DecimalMoney.sign(value);
+                  return sign === 1
+                    ? "正数：计入收入"
+                    : sign === -1
+                      ? "负数：计入支出"
+                      : "零：不改变结余";
+                },
+                amountClass: function (value) {
+                  var sign = DecimalMoney.sign(value);
+                  return sign === 1
+                    ? "is-positive"
+                    : sign === -1
+                      ? "is-negative"
+                      : "is-zero";
+                },
+                loadStats: function () {
+                  var vm = this;
+                  vm.statsLoading = true;
+                  vm.statsError = "";
+                  $.ajax({
+                    url: "/api/account/stats/by-label",
+                    type: "GET",
+                    cache: false,
+                  })
+                    .done(function (res) {
+                      if (!res || res.code !== "0" || !res.data) {
+                        vm.statsError =
+                          (res && res.msg) || "全量汇总返回格式无效。";
+                        return;
+                      }
+                      vm.stats = {
+                        incomeTotal: String(res.data.incomeTotal || "0.00"),
+                        expenseTotal: String(res.data.expenseTotal || "0.00"),
+                        balance: String(res.data.balance || "0.00"),
+                      };
+                    })
+                    .fail(function (xhr) {
+                      vm.statsError =
+                        (xhr.responseJSON && xhr.responseJSON.msg) ||
+                        "全量汇总暂时无法读取。";
+                    })
+                    .always(function () {
+                      vm.statsLoading = false;
+                    });
+                },
+                load: function (page) {
+                  var vm = this;
+                  vm.loading = true;
+                  vm.loadError = "";
+                  $.ajax({
+                    url: "/api/account/page",
+                    type: "GET",
+                    data: {
+                      name: vm.search,
+                      pageNum: page,
+                      pageSize: vm.pageSize,
+                    },
+                    cache: false,
+                  })
+                    .done(function (res) {
+                      if (
+                        !res ||
+                        res.code !== "0" ||
+                        !res.data ||
+                        !Array.isArray(res.data.records)
+                      ) {
+                        vm.loadError =
+                          (res && res.msg) || "服务返回了无法识别的数据。";
+                        return;
+                      }
+                      vm.records = res.data.records;
+                      vm.pageNum = Number(res.data.current || page);
+                      vm.total = Number(res.data.total || 0);
+                      vm.totalPages = Math.max(
+                        1,
+                        Number(
+                          res.data.pages ||
+                            Math.ceil(vm.total / vm.pageSize) ||
+                            1,
+                        ),
+                      );
+                    })
+                    .fail(function (xhr) {
+                      vm.loadError =
+                        (xhr.responseJSON && xhr.responseJSON.msg) ||
+                        "请检查网络连接后重试。";
+                    })
+                    .always(function () {
+                      vm.loading = false;
+                    });
+                },
+                resetSearch: function () {
+                  this.search = "";
+                  this.load(1);
+                },
+                openDetail: function (item) {
+                  this.detailItem = item;
+                  this.$nextTick(function () {
+                    if (this.$refs.detailClose) this.$refs.detailClose.focus();
+                  });
+                },
+                closeDetail: function () {
+                  this.detailItem = null;
+                },
+                editFromDetail: function () {
+                  var item = this.detailItem;
+                  this.closeDetail();
+                  this.openEdit(item);
+                },
+                openCreate: function () {
+                  this.form = {
+                    id: null,
+                    alabel: "",
+                    auname: "",
+                    avalue: "",
+                    adescribe: "",
+                  };
+                  this.editError = "";
+                  this.editOpen = true;
+                  this.focusEdit();
+                },
+                openEdit: function (item) {
+                  this.messageType = "error";
+                  this.message = "资金公示仅允许追加，历史记录不可编辑。";
+                },
+                focusEdit: function () {
+                  this.$nextTick(function () {
+                    if (this.$refs.editFirst) this.$refs.editFirst.focus();
+                  });
+                },
+                cancelEdit: function () {
+                  if (this.saving) return;
+                  this.editOpen = false;
+                  this.editError = "";
+                },
+                accountPayload: function () {
+                  var payload = {
+                    alabel: this.form.alabel,
+                    avalue: String(this.form.avalue),
+                    adescribe: this.form.adescribe,
+                  };
+                  return payload;
+                },
+                save: function () {
+                  var vm = this;
+                  if (
+                    vm.saving ||
+                    !vm.form.alabel ||
+                    vm.form.avalue === "" ||
+                    DecimalMoney.sign(vm.form.avalue) === null
+                  )
+                    return;
+                  vm.saving = true;
+                  vm.editError = "";
+                  $.ajax({
+                    url: "/api/account",
+                    type: "POST",
                     contentType: "application/json",
-                    data: JSON.stringify(this.entity)
-                }).then(res => {
-                    if (res.code === '0') {
-                        this.$message({
-                            message: "保存成功",
-                            type: "success"
-                        });
-                        this.loadTable();
-                    } else {
-                        this.$message({
-                            message: res.msg,
-                            type: "error"
-                        })
-                    }
-                    this.dialogFormVisible = false;
-                })
-            },
-            edit(obj) {
-                this.entity = obj;
-                this.dialogFormVisible = true;
-            },
-            del(id) {
-                $.ajax({
-                    url: urlBase + "/" + id,
-                    type: "delete"
-                }).then(res => {
-                    if (res.code === '0') {
-                        this.$message({
-                            message: "删除成功",
-                            type: "success"
-                        })
-                        this.loadTable();
-                    } else {
-                        this.$message({
-                            message: res.msg,
-                            type: "error"
-                        })
-                    }
-                })
-            }
-        }
-    })
-</script>
-</body>
-</html>
-
+                    data: JSON.stringify(vm.accountPayload()),
+                  })
+                    .done(function (res) {
+                       if (!res || res.code !== "0" || res.data !== true) {
+                        vm.editError = (res && res.msg) || "资金记录保存失败。";
+                        return;
+                      }
+                      var id = vm.form.id;
+                      vm.editOpen = false;
+                      vm.load(vm.pageNum);
+                      vm.loadStats();
+                      vm.messageType = "success";
+                      vm.message = id
+                        ? "资金记录 #" + id + " 已保存。"
+                        : "资金记录已新增。";
+                    })
+                    .fail(function (xhr) {
+                      vm.editError =
+                        (xhr.responseJSON && xhr.responseJSON.msg) ||
+                        "网络异常，资金记录未保存。";
+                    })
+                    .always(function () {
+                      vm.saving = false;
+                    });
+                },
+                askDelete: function (item) {
+                  this.messageType = "error";
+                  this.message = "资金公示仅允许追加，历史记录不可物理删除。";
+                },
+                cancelDelete: function () {
+                  if (this.deleting) return;
+                  this.deleteItem = null;
+                  this.deleteError = "";
+                },
+                confirmDelete: function () {
+                  var vm = this;
+                  if (!vm.deleteItem || vm.deleting) return;
+                  vm.deleting = true;
+                  vm.deleteError = "";
+                  $.ajax({
+                    url: "/api/account/" + encodeURIComponent(vm.deleteItem.id),
+                    type: "DELETE",
+                  })
+                    .done(function (res) {
+                      if (!res || res.code !== "0") {
+                        vm.deleteError = (res && res.msg) || "删除失败。";
+                        return;
+                      }
+                      var id = vm.deleteItem.id;
+                      vm.deleteItem = null;
+                      vm.load(vm.pageNum);
+                      vm.loadStats();
+                      vm.messageType = "success";
+                      vm.message =
+                        "资金记录 #" + id + " 已删除，全量汇总已重新读取。";
+                    })
+                    .fail(function (xhr) {
+                      vm.deleteError =
+                        (xhr.responseJSON && xhr.responseJSON.msg) ||
+                        "网络异常，记录未删除。";
+                    })
+                    .always(function () {
+                      vm.deleting = false;
+                    });
+                },
+              },
+            });
+          },
+        });
+      })();</script></body></html>

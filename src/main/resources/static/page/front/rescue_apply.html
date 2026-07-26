@@ -1,188 +1,282 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <title>救助咨询</title>
-    <link rel="stylesheet" href="../../css/base.css">
-    <link rel="stylesheet" href="../../css/element.css">
-    <style>
-        body { margin: 0; background: #f5f7fb; color: #24324a; }
-        .page-shell { max-width: 900px; margin: 0 auto; padding: 28px 20px 60px; }
-        .nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-        .nav-links, .nav-user { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        .chip { display: inline-flex; align-items: center; height: 38px; padding: 0 14px; border-radius: 999px; background: #fff; color: #3552a6; text-decoration: none; box-shadow: 0 8px 20px rgba(25, 43, 77, 0.06); }
-        .hero { background: linear-gradient(135deg, #ff9a76 0%, #f96d5c 100%); color: #fff; border-radius: 20px; padding: 28px 30px; box-shadow: 0 12px 30px rgba(249, 109, 92, 0.2); margin-bottom: 22px; }
-        .hero h1 { margin: 0 0 8px; font-size: 30px; }
-        .hero p { margin: 0; opacity: 0.95; }
-        .panel { background: #fff; border-radius: 18px; box-shadow: 0 10px 30px rgba(25, 43, 77, 0.08); padding: 24px; }
-        .panel-head h2 { margin: 0 0 6px; font-size: 24px; }
-        .panel-head p { margin: 0 0 20px; color: #72809a; }
-        .field { margin-bottom: 18px; }
-        .field label { display: block; margin-bottom: 8px; font-size: 14px; color: #4d5b73; font-weight: 600; }
-        .input, .textarea { width: 100%; box-sizing: border-box; border: 1px solid #d9e2f2; border-radius: 12px; background: #fff; color: #24324a; outline: none; }
-        .input { height: 44px; padding: 0 14px; }
-        .textarea { min-height: 120px; padding: 12px 14px; resize: vertical; }
-        .upload-zone { display: flex; align-items: center; gap: 12px; }
-        .upload-zone img { width: 120px; height: 90px; object-fit: cover; border-radius: 10px; background: #eef3ff; }
-        .actions { display: flex; gap: 12px; margin-top: 26px; flex-wrap: wrap; }
-        .btn { height: 44px; padding: 0 22px; border: 0; border-radius: 12px; cursor: pointer; font-size: 15px; }
-        .btn-primary { background: #f96d5c; color: #fff; }
-        .btn-ghost { background: #eef3ff; color: #3552a6; }
-        .tips { padding: 12px 14px; border-radius: 12px; background: #fff4e8; color: #b25f00; font-size: 13px; margin-bottom: 20px; }
-        .empty { background: #fff; border-radius: 18px; padding: 60px 20px; text-align: center; color: #70809a; box-shadow: 0 10px 30px rgba(25, 43, 77, 0.08); }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="提交正式动物救助请求，并加入已认证用户的全局救助社区聊天室">
+  <title>发起救助 · 归途计划</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
+  <link rel="stylesheet" href="../../css/product-ui.css?v=20260728">
 </head>
 <body>
-<div id="user-toolbar" style="position:fixed;right:20px;top:20px;z-index:9999;display:flex;align-items:center;gap:0;background:#fff;border-radius:14px;box-shadow:0 8px 24px rgba(25,43,77,0.12);">
-  <div id="toolbar-trigger" onclick="document.getElementById('toolbar-dropdown').classList.toggle('show')" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 14px;border-radius:14px;">
-    <svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#f96d5c"/><circle cx="20" cy="14" r="8" fill="#fff" opacity=".95"/><ellipse cx="20" cy="37" rx="15" ry="11" fill="#fff" opacity=".95"/></svg>
-    <span style="color:#24324a;font-size:16px;font-weight:600;" id="toolbar-username">未登录</span>
-    <svg width="14" height="14" viewBox="0 0 14 14" style="flex-shrink:0;margin-left:2px;"><path d="M3.5 5.25L7 8.75l3.5-3.5" fill="none" stroke="#637089" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  </div>
-  <div id="toolbar-dropdown" style="display:none;position:absolute;right:0;top:64px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(25,43,77,0.15);min-width:140px;padding:6px 0;">
-    <a href="/page/end/person.html" style="display:block;padding:10px 18px;font-size:15px;color:#24324a;text-decoration:none;">个人信息</a>
-    <a href="/page/end/index.html" style="display:block;padding:10px 18px;font-size:15px;color:#3552a6;text-decoration:none;">管理后台</a>
-    <a href="javascript:void(0)" onclick="handleLogout()" style="display:block;padding:10px 18px;font-size:15px;color:#c73636;text-decoration:none;">退出登录</a>
-  </div>
-</div>
-<style>
-#toolbar-dropdown.show { display:block !important; }
-#toolbar-dropdown a:hover { background:#f5f7fb; }
-</style>
-<script>
-document.addEventListener('click', function(e) {
-  var d = document.getElementById('toolbar-dropdown');
-  var t = document.getElementById('toolbar-trigger');
-  if (d && t && !t.contains(e.target) && !d.contains(e.target)) {
-    d.classList.remove('show');
-  }
-});
-</script>
+<div id="authWait" class="ui-auth-wait" role="status">正在验证登录状态...</div>
+<div id="app" v-cloak @keyup.esc="closeMenus">
+  <header class="ui-header">
+    <div class="ui-header-inner">
+      <a class="ui-brand" href="./index.html"><span class="ui-brand-mark" aria-hidden="true">♡</span><span class="ui-brand-copy"><strong>归途计划</strong><small>PAWS ON THE WAY HOME</small></span></a>
+      <nav class="ui-nav" aria-label="主导航"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a href="./notice_list.html">救助动态</a><a class="is-active" href="./rescue_apply.html" aria-current="page">发起救助</a><a href="./account_public.html">透明公示</a></nav>
+      <div class="ui-header-actions">
+        <button class="ui-icon-button ui-mobile-toggle" type="button" aria-controls="mobileNav" :aria-expanded="String(mobileOpen)" aria-label="打开或关闭导航" @click="mobileOpen=!mobileOpen"><span aria-hidden="true">{{ mobileOpen ? '关闭' : '菜单' }}</span></button>
+        <div class="ui-account"><button class="ui-account-trigger" type="button" aria-controls="accountMenu" :aria-expanded="String(accountOpen)" @click="accountOpen=!accountOpen"><span class="ui-avatar">{{ userInitial }}</span><span class="ui-account-name">{{ user.username }}</span></button><div id="accountMenu" class="ui-account-menu" v-if="accountOpen"><a href="/page/end/person.html">个人资料</a><a href="./my_rescue.html">我的救助</a><button class="is-danger" type="button" @click="logout">退出登录</button></div></div>
+      </div>
+      <nav id="mobileNav" class="ui-mobile-nav" :class="{'is-open':mobileOpen}" aria-label="移动端导航"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a href="./notice_list.html">救助动态</a><a href="./rescue_apply.html" aria-current="page">发起救助</a><a href="./my_rescue.html">我的救助</a><a href="./account_public.html">透明公示</a></nav>
+    </div>
+  </header>
 
-<div id="app" class="page-shell">
-    <div class="nav">
-        <div class="nav-links">
-            <a class="chip" href="./animal_browse.html">动物浏览</a>
-            <a class="chip" href="./my_adopt.html">我的领养申请</a>
-            <a class="chip" href="./volunteer_apply.html">义工申请</a>
-            <a class="chip" href="./rescue_apply.html" style="background:#f96d5c;color:#fff;">救助咨询</a>
-            <a class="chip" href="./my_rescue.html">我的救助</a>
-            <a class="chip" href="./notice_list.html">公告中心</a>
-        </div>
-        <div class="nav-user">
-            <span class="chip">{{ user.username || '未登录' }}</span>
-            <a class="chip" href="./login.html">登录页</a>
-        </div>
-    </div>
-    <div class="hero">
-        <h1>救助咨询</h1>
-        <p>发现流浪或受伤动物？请填写以下信息提交救助请求，我们会尽快处理。</p>
-    </div>
-    <div v-if="submitted" class="empty">
-        <div style="font-size:48px;margin-bottom:12px;">&#x2705;</div>
-        <div style="font-size:20px;font-weight:600;margin-bottom:8px;">提交成功</div>
-        <div>救助请求已提交，请前往<a href="./my_rescue.html" style="color:#f96d5c;">我的救助</a>查看处理进度。</div>
-        <div style="margin-top:18px;"><button class="btn btn-primary" @click="resetForm">继续提交</button></div>
-    </div>
-    <div v-else-if="!user.id" class="empty">请先登录后再提交救助请求。</div>
-    <div v-else class="panel">
-        <div class="panel-head">
-            <h2>救助信息填写</h2>
-            <p>当前用户：{{ user.username }}</p>
-        </div>
-        <div class="tips">请尽量提供详细的信息和清晰的现场照片，以便我们更快速地开展救助。</div>
-        <div class="field">
-            <label>求助标题 <span style="color:#f96d5c">*</span></label>
-            <input class="input" v-model.trim="form.title" type="text" placeholder="例如：小区门口发现一只受伤的流浪猫">
-        </div>
-        <div class="field">
-            <label>详细描述 <span style="color:#f96d5c">*</span></label>
-            <textarea class="textarea" v-model.trim="form.description" placeholder="请描述动物的状况、大小、毛色等特征，以及是否需要紧急医疗救助"></textarea>
-        </div>
-        <div class="field">
-            <label>发现地点 <span style="color:#f96d5c">*</span></label>
-            <input class="input" v-model.trim="form.location" type="text" placeholder="请输入详细地址，如：XX市XX区XX路XX号附近">
-        </div>
-        <div class="field">
-            <label>联系电话</label>
-            <input class="input" v-model.trim="form.phone" type="text" placeholder="请输入您的联系电话">
-        </div>
-        <div class="field">
-            <label>现场照片</label>
-            <div class="upload-zone">
-                <img :src="form.pic ? '/api/files/' + form.pic : 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%2290%22%3E%3Crect fill=%22%23eef3ff%22 width=%22120%22 height=%2290%22/%3E%3Ctext x=%2235%22 y=%2250%22 fill=%22%238899aa%22%3E暂无图片%3C/text%3E%3C/svg%3E'" alt="">
-                <input type="file" id="rescue-pic" accept="image/*" @change="uploadPic">
-            </div>
-        </div>
-        <div class="actions">
-            <button class="btn btn-primary" @click="submit">提交救助请求</button>
-            <button class="btn btn-ghost" @click="resetForm">重置表单</button>
-        </div>
-    </div>
-</div>
+  <main class="ui-container ui-rescue-page">
+    <section class="ui-rescue-intro" aria-labelledby="rescueTitle">
+      <div><p class="ui-eyebrow">FORMAL RESCUE REQUEST</p><h1 id="rescueTitle">先把现场信息，交给能行动的人。</h1><p>正式救助表单是本页的首要入口。请提供准确位置、动物现状和可联系号码；生命危险时请同时联系附近动物医院。</p></div>
+      <aside class="ui-rescue-priority"><strong>紧急情况优先处理</strong><span>社区聊天室是所有已登录用户共享的全局公共房间，不是私人客服，也不代替正式工单。</span></aside>
+    </section>
 
+    <div class="ui-rescue-layout">
+      <section class="ui-panel ui-rescue-form" aria-labelledby="formTitle">
+        <div class="ui-panel-head"><div><h2 id="formTitle">正式救助表单</h2><p>服务端以当前会话确定提交人。页面只提交可编辑的现场信息。</p></div><a class="ui-button is-ghost" href="./my_rescue.html">查看处理进度</a></div>
+        <div v-if="submitted" class="ui-rescue-success" role="status" aria-live="polite"><h2>救助请求已提交</h2><p>工作人员回复和状态变化会显示在“我的救助”中。</p><div class="ui-form-actions"><a class="ui-button is-dark" href="./my_rescue.html">查看我的救助</a><button class="ui-button is-ghost" type="button" @click="resetForm">继续提交</button></div></div>
+        <form v-else novalidate @submit.prevent="submitRescue">
+          <div class="ui-inline-alert">请勿为了拍摄靠近有攻击性或处于应激状态的动物。现场照片为选填，单张最大 10 MB。</div>
+          <div class="ui-form-grid">
+            <div class="ui-form-field is-full"><label for="rescueTitleInput">求助标题 <small>必填，最多 255 字</small></label><input id="rescueTitleInput" ref="title" v-model.trim="form.title" class="ui-form-input" type="text" maxlength="255" placeholder="例如：社区入口发现无法站立的橘猫" :aria-invalid="String(!!errors.title)" :aria-describedby="errors.title?'titleError':null"><p v-if="errors.title" id="titleError" class="ui-field-error">{{ errors.title }}</p></div>
+            <div class="ui-form-field is-full"><label for="rescueDescription">动物与现场情况 <small>必填，最多 5000 字</small></label><textarea id="rescueDescription" ref="description" v-model.trim="form.description" class="ui-form-textarea" maxlength="5000" rows="6" placeholder="描述动物种类、体型、毛色、伤情、活动能力及周边风险" :aria-invalid="String(!!errors.description)" :aria-describedby="errors.description?'descriptionError':null"></textarea><p v-if="errors.description" id="descriptionError" class="ui-field-error">{{ errors.description }}</p><p class="ui-field-hint">{{ form.description.length }}/5000</p></div>
+            <div class="ui-form-field"><label for="rescueLocation">发现地点 <small>必填</small></label><input id="rescueLocation" ref="location" v-model.trim="form.location" class="ui-form-input" type="text" maxlength="255" autocomplete="street-address" placeholder="街道、门牌及易识别地标" :aria-invalid="String(!!errors.location)" :aria-describedby="errors.location?'locationError':null"><p v-if="errors.location" id="locationError" class="ui-field-error">{{ errors.location }}</p></div>
+            <div class="ui-form-field"><label for="rescuePhone">联系电话 <small>选填</small></label><input id="rescuePhone" ref="phone" v-model.trim="form.phone" class="ui-form-input" type="tel" maxlength="20" autocomplete="tel" placeholder="便于救助人员联系现场" :aria-invalid="String(!!errors.phone)" :aria-describedby="errors.phone?'phoneError':null"><p v-if="errors.phone" id="phoneError" class="ui-field-error">{{ errors.phone }}</p></div>
+            <div class="ui-form-field is-full"><label for="rescuePhoto">现场照片 <small>选填，JPG/PNG/GIF</small></label><div class="ui-upload-box"><img v-if="previewUrl" class="ui-rescue-upload-preview" :src="previewUrl" alt="待上传现场照片预览"><div v-else class="ui-rescue-upload-empty" aria-hidden="true">暂无照片</div><div><input id="rescuePhoto" ref="photo" type="file" accept="image/jpeg,image/png,image/gif" @change="selectPhoto"><p v-if="photoFile" class="ui-field-hint">{{ photoFile.name }} · {{ fileSize(photoFile.size) }}</p><p v-if="errors.photo" class="ui-field-error">{{ errors.photo }}</p></div></div></div>
+          </div>
+          <div v-if="formFeedback" class="ui-form-alert" role="alert" aria-live="polite">{{ formFeedback }}</div>
+          <div class="ui-form-actions"><button class="ui-button is-primary" type="submit" :disabled="submitting">{{ submitting ? '正在提交...' : '提交正式救助请求' }}</button><button class="ui-button is-ghost" type="button" :disabled="submitting" @click="resetForm">清空表单</button></div>
+        </form>
+      </section>
+
+      <section class="ui-panel ui-rescue-chat" aria-labelledby="communityTitle">
+        <div class="ui-rescue-chat-head"><div><h2 id="communityTitle">已认证全局救助社区聊天室</h2><p>所有已登录用户共享，消息会持久保存；这不是私人会话。</p></div><span class="ui-connection" :class="connectionClass" aria-live="polite">{{ connectionText }}</span></div>
+        <div class="ui-chat-notice" role="note">请勿发布不必要的个人信息。正式救助、位置和联系电话应提交到左侧表单，由工单流程处理。</div>
+        <div ref="chatBox" class="ui-chat-messages" aria-live="polite" aria-relevant="additions text">
+          <div v-if="historyLoading" class="ui-chat-empty" role="status">正在读取最近的社区消息...</div>
+          <div v-else-if="historyError&&!messages.length" class="ui-chat-empty"><div>{{ historyError }}<br><button class="ui-button is-ghost" type="button" @click="loadHistory">重新加载</button></div></div>
+          <div v-else-if="!messages.length" class="ui-chat-empty">最近还没有社区消息。<br>你可以提出不包含隐私的一般救助问题。</div>
+          <article v-for="message in messages" :key="message.key" class="ui-chat-message" :class="{'is-self':isSelf(message)}">
+            <span class="ui-chat-avatar" aria-hidden="true">{{ messageInitial(message) }}</span>
+            <div class="ui-chat-copy"><div class="ui-chat-meta"><strong>{{ message.username || '社区成员' }}</strong><time>{{ formatTime(message.createdTime) }}</time></div><div class="ui-chat-bubble">{{ message.text }}</div></div>
+          </article>
+        </div>
+        <form class="ui-chat-compose" @submit.prevent="sendChat"><label for="communityMessage">发送到全局公共房间</label><div class="ui-chat-compose-row"><textarea id="communityMessage" v-model.trim="chatText" class="ui-form-textarea" maxlength="500" rows="2" placeholder="输入一般救助交流内容（最多500字）" :disabled="chatSending"></textarea><button class="ui-button is-dark" type="submit" :disabled="chatSending||!chatText">{{ chatSending ? '发送中' : '发送' }}</button></div><p class="ui-chat-feedback" :class="{'is-error':chatError}" aria-live="polite">{{ chatError || '消息通过 HTTP 保存，页面可见时每 10 秒定时更新。' }}</p></form>
+      </section>
+    </div>
+  </main>
+
+  <footer class="ui-site-footer"><div class="ui-container ui-footer-inner"><div class="ui-footer-copy"><strong>归途计划</strong><span>© 2026 · 让每一次善意都有回音</span></div><nav class="ui-footer-nav" aria-label="页脚导航"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a href="./notice_list.html">救助动态</a><a href="./rescue_apply.html">发起救助</a><a href="./account_public.html">透明公示</a></nav></div></footer>
+</div>
 <script src="../../js/jquery.min.js"></script>
 <script src="../../js/vue.min.js"></script>
-
+<script src="../../js/auth-session.js?v=20260728"></script>
 <script>
-function handleLogout() {
-    $.get("/api/user/logout");
-    sessionStorage.removeItem("user");
-    location.href = "./login.html";
-}
-
-new Vue({
-    el: "#app",
-    data: {
-        user: {},
-        form: { title: "", description: "", location: "", phone: "", pic: "" },
-        submitted: false
-    },
-    created() {
-        this.user = sessionStorage.getItem("user") ? JSON.parse(sessionStorage.getItem("user")) : {};
-        if (this.user.id) {
-            document.getElementById("toolbar-username").textContent = this.user.username;
-        }
-    },
-    methods: {
-        uploadPic(e) {
-            var file = e.target.files[0];
+(function () {
+  'use strict';
+  var pollTimer = null;
+  var historyRequest = null;
+  var pollingGeneration = 0;
+  var pollingStopped = false;
+  var pollInterval = 10000;
+  AuthSession.bootstrap({
+    requireAuth: true,
+    allowCachedOnNetworkError: false,
+    onDone: function (ok, authenticatedUser) {
+      if (!ok || !authenticatedUser) return;
+      document.getElementById('authWait').hidden = true;
+      var vm = new Vue({
+        el: '#app',
+        data: {
+          user: authenticatedUser,
+          mobileOpen: false,
+          accountOpen: false,
+          form: { title: '', description: '', location: '', phone: authenticatedUser.phone || '' },
+          errors: {},
+          photoFile: null,
+          previewUrl: '',
+          submitting: false,
+          submitted: false,
+          formFeedback: '',
+          messages: [],
+          historyLoading: true,
+          connectionState: 'connecting',
+          historyRequestActive: false,
+          historyError: '',
+          chatText: '',
+          chatSending: false,
+          chatError: ''
+        },
+        computed: {
+          connectionClass: function () {
+            return this.connectionState === 'connected' ? 'is-connected'
+                 : this.connectionState === 'error' ? 'is-error' : 'is-connecting';
+          },
+          connectionText: function () {
+            return this.connectionState === 'connected' ? '每 10 秒更新'
+                 : this.connectionState === 'error' ? '连接异常' : '更新中…';
+          },
+          userInitial: function () { return this.user.username ? this.user.username.slice(0, 1).toUpperCase() : 'U'; }
+        },
+        created: function () { this.startPolling(); },
+        beforeDestroy: function () { this.stopPolling(); },
+        methods: {
+          closeMenus: function () { this.mobileOpen = false; this.accountOpen = false; },
+          logout: function () { this.stopPolling(); AuthSession.logout(); },
+          fileSize: function (bytes) { return bytes < 1024 * 1024 ? Math.ceil(bytes / 1024) + ' KB' : (bytes / 1024 / 1024).toFixed(1) + ' MB'; },
+          selectPhoto: function (event) {
+            var file = event.target.files && event.target.files[0];
+            if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
+            this.previewUrl = '';
+            this.photoFile = null;
+            this.errors = Object.assign({}, this.errors, { photo: '' });
             if (!file) return;
-            var formData = new FormData();
-            formData.append("file", file);
-            var self = this;
-            $.ajax({ url: '/api/files/upload', type: 'POST', data: formData, processData: false, contentType: false })
-            .then(function(res) {
-                if (res.code === '0') self.form.pic = res.data.flag;
-            });
-        },
-        submit() {
-            if (!this.form.title || !this.form.description || !this.form.location) {
-                alert("请填写标题、描述和发现地点");
-                return;
+            if (!/\.(jpe?g|png|gif)$/i.test(file.name) || ['image/jpeg', 'image/png', 'image/gif'].indexOf(file.type) < 0) {
+              this.errors = Object.assign({}, this.errors, { photo: '请选择 JPG、PNG 或 GIF 图片。' });
+              event.target.value = '';
+              return;
             }
-            var data = {
-                uid: this.user.id,
-                uname: this.user.username,
-                title: this.form.title,
-                description: this.form.description,
-                location: this.form.location,
-                phone: this.form.phone || this.user.phone || "",
-                pic: this.form.pic || ""
-            };
-            var self = this;
-            $.ajax({ url: '/api/help', type: 'POST', contentType: 'application/json', data: JSON.stringify(data) })
-            .then(function(res) {
-                if (res.code === '0') self.submitted = true;
-                else alert(res.msg || "提交失败");
+            if (file.size > 10 * 1024 * 1024) {
+              this.errors = Object.assign({}, this.errors, { photo: '现场照片不能超过 10 MB。' });
+              event.target.value = '';
+              return;
+            }
+            this.photoFile = file;
+            this.previewUrl = URL.createObjectURL(file);
+          },
+          validate: function () {
+            var errors = {};
+            if (!this.form.title) errors.title = '请填写求助标题。';
+            if (!this.form.description) errors.description = '请描述动物与现场情况。';
+            if (!this.form.location) errors.location = '请填写发现地点。';
+            if (this.form.phone && !/^[0-9+()\s-]{6,20}$/.test(this.form.phone)) errors.phone = '联系电话须为6至20位，只能包含数字、空格、加号、括号或连字符。';
+            this.errors = errors;
+            if (Object.keys(errors).length) {
+              this.formFeedback = '请检查标出的救助信息。';
+              var first = Object.keys(errors)[0];
+              this.$nextTick(function () { if (this.$refs[first] && this.$refs[first].focus) this.$refs[first].focus(); });
+              return false;
+            }
+            return true;
+          },
+          uploadPhoto: function () {
+            if (!this.photoFile) return $.Deferred().resolve('').promise();
+            var formData = new FormData();
+            formData.append('file', this.photoFile);
+            AuthSession.appendUploadPurpose(formData, 'help');
+            return $.ajax({ url: '/api/files/upload', type: 'POST', data: formData, processData: false, contentType: false }).then(function (res) {
+              var flag = res && res.code === '0' && res.data && (res.data.flag || res.data);
+              if (!flag || !/^[a-zA-Z0-9-]{1,64}$/.test(String(flag))) return $.Deferred().reject({ responseJSON: { msg: (res && res.msg) || '照片上传结果无效。' } }).promise();
+              return String(flag);
             });
-        },
-        resetForm() {
-            this.form = { title: "", description: "", location: "", phone: "", pic: "" };
+          },
+          mutablePayload: function (photoFlag) {
+            var payload = { title: this.form.title, description: this.form.description, location: this.form.location, phone: this.form.phone };
+            if (photoFlag) payload.pic = photoFlag;
+            return payload;
+          },
+          submitRescue: function () {
+            if (this.submitting || !this.validate()) return;
+            var page = this;
+            page.submitting = true;
+            page.formFeedback = '';
+            page.uploadPhoto().then(function (photoFlag) {
+              return $.ajax({ url: '/api/help', type: 'POST', contentType: 'application/json', data: JSON.stringify(page.mutablePayload(photoFlag)) });
+            }).done(function (res) {
+              if (!res || res.code !== '0' || res.data !== true) { page.formFeedback = (res && res.msg) || '救助请求提交失败。'; return; }
+              page.submitted = true;
+            }).fail(function (xhr) { page.formFeedback = (xhr.responseJSON && xhr.responseJSON.msg) || '网络异常，救助请求未能提交。'; }).always(function () { page.submitting = false; });
+          },
+          resetForm: function () {
+            if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
+            this.form = { title: '', description: '', location: '', phone: this.user.phone || '' };
+            this.errors = {};
+            this.photoFile = null;
+            this.previewUrl = '';
+            this.formFeedback = '';
             this.submitted = false;
+            if (this.$refs.photo) this.$refs.photo.value = '';
+          },
+          normalizeMessage: function (item) {
+            if (!item || typeof item !== 'object' || item.id == null) return null;
+            var id = String(item.id);
+            var username = typeof item.username === 'string' ? item.username : '';
+            var text = typeof item.text === 'string' ? item.text : '';
+            var createdTime = typeof item.createdTime === 'string' ? item.createdTime : '';
+            if (!/^[1-9][0-9]*$/.test(id) || !text.trim() || text.length > 500 || username.length > 255 || !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(createdTime)) return null;
+            var time = new Date(createdTime.replace(' ', 'T')).getTime();
+            if (!isFinite(time)) return null;
+            return { key: 'id-' + id, id: id, username: username, text: text, createdTime: createdTime, sortTime: time };
+          },
+          appendMessage: function (item) {
+            this.mergeMessages([item]);
+            this.scrollChat();
+          },
+          mergeMessages: function (items) {
+            var page = this;
+            var byId = Object.create(null);
+            var merged = [];
+            page.messages.concat(items.slice(0, 500)).forEach(function (item) {
+              var normalized = page.normalizeMessage(item);
+              if (!normalized) return;
+              if (!byId[normalized.id]) { byId[normalized.id] = normalized; merged.push(normalized); }
+            });
+            page.messages.splice.apply(page.messages, [0, page.messages.length].concat(merged));
+            page.sortAndTrimMessages();
+          },
+          sortAndTrimMessages: function () {
+            this.messages.sort(function (left, right) {
+              var leftTime = left.sortTime;
+              var rightTime = right.sortTime;
+              if (leftTime !== rightTime) return leftTime - rightTime;
+              if (left.id.length !== right.id.length) return left.id.length - right.id.length;
+              return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
+            });
+            if (this.messages.length > 100) this.messages.splice(0, this.messages.length - 100);
+          },
+          loadHistory: function () {
+            var page = this;
+            if (page.historyRequestActive) return;
+            if (pollTimer) window.clearTimeout(pollTimer);
+            pollTimer = null;
+            page.historyRequestActive = true;
+            var generation = pollingGeneration;
+            page.historyLoading = !page.messages.length;
+            page.historyError = '';
+            historyRequest = $.ajax({ url: '/api/help/chat/history', type: 'GET', cache: false }).done(function (res) {
+              if (generation !== pollingGeneration) return;
+              if (!res || res.code !== '0' || !Array.isArray(res.data) || res.data.length > 500) { page.historyError = (res && res.msg) || '社区消息返回格式无效。'; return; }
+              page.mergeMessages(res.data);
+              page.connectionState = 'connected';
+            }).fail(function (xhr, status) { if (generation === pollingGeneration && status !== 'abort') page.historyError = (xhr.responseJSON && xhr.responseJSON.msg) || '最近社区消息暂时无法读取。'; page.connectionState = 'error'; }).always(function () { if (generation !== pollingGeneration) return; historyRequest = null; page.historyRequestActive = false; page.historyLoading = false; page.schedulePoll(); });
+          },
+          sendChat: function () {
+            if (this.chatSending || !this.chatText) return;
+            var page = this;
+            var text = page.chatText.slice(0, 500);
+            page.chatSending = true;
+            page.chatError = '';
+            $.ajax({ url: '/api/help/chat', type: 'POST', contentType: 'application/json', data: JSON.stringify({ text: text }) }).done(function (res) {
+              if (!res || res.code !== '0' || !res.data) { page.chatError = (res && res.msg) || '消息未能保存。'; return; }
+              page.appendMessage(res.data);
+              page.chatText = '';
+            }).fail(function (xhr) { page.chatError = (xhr.responseJSON && xhr.responseJSON.msg) || '网络异常，消息未能保存。'; }).always(function () { page.chatSending = false; });
+          },
+          schedulePoll: function () { var page = this; if (pollingStopped || document.hidden) return; pollTimer = window.setTimeout(function () { page.loadHistory(); }, pollInterval); },
+          startPolling: function () { pollingStopped = false; if (!document.hidden) this.loadHistory(); },
+          pausePolling: function () { if (pollTimer) window.clearTimeout(pollTimer); pollTimer = null; },
+          stopPolling: function () { pollingStopped = true; pollingGeneration += 1; this.pausePolling(); if (historyRequest) historyRequest.abort(); historyRequest = null; this.historyRequestActive = false; this.historyLoading = false; },
+          isSelf: function (message) { return message.username === this.user.username; },
+          messageInitial: function (message) { return message.username ? String(message.username).slice(0, 1).toUpperCase() : 'U'; },
+          formatTime: function (value) { if (!value) return ''; var date = new Date(typeof value === 'string' ? value.replace(' ', 'T') : value); return isNaN(date.getTime()) ? String(value) : date.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }); },
+          scrollChat: function () { this.$nextTick(function () { if (this.$refs.chatBox) this.$refs.chatBox.scrollTop = this.$refs.chatBox.scrollHeight; }); }
         }
+      });
+      document.addEventListener('visibilitychange', function () { if (document.hidden) vm.pausePolling(); else vm.startPolling(); });
+      window.addEventListener('pagehide', function () { vm.stopPolling(); });
+      window.addEventListener('beforeunload', function () { vm.stopPolling(); }, { once: true });
+      window.addEventListener('pageshow', function () { vm.startPolling(); });
     }
-});
+  });
+})();
 </script>
 </body>
 </html>

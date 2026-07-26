@@ -21,4 +21,7 @@ public class Proof extends Model<Proof> {
     private String ppic;
 
     private String ptitle;
+
+    /** 0待审核 1已通过 2已驳回 */
+    private Integer pstatus;
 }

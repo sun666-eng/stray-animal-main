@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#efefed"/><stop offset="1" stop-color="#8e9290"/></linearGradient><filter id="b"><feGaussianBlur stdDeviation="62"/></filter></defs>
+  <rect width="1200" height="900" fill="#a9acaa"/>
+  <path d="M-110 160C204-45 387 80 531 242s354 185 779-72v-240H-110Z" fill="#f4f3ef" opacity=".75" filter="url(#b)"/>
+  <rect x="75" y="570" width="1060" height="210" rx="105" fill="#656967" opacity=".38"/>
+  <g transform="translate(330 90)"><path d="M96 230L28 24q154 43 211 164M360 189Q426 64 540 25l-70 216" fill="#4d504e"/><ellipse cx="282" cy="329" rx="219" ry="206" fill="url(#g)"/><path d="M139 307q46-34 92 0M333 307q46-34 92 0" fill="none" stroke="#343635" stroke-width="21" stroke-linecap="round"/><path d="M255 366q27-17 55 0-4 39-28 39t-27-39" fill="#303231"/><path d="M282 404q-8 44-57 37M282 404q8 44 57 37" fill="none" stroke="#303231" stroke-width="14" stroke-linecap="round"/><path d="M157 525q133 79 266 0" fill="none" stroke="#666a67" stroke-width="28" stroke-linecap="round"/></g>
+  <text x="62" y="78" fill="#fff" font-family="Arial,sans-serif" font-size="22" letter-spacing="8">PET PROFILE / 04</text>
+</svg>

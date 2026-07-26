@@ -4,17 +4,19 @@ import lombok.Data;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.activerecord.Model;
-import com.github.jeffreyning.mybatisplus.anno.MppMultiId;
 
+/**
+ * 复合主键 (aid, uid)：MyBatis-Plus 不支持复合 @TableId，
+ * 所有按键操作一律显式 .eq("aid",..).eq("uid",..)（历史上引入的
+ * mybatisplus-plus @MppMultiId 从未被调用，已随 Boot3 迁移移除）。
+ */
 @Data
 @TableName("t_adopt")
 public class Adopt extends Model<Adopt> {
 
-    @MppMultiId
     @TableField(value = "aid")
     private Long aid;
 
-    @MppMultiId
     @TableField(value = "uid")
     private Long uid;
 
