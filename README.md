@@ -126,7 +126,7 @@ mvn spring-boot:run
 http://localhost:9999/page/end
 ```
 
-默认后台账号需以数据库初始化数据为准。若启用了 `DATA_FIX_ENABLED=true`，系统会尝试修复部分默认权限数据。
+`test.sql` 不再内置任何默认账号（明文弱口令种子已移除）。空库首个管理员请通过 `INITIAL_ADMIN_*` 环境变量引导创建（见 `docs/sql/dev-seed-notes.md`）。若启用了 `DATA_FIX_ENABLED=true`，系统会尝试修复部分默认权限数据。
 
 ## 安全注意事项
 
