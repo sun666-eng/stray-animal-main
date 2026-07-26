@@ -256,7 +256,7 @@ public class AuthInterceptorSessionTest {
     }
 
     private User invokeGetCurrentUser(MockHttpServletRequest request) throws Exception {
-        Method m = AuthInterceptor.class.getDeclaredMethod("getCurrentUser", javax.servlet.http.HttpServletRequest.class);
+        Method m = AuthInterceptor.class.getDeclaredMethod("getCurrentUser", jakarta.servlet.http.HttpServletRequest.class);
         m.setAccessible(true);
         return (User) m.invoke(interceptor, request);
     }

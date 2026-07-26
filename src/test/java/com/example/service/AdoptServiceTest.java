@@ -118,7 +118,7 @@ public class AdoptServiceTest {
                 () -> adoptService.submitAdopt(adopt, user, false));
 
         assertEquals("409", ex.getCode());
-        verify(adoptMapper, org.mockito.Mockito.never()).insert(any());
+        verify(adoptMapper, org.mockito.Mockito.never()).insert(any(com.example.entity.Adopt.class));
     }
 
     @Test

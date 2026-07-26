@@ -43,6 +43,12 @@ public class VisitServiceTest {
     @InjectMocks
     VisitService visitService;
 
+    /** Mockito 5 不注入继承的泛型字段 M baseMapper（MP 3.5.7 起访问会断言非空），须显式注入。 */
+    @org.junit.jupiter.api.BeforeEach
+    void injectInheritedBaseMapper() {
+        org.springframework.test.util.ReflectionTestUtils.setField(visitService, "baseMapper", visitMapper);
+    }
+
     private User actor() {
         User u = new User();
         u.setId(1L);
@@ -85,7 +91,7 @@ public class VisitServiceTest {
                 () -> visitService.createVisit(validDraft(), actor(), true));
         assertEquals("400", ex.getCode());
         assertTrue(ex.getMsg().contains("已审核通过"));
-        verify(visitMapper, never()).insert(any());
+        verify(visitMapper, never()).insert(any(com.example.entity.Visit.class));
     }
 
     @Test
@@ -105,7 +111,7 @@ public class VisitServiceTest {
                 () -> visitService.createVisit(v, actor(), true));
         assertEquals("400", ex.getCode());
         assertTrue(ex.getMsg().contains("健康评分"));
-        verify(visitMapper, never()).insert(any());
+        verify(visitMapper, never()).insert(any(com.example.entity.Visit.class));
     }
 
     @Test
@@ -141,7 +147,7 @@ public class VisitServiceTest {
         CustomException ex = assertThrows(CustomException.class,
                 () -> visitService.createVisit(validDraft(), actor(), false));
         assertEquals("403", ex.getCode());
-        verify(visitMapper, never()).insert(any());
+        verify(visitMapper, never()).insert(any(com.example.entity.Visit.class));
     }
 
     @Test

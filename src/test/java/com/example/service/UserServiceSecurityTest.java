@@ -43,6 +43,12 @@ class UserServiceSecurityTest {
     @InjectMocks
     UserService userService;
 
+    /** Mockito 5 不注入继承的泛型字段 M baseMapper（MP 3.5.7 起访问会断言非空），须显式注入。 */
+    @org.junit.jupiter.api.BeforeEach
+    void injectInheritedBaseMapper() {
+        org.springframework.test.util.ReflectionTestUtils.setField(userService, "baseMapper", userMapper);
+    }
+
     @Test
     void requireRealSuperAdmin_rejectsForgedSessionRole() {
         User claimed = user(8L, 1L);

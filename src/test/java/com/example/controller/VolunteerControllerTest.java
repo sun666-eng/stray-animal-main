@@ -67,7 +67,7 @@ class VolunteerControllerTest {
         assertEquals("0", result.getCode());
         verify(service).auditVolunteer(9L, 2, manager);
         Method method = VolunteerController.class.getMethod(
-                "audit", Long.class, Integer.class, javax.servlet.http.HttpServletRequest.class);
+                "audit", Long.class, Integer.class, jakarta.servlet.http.HttpServletRequest.class);
         assertNotNull(method.getAnnotation(AuditLog.class));
     }
 

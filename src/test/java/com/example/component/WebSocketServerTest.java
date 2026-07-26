@@ -8,9 +8,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import javax.websocket.RemoteEndpoint;
-import javax.websocket.Session;
-import javax.websocket.CloseReason;
+import jakarta.websocket.RemoteEndpoint;
+import jakarta.websocket.Session;
+import jakarta.websocket.CloseReason;
 import java.util.Map;
 import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;

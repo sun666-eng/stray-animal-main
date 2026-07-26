@@ -12,9 +12,9 @@ import com.example.service.RoleService;
 import com.example.service.UserService;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -73,7 +73,7 @@ public class RoleController {
     }
 
     @GetMapping("/export")
-    public void export(javax.servlet.http.HttpServletRequest request, HttpServletResponse response) throws IOException {
+    public void export(jakarta.servlet.http.HttpServletRequest request, HttpServletResponse response) throws IOException {
         com.example.entity.User user = (com.example.entity.User) request.getSession().getAttribute("user");
         if (!com.example.common.PermissionUtil.hasFlag(user, "role")) {
             response.setStatus(403);

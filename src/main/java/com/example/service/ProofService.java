@@ -12,7 +12,7 @@ import com.example.mapper.ProofMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 @Service
 public class ProofService extends ServiceImpl<ProofMapper, Proof> {

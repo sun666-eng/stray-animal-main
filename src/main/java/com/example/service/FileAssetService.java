@@ -29,7 +29,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;

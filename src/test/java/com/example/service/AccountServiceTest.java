@@ -21,6 +21,12 @@ class AccountServiceTest {
     @Mock AccountMapper mapper;
     @InjectMocks AccountService service;
 
+    /** Mockito 5 不注入继承的泛型字段 M baseMapper（MP 3.5.7 起访问会断言非空），须显式注入。 */
+    @org.junit.jupiter.api.BeforeEach
+    void injectInheritedBaseMapper() {
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "baseMapper", mapper);
+    }
+
     @Test
     void rejectsZeroExcessScaleAndRange() {
         Account account = valid();

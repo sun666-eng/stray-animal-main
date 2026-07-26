@@ -13,7 +13,7 @@ import com.example.mapper.VisitMapper;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 @Service
 public class AdoptService extends ServiceImpl<AdoptMapper, Adopt> {

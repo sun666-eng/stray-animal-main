@@ -24,10 +24,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
-import javax.validation.Valid;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.RequestMethod;
 import java.io.IOException;
 import java.util.Collection;
@@ -188,7 +188,7 @@ public class UserController {
         } catch (IllegalStateException ignored) {
             // already invalidated
         }
-        javax.servlet.http.Cookie clear = new javax.servlet.http.Cookie("JSESSIONID", "");
+        jakarta.servlet.http.Cookie clear = new jakarta.servlet.http.Cookie("JSESSIONID", "");
         clear.setPath("/");
         clear.setMaxAge(0);
         clear.setHttpOnly(true);

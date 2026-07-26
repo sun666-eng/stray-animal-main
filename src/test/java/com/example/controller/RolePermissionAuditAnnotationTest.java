@@ -13,21 +13,21 @@ class RolePermissionAuditAnnotationTest {
     @Test
     void roleMutationsAreAudited() throws Exception {
         assertAudited(RoleController.class.getMethod("save",
-                com.example.entity.Role.class, javax.servlet.http.HttpServletRequest.class), "新增角色定义");
+                com.example.entity.Role.class, jakarta.servlet.http.HttpServletRequest.class), "新增角色定义");
         assertAudited(RoleController.class.getMethod("update",
-                com.example.entity.Role.class, javax.servlet.http.HttpServletRequest.class), "更新角色定义");
+                com.example.entity.Role.class, jakarta.servlet.http.HttpServletRequest.class), "更新角色定义");
         assertAudited(RoleController.class.getMethod("delete",
-                Long.class, javax.servlet.http.HttpServletRequest.class), "删除角色定义");
+                Long.class, jakarta.servlet.http.HttpServletRequest.class), "删除角色定义");
     }
 
     @Test
     void permissionMutationsAreAudited() throws Exception {
         assertAudited(PermissionController.class.getMethod("save",
-                com.example.entity.Permission.class, javax.servlet.http.HttpServletRequest.class), "新增权限定义");
+                com.example.entity.Permission.class, jakarta.servlet.http.HttpServletRequest.class), "新增权限定义");
         assertAudited(PermissionController.class.getMethod("update",
-                com.example.entity.Permission.class, javax.servlet.http.HttpServletRequest.class), "更新权限定义");
+                com.example.entity.Permission.class, jakarta.servlet.http.HttpServletRequest.class), "更新权限定义");
         assertAudited(PermissionController.class.getMethod("delete",
-                Long.class, javax.servlet.http.HttpServletRequest.class), "删除权限定义");
+                Long.class, jakarta.servlet.http.HttpServletRequest.class), "删除权限定义");
     }
 
     private static void assertAudited(Method method, String action) {

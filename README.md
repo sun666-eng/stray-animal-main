@@ -8,7 +8,7 @@
 
 客户端：Vue.js、Ajax、jQuery、Element UI。
 
-服务端：Spring Boot 2.7.x、MyBatis Plus、MyBatis、JWT、BCrypt、WebSocket、Redis 可选。
+服务端：Spring Boot 3.4.x（Java 17+）、MyBatis Plus、JWT、BCrypt、WebSocket、Redis 可选。
 
 数据库：MySQL。
 
@@ -16,7 +16,7 @@
 
 ## 推荐运行环境
 
-- JDK：8 或 17。当前项目按 Java 8 字节码目标编译，不建议在生产环境混用未验证的 JDK 版本。
+- JDK：17 或 21（Spring Boot 3.x 最低要求 17；按 Java 17 字节码编译）。
 - Maven：3.6+
 - MySQL：5.7+ 或 8.x
 - Redis：可选，仅在启用多实例 WebSocket 广播时需要。

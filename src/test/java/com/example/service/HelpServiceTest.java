@@ -43,6 +43,12 @@ public class HelpServiceTest {
     @InjectMocks
     HelpService helpService;
 
+    /** Mockito 5 不注入继承的泛型字段 M baseMapper（MP 3.5.7 起访问会断言非空），须显式注入。 */
+    @org.junit.jupiter.api.BeforeEach
+    void injectInheritedBaseMapper() {
+        org.springframework.test.util.ReflectionTestUtils.setField(helpService, "baseMapper", helpMapper);
+    }
+
     @Test
     public void userSubmit_clearsReservedAndServerOwnedFields() {
         User user = new User();
@@ -210,7 +216,7 @@ public class HelpServiceTest {
                 () -> helpService.updateHelp(patch, manager));
 
         assertEquals("400", ex.getCode());
-        verify(helpMapper, never()).updateById(any());
+        verify(helpMapper, never()).updateById(any(com.example.entity.Help.class));
     }
 
     @Test
