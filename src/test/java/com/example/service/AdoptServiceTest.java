@@ -58,8 +58,8 @@ public class AdoptServiceTest {
         when(animalService.lockState(1L)).thenReturn(0, 1);
         when(animalService.compareAndSetState(1L, 1, 1)).thenReturn(true);
         when(adoptMapper.insert(any(Adopt.class))).thenReturn(1);
-        // approvedCount=0 for submit check; then sync counts
-        when(adoptMapper.selectCount(any())).thenReturn(0L, 0L, 0L, 1L);
+        // 重复校验现走 getOne(selectOne，未打桩=无旧申请)；count 序列：approved 校验 + sync 两次
+        when(adoptMapper.selectCount(any())).thenReturn(0L, 0L, 1L);
 
         Adopt adopt = new Adopt();
         adopt.setAid(1L);
@@ -87,7 +87,7 @@ public class AdoptServiceTest {
         when(animalService.getById(1L)).thenReturn(animal);
         when(animalService.compareAndSetState(1L, 1, 1)).thenReturn(true);
         when(adoptMapper.insert(any(Adopt.class))).thenReturn(1);
-        when(adoptMapper.selectCount(any())).thenReturn(0L, 0L, 0L, 2L);
+        when(adoptMapper.selectCount(any())).thenReturn(0L, 0L, 2L);
         Adopt adopt = new Adopt();
         adopt.setAid(1L);
         fillValidApplication(adopt);
@@ -107,7 +107,11 @@ public class AdoptServiceTest {
         animal.setId(1L);
         when(animalService.lockState(1L)).thenReturn(1);
         when(animalService.getById(1L)).thenReturn(animal);
-        when(adoptMapper.selectCount(any())).thenReturn(1L);
+        Adopt pendingPrevious = new Adopt();
+        pendingPrevious.setAid(1L);
+        pendingPrevious.setUid(3L);
+        pendingPrevious.setVstate(0);
+        when(adoptMapper.selectOne(any(), any(boolean.class))).thenReturn(pendingPrevious);
         Adopt adopt = new Adopt();
         adopt.setAid(1L);
         fillValidApplication(adopt);
@@ -119,6 +123,38 @@ public class AdoptServiceTest {
 
         assertEquals("409", ex.getCode());
         verify(adoptMapper, org.mockito.Mockito.never()).insert(any(com.example.entity.Adopt.class));
+    }
+
+    @Test
+    public void submitAdopt_revivesRejectedApplicationInsteadOf409() {
+        Animal animal = new Animal();
+        animal.setId(1L);
+        animal.setTname("小白");
+        animal.setTpic("pic");
+        when(animalService.lockState(1L)).thenReturn(0, 1);
+        when(animalService.getById(1L)).thenReturn(animal);
+        when(animalService.compareAndSetState(1L, 0, 1)).thenReturn(true);
+        when(animalService.compareAndSetState(1L, 1, 1)).thenReturn(true);
+        Adopt rejectedPrevious = new Adopt();
+        rejectedPrevious.setAid(1L);
+        rejectedPrevious.setUid(3L);
+        rejectedPrevious.setVstate(2);
+        when(adoptMapper.selectOne(any(), any(boolean.class))).thenReturn(rejectedPrevious);
+        when(adoptMapper.update(any(Adopt.class), any())).thenReturn(1);
+        when(adoptMapper.selectCount(any())).thenReturn(0L, 0L, 1L);
+
+        Adopt adopt = new Adopt();
+        adopt.setAid(1L);
+        fillValidApplication(adopt);
+        User user = new User();
+        user.setId(3L);
+        user.setUsername("second-chance");
+
+        assertTrue(adoptService.submitAdopt(adopt, user, false));
+
+        // 复合主键旧行被复活为待审，而不是插入新行或 409
+        verify(adoptMapper, never()).insert(any(Adopt.class));
+        verify(adoptMapper).update(any(Adopt.class), any());
     }
 
     @Test
@@ -219,7 +255,7 @@ public class AdoptServiceTest {
         when(animalService.compareAndSetState(1L, 1, 1)).thenReturn(true);
         when(animalService.lockState(1L)).thenReturn(1);
         when(adoptMapper.insert(any(Adopt.class))).thenReturn(1);
-        when(adoptMapper.selectCount(any())).thenReturn(0L, 0L, 0L, 1L);
+        when(adoptMapper.selectCount(any())).thenReturn(0L, 0L, 1L);
         Adopt submitted = new Adopt();
         submitted.setAid(1L);
         submitted.setUid(999L);

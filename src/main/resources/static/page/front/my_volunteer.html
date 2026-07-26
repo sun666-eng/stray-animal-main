@@ -37,6 +37,7 @@
           <div class="ui-volunteer-record-head"><div><span class="ui-record-id">申请 #{{ item.id }}</span><h2>{{ item.name || '未填写姓名' }}</h2></div><span class="ui-badge" :class="badgeClass(item.vstate)">{{ stateText(item.vstate) }}</span></div>
           <dl class="ui-volunteer-facts"><div><dt>现居地</dt><dd>{{ item.location || '-' }}</dd></div><div><dt>可参与时间</dt><dd>{{ spareTime(item.sparetime) }}</dd></div><div><dt>是否到过基地</dt><dd>{{ visitText(item.isvisit) }}</dd></div><div><dt>联系电话</dt><dd>{{ item.tel || '-' }}</dd></div><div><dt>电子邮箱</dt><dd>{{ item.email || '-' }}</dd></div><div><dt>微信号</dt><dd>{{ item.wechat || '-' }}</dd></div></dl>
           <div class="ui-volunteer-statement"><strong>能力与参与意向</strong><p>{{ item.moreability || '未填写' }}</p></div>
+          <div v-if="Number(item.vstate)===0" class="ui-form-actions"><button class="ui-button is-ghost" type="button" :disabled="withdrawing===item.id" @click="withdraw(item)">{{ withdrawing===item.id ? '正在撤回…' : '撤回申请' }}</button></div>
         </article>
       </div>
       <div v-if="!loading&&!error&&totalPages>1" class="ui-pagination"><span>第 {{ pageNum }} 页，共 {{ total }} 条记录</span><div class="ui-page-buttons"><button type="button" :disabled="pageNum===1" aria-label="上一页" @click="load(pageNum-1)">‹</button><button v-for="page in pages" :key="page" type="button" :class="{'is-current':page===pageNum}" :aria-current="page===pageNum?'page':null" @click="load(page)">{{ page }}</button><button type="button" :disabled="pageNum===totalPages" aria-label="下一页" @click="load(pageNum+1)">›</button></div></div>
@@ -59,7 +60,7 @@
       document.getElementById('authWait').hidden = true;
       new Vue({
         el: '#app',
-        data: { user: authenticatedUser, records: [], loading: true, error: '', pageNum: 1, pageSize: 8, total: 0, totalPages: 1, mobileOpen: false, accountOpen: false },
+        data: { user: authenticatedUser, records: [], loading: true, error: '', pageNum: 1, pageSize: 8, total: 0, totalPages: 1, mobileOpen: false, accountOpen: false, withdrawing: null },
         computed: {
           userInitial: function () { return this.user.username ? this.user.username.slice(0, 1).toUpperCase() : 'U'; },
           pages: function () { var result = []; var start = Math.max(1, this.pageNum - 2); var end = Math.min(this.totalPages, start + 4); start = Math.max(1, end - 4); for (var page = start; page <= end; page += 1) result.push(page); return result; }
@@ -68,6 +69,17 @@
         methods: {
           closeMenus: function () { this.mobileOpen = false; this.accountOpen = false; },
           logout: function () { AuthSession.logout(); },
+          withdraw: function (item) {
+            var vm = this;
+            if (vm.withdrawing) return;
+            vm.withdrawing = item.id;
+            $.ajax({ url: '/api/volunteer/' + encodeURIComponent(item.id), type: 'DELETE' }).done(function (res) {
+              if (res && res.code === '0') { vm.load(vm.pageNum); return; }
+              vm.error = (res && res.msg) || '撤回失败，请稍后重试。';
+            }).fail(function (xhr) {
+              vm.error = (xhr.responseJSON && xhr.responseJSON.msg) || '撤回失败，请稍后重试。';
+            }).always(function () { vm.withdrawing = null; });
+          },
           load: function (page) {
             var vm = this;
             vm.loading = true;

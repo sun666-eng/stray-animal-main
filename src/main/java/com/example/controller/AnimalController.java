@@ -87,11 +87,28 @@ public class AnimalController {
         }
         if (!Integer.valueOf(0).equals(animal.getTstate())
                 && !Integer.valueOf(1).equals(animal.getTstate())
-                && !PermissionUtil.hasFlag(sessionUser(request), "animal")) {
+                && !PermissionUtil.hasFlag(sessionUser(request), "animal")
+                && !isApplicant(sessionUser(request), id)) {
             return Result.error("404", "动物信息不存在");
         }
         return Result.success(animal);
     }
+
+    /**
+     * 审计修复 H1：动物进入已领养态(tstate=2)后，领养申请人（含已通过/被驳回者）
+     * 仍可查看档案——my_adopt/my_visit 的「查看动物」入口此前对他们全部 404。
+     * 匿名与无关用户维持 404 不变（防枚举）。
+     */
+    private boolean isApplicant(User user, Long animalId) {
+        if (user == null || user.getId() == null) {
+            return false;
+        }
+        return adoptService.count(Wrappers.<com.example.entity.Adopt>query()
+                .eq("aid", animalId).eq("uid", user.getId())) > 0;
+    }
+
+    @Resource
+    private com.example.service.AdoptService adoptService;
 
     @GetMapping
     public Result<List<Animal>> findAll() {

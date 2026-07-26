@@ -143,10 +143,10 @@ public class HelpService extends ServiceImpl<HelpMapper, Help> {
             String prev = oldPic == null ? "" : oldPic.trim();
             if (next.isEmpty()) {
                 if (!prev.isEmpty()) {
-                    fileAssetService.unbindIfMatches(prev, "help", help.getId());
+                    fileAssetService.retireIfMatches(prev, "help", help.getId());
                 }
             } else if (!next.equals(prev) && !prev.isEmpty()) {
-                fileAssetService.unbindIfMatches(prev, "help", help.getId());
+                fileAssetService.retireIfMatches(prev, "help", help.getId());
             }
         }
         return true;

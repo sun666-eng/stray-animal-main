@@ -91,8 +91,10 @@ public class FileAssetService extends ServiceImpl<FileAssetMapper, FileAsset> {
 
     private static final long MAX_IMAGE_PIXELS = 25_000_000L;
 
+    // 审计修复 L6：移除 purpose=notice——公告无图片字段、全系统零绑定点零前端调用，
+    // 该用途上传的文件只会在 24h 后被静默清理，属无出口的死分支。
     private static final Set<String> KNOWN_PURPOSES = new HashSet<>(Arrays.asList(
-            "animal", "avatar", "notice", "proof", "visit", "volunteer", "help", "private"
+            "animal", "avatar", "proof", "visit", "volunteer", "help", "private"
     ));
 
     private static final Set<String> IMAGE_EXT = new HashSet<>(Arrays.asList(
@@ -109,8 +111,7 @@ public class FileAssetService extends ServiceImpl<FileAssetMapper, FileAsset> {
 
     public String visibilityForPurpose(String purpose) {
         // Public image purposes remain private until a business record owns them.
-        if ("avatar".equals(normalizePurpose(purpose)) || "animal".equals(normalizePurpose(purpose))
-                || "notice".equals(normalizePurpose(purpose))) {
+        if ("avatar".equals(normalizePurpose(purpose)) || "animal".equals(normalizePurpose(purpose))) {
             return VIS_PRIVATE;
         }
         String p = normalizePurpose(purpose);
@@ -217,12 +218,6 @@ public class FileAssetService extends ServiceImpl<FileAssetMapper, FileAsset> {
                 throw new CustomException("403", "无权上传动物公开图片");
             }
             return "animal";
-        }
-        if ("notice".equals(req)) {
-            if (!PermissionUtil.hasFlag(user, "notice")) {
-                throw new CustomException("403", "无权上传公告图片");
-            }
-            return "notice";
         }
         if ("avatar".equals(req)) {
             if (user == null || user.getId() == null) {

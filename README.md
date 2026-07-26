@@ -136,7 +136,7 @@ http://localhost:9999/page/end
 - 上传目录不要指向项目源码目录或临时目录。
 - 生产环境必须收紧 CORS 允许来源。
 - 状态变更 API 须带 `X-CSRF-Token`（登录响应或 `GET /api/user/csrf`）。
-- 文件上传建议带 `purpose`：`animal`/`avatar`/`notice`（公开），`proof`/`visit`/`volunteer`/`help`（私有）。
+- 文件上传建议带 `purpose`：`animal`/`avatar`（绑定业务后公开），`proof`/`visit`/`volunteer`/`help`（私有）。
 - 上传走 `/api/files/{flag}`，**不要**再依赖 `/file/**` 直链上传目录。
 - WebSocket 聊天连接使用登录后 `/api/user/ws-ticket` 一次性票据。
 

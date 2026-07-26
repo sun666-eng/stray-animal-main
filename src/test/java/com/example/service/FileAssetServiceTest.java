@@ -184,10 +184,11 @@ public class FileAssetServiceTest {
     }
 
     @Test
-    public void noticeRequiresNoticeFlag() {
+    public void noticePurposeIsRetired_fallsBackToPrivate() {
+        // 审计修复 L6：notice 用途已移除（无绑定点的死分支），归一化回退到 private
         User user = new User();
         user.setId(3L);
-        assertThrows(CustomException.class, () -> service.resolvePurposeForUpload(user, "notice"));
+        assertEquals("private", service.resolvePurposeForUpload(user, "notice"));
     }
 
     @Test

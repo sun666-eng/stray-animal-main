@@ -212,7 +212,7 @@ class VolunteerServiceTest {
 
         verify(fileAssetService).bindToBusiness(actor, "new-photo", "volunteer",
                 "volunteer", 2L, false);
-        verify(fileAssetService).unbindIfMatches("old-photo", "volunteer", 2L);
+        verify(fileAssetService).retireIfMatches("old-photo", "volunteer", 2L);
     }
 
     @Test

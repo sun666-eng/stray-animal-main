@@ -104,23 +104,41 @@ class PermissionServiceSecurityTest {
     }
 
     @Test
-    void updateDefinition_rejectsPermissionReferencedByRole() {
+    void updateDefinition_rejectsSemanticChangeWhenReferenced() {
+        // 审计修复 H2：仅 flag/path（鉴权语义）变更才要求未被引用
         User actor = user(1L, 1L);
         when(userMapper.selectById(1L)).thenReturn(actor);
         Permission stored = permission("visit", "/page/end/visit.html");
         stored.setId(7L);
         when(permissionMapper.selectById(7L)).thenReturn(stored);
-        // 规范化 Phase 1：引用检查改查 role_permission 关联表
         when(rolePermissionMapper.selectCount(any())).thenReturn(1L);
-        Permission update = permission("visit", "/page/end/visit.html");
+        Permission update = permission("visit", "/page/end/proof.html");
         update.setId(7L);
-        update.setDescription("changed");
 
         CustomException error = assertThrows(CustomException.class,
                 () -> permissionService.updateDefinition(update, actor));
 
         assertEquals("409", error.getCode());
         verify(permissionMapper, never()).updateById(any(Permission.class));
+    }
+
+    @Test
+    void updateDefinition_allowsNameDescriptionEditWhenReferenced() {
+        // 审计修复 H2：被内置角色引用的种子权限也必须能改名称/描述（原闭环无出口）
+        User actor = user(1L, 1L);
+        when(userMapper.selectById(1L)).thenReturn(actor);
+        Permission stored = permission("visit", "/page/end/visit.html");
+        stored.setId(7L);
+        when(permissionMapper.selectById(7L)).thenReturn(stored);
+        when(permissionMapper.updateById(any(Permission.class))).thenReturn(1);
+        Permission update = permission("visit", "/page/end/visit.html");
+        update.setId(7L);
+        update.setDescription("changed");
+
+        permissionService.updateDefinition(update, actor);
+
+        verify(permissionMapper).updateById(any(Permission.class));
+        verify(rolePermissionMapper, never()).selectCount(any());
     }
 
     @Test

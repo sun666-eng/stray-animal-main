@@ -314,6 +314,11 @@ public class AuthInterceptor implements HandlerInterceptor {
         if (path.startsWith("/api/volunteer/mine")) {
             return hasAnyPermissionFlag(user, Arrays.asList("apply", "volunteer"));
         }
+        // 审计修复 M3：申请人撤回自己的待审义工申请。归属与状态校验在
+        // VolunteerService.deleteVolunteer（Service 层早已实现并测试，此前被本拦截器挡死）。
+        if (path.matches("^/api/volunteer/\\d+$") && "DELETE".equalsIgnoreCase(method)) {
+            return hasAnyPermissionFlag(user, Arrays.asList("apply", "volunteer"));
+        }
         if (path.startsWith("/api/help/mine") || path.startsWith("/api/help/chat")) {
             return hasAnyPermissionFlag(user, Arrays.asList("im", "help", "rescue"));
         }

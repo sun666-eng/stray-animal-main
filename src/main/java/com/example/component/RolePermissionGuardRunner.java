@@ -212,21 +212,72 @@ public class RolePermissionGuardRunner implements ApplicationRunner {
         }
     }
 
+    private static final String ROLE3_SLIM_JSON =
+            "{\"id\":3,\"name\":\"普通用户\",\"description\":\"部分非工作权限\",\"permission\":null}";
+    private static final String ROLE4_SLIM_JSON =
+            "{\"id\":4,\"name\":\"认证义工\",\"description\":\"义工审核通过标记，无后台管理权限\",\"permission\":null}";
+    private static final int MAX_USER_SCAN = 10000;
+
     /**
-     * 用户同时挂 role3 + role2（志愿者后台）时，降为 role3 + role4，收回越权。
-     * 直接写入规范 JSON，避免半残字符串导致登录后 permission 为空。
+     * 全量拉取 (id, role JSON) 并在 Java 端用 RoleAssignmentPolicy.extractRoleId 精确解析角色 ID 集合。
+     * 修复审计问题 L5：旧实现用 LIKE '%"id":2%' 子串匹配，两位数自定义角色（20-29 等）
+     * 会被误判为角色2；register 落库的完整 role3 JSON 内嵌权限 id 也会被误匹配。
+     */
+    private java.util.Map<Long, java.util.Set<Long>> scanUserRoleIds(List<String> errors) {
+        java.util.Map<Long, java.util.Set<Long>> result = new java.util.LinkedHashMap<>();
+        List<Object[]> rows = jdbcTemplate.query(
+                "SELECT id, role FROM t_user LIMIT " + (MAX_USER_SCAN + 1),
+                (rs, i) -> new Object[]{rs.getLong(1), rs.getString(2)});
+        if (rows.size() > MAX_USER_SCAN) {
+            errors.add("用户数量超过角色守护扫描上限 " + MAX_USER_SCAN + "，请人工核查角色数据");
+            return result;
+        }
+        for (Object[] row : rows) {
+            java.util.Set<Long> ids = new java.util.LinkedHashSet<>();
+            String json = (String) row[1];
+            if (json != null && !json.trim().isEmpty()) {
+                try {
+                    for (Object item : cn.hutool.json.JSONUtil.parseArray(json)) {
+                        Long roleId = com.example.common.RoleAssignmentPolicy.extractRoleId(item);
+                        if (roleId != null) {
+                            ids.add(roleId);
+                        }
+                    }
+                } catch (Exception ignored) {
+                    // 非法 JSON 由其他守护处理，此处不误判
+                }
+            }
+            result.put((Long) row[0], ids);
+        }
+        return result;
+    }
+
+    /** 该用户是否有已通过的义工申请（role4 的唯一合法来源）。 */
+    private boolean hasApprovedVolunteer(Long userId) {
+        try {
+            Integer cnt = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM t_volunteer WHERE uid = ? AND vstate = 1", Integer.class, userId);
+            return cnt != null && cnt > 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * 用户同时挂 role3 + role2（志愿者后台）时收回越权。
+     * 修复审计问题 H3：降权目标不再无条件授予 role4——仅当该用户确有已通过的
+     * 义工申请才保留徽章（role4 是审核结果的派生角色，不能凭空发放）。
      */
     private void demoteOverPrivilegedUsers(List<String> errors) {
-        final String safeDualRoleJson =
-                "[{\"id\":3,\"name\":\"普通用户\",\"description\":\"部分非工作权限\",\"permission\":null},"
-                        + "{\"id\":4,\"name\":\"认证义工\",\"description\":\"义工审核通过标记，无后台管理权限\",\"permission\":null}]";
         try {
-            List<Long> ids = jdbcTemplate.query(
-                    "SELECT id FROM t_user WHERE "
-                            + "(role LIKE '%\"id\":2%' OR role LIKE '%\"id\": 2%') "
-                            + "AND (role LIKE '%\"id\":3%' OR role LIKE '%\"id\": 3%')",
-                    (rs, i) -> rs.getLong(1));
-            if (ids == null || ids.isEmpty()) {
+            java.util.Map<Long, java.util.Set<Long>> userRoles = scanUserRoleIds(errors);
+            List<Long> ids = new java.util.ArrayList<>();
+            for (java.util.Map.Entry<Long, java.util.Set<Long>> e : userRoles.entrySet()) {
+                if (e.getValue().contains(2L) && e.getValue().contains(3L)) {
+                    ids.add(e.getKey());
+                }
+            }
+            if (ids.isEmpty()) {
                 return;
             }
             if (!autoFix) {
@@ -234,8 +285,12 @@ public class RolePermissionGuardRunner implements ApplicationRunner {
                 return;
             }
             for (Long id : ids) {
-                jdbcTemplate.update("UPDATE t_user SET role = ? WHERE id = ?", safeDualRoleJson, id);
-                log.warn("RolePermissionGuard 用户 id={} 重置为 角色3+4（收回 role2 后台权）", id);
+                boolean badge = hasApprovedVolunteer(id);
+                String json = badge ? "[" + ROLE3_SLIM_JSON + "," + ROLE4_SLIM_JSON + "]"
+                                    : "[" + ROLE3_SLIM_JSON + "]";
+                jdbcTemplate.update("UPDATE t_user SET role = ? WHERE id = ?", json, id);
+                log.warn("RolePermissionGuard 用户 id={} 重置为 角色3{}（收回 role2 后台权）",
+                        id, badge ? "+4(有已通过义工申请)" : "");
             }
         } catch (Exception e) {
             log.warn("demoteOverPrivilegedUsers 跳过: {}", e.getMessage());
@@ -247,25 +302,23 @@ public class RolePermissionGuardRunner implements ApplicationRunner {
      * 修复为 role3+role4 标准双角色。
      */
     private void ensureBadgeUsersKeepOrdinaryRole(List<String> errors) {
-        final String safeDualRoleJson =
-                "[{\"id\":3,\"name\":\"普通用户\",\"description\":\"部分非工作权限\",\"permission\":null},"
-                        + "{\"id\":4,\"name\":\"认证义工\",\"description\":\"义工审核通过标记，无后台管理权限\",\"permission\":null}]";
         try {
-            // 含 id:4，且不含 id:3 / id:1 / id:2（兼容 "id":4 与 "id": 4）
-            List<Long> ids = jdbcTemplate.query(
-                    "SELECT id FROM t_user WHERE "
-                            + "(role LIKE '%\"id\":4%' OR role LIKE '%\"id\": 4%') "
-                            + "AND role NOT LIKE '%\"id\":3%' AND role NOT LIKE '%\"id\": 3%' "
-                            + "AND role NOT LIKE '%\"id\":1%' AND role NOT LIKE '%\"id\": 1%' "
-                            + "AND role NOT LIKE '%\"id\":2%' AND role NOT LIKE '%\"id\": 2%'",
-                    (rs, i) -> rs.getLong(1));
-            if (ids == null || ids.isEmpty()) {
+            java.util.Map<Long, java.util.Set<Long>> userRoles = scanUserRoleIds(errors);
+            List<Long> ids = new java.util.ArrayList<>();
+            for (java.util.Map.Entry<Long, java.util.Set<Long>> e : userRoles.entrySet()) {
+                java.util.Set<Long> roles = e.getValue();
+                if (roles.contains(4L) && !roles.contains(1L) && !roles.contains(2L) && !roles.contains(3L)) {
+                    ids.add(e.getKey());
+                }
+            }
+            if (ids.isEmpty()) {
                 return;
             }
             if (!autoFix) {
                 errors.add("发现 " + ids.size() + " 个用户仅有认证义工徽章而无普通用户角色（permission 将为空）");
                 return;
             }
+            String safeDualRoleJson = "[" + ROLE3_SLIM_JSON + "," + ROLE4_SLIM_JSON + "]";
             for (Long id : ids) {
                 jdbcTemplate.update("UPDATE t_user SET role = ? WHERE id = ?", safeDualRoleJson, id);
                 log.warn("RolePermissionGuard 用户 id={} 补回角色3（原仅有空徽章 role4）", id);

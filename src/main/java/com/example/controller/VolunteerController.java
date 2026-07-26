@@ -117,7 +117,12 @@ public class VolunteerController {
         User user = (User) request.getSession().getAttribute("user");
         long safePageNum = pageNum == null ? 1 : Math.max(1, pageNum);
         long safePageSize = pageSize == null ? 10 : Math.max(1, Math.min(50, pageSize));
-        if (!PermissionUtil.hasFlag(user, "volunteer")) {
+        // 审计修复 M2：/mine 默认名副其实——所有用户（含 volunteer 审核员）按 uid 查自己的申请；
+        // 仅当显式携带搜索参数时，volunteer 管理员才进入检索分支。
+        // 旧行为：flag 持有者无参数时直接返回空页，自己的申请永久不可见，与提交侧 409 矛盾。
+        boolean adminSearch = PermissionUtil.hasFlag(user, "volunteer")
+                && !(username.trim().isEmpty() && phone.trim().isEmpty() && email.trim().isEmpty());
+        if (!adminSearch) {
             if (user == null || user.getId() == null) {
                 return Result.error("403", "只能查看自己的义工申请");
             }
@@ -144,9 +149,6 @@ public class VolunteerController {
         String queryUsername = username;
         String queryPhone = phone;
         String queryEmail = email;
-        if (queryUsername.trim().isEmpty() && queryPhone.trim().isEmpty() && queryEmail.trim().isEmpty()) {
-            return Result.success(new Page<>(safePageNum, safePageSize));
-        }
         LambdaQueryWrapper<Volunteer> wrapper = Wrappers.<Volunteer>lambdaQuery();
         wrapper.and(q -> {
             boolean appended = false;

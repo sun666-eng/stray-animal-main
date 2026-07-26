@@ -128,10 +128,10 @@ public class VolunteerService extends ServiceImpl<VolunteerMapper, Volunteer> {
             String prev = oldPic == null ? "" : oldPic.trim();
             if (next.isEmpty()) {
                 if (!prev.isEmpty()) {
-                    fileAssetService.unbindIfMatches(prev, "volunteer", volunteer.getId());
+                    fileAssetService.retireIfMatches(prev, "volunteer", volunteer.getId());
                 }
             } else if (!next.equals(prev) && !prev.isEmpty()) {
-                fileAssetService.unbindIfMatches(prev, "volunteer", volunteer.getId());
+                fileAssetService.retireIfMatches(prev, "volunteer", volunteer.getId());
             }
         }
         return true;

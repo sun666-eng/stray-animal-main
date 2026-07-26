@@ -24,7 +24,7 @@
     <div class="admin-help-layout">
       <section class="admin-help-list" aria-labelledby="helpListTitle">
         <div class="admin-section-head"><div><h2 id="helpListTitle">正式救助工单</h2><p>每次只读取当前页，处理状态和管理员回复通过专用管理接口更新。</p></div></div>
-        <form class="ui-toolbar admin-review-toolbar" role="search" @submit.prevent="load(1)"><label class="ui-search"><span aria-hidden="true">搜索</span><span class="sr-only">按求助标题搜索</span><input v-model.trim="search" type="search" maxlength="120" placeholder="按求助标题搜索"></label><button class="ui-button is-dark" type="submit" :disabled="loading">查询</button><button v-if="search" class="ui-button is-ghost" type="button" @click="resetSearch">清除</button></form>
+        <form class="ui-toolbar admin-review-toolbar" role="search" @submit.prevent="load(1)"><label class="ui-search"><span aria-hidden="true">搜索</span><span class="sr-only">按求助标题搜索</span><input v-model.trim="search" type="search" maxlength="100" placeholder="按求助标题搜索"></label><button class="ui-button is-dark" type="submit" :disabled="loading">查询</button><button v-if="search" class="ui-button is-ghost" type="button" @click="resetSearch">清除</button></form>
         <div class="admin-status-key" aria-label="救助状态说明"><span><i class="is-pending"></i>待处理</span><span><i></i>处理中</span><span><i class="is-done"></i>已完成</span><span><i class="is-closed"></i>已关闭</span></div>
         <div v-if="message" class="admin-inline-message" :class="{'is-error':messageType==='error','is-success':messageType==='success'}" :role="messageType==='error'?'alert':'status'" aria-live="polite">{{ message }}</div>
         <div v-if="loading" class="admin-status" role="status">正在读取当前页救助工单...</div>

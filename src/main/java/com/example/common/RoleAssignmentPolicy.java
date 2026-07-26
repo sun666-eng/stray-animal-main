@@ -27,6 +27,7 @@ import java.util.Set;
 public class RoleAssignmentPolicy {
 
     public static final long SUPER_ADMIN_ROLE_ID = 1L;
+    public static final long LEGACY_VOLUNTEER_ROLE_ID = 2L;
     public static final long DEFAULT_USER_ROLE_ID = 3L;
     public static final long DERIVED_VOLUNTEER_ROLE_ID = 4L;
 
@@ -132,6 +133,11 @@ public class RoleAssignmentPolicy {
         }
         if (ids.contains(DERIVED_VOLUNTEER_ROLE_ID)) {
             throw new CustomException("400", "认证义工角色由审核结果派生，不能通过用户接口分配或移除");
+        }
+        // 与启动期 RolePermissionGuard 契约对齐：角色2(志愿者后台)+角色3(普通用户)组合视为越权，
+        // 运行期若放行，重启后会被 Guard 降权（dev 静默改写 / prod 拒绝启动）。
+        if (ids.contains(LEGACY_VOLUNTEER_ROLE_ID) && ids.contains(DEFAULT_USER_ROLE_ID)) {
+            throw new CustomException("400", "志愿者(2)与普通用户(3)角色互斥；义工资质请通过义工审核流程获得");
         }
         if (ids.contains(SUPER_ADMIN_ROLE_ID) && !isSuperAdmin(actor)) {
             throw new CustomException("403", "仅超级管理员可分配超级管理员角色");

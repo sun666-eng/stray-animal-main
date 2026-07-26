@@ -121,8 +121,14 @@ public class UserService extends ServiceImpl<UserMapper, User> {
         if (defaultRole == null) {
             throw new CustomException("500", "普通用户角色未配置");
         }
+        // 只落 slim 摘要（id/name/description），不把内嵌 permission JSON 写进 t_user.role——
+        // 与 resolveRolesForWrite 的 slim 约定一致，权限一律经 role_permission 实时解析
+        Role slimRole = new Role();
+        slimRole.setId(defaultRole.getId());
+        slimRole.setName(defaultRole.getName());
+        slimRole.setDescription(defaultRole.getDescription());
         List<Role> roles = new ArrayList<>();
-        roles.add(defaultRole);
+        roles.add(slimRole);
         user.setRole(roles);
         save(user);
         User newUser = getOne((Wrappers.<User>lambdaQuery().eq(User::getUsername, user.getUsername())));
@@ -406,10 +412,10 @@ public class UserService extends ServiceImpl<UserMapper, User> {
             String prev = previous == null ? "" : previous.trim();
             if (next.isEmpty()) {
                 if (!prev.isEmpty()) {
-                    fileAssetService.unbindIfMatches(prev, "user", targetId);
+                    fileAssetService.retireIfMatches(prev, "user", targetId);
                 }
             } else if (!next.equals(prev) && !prev.isEmpty()) {
-                fileAssetService.unbindIfMatches(prev, "user", targetId);
+                fileAssetService.retireIfMatches(prev, "user", targetId);
             }
         }
         return true;

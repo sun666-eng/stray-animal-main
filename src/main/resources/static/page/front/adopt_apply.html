@@ -24,6 +24,7 @@
                 </section>
                 <form class="ui-panel" novalidate @submit.prevent="submit">
                     <div class="ui-panel-head"><div><h2>领养条件</h2><p>当前申请账户：{{ user.username }}。账户身份、动物名称、图片和审核状态均由服务端确定。</p></div><span class="ui-badge is-pending">待审核</span></div>
+                    <div v-if="existingNotice" class="ui-inline-alert" :role="existingBlocked?'alert':'status'">{{ existingNotice }} <a v-if="existingBlocked" class="ui-button is-ghost" href="./my_adopt.html">查看我的申请</a></div>
                     <div v-if="Number(animal.tstate)===1" class="ui-inline-alert" role="status">该动物已有待审申请，你仍可提交；工作人员最终只会批准一位申请人。</div><div v-else-if="Number(animal.tstate)!==0" class="ui-inline-alert" role="alert">该动物已完成领养，不能再提交申请。</div>
                     <div class="ui-form-grid">
                         <div class="ui-form-field"><label for="adoptAge">年龄</label><input id="adoptAge" v-model.number="form.age" class="ui-form-input" type="number" min="18" max="100" inputmode="numeric"></div>
@@ -40,7 +41,7 @@
                         <div class="ui-form-field is-full"><label for="adoptAddress">家庭住址</label><textarea id="adoptAddress" v-model.trim="form.location" class="ui-form-textarea" maxlength="120" placeholder="填写城市、区县和可用于回访的详细地址"></textarea></div>
                     </div>
                     <div v-if="formError" class="ui-form-alert" role="alert">{{ formError }}</div>
-                    <div class="ui-form-actions"><button class="ui-button is-primary" type="submit" :disabled="submitting || ![0,1].includes(Number(animal.tstate))">{{ submitting ? '正在提交…' : '确认提交申请' }}</button><a class="ui-button is-ghost" :href="'./animal_detail.html?id='+encodeURIComponent(animal.id)">返回动物详情</a></div>
+                    <div class="ui-form-actions"><button class="ui-button is-primary" type="submit" :disabled="submitting || existingBlocked || ![0,1].includes(Number(animal.tstate))">{{ submitting ? '正在提交…' : '确认提交申请' }}</button><a class="ui-button is-ghost" :href="'./animal_detail.html?id='+encodeURIComponent(animal.id)">返回动物详情</a></div>
                     <div class="sr-only" aria-live="polite">{{ liveMessage }}</div>
                 </form>
             </template>
@@ -52,11 +53,13 @@
 <script>
 AuthSession.bootstrap({requireAuth:true,allowCachedOnNetworkError:false,onDone:function(ok,user){if(!ok||!user)return;document.getElementById('authWait').hidden=true;new Vue({
   el:'#app',
-  data:{user:{},animal:null,loading:true,pageError:'',formError:'',liveMessage:'',submitting:false,mobileOpen:false,form:{gender:'',age:null,maritalstatus:null,occupation:'',tel:'',location:'',fixresident:null,income:null,experience:null,petnum:0,familyagree:null,wechat:''}},
+  data:{user:{},animal:null,loading:true,pageError:'',formError:'',existingNotice:'',existingBlocked:false,liveMessage:'',submitting:false,mobileOpen:false,form:{gender:'',age:null,maritalstatus:null,occupation:'',tel:'',location:'',fixresident:null,income:null,experience:null,petnum:0,familyagree:null,wechat:''}},
   computed:{userInitial(){return this.user.username?this.user.username.slice(0,1).toUpperCase():'U';}},
   created(){this.user=user;this.loadAnimal();},
   methods:{
-    loadAnimal(){const id=new URLSearchParams(location.search).get('animalId');if(!id){this.loading=false;this.pageError='缺少动物编号，请从动物详情页重新进入。';return;}$.ajax({url:'/api/animal/'+encodeURIComponent(id),type:'GET'}).done(res=>{if(res&&res.code==='0'&&res.data)this.animal=res.data;else this.pageError=(res&&res.msg)||'动物不存在。';}).fail(()=>{this.pageError='动物信息读取失败，请稍后重试。';}).always(()=>{this.loading=false;});},
+    loadAnimal(){const id=new URLSearchParams(location.search).get('animalId');if(!id){this.loading=false;this.pageError='缺少动物编号，请从动物详情页重新进入。';return;}$.ajax({url:'/api/animal/'+encodeURIComponent(id),type:'GET'}).done(res=>{if(res&&res.code==='0'&&res.data){this.animal=res.data;this.checkExisting(id);}else this.pageError=(res&&res.msg)||'动物不存在。';}).fail(()=>{this.pageError='动物信息读取失败，请稍后重试。';}).always(()=>{this.loading=false;});},
+    // 审计修复 M1：填表前预检既有申请，避免填完 4 分钟问卷才被 409
+    checkExisting(id){$.ajax({url:'/api/adopt/mine/'+encodeURIComponent(id),type:'GET'}).done(res=>{if(!res||res.code!=='0'||!res.data)return;const v=Number(res.data.vstate);if(v===0||v===1){this.existingBlocked=true;this.existingNotice=v===0?'你已提交过该动物的申请，正在等待审核。':'你的申请已通过，无需重复提交。';}else{this.existingNotice='你此前对该动物的申请未通过；重新提交将以本次填写的内容替换原申请。';}});},
     validate(){if(![0,1].includes(Number(this.animal.tstate)))return '该动物当前不可申请';if(!this.form.age||Number(this.form.age)<18||Number(this.form.age)>100)return '申请人年龄需在 18–100 岁之间';if(!this.form.gender)return '请选择性别';if(!/^1\d{10}$/.test(this.form.tel))return '请输入正确的 11 位手机号';if(!this.form.wechat)return '请输入微信号';if(!this.form.occupation)return '请输入职业';if(this.form.maritalstatus===null||this.form.fixresident===null||this.form.income===null||this.form.experience===null||this.form.familyagree===null)return '请完成所有选择项';if(this.form.petnum===null||Number(this.form.petnum)<0)return '宠物数量不能小于 0';if(!this.form.location)return '请输入家庭住址';return '';},
     submit(){if(this.submitting)return;this.formError=this.validate();if(this.formError)return;this.submitting=true;this.liveMessage='正在提交领养申请';const payload={aid:Number(this.animal.id),gender:this.form.gender,age:Number(this.form.age),maritalstatus:Number(this.form.maritalstatus),occupation:this.form.occupation,tel:String(this.form.tel),location:this.form.location,fixresident:Number(this.form.fixresident),income:Number(this.form.income),experience:Number(this.form.experience),petnum:Number(this.form.petnum),familyagree:Number(this.form.familyagree),wechat:this.form.wechat};$.ajax({url:'/api/adopt',type:'POST',contentType:'application/json',data:JSON.stringify(payload)}).done(res=>{if(res&&res.code==='0'&&res.data===true){this.liveMessage='申请提交成功';location.replace('./my_adopt.html');return;}this.formError=(res&&res.msg)||'申请未提交，请稍后重试。';this.liveMessage=this.formError;}).fail(xhr=>{this.formError=(xhr.responseJSON&&xhr.responseJSON.msg)||'申请未提交，请检查网络后重试。';this.liveMessage=this.formError;}).always(()=>{this.submitting=false;});},
     stateText(value){return StatusText.animal(value);},

@@ -57,6 +57,20 @@ public class RoleAssignmentPolicyTest {
     }
 
     @Test
+    public void role2PlusRole3Combination_isRejected() {
+        // 审计修复 H3：与启动期 RolePermissionGuard 契约对齐——运行期若放行 2+3 组合，
+        // 重启后 dev 会被静默降权、prod 直接拒绝启动
+        User actor = superAdmin();
+        Role r2 = new Role();
+        r2.setId(2L);
+        Role r3 = new Role();
+        r3.setId(3L);
+        CustomException ex = assertThrows(CustomException.class,
+                () -> policy.resolveRolesForWrite(actor, java.util.Arrays.asList(r2, r3), false));
+        assertEquals("400", ex.getCode());
+    }
+
+    @Test
     public void superAdmin_canAssignSuperAdmin() {
         User actor = superAdmin();
         Role superRole = new Role();

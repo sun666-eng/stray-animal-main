@@ -142,7 +142,6 @@ public class PermissionService extends ServiceImpl<PermissionMapper, Permission>
         if (existing == null) {
             throw new CustomException("404", "权限不存在");
         }
-        assertNotReferenced(submitted.getId());
         Permission effective = new Permission();
         effective.setId(existing.getId());
         effective.setName(submitted.getName() == null ? existing.getName() : submitted.getName());
@@ -150,6 +149,13 @@ public class PermissionService extends ServiceImpl<PermissionMapper, Permission>
         effective.setFlag(submitted.getFlag() == null ? existing.getFlag() : submitted.getFlag());
         effective.setPath(submitted.getPath() == null ? existing.getPath() : submitted.getPath());
         normalizeAndValidate(effective, effective.getId());
+        // 审计修复 H2：仅鉴权语义字段（flag/path）变更才要求未被引用；
+        // 名称/描述的修改放行——否则内置角色引用的 15 个种子权限连描述都永远改不了（闭环无出口）。
+        boolean semanticChange = !safeEquals(effective.getFlag(), existing.getFlag())
+                || !safeEquals(effective.getPath(), existing.getPath());
+        if (semanticChange) {
+            assertNotReferenced(submitted.getId());
+        }
         if (permissionMapper.updateById(effective) != 1) {
             throw new CustomException("409", "权限更新失败，请刷新后重试");
         }
@@ -260,6 +266,10 @@ public class PermissionService extends ServiceImpl<PermissionMapper, Permission>
                 throw new CustomException("409", "权限路径已存在");
             }
         }
+    }
+
+    private static boolean safeEquals(String left, String right) {
+        return left == null ? right == null : left.equals(right);
     }
 
     /** 规范化 Phase 1：引用检查由全表 JSON 扫描改为关联表 COUNT，一致且 O(1)。 */

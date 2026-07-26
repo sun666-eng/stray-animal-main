@@ -104,10 +104,10 @@ public class AnimalService extends ServiceImpl<AnimalMapper, Animal> {
             String prev = oldPic == null ? "" : oldPic.trim();
             if (next.isEmpty()) {
                 if (!prev.isEmpty()) {
-                    fileAssetService.unbindIfMatches(prev, "animal", animal.getId());
+                    fileAssetService.retireIfMatches(prev, "animal", animal.getId());
                 }
             } else if (!next.equals(prev) && !prev.isEmpty()) {
-                fileAssetService.unbindIfMatches(prev, "animal", animal.getId());
+                fileAssetService.retireIfMatches(prev, "animal", animal.getId());
             }
         }
         return true;

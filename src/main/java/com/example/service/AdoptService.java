@@ -57,9 +57,13 @@ public class AdoptService extends ServiceImpl<AdoptMapper, Adopt> {
         if (animal == null) {
             throw new CustomException("404", "动物信息不存在");
         }
-        long duplicate = count(new QueryWrapper<Adopt>()
-                .eq("aid", adopt.getAid()).eq("uid", user.getId()));
-        if (duplicate > 0) {
+        // 审计修复 M1：重复校验只拦「活跃」申请（待审/已通过）。
+        // 驳回/其他状态的旧行不再永久 409——动物重新上架后允许原申请人再次申请（复活旧行）。
+        Adopt previous = getOne(new QueryWrapper<Adopt>()
+                .eq("aid", adopt.getAid()).eq("uid", user.getId()).last("FOR UPDATE"), false);
+        if (previous != null
+                && (Integer.valueOf(ADOPT_PENDING).equals(previous.getVstate())
+                    || Integer.valueOf(ADOPT_APPROVED).equals(previous.getVstate()))) {
             throw new CustomException("409", "你已提交过该动物的领养申请");
         }
 
@@ -82,7 +86,22 @@ public class AdoptService extends ServiceImpl<AdoptMapper, Adopt> {
         adopt.setApic(animal.getTpic());
         adopt.setVstate(ADOPT_PENDING);
 
-        boolean saved = save(adopt);
+        boolean saved;
+        if (previous == null) {
+            saved = save(adopt);
+        } else {
+            // 复合主键 (aid,uid) 不允许第二行：把驳回/其他状态的旧行按新表单「复活」为待审申请。
+            // CAS 旧 vstate 防并发复活。
+            Adopt revived = mutableApplication(adopt.getAid(), user.getId(), adopt);
+            revived.setUname(user.getUsername());
+            revived.setAname(animal.getTname());
+            revived.setApic(animal.getTpic());
+            revived.setVstate(ADOPT_PENDING);
+            UpdateWrapper<Adopt> revive = new UpdateWrapper<>();
+            revive.eq("aid", adopt.getAid()).eq("uid", user.getId())
+                    .eq("vstate", previous.getVstate());
+            saved = update(revived, revive);
+        }
         if (!saved) {
             throw new CustomException("500", "领养申请保存失败");
         }
@@ -325,8 +344,10 @@ public class AdoptService extends ServiceImpl<AdoptMapper, Adopt> {
     }
 
     private void validateAdoptState(Integer state) {
-        if (state == null || state < ADOPT_PENDING || state > ADOPT_OTHER) {
-            throw new CustomException("400", "非法的领养状态");
+        // 审计建议：封死 vstate=3(其他状态) 的写入口——前端只发 1/2，状态3仅裸 API 可达，
+        // 进入后不可再审、动物却回到可申请，属休眠陷阱态。存量 3 的行仍可展示与删除。
+        if (state == null || (state != ADOPT_APPROVED && state != ADOPT_REJECTED)) {
+            throw new CustomException("400", "审核结果仅允许通过或驳回");
         }
     }
 
