@@ -21,20 +21,25 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 启动时修复重复的权限名称（例如数据库中存在 flag=help 和 flag=rescue 都叫"救助管理"的情况）。
- * 将 flag=rescue 的权限重命名为"求助咨询"，与 flag=help 的"救助管理"区分开。
+ * 启动时规范化权限定义与角色内嵌权限。
+ * <p>
+ * flag=rescue 是历史遗留的 help 等价管理 flag：全部运行时鉴权
+ * （AuthInterceptor / HelpController / FileAssetService / RoleContracts.ADMIN_FLAGS）
+ * 均视其为管理端权限，因此这里同样按管理 flag 处理——普通用户（角色3）不得保留，
+ * 否则可越权查看救助管理列表。
  */
 @Slf4j
 @Component
 @ConditionalOnProperty(name = "app.data-fix.enabled", havingValue = "true")
 public class DataFixRunner implements CommandLineRunner {
 
+    // 与 RoleContracts.ADMIN_FLAGS 对齐：rescue 是 help 等价的管理 flag
     private static final Set<String> ADMIN_FLAGS = new HashSet<>(Arrays.asList(
-            "user", "role", "permission", "animal", "adopt", "proof", "visit", "volunteer", "account", "notice", "help"
+            "user", "role", "permission", "animal", "adopt", "proof", "visit", "volunteer", "account", "notice", "help", "rescue"
     ));
 
     private static final Set<String> USER_FLAGS = new HashSet<>(Arrays.asList(
-            "adopt_view", "my_adopt", "my_proof", "apply", "im", "rescue"
+            "adopt_view", "my_adopt", "my_proof", "apply", "im"
     ));
 
     private static final Map<String, PermissionPatch> PERMISSION_PATCHES = buildPermissionPatches();
@@ -188,7 +193,8 @@ public class DataFixRunner implements CommandLineRunner {
         patches.put("my_proof", new PermissionPatch("领养凭证入口", "/page/front/adopt_proof.html", "用户端提交和管理自己的领养凭证"));
         patches.put("apply", new PermissionPatch("义工申请", "/page/front/volunteer_apply.html", "用户端提交义工申请"));
         patches.put("im", new PermissionPatch("救助咨询", "/page/front/rescue_apply.html", "用户端提交救助咨询和救助请求"));
-        patches.put("rescue", new PermissionPatch("救助咨询", "/page/front/rescue_apply.html", "用户端提交救助咨询和救助请求"));
+        // rescue 为 help 等价的历史管理 flag，定义按管理端语义规范化
+        patches.put("rescue", new PermissionPatch("救助管理", "/page/end/help.html", "管理救助请求并回复用户（历史 rescue flag，等价 help）"));
         return Collections.unmodifiableMap(patches);
     }
 
