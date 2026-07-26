@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>救助管理 · 归途计划管理</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-  <link rel="stylesheet" href="../../css/product-ui.css?v=20260726">
-  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260726">
+  <link rel="stylesheet" href="../../css/product-ui.css?v=20260727">
+  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260727">
 </head>
 <body>
 <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
@@ -56,8 +56,8 @@
   <div v-if="manageItem" class="admin-dialog-backdrop" @click.self="cancelManage"><section class="admin-dialog" role="dialog" aria-modal="true" aria-labelledby="manageTitle"><div class="admin-dialog-head"><div><span>工单 #{{ manageItem.id }}</span><h2 id="manageTitle">更新处理结果</h2></div><button type="button" aria-label="取消更新救助工单" @click="cancelManage">关闭</button></div><form class="admin-manager-form" @submit.prevent="saveManage"><h3>{{ manageItem.title || '未命名救助请求' }}</h3><p>本操作只更新工单状态和管理员回复，不覆盖申请人提交的现场字段。</p><div class="ui-form-field"><label for="managerStatus">处理状态 <small>必填</small></label><select id="managerStatus" ref="managerStatus" v-model.number="manageForm.status" class="ui-form-input"><option :value="0">待处理</option><option :value="1">处理中</option><option :value="2">已完成</option><option :value="3">已关闭</option></select></div><div class="ui-form-field"><label for="managerRemark">管理员回复 <small>最多 2000 字</small></label><textarea id="managerRemark" v-model.trim="manageForm.remark" class="ui-form-textarea" maxlength="2000" rows="6" placeholder="说明当前处理结果或下一步安排"></textarea><p class="ui-field-hint">{{ manageForm.remark.length }}/2000</p></div><div v-if="manageError" class="admin-inline-message is-error" role="alert">{{ manageError }}</div><div class="admin-dialog-actions"><button class="ui-button is-ghost" type="button" :disabled="manageSaving" @click="cancelManage">取消</button><button class="ui-button is-primary" type="submit" :disabled="manageSaving">{{ manageSaving ? '正在保存...' : '保存状态与回复' }}</button></div></form></section></div>
 </div>
 <script src="../../js/jquery.min.js"></script>
-<script src="../../js/auth-session.js?v=20260726"></script>
-<script src="../../js/admin-auth.js?v=20260726"></script>
+<script src="../../js/auth-session.js?v=20260727"></script>
+<script src="../../js/admin-auth.js?v=20260727"></script>
 <script src="../../js/vue.min.js"></script>
 <script>
 (function () {

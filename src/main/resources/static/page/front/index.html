@@ -6,7 +6,7 @@
     <meta name="description" content="归途计划流浪动物领养、救助与透明公示平台">
     <title>归途计划 · 让每个生命都被认真对待</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-    <link rel="stylesheet" href="../../css/product-ui.css?v=20260726">
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260727">
 </head>
 <body>
 <div id="app" v-cloak>
@@ -87,12 +87,24 @@
                         <p>这些是当前账号可以直接使用的用户端功能，不依赖后台管理权限。</p>
                     </div>
                 </div>
-                <div class="ui-service-grid">
-                    <a v-for="item in services" :key="item.id" class="ui-service-card" :href="item.href">
-                        <strong>{{ item.label }}</strong>
-                        <span>{{ item.desc }}</span>
-                        <em>进入 →</em>
-                    </a>
+                <div v-for="group in serviceGroups" :key="group.id" class="ui-service-group">
+                    <div class="ui-service-group-head"><strong>{{ group.label }}</strong><span v-if="group.hint">{{ group.hint }}</span></div>
+                    <div v-if="group.style==='action'" class="ui-action-grid">
+                        <a v-for="item in group.items" :key="item.id" class="ui-action-card" :href="item.href">
+                            <span class="ui-action-mark" aria-hidden="true">{{ item.mark }}</span>
+                            <strong>{{ item.label }}</strong>
+                            <span>{{ item.desc }}</span>
+                            <em>{{ item.cta }} →</em>
+                        </a>
+                    </div>
+                    <div v-else-if="group.style==='record'" class="ui-record-grid">
+                        <a v-for="item in group.items" :key="item.id" class="ui-record-link" :href="item.href">
+                            <div><strong>{{ item.label }}</strong><span>{{ item.desc }}</span></div><i aria-hidden="true">→</i>
+                        </a>
+                    </div>
+                    <div v-else class="ui-platform-row">
+                        <a v-for="item in group.items" :key="item.id" class="ui-platform-link" :href="item.href">{{ item.label }} <small v-if="item.sub">{{ item.sub }}</small></a>
+                    </div>
                 </div>
             </div>
         </section>
@@ -106,8 +118,8 @@
 </div>
 <script src="../../js/jquery.min.js"></script>
 <script src="../../js/vue.min.js"></script>
-<script src="../../js/auth-session.js?v=20260726"></script>
-<script src="../../js/user-workspace.js?v=20260726"></script>
+<script src="../../js/auth-session.js?v=20260727"></script>
+<script src="../../js/user-workspace.js?v=20260727"></script>
 <script>
 new Vue({
   el: '#app',
@@ -115,7 +127,7 @@ new Vue({
     user: null,
     mobileOpen: false,
     accountOpen: false,
-    services: window.UserWorkspace ? UserWorkspace.services() : [],
+    serviceGroups: window.UserWorkspace ? UserWorkspace.serviceGroups() : [],
     stats: { availableAnimals: 0, adoptedAnimals: 0, approvedVolunteers: 0 },
     statsLoading: true,
     statsError: '',
