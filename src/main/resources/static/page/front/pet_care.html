@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="向照顾知识助手询问动物喂养、健康与行为问题">
+    <title>照顾知识助手 · 归途计划</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260728">
+</head>
+<body>
+<div id="authWait" class="ui-state" role="status"><div><span class="ui-state-mark ui-skeleton"></span><h2>正在验证登录状态</h2></div></div>
+<div id="app" v-cloak>
+    <header class="ui-header"><div class="ui-header-inner"><a class="ui-brand" href="./index.html"><span class="ui-brand-mark">♡</span><span class="ui-brand-copy"><strong>归途计划</strong><small>PAWS ON THE WAY HOME</small></span></a><nav class="ui-nav" aria-label="主导航"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a href="./notice_list.html">救助动态</a><a href="./account_public.html">透明公示</a></nav><div class="ui-header-actions"><button class="ui-icon-button ui-mobile-toggle" type="button" aria-label="切换导航" :aria-expanded="String(mobileOpen)" @click="mobileOpen=!mobileOpen">☰</button><a class="ui-account-trigger" href="./index.html"><span class="ui-avatar">{{ userInitial }}</span><span class="ui-account-name">{{ user.username || '账户' }}</span></a></div></div><nav class="ui-mobile-nav" :class="{'is-open':mobileOpen}" aria-label="移动端导航"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a href="./notice_list.html">救助动态</a><a href="./account_public.html">透明公示</a></nav></header>
+
+    <main class="ui-container ui-workspace">
+        <div class="ui-panel-head"><div><p class="ui-eyebrow">PET CARE ASSISTANT</p><h1 class="ui-workspace-title">照顾知识助手</h1><p>询问喂养、疫苗驱虫、行为习惯、领养适应等日常照顾问题。回答仅供参考，<strong>不能替代兽医诊断</strong>，动物出现异常请及时就医。</p></div></div>
+
+        <section class="ui-panel" aria-label="问答对话">
+            <div ref="chatBox" class="ui-chat-messages" style="max-height:52vh" aria-live="polite" aria-relevant="additions">
+                <div v-if="messages.length===0" class="ui-chat-empty">
+                    <div>你好呀，我是照顾知识助手 ♡<br>可以直接输入问题，或从下面的常见问题开始。</div>
+                </div>
+                <div v-for="(msg, idx) in messages" :key="idx" class="ui-chat-message" :class="{'is-self': msg.role==='user'}">
+                    <span class="ui-chat-avatar">{{ msg.role==='user' ? userInitial : '♡' }}</span>
+                    <div>
+                        <div class="ui-chat-meta"><span>{{ msg.role==='user' ? (user.username||'我') : '照顾助手' }}</span><span v-if="msg.topic">{{ msg.topic }}</span></div>
+                        <div class="ui-chat-bubble" style="white-space:pre-wrap">{{ msg.text }}</div>
+                    </div>
+                </div>
+                <div v-if="asking" class="ui-chat-message"><span class="ui-chat-avatar">♡</span><div><div class="ui-chat-meta"><span>照顾助手</span></div><div class="ui-chat-bubble">正在思考…</div></div></div>
+            </div>
+
+            <div v-if="quickQuestions.length" class="ui-platform-row" style="margin:14px 0 4px" aria-label="常见问题">
+                <button v-for="q in quickQuestions" :key="q" class="ui-platform-link" type="button" :disabled="asking" @click="askQuick(q)">{{ q }}</button>
+            </div>
+
+            <form class="ui-chat-compose" @submit.prevent="submit">
+                <label for="petCareInput">输入你的问题</label>
+                <div class="ui-chat-compose-row">
+                    <textarea id="petCareInput" v-model.trim="draft" class="ui-form-textarea" maxlength="500" rows="2" placeholder="例如：刚领养的猫一直躲着不出来怎么办？" :disabled="asking"></textarea>
+                    <button class="ui-button is-primary" type="submit" :disabled="asking||!draft">{{ asking ? '请稍候' : '提问' }}</button>
+                </div>
+                <p class="ui-chat-feedback" :class="{'is-error':error}" aria-live="polite">{{ error || '每分钟最多提问 10 次 · 回答不构成医疗建议' }}</p>
+            </form>
+        </section>
+    </main>
+
+    <footer class="ui-site-footer"><div class="ui-container ui-footer-inner"><div class="ui-footer-copy"><strong>归途计划</strong><span>© 2026 · 让每一次善意都有回音</span></div><nav class="ui-footer-nav" aria-label="页脚导航"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a href="./notice_list.html">救助动态</a><a href="./rescue_apply.html">发起救助</a><a href="./account_public.html">透明公示</a></nav></div></footer>
+</div>
+
+<script src="../../js/jquery.min.js"></script>
+<script src="../../js/vue.min.js"></script>
+<script src="../../js/auth-session.js?v=20260728"></script>
+<script>
+AuthSession.bootstrap({ requireAuth: true, allowCachedOnNetworkError: false, onDone: function (ok, user) {
+  if (!ok || !user) return;
+  document.getElementById('authWait').hidden = true;
+  new Vue({
+    el: '#app',
+    data: { user: user, messages: [], draft: '', asking: false, error: '', quickQuestions: [], mobileOpen: false },
+    computed: {
+      userInitial: function () { return this.user.username ? this.user.username.slice(0, 1).toUpperCase() : 'U'; }
+    },
+    created: function () { this.loadTopics(); },
+    methods: {
+      loadTopics: function () {
+        var vm = this;
+        $.ajax({ url: '/api/petcare/topics', type: 'GET' }).done(function (res) {
+          if (res && res.code === '0' && Array.isArray(res.data)) vm.quickQuestions = res.data;
+        });
+      },
+      askQuick: function (q) { this.draft = q; this.submit(); },
+      submit: function () {
+        var vm = this;
+        if (vm.asking || !vm.draft) return;
+        var question = vm.draft;
+        vm.messages.push({ role: 'user', text: question });
+        vm.draft = '';
+        vm.error = '';
+        vm.asking = true;
+        vm.scrollDown();
+        $.ajax({ url: '/api/petcare/ask', type: 'POST', contentType: 'application/json', data: JSON.stringify({ question: question }) })
+          .done(function (res) {
+            if (res && res.code === '0' && res.data && res.data.answer) {
+              vm.messages.push({ role: 'assistant', text: res.data.answer, topic: res.data.topic });
+            } else {
+              vm.error = (res && res.msg) || '回答生成失败，请稍后重试。';
+            }
+          })
+          .fail(function (xhr) {
+            vm.error = (xhr.responseJSON && xhr.responseJSON.msg) || '网络异常，请稍后重试。';
+          })
+          .always(function () { vm.asking = false; vm.scrollDown(); });
+      },
+      scrollDown: function () {
+        var vm = this;
+        vm.$nextTick(function () {
+          var box = vm.$refs.chatBox;
+          if (box) box.scrollTop = box.scrollHeight;
+        });
+      }
+    }
+  });
+}});
+</script>
+</body>
+</html>

@@ -131,12 +131,12 @@ app:
 
 ## 四、验收清单(完成后逐项打勾)
 
-- [ ] 全量单元测试通过(≥341,含新增)
-- [ ] `mvn package` 成功,jar 独立启动成功
-- [ ] dev 实机启动:SchemaGuard 建索引、druid 参数生效日志
-- [ ] curl 冒烟:公开页/API/新 petcare 接口行为正确(未登录 401)
-- [ ] pet_care 页面 headless 截图渲染正常、零控制台错误
-- [ ] 全部改动提交并推送(PR #2)
+- [x] 351/351 全量单元测试通过(≥341,含新增)
+- [x] `mvn package` 成功(68MB jar),jar 独立启动成功
+- [x] dev 实机启动:SchemaGuard 建索引、druid 参数生效日志
+- [x] curl 冒烟:公开页/API/新 petcare 接口行为正确(未登录 401)
+- [x] pet_care 页面 headless 截图完整问答流验证（顺带修复 .ui-state[hidden] 存量 bug）
+- [x] 全部改动提交并推送(PR #2)
 
 ---
 

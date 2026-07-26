@@ -38,7 +38,8 @@ public class AuthInterceptor implements HandlerInterceptor {
             "/page/front/my_volunteer.html",
             "/page/front/rescue_apply.html",
             "/page/front/my_rescue.html",
-            "/page/front/my_visit.html"
+            "/page/front/my_visit.html",
+            "/page/front/pet_care.html"
     ));
 
     static {
@@ -297,6 +298,10 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
         // /online：须登录；是否可枚举用户名由 Controller 再判管理 flag
         if (path.startsWith("/api/user/online")) {
+            return true;
+        }
+        // AI 照顾助手：登录用户即可用，与业务权限无关（限流在 Service）
+        if (path.startsWith("/api/petcare")) {
             return true;
         }
         // detail：须登录，细粒度归属在 UserController（本人或 user 管理）

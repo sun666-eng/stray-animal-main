@@ -38,6 +38,7 @@
     Object.freeze({
       id: 'platform', label: '了解平台', hint: '', style: 'platform',
       items: Object.freeze([
+        Object.freeze({ id: 'petcare', label: '照顾知识助手', href: '/page/front/pet_care.html', sub: '喂养与健康问答' }),
         Object.freeze({ id: 'notice', label: '救助动态', href: '/page/front/notice_list.html', sub: '平台公告' }),
         Object.freeze({ id: 'account', label: '透明公示', href: '/page/front/account_public.html', sub: '资金收支' }),
         Object.freeze({ id: 'person', label: '个人资料', href: '/page/end/person.html', sub: '邮箱与头像' })

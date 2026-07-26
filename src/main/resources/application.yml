@@ -63,6 +63,14 @@ file:
   fallback-static-dir: ${FILE_FALLBACK_STATIC_DIR:}
 
 app:
+  # AI 动物照顾助手（DELIVERY-PLAN.md §三）：默认纯内置知识库（离线可用）；
+  # 配置 OpenAI 兼容服务后自动升级为 LLM 对话，失败自动降级，用户无感。
+  ai:
+    enabled: ${AI_ENABLED:false}
+    base-url: ${AI_BASE_URL:}
+    api-key: ${AI_API_KEY:}
+    model: ${AI_MODEL:deepseek-chat}
+    timeout-ms: ${AI_TIMEOUT_MS:8000}
   auth:
     # 鉴权用户快照缓存 TTL（毫秒）：消除每请求 getById+fillPermissions 的 N+1。
     # 写路径均有主动失效（AuthUserCache）；设为 0 可完全停用缓存回退每请求查库。

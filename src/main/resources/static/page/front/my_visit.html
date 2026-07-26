@@ -6,7 +6,7 @@
   <meta name="description" content="查看领养动物的真实回访记录">
   <title>回访记录 · 归途计划</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-  <link rel="stylesheet" href="../../css/product-ui.css?v=20260727">
+  <link rel="stylesheet" href="../../css/product-ui.css?v=20260728">
 </head>
 <body>
 <div id="authWait" class="ui-state" role="status"><div><span class="ui-state-mark ui-skeleton"></span><h2>正在验证登录状态</h2></div></div>
@@ -32,7 +32,7 @@
   </div></main>
   <footer class="ui-site-footer"><div class="ui-container ui-footer-inner"><div class="ui-footer-copy"><strong>归途计划</strong><span>© 2026 · 让每一次善意都有回音</span></div><nav class="ui-footer-nav" aria-label="页脚导航"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a href="./notice_list.html">救助动态</a><a href="./account_public.html">透明公示</a></nav></div></footer>
 </div>
-<script src="../../js/jquery.min.js"></script><script src="../../js/vue.min.js"></script><script src="../../js/auth-session.js?v=20260727"></script>
+<script src="../../js/jquery.min.js"></script><script src="../../js/vue.min.js"></script><script src="../../js/auth-session.js?v=20260728"></script>
 <script>
 (function(){'use strict';AuthSession.bootstrap({requireAuth:true,allowCachedOnNetworkError:false,onDone:function(ok,user){if(!ok||!user)return;document.getElementById('authWait').hidden=true;new Vue({el:'#app',data:{user:user,records:[],loading:true,error:'',pageNum:1,pageSize:8,total:0,totalPages:1,petId:null,mobileOpen:false},computed:{userInitial:function(){return this.user.username?this.user.username.slice(0,1).toUpperCase():'U';},pages:function(){var values=[];var start=Math.max(1,this.pageNum-2);var end=Math.min(this.totalPages,start+4);start=Math.max(1,end-4);for(var page=start;page<=end;page+=1)values.push(page);return values;}},created:function(){var raw=new URLSearchParams(window.location.search).get('aid');this.petId=/^[1-9][0-9]*$/.test(raw||'')?raw:null;this.load(1);},methods:{load:function(page){var view=this;view.loading=true;view.error='';$.ajax({url:'/api/visit/mine',type:'GET',data:{pageNum:page,pageSize:view.pageSize,petId:view.petId||undefined},cache:false}).done(function(res){if(!res||res.code!=='0'||!res.data||!Array.isArray(res.data.records)){view.error=(res&&res.msg)||'服务返回了无法识别的数据。';return;}view.records=res.data.records;view.pageNum=Number(res.data.current||page);view.total=Number(res.data.total||0);view.totalPages=Math.max(1,Number(res.data.pages||1));}).fail(function(xhr){view.error=(xhr.responseJSON&&xhr.responseJSON.msg)||'请检查网络连接后重试。';}).always(function(){view.loading=false;});},score:function(value){var score=Number(value);return score>=1&&score<=5?score+'/5':'未记录';},dateText:function(value){return typeof value==='string'&&/^\d{4}-\d{2}-\d{2}/.test(value)?value.slice(0,10):'未记录';},imageUrl:function(flag){var value=flag==null?'':String(flag);return /^[a-zA-Z0-9-]{1,64}$/.test(value)?'/api/files/'+encodeURIComponent(value):'/prototype-assets/editorial-01.svg';},imageFallback:function(event){event.target.src='/prototype-assets/editorial-01.svg';},animalUrl:function(id){return './animal_detail.html?id='+encodeURIComponent(id);}}});}});})();
 </script>

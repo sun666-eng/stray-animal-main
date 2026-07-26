@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="提交领养审核凭证"><title>领养凭证 · 归途计划</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>"><link rel="stylesheet" href="../../css/product-ui.css?v=20260727"></head>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>"><link rel="stylesheet" href="../../css/product-ui.css?v=20260728"></head>
 <body>
 <div id="authWait" class="ui-state" role="status"><div><span class="ui-state-mark ui-skeleton"></span><h2>正在验证登录状态</h2></div></div><div id="app" v-cloak>
     <header class="ui-header"><div class="ui-header-inner"><a class="ui-brand" href="./index.html"><span class="ui-brand-mark">♡</span><span class="ui-brand-copy"><strong>归途计划</strong><small>PAWS ON THE WAY HOME</small></span></a><nav class="ui-nav" aria-label="主导航"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a href="./notice_list.html">救助动态</a><a href="./account_public.html">透明公示</a></nav><div class="ui-header-actions"><button class="ui-icon-button ui-mobile-toggle" type="button" aria-label="切换导航" :aria-expanded="String(mobileOpen)" @click="mobileOpen=!mobileOpen">☰</button><a class="ui-account-trigger" href="./index.html"><span class="ui-avatar">{{ userInitial }}</span><span class="ui-account-name">{{ user.username || '账户' }}</span></a></div></div><nav class="ui-mobile-nav" :class="{'is-open':mobileOpen}" aria-label="移动端导航"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a href="./notice_list.html">救助动态</a><a href="./account_public.html">透明公示</a></nav></header>
@@ -23,7 +23,7 @@
     </div></main>
     <footer class="ui-site-footer"><div class="ui-container ui-footer-inner"><div class="ui-footer-copy"><strong>归途计划</strong><span>© 2026 · 让每一次善意都有回音</span></div><nav class="ui-footer-nav" aria-label="页脚导航"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a href="./notice_list.html">救助动态</a><a href="./rescue_apply.html">发起救助</a><a href="./account_public.html">透明公示</a></nav></div></footer>
 </div>
-<script src="../../js/jquery.min.js"></script><script src="../../js/vue.min.js"></script><script src="../../js/auth-session.js?v=20260727"></script>
+<script src="../../js/jquery.min.js"></script><script src="../../js/vue.min.js"></script><script src="../../js/auth-session.js?v=20260728"></script>
 <script>
 AuthSession.bootstrap({requireAuth:true,allowCachedOnNetworkError:false,onDone:function(ok,user){if(!ok||!user)return;document.getElementById('authWait').hidden=true;new Vue({
   el:'#app',data:{user:user,aid:null,missingAid:false,approved:false,title:'',file:null,previewUrl:'',stagedFlag:'',records:[],loading:true,saving:false,deleting:null,formError:'',listError:'',liveMessage:'',mobileOpen:false,types:['身份材料','居住环境图片','动物健康材料','住所相关材料','收入相关材料','其他领养审核材料']},
