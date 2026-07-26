@@ -165,7 +165,7 @@ public class FileControllerTest {
     }
 
     @Test
-    public void getFile_publicAsset_alsoUsesNoStoreHeaders() throws Exception {
+    public void getFile_publicImage_isLongCacheable() throws Exception {
         FileAssetService assets = mock(FileAssetService.class);
         FileAsset asset = new FileAsset();
         asset.setFlag("abc");
@@ -182,8 +182,8 @@ public class FileControllerTest {
         controller(assets).getFile("abc", response, new MockHttpServletRequest());
 
         assertEquals(200, response.getStatus());
-        assertEquals("no-store, no-cache, must-revalidate, max-age=0", response.getHeader("Cache-Control"));
-        assertEquals("no-cache", response.getHeader("Pragma"));
+        // 公开图片 flag 为 UUID 内容不可变：允许长缓存，避免列表页每次全量重下原图
+        assertEquals("public, max-age=604800, immutable", response.getHeader("Cache-Control"));
         assertEquals("nosniff", response.getHeader("X-Content-Type-Options"));
     }
 

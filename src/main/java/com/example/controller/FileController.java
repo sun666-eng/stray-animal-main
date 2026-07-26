@@ -178,6 +178,13 @@ public class FileController {
             String contentType = resolveContentType(asset, filePath, name);
             response.setContentType(contentType);
             boolean inlineImage = contentType != null && contentType.startsWith("image/");
+            // 性能：公开图片（动物照片/公告图等）flag 为 UUID、内容不可变，允许浏览器长缓存。
+            // 此前统一 no-store 导致列表页每次访问全量重下多 MB 原图。私有附件保持 no-store。
+            if (inlineImage && FileAssetService.VIS_PUBLIC.equals(asset.getVisibility())) {
+                response.setHeader("Cache-Control", "public, max-age=604800, immutable");
+                // 覆盖 fail-closed 阶段设置的 Pragma: no-cache（HTTP/1.1 下 Cache-Control 优先）
+                response.setHeader("Pragma", "");
+            }
             String disposition = (inlineImage ? "inline" : "attachment")
                     + ";filename=" + URLEncoder.encode(name, "UTF-8");
             response.setHeader("Content-Disposition", disposition);
