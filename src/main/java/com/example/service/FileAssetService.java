@@ -89,7 +89,9 @@ public class FileAssetService extends ServiceImpl<FileAssetMapper, FileAsset> {
             "help"
     ));
 
-    private static final long MAX_IMAGE_PIXELS = 25_000_000L;
+    // 崩溃预防 P1.1：25MP 单张解码峰值约 100MB 堆（ARGB），并发上传即 OOM 源；
+    // 5MP（约 2600×1900）足够展示需求
+    private static final long MAX_IMAGE_PIXELS = 5_000_000L;
 
     // 审计修复 L6：移除 purpose=notice——公告无图片字段、全系统零绑定点零前端调用，
     // 该用途上传的文件只会在 24h 后被静默清理，属无出口的死分支。
@@ -173,7 +175,7 @@ public class FileAssetService extends ServiceImpl<FileAssetMapper, FileAsset> {
                 throw invalidImage();
             }
             if ((long) width * height > MAX_IMAGE_PIXELS) {
-                throw new CustomException("400", "图片像素过大，最大允许 2500 万像素");
+                throw new CustomException("400", "图片像素过大，最大允许 500 万像素（约 2600×1900）");
             }
             BufferedImage decoded = reader.read(0);
             if (decoded == null || decoded.getWidth() <= 0 || decoded.getHeight() <= 0) {

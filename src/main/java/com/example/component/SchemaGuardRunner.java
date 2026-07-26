@@ -31,7 +31,7 @@ import java.util.Map;
 public class SchemaGuardRunner implements ApplicationRunner {
 
     /** 结构契约版本：变更闭环必需列/角色时递增，并写入 app_schema_meta */
-    public static final String SCHEMA_VERSION = "2026.07.26-role-permission-v1";
+    public static final String SCHEMA_VERSION = "2026.07.27-help-chat-index-v1";
 
     private static final String FILE_FLAG_COLLATION = "utf8mb4_unicode_ci";
 
@@ -107,6 +107,7 @@ public class SchemaGuardRunner implements ApplicationRunner {
             ensureTextColumn("t_role", "permission", errors);
             ensureTextColumn("t_user", "role", errors);
             ensureRolePermissionTable(errors);
+            ensureHelpChatIndexes(errors);
             ensureLightVolunteerRole(errors);
             ensureRole3HasMyProof(errors);
             ensurePermissionMyProof(errors);
@@ -462,6 +463,34 @@ public class SchemaGuardRunner implements ApplicationRunner {
             jdbcTemplate.execute(alterSql);
         } catch (Exception e) {
             errors.add("补齐 t_file_asset." + column + " 失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 崩溃预防 P0.2：聊天轮询每在线页面 10s 打一次
+     * WHERE title='聊天室消息' ORDER BY create_time DESC,id DESC —— t_help 此前仅有主键，
+     * 每次都是全表扫+filesort，消息堆积后与小连接池叠加是全站假死的头号路径。
+     */
+    private void ensureHelpChatIndexes(List<String> errors) {
+        ensureIndex("t_help", "idx_help_chat",
+                "ALTER TABLE t_help ADD INDEX idx_help_chat (title, create_time, id)", errors);
+        ensureIndex("t_help", "idx_help_uid",
+                "ALTER TABLE t_help ADD INDEX idx_help_uid (uid)", errors);
+    }
+
+    private void ensureIndex(String table, String index, String alterSql, List<String> errors) {
+        if (indexExists(table, index)) {
+            return;
+        }
+        if (!autoMigrate) {
+            errors.add(table + " 缺少索引 " + index + " 且 auto-migrate=false（见 docs/sql/2026-07-27-help-chat-index.sql）");
+            return;
+        }
+        log.warn("SchemaGuard 自动创建索引 {}.{}", table, index);
+        try {
+            jdbcTemplate.execute(alterSql);
+        } catch (Exception e) {
+            errors.add("创建索引 " + table + "." + index + " 失败: " + e.getMessage());
         }
     }
 

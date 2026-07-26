@@ -5,8 +5,14 @@ server:
     enabled: true
     mime-types: text/html,text/css,application/javascript,application/json,image/svg+xml
     min-response-size: 1024
+  # 崩溃预防 P0.3：显式 Tomcat 基线（200 线程 vs 20 连接池失衡是假死放大器）
+  tomcat:
+    threads:
+      max: 100
+    connection-timeout: 20s
   servlet:
     session:
+      timeout: 30m
       cookie:
         http-only: true
         # 生产在 application-prod 或反向代理层再开 secure
@@ -22,8 +28,17 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:}
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:test}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2b8
-    type: com.alibaba.druid.pool.DruidDataSource
+    # connectTimeout/socketTimeout：druid 默认不注入任何 JDBC 网络超时（已核实），
+    # 无超时的 socket 读会把请求线程永久挂在网络黑洞上
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:test}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2b8&connectTimeout=5000&socketTimeout=60000
+    # 崩溃预防 P0.1：连接池显式参数（经 config/DataSourceConfig 宽松绑定，
+    # 勿写 spring.datasource.druid.* —— SB3 无 starter 时该前缀静默失效）
+    initial-size: 5
+    min-idle: 5
+    max-active: 20
+    # 【关键】默认 -1 = 池满无限挂起；5s 快速失败并留下异常日志
+    max-wait: 5000
+    keep-alive: true
 
   servlet:
     multipart:

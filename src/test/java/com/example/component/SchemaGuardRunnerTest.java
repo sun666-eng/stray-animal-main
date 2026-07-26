@@ -40,7 +40,7 @@ public class SchemaGuardRunnerTest {
 
     @Test
     public void schemaVersionConstant_isStable() {
-        assertEquals("2026.07.26-role-permission-v1", SchemaGuardRunner.SCHEMA_VERSION);
+        assertEquals("2026.07.27-help-chat-index-v1", SchemaGuardRunner.SCHEMA_VERSION);
     }
 
     @Test

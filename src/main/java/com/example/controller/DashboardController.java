@@ -30,18 +30,38 @@ public class DashboardController {
     @Resource
     private UserService userService;
 
+    /**
+     * 崩溃预防 P1.3：两个匿名统计接口每次 3-4 个 COUNT(*)，无缓存无限流，
+     * 对小连接池是廉价打法。60s 进程内缓存（统计数据无实时性要求）。
+     */
+    private static final long STATS_CACHE_MS = 60_000;
+    private volatile Map<String, Long> publicStatsCache;
+    private volatile long publicStatsCachedAt;
+    private volatile HomeStatsDTO homeStatsCache;
+    private volatile long homeStatsCachedAt;
+
     @GetMapping("/public-stats")
     public Result<Map<String, Long>> publicStats() {
+        Map<String, Long> cached = publicStatsCache;
+        if (cached != null && System.currentTimeMillis() - publicStatsCachedAt < STATS_CACHE_MS) {
+            return Result.success(cached);
+        }
         Map<String, Long> stats = new LinkedHashMap<>();
         stats.put("volunteers", volunteerService.count(Wrappers.<Volunteer>lambdaQuery().eq(Volunteer::getVstate, 1)));
         stats.put("animals", animalService.count());
         stats.put("adopts", adoptService.count());
         stats.put("users", userService.count());
+        publicStatsCache = java.util.Collections.unmodifiableMap(stats);
+        publicStatsCachedAt = System.currentTimeMillis();
         return Result.success(stats);
     }
 
     @GetMapping("/home-stats")
     public Result<HomeStatsDTO> homeStats() {
+        HomeStatsDTO cached = homeStatsCache;
+        if (cached != null && System.currentTimeMillis() - homeStatsCachedAt < STATS_CACHE_MS) {
+            return Result.success(cached);
+        }
         long availableAnimals = animalService.count(
                 Wrappers.<Animal>lambdaQuery().eq(Animal::getTstate, 0));
         long adoptedAnimals = animalService.count(
@@ -51,9 +71,12 @@ public class DashboardController {
                         .select("COUNT(DISTINCT uid)")
                         .eq("vstate", 1),
                 value -> value == null ? 0L : ((Number) value).longValue());
-        return Result.success(new HomeStatsDTO(
+        HomeStatsDTO dto = new HomeStatsDTO(
                 availableAnimals,
                 adoptedAnimals,
-                approvedVolunteers == null ? 0L : approvedVolunteers));
+                approvedVolunteers == null ? 0L : approvedVolunteers);
+        homeStatsCache = dto;
+        homeStatsCachedAt = System.currentTimeMillis();
+        return Result.success(dto);
     }
 }

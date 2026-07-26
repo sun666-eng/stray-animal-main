@@ -198,11 +198,21 @@ public class HelpService extends ServiceImpl<HelpMapper, Help> {
         if (!save(message) || message.getId() == null) {
             throw new CustomException("500", "聊天消息保存失败");
         }
+        invalidateChatHistoryCache();
 
         return toChatDTO(message);
     }
 
+    /** 崩溃预防 P0.2：历史查询 5s 微缓存——在线 N 人每 10s 各查一次 → 固定每 5s 一次。 */
+    private static final long CHAT_HISTORY_CACHE_MS = 5000;
+    private volatile List<ChatMessageDTO> chatHistoryCache;
+    private volatile long chatHistoryCachedAt;
+
     public List<ChatMessageDTO> getChatHistory() {
+        List<ChatMessageDTO> cached = chatHistoryCache;
+        if (cached != null && System.currentTimeMillis() - chatHistoryCachedAt < CHAT_HISTORY_CACHE_MS) {
+            return cached;
+        }
         List<Help> latest = list(Wrappers.<Help>lambdaQuery()
                 .eq(Help::getTitle, CHAT_TITLE)
                 .orderByDesc(Help::getCreateTime)
@@ -213,7 +223,15 @@ public class HelpService extends ServiceImpl<HelpMapper, Help> {
         for (Help message : latest) {
             result.add(toChatDTO(message));
         }
-        return result;
+        List<ChatMessageDTO> snapshot = Collections.unmodifiableList(result);
+        chatHistoryCache = snapshot;
+        chatHistoryCachedAt = System.currentTimeMillis();
+        return snapshot;
+    }
+
+    /** 新消息落库后失效历史缓存，发送者及他人下次轮询即可见。 */
+    private void invalidateChatHistoryCache() {
+        chatHistoryCache = null;
     }
 
     public ChatMessageDTO getPersistedChatMessage(Long id) {

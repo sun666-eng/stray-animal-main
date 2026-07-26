@@ -99,11 +99,19 @@ public class LoginRateLimiter {
         windows.remove(key);
     }
 
+    /** 崩溃预防 P1.2：key=ip+username 可被凭据填充无限造新键，必须有节流清理 + 硬上限。 */
+    private static final int MAX_WINDOWS = 20_000;
+    private static final long CLEANUP_INTERVAL_MS = 60_000;
+    private volatile long lastCleanupAt;
+
     private void cleanupIfNeeded() {
-        if (windows.size() < 5000) {
+        long now = System.currentTimeMillis();
+        boolean overCap = windows.size() >= MAX_WINDOWS;
+        // 原实现 size>=5000 后每个登录请求都全量 O(n) 扫描；改为最多每 60s 清一次
+        if (!overCap && (windows.size() < 5000 || now - lastCleanupAt < CLEANUP_INTERVAL_MS)) {
             return;
         }
-        long now = System.currentTimeMillis();
+        lastCleanupAt = now;
         long stale = Math.max(windowSeconds, lockSeconds) * 1000L * 2;
         Iterator<Map.Entry<String, Window>> it = windows.entrySet().iterator();
         while (it.hasNext()) {
@@ -114,6 +122,11 @@ public class LoginRateLimiter {
                     it.remove();
                 }
             }
+        }
+        // 硬上限兜底：清理后仍超上限（攻击性流量），清空重来——限流是防护性状态，
+        // 重置的代价只是攻击者获得一个新窗口，远小于内存被撑爆
+        if (windows.size() >= MAX_WINDOWS) {
+            windows.clear();
         }
     }
 

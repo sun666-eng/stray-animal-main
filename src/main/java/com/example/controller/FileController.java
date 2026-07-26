@@ -370,12 +370,21 @@ public class FileController {
     }
 
     /** 按 ownerId 串行化上传，保护配额 check-then-act；不同用户互不阻塞。 */
-    private final ConcurrentHashMap<Long, Object> uploadLocks = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, java.util.concurrent.locks.ReentrantLock> uploadLocks = new ConcurrentHashMap<>();
 
     private FileVO doUpload(MultipartFile file, Long ownerId, String purpose, String contentType) throws Exception {
-        Object lock = uploadLocks.computeIfAbsent(ownerId == null ? -1L : ownerId, k -> new Object());
-        synchronized (lock) {
+        java.util.concurrent.locks.ReentrantLock lock =
+                uploadLocks.computeIfAbsent(ownerId == null ? -1L : ownerId,
+                        k -> new java.util.concurrent.locks.ReentrantLock());
+        // 崩溃预防 P1.1：锁改为限时等待。原 synchronized 无超时——持锁者若在锁内
+        // 等 DB/慢盘，该用户后续上传逐个占满 Tomcat 线程排队，是进程假死放大器。
+        if (!lock.tryLock(10, java.util.concurrent.TimeUnit.SECONDS)) {
+            throw new CustomException("429", "上传处理繁忙，请稍后重试");
+        }
+        try {
             return doUploadLocked(file, ownerId, purpose, contentType);
+        } finally {
+            lock.unlock();
         }
     }
 
