@@ -45,6 +45,9 @@ public class UserService extends ServiceImpl<UserMapper, User> {
     @Resource
     private VolunteerMapper volunteerMapper;
 
+    @Resource
+    private com.example.common.AuthUserCache authUserCache;
+
     @Value("${app.volunteer.auto-grant-role-id:4}")
     private Long volunteerRoleId = RoleAssignmentPolicy.DERIVED_VOLUNTEER_ROLE_ID;
 
@@ -79,6 +82,7 @@ public class UserService extends ServiceImpl<UserMapper, User> {
                 passwordPatch.setPassword(ENCODER.encode(raw));
                 // 密码迁移不回写用户的角色 JSON，避免触碰派生角色。
                 super.updateById(passwordPatch);
+                authUserCache.invalidate(one.getId());
             }
         } else {
             // 存储为明文但已关闭兼容：拒绝并提示需重置
@@ -354,7 +358,11 @@ public class UserService extends ServiceImpl<UserMapper, User> {
                 user.setPassword(ENCODER.encode(user.getPassword()));
             }
         }
-        return super.updateById(user);
+        boolean updated = super.updateById(user);
+        if (updated) {
+            authUserCache.invalidate(user.getId());
+        }
+        return updated;
     }
 
     /**
@@ -416,6 +424,8 @@ public class UserService extends ServiceImpl<UserMapper, User> {
         if (!super.updateById(user)) {
             throw new CustomException("409", "用户资料更新失败，请刷新后重试");
         }
+        // 资料/角色变更后失效鉴权缓存（事务提交后生效）
+        authUserCache.invalidate(targetId);
         if (newAvatar != null) {
             String next = newAvatar.trim();
             String prev = previous == null ? "" : previous.trim();
@@ -674,6 +684,8 @@ public class UserService extends ServiceImpl<UserMapper, User> {
         if (!super.updateById(patch)) {
             throw new CustomException("409", "用户角色已变化，请刷新后重试");
         }
+        // 角色变更直接改变有效权限，须失效鉴权缓存（事务提交后生效）
+        authUserCache.invalidate(userId);
     }
 
     private boolean isBcrypt(String password) {

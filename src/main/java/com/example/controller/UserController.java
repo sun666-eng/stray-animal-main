@@ -59,6 +59,9 @@ public class UserController {
     private RoleAssignmentPolicy roleAssignmentPolicy;
 
     @Resource
+    private com.example.common.AuthUserCache authUserCache;
+
+    @Resource
     private LoginRateLimiter loginRateLimiter;
 
     @AuditLog(module = "用户管理", action = "用户登录")
@@ -85,6 +88,8 @@ public class UserController {
             // 浏览器唯一权威：Session；不再签发 JWT
             request.getSession(true).setAttribute("user", res);
             request.getSession(true).setAttribute("userId", res.getId());
+            // 登录以刚加载的最新权限为准，丢弃可能的登录前缓存
+            authUserCache.invalidate(res.getId());
             String csrf = csrfTokenService.getOrCreate(request);
             if (MAP.size() < MAX_ONLINE_SNAPSHOTS || MAP.containsKey(res.getUsername())) {
                 MAP.put(res.getUsername(), res);
@@ -176,6 +181,7 @@ public class UserController {
             webSocketTicketService.revokeUser(userId);
             // 登出即时断开该用户全部 WebSocket 连接（此前 closeUserSessions 无调用方）
             com.example.component.WebSocketServer.closeUserSessions(userId);
+            authUserCache.invalidate(userId);
             if (request.getSession(false) != null) {
                 request.getSession(false).invalidate();
             }
@@ -207,6 +213,8 @@ public class UserController {
                     .body(Result.error("401", "未登录或登录已过期"));
         }
         Long id = ((User) sessionUser).getId();
+        com.example.common.AuthUserCache.Stamp stamp = authUserCache.stamp(id);
+        long loadStart = System.currentTimeMillis();
         User fresh = userService.getById(id);
         if (fresh == null) {
             try {
@@ -220,6 +228,8 @@ public class UserController {
                     .body(Result.error("401", "未登录或登录已过期"));
         }
         userService.fillPermissions(fresh);
+        // /me 是前端主动刷新点：顺带刷新鉴权缓存，保持 session 与缓存一致
+        authUserCache.put(fresh.getId(), fresh, stamp, loadStart);
         request.getSession(true).setAttribute("user", fresh);
         request.getSession(true).setAttribute("userId", fresh.getId());
         return org.springframework.http.ResponseEntity.ok(Result.success(UserDTO.from(fresh)));

@@ -34,10 +34,13 @@ public class AuthInterceptorSessionTest {
     UserService userService;
 
     AuthInterceptor interceptor;
+    AuthUserCache authUserCache;
 
     @BeforeEach
     public void setUp() {
-        interceptor = new AuthInterceptor(userService);
+        // 每个测试独立缓存实例；测试内单次调用均为冷缓存 → 仍然验证"必须按 DB 重载"契约
+        authUserCache = new AuthUserCache();
+        interceptor = new AuthInterceptor(userService, authUserCache);
     }
 
     @Test
@@ -145,6 +148,8 @@ public class AuthInterceptorSessionTest {
 
         User ordinary = userWithFlag("im");
         when(userService.getById(9L)).thenReturn(ordinary);
+        // 生产语义：权限变更（角色/用户写路径）必然触发缓存失效；此处模拟该失效
+        authUserCache.invalidate(9L);
         MockHttpServletRequest denied = new MockHttpServletRequest("GET", "/api/help/page");
         denied.getSession(true).setAttribute("user", ordinary);
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -194,6 +199,50 @@ public class AuthInterceptorSessionTest {
         MockHttpServletResponse denied = new MockHttpServletResponse();
         assertFalse(interceptor.preHandle(management, denied, new Object()));
         assertEquals(403, denied.getStatus());
+    }
+
+    @Test
+    public void secondRequestWithinTtl_isServedFromCacheWithoutDbReload() throws Exception {
+        User fresh = userWithFlag("im");
+        when(userService.getById(9L)).thenReturn(fresh);
+        when(userService.fillPermissions(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        MockHttpServletRequest first = new MockHttpServletRequest();
+        first.getSession(true).setAttribute("userId", 9L);
+        assertNotNull(invokeGetCurrentUser(first));
+
+        MockHttpServletRequest second = new MockHttpServletRequest();
+        second.getSession(true).setAttribute("userId", 9L);
+        User resolved = invokeGetCurrentUser(second);
+        assertNotNull(resolved);
+        assertEquals("user", resolved.getUsername());
+        // 命中缓存：DB 只应查过一次
+        org.mockito.Mockito.verify(userService, org.mockito.Mockito.times(1)).getById(9L);
+        org.mockito.Mockito.verify(userService, org.mockito.Mockito.times(1)).fillPermissions(any(User.class));
+    }
+
+    @Test
+    public void cachedCopyMutation_doesNotAffectSubsequentRequests() throws Exception {
+        User fresh = userWithFlag("im");
+        when(userService.getById(9L)).thenReturn(fresh);
+        when(userService.fillPermissions(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        MockHttpServletRequest first = new MockHttpServletRequest();
+        first.getSession(true).setAttribute("userId", 9L);
+        invokeGetCurrentUser(first);
+
+        MockHttpServletRequest second = new MockHttpServletRequest();
+        second.getSession(true).setAttribute("userId", 9L);
+        User fromCache = invokeGetCurrentUser(second);
+        // 模拟下游代码改写 session 里的对象（历史上测试代码出现过该写法）
+        fromCache.setUsername("evil");
+        fromCache.setPermission(Collections.emptyList());
+
+        MockHttpServletRequest third = new MockHttpServletRequest();
+        third.getSession(true).setAttribute("userId", 9L);
+        User next = invokeGetCurrentUser(third);
+        assertEquals("user", next.getUsername());
+        assertEquals(1, next.getPermission().size());
     }
 
     private static User userWithFlag(String flag) {

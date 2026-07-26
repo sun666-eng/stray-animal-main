@@ -40,6 +40,7 @@ class UserServiceVolunteerRoleTest {
         ReflectionTestUtils.setField(service, "volunteerMapper", volunteerMapper);
         ReflectionTestUtils.setField(service, "roleService", roleService);
         ReflectionTestUtils.setField(service, "fileAssetService", mock(FileAssetService.class));
+        ReflectionTestUtils.setField(service, "authUserCache", new com.example.common.AuthUserCache());
         ReflectionTestUtils.setField(service, "volunteerRoleId", 4L);
     }
 

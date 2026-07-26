@@ -51,6 +51,9 @@ public class PermissionService extends ServiceImpl<PermissionMapper, Permission>
     @Resource
     private UserMapper userMapper;
 
+    @Resource
+    private com.example.common.AuthUserCache authUserCache;
+
     public List<Permission> getByRoles(List<Role> roles) {
         List<Permission> permissions = new ArrayList<>();
         if (roles == null) {
@@ -83,6 +86,8 @@ public class PermissionService extends ServiceImpl<PermissionMapper, Permission>
         if (permissionMapper.insert(permission) != 1) {
             throw new CustomException("500", "权限保存失败");
         }
+        // 超管的 fillPermissions 始终拉全表：新权限立即属于全部超管，须全量失效鉴权缓存
+        authUserCache.invalidateAll();
         return true;
     }
 
@@ -111,7 +116,22 @@ public class PermissionService extends ServiceImpl<PermissionMapper, Permission>
         if (permissionMapper.updateById(effective) != 1) {
             throw new CustomException("409", "权限更新失败，请刷新后重试");
         }
+        // 权限定义（flag/name/path）变更影响所有内嵌引用者与全部超管，须全量失效鉴权缓存
+        authUserCache.invalidateAll();
         return true;
+    }
+
+    /**
+     * 兜底：继承自 ServiceImpl 的通用更新（当前无调用方，防未来旁路绕过失效；
+     * saveOrUpdate 的更新分支同样走到这里）。
+     */
+    @Override
+    public boolean updateById(Permission permission) {
+        boolean updated = super.updateById(permission);
+        if (updated) {
+            authUserCache.invalidateAll();
+        }
+        return updated;
     }
 
     @Transactional

@@ -37,6 +37,8 @@ class UserServiceSecurityTest {
     PermissionService permissionService;
     @Mock
     FileAssetService fileAssetService;
+    @Mock
+    com.example.common.AuthUserCache authUserCache;
 
     @InjectMocks
     UserService userService;

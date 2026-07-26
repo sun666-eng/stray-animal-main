@@ -33,6 +33,8 @@ class RoleServiceSecurityTest {
     PermissionMapper permissionMapper;
     @Mock
     UserMapper userMapper;
+    @Mock
+    com.example.common.AuthUserCache authUserCache;
 
     @InjectMocks
     RoleService roleService;
@@ -70,6 +72,24 @@ class RoleServiceSecurityTest {
         ArgumentCaptor<Role> captor = ArgumentCaptor.forClass(Role.class);
         verify(roleMapper).insert(captor.capture());
         assertSame(stored, captor.getValue().getPermission().get(0));
+    }
+
+    @Test
+    void updateDefinition_success_invalidatesAuthCacheForAllUsers() {
+        User actor = user(1L, 1L);
+        when(userMapper.selectById(1L)).thenReturn(actor);
+        Role existing = new Role();
+        existing.setId(9L);
+        when(roleMapper.selectById(9L)).thenReturn(existing);
+        when(roleMapper.updateById(any(Role.class))).thenReturn(1);
+        Role update = new Role();
+        update.setId(9L);
+        update.setName("Reviewer-v2");
+
+        roleService.updateDefinition(update, actor);
+
+        // 写路径→失效配对：角色内容变更影响所有持有者，必须全量失效鉴权缓存
+        verify(authUserCache).invalidateAll();
     }
 
     @Test

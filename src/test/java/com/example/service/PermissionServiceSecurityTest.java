@@ -31,6 +31,8 @@ class PermissionServiceSecurityTest {
     RoleService roleService;
     @Mock
     UserMapper userMapper;
+    @Mock
+    com.example.common.AuthUserCache authUserCache;
 
     @InjectMocks
     PermissionService permissionService;
@@ -59,6 +61,8 @@ class PermissionServiceSecurityTest {
         verify(permissionMapper).insert(captor.capture());
         assertEquals("help", captor.getValue().getFlag());
         assertEquals("/page/end/help.html", captor.getValue().getPath());
+        // 写路径→失效配对：新权限即刻属于全部超管，必须全量失效鉴权缓存
+        verify(authUserCache).invalidateAll();
     }
 
     @Test

@@ -45,6 +45,7 @@ class UserControllerSecurityTest {
         ReflectionTestUtils.setField(controller, "userService", userService);
         ReflectionTestUtils.setField(controller, "roleAssignmentPolicy", roleAssignmentPolicy);
         ReflectionTestUtils.setField(controller, "webSocketTicketService", webSocketTicketService);
+        ReflectionTestUtils.setField(controller, "authUserCache", new com.example.common.AuthUserCache());
     }
 
     @Test

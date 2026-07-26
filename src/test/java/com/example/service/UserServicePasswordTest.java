@@ -33,6 +33,9 @@ public class UserServicePasswordTest {
     @Mock
     PermissionService permissionService;
 
+    @Mock
+    com.example.common.AuthUserCache authUserCache;
+
     @InjectMocks
     UserService userService;
 
@@ -50,6 +53,8 @@ public class UserServicePasswordTest {
         String encoded = captor.getValue().getPassword();
         assertTrue(encoded.startsWith("$2"));
         assertTrue(new BCryptPasswordEncoder().matches("new-password", encoded));
+        // 写路径→失效配对：用户行变更须失效该用户的鉴权缓存
+        verify(authUserCache).invalidate(1L);
     }
 
     @Test

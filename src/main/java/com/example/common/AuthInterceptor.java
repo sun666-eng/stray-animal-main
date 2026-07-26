@@ -82,9 +82,11 @@ public class AuthInterceptor implements HandlerInterceptor {
     }
 
     private final UserService userService;
+    private final AuthUserCache authUserCache;
 
-    public AuthInterceptor(UserService userService) {
+    public AuthInterceptor(UserService userService, AuthUserCache authUserCache) {
         this.userService = userService;
+        this.authUserCache = authUserCache;
     }
 
     @Override
@@ -246,6 +248,18 @@ public class AuthInterceptor implements HandlerInterceptor {
             return null;
         }
 
+        // 短 TTL 缓存命中：返回的是防御性副本，权限最迟 TTL 后刷新；
+        // 用户/角色/权限的写路径都会主动失效（见 AuthUserCache）。
+        User cached = authUserCache.get(userId);
+        if (cached != null) {
+            bindRequest(request, cached);
+            return cached;
+        }
+
+        // 读库前先取失效戳并记录读取时刻：读库期间发生的失效会使 put 被丢弃，
+        // 且快照过期从此刻起算，最大陈旧度恒为 TTL（防慢线程回填复活旧权限）
+        AuthUserCache.Stamp stamp = authUserCache.stamp(userId);
+        long loadStart = System.currentTimeMillis();
         User user = userService.getById(userId);
         if (user == null) {
             try {
@@ -259,11 +273,16 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
 
         userService.fillPermissions(user);
+        authUserCache.put(userId, user, stamp, loadStart);
+        bindRequest(request, user);
+        return user;
+    }
+
+    private void bindRequest(HttpServletRequest request, User user) {
         request.setAttribute("userId", user.getId());
         request.setAttribute("username", user.getUsername());
         request.getSession(true).setAttribute("user", user);
         request.getSession(true).setAttribute("userId", user.getId());
-        return user;
     }
 
     private boolean hasApiPermission(User user, String path, String method) {

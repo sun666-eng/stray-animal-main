@@ -27,6 +27,9 @@ public class SessionAuthorityTest {
     @Mock
     UserService userService;
 
+    @Mock
+    AuthUserCache authUserCache;
+
     @InjectMocks
     AuthInterceptor interceptor;
 

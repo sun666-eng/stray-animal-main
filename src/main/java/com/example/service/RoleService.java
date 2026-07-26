@@ -33,6 +33,9 @@ public class RoleService extends ServiceImpl<RoleMapper, Role> {
     @Resource
     private UserMapper userMapper;
 
+    @Resource
+    private com.example.common.AuthUserCache authUserCache;
+
     @Transactional
     public boolean createDefinition(Role role, User actor) {
         return RolePermissionWriteLock.execute(() -> createDefinitionLocked(role, actor));
@@ -74,6 +77,8 @@ public class RoleService extends ServiceImpl<RoleMapper, Role> {
         if (roleMapper.updateById(role) != 1) {
             throw new CustomException("409", "角色更新失败，请刷新后重试");
         }
+        // 角色权限内容变更影响所有持有该角色的用户，无法反查，须全量失效鉴权缓存
+        authUserCache.invalidateAll();
         return true;
     }
 
@@ -109,6 +114,20 @@ public class RoleService extends ServiceImpl<RoleMapper, Role> {
         if (roleMapper.deleteById(id) != 1) {
             throw new CustomException("409", "角色删除失败，请刷新后重试");
         }
+        authUserCache.invalidateAll();
+    }
+
+    /**
+     * 兜底：继承自 ServiceImpl 的通用更新（现存调用方为启动期 DataFixRunner；
+     * saveOrUpdate 的更新分支同样走到这里）。任何角色内容变更都须全量失效鉴权缓存。
+     */
+    @Override
+    public boolean updateById(Role role) {
+        boolean updated = super.updateById(role);
+        if (updated) {
+            authUserCache.invalidateAll();
+        }
+        return updated;
     }
 
     private boolean isBuiltInRole(Long id) {

@@ -41,6 +41,10 @@ file:
   fallback-static-dir: ${FILE_FALLBACK_STATIC_DIR:}
 
 app:
+  auth:
+    # 鉴权用户快照缓存 TTL（毫秒）：消除每请求 getById+fillPermissions 的 N+1。
+    # 写路径均有主动失效（AuthUserCache）；设为 0 可完全停用缓存回退每请求查库。
+    cache-ttl-ms: ${AUTH_CACHE_TTL_MS:5000}
   file:
     staged-cleanup-enabled: ${FILE_STAGED_CLEANUP_ENABLED:true}
     staged-retention-hours: ${FILE_STAGED_RETENTION_HOURS:24}
