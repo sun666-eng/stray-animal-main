@@ -174,6 +174,8 @@ public class UserController {
                 userId = ((User) sessionUser).getId();
             }
             webSocketTicketService.revokeUser(userId);
+            // 登出即时断开该用户全部 WebSocket 连接（此前 closeUserSessions 无调用方）
+            com.example.component.WebSocketServer.closeUserSessions(userId);
             if (request.getSession(false) != null) {
                 request.getSession(false).invalidate();
             }

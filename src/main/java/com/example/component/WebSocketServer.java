@@ -101,13 +101,36 @@ public class WebSocketServer {
         for (Set<Session> sessions : sessionMap.values()) {
             for (Session session : sessions) {
                 Long userId = getUserIdBySession(session);
-                if (loadAuthorizedUser(userId) == null) {
+                if (cachedAuthorizedUser(userId) == null) {
                     closeUnauthorized(session);
                     continue;
                 }
                 sendMessage(message, session);
             }
         }
+    }
+
+    /**
+     * 广播/心跳路径的鉴权走短 TTL 缓存，避免每条消息 × 每个在线连接的
+     * getById + fillPermissions 全量 DB 查询（N+1）。权限被撤销的用户最多
+     * 再收 {@value #AUTH_CACHE_TTL_MS} 毫秒消息；登出走 closeUserSessions 即时断开。
+     * 连接建立（@OnOpen）仍实时查库，不走本缓存。
+     */
+    private static final long AUTH_CACHE_TTL_MS = 30_000;
+    private static final Map<Long, Object[]> authCache = new ConcurrentHashMap<>();
+
+    private static User cachedAuthorizedUser(Long userId) {
+        if (userId == null) {
+            return null;
+        }
+        long now = System.currentTimeMillis();
+        Object[] entry = authCache.get(userId);
+        if (entry != null && now < (Long) entry[0]) {
+            return (User) entry[1];
+        }
+        User user = loadAuthorizedUser(userId);
+        authCache.put(userId, new Object[]{now + AUTH_CACHE_TTL_MS, user});
+        return user;
     }
 
     @OnOpen
@@ -187,7 +210,7 @@ public class WebSocketServer {
             return;
         }
         Long userId = getUserIdBySession(session);
-        if (loadAuthorizedUser(userId) == null) {
+        if (cachedAuthorizedUser(userId) == null) {
             closeUnauthorized(session);
             return;
         }
@@ -250,6 +273,7 @@ public class WebSocketServer {
         if (userId == null) {
             return;
         }
+        authCache.remove(userId);
         Set<Session> sessions = userSessionMap.remove(userId);
         if (sessions == null) {
             return;
