@@ -25,10 +25,12 @@ import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 @RestController
@@ -360,7 +362,17 @@ public class FileController {
         return SAFE_FLAG_PATTERN.matcher(flag).matches();
     }
 
-    private synchronized FileVO doUpload(MultipartFile file, Long ownerId, String purpose, String contentType) throws Exception {
+    /** 按 ownerId 串行化上传，保护配额 check-then-act；不同用户互不阻塞。 */
+    private final ConcurrentHashMap<Long, Object> uploadLocks = new ConcurrentHashMap<>();
+
+    private FileVO doUpload(MultipartFile file, Long ownerId, String purpose, String contentType) throws Exception {
+        Object lock = uploadLocks.computeIfAbsent(ownerId == null ? -1L : ownerId, k -> new Object());
+        synchronized (lock) {
+            return doUploadLocked(file, ownerId, purpose, contentType);
+        }
+    }
+
+    private FileVO doUploadLocked(MultipartFile file, Long ownerId, String purpose, String contentType) throws Exception {
         fileAssetService.assertStagedQuota(ownerId, 1, file.getSize());
         String originalName = file.getOriginalFilename();
         try (InputStream input = file.getInputStream()) {
@@ -375,7 +387,10 @@ public class FileController {
             dir.mkdirs();
         }
         File target = new File(dir, storedName);
-        FileUtil.writeBytes(file.getBytes(), target);
+        // 流式写盘，避免 getBytes() 将整个文件读入内存
+        try (InputStream input = file.getInputStream()) {
+            Files.copy(input, target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        }
         try {
             fileAssetService.recordUpload(flag, storedName, originalName, ownerId, purpose,
                     contentType, file.getSize());
