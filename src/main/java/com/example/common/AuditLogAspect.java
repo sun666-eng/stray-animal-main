@@ -125,7 +125,6 @@ public class AuditLogAspect {
         }
         String a = remoteAddr.trim().toLowerCase();
         return "127.0.0.1".equals(a)
-                || "https://example.net/id/garnet".equals(a)
                 || "::1".equals(a)
                 || "0:0:0:0:0:0:0:1".equals(a)
                 || a.startsWith("10.")
