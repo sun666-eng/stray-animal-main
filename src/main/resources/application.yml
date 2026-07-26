@@ -30,7 +30,7 @@ spring:
     password: ${REDIS_PASSWORD:}
     database: 0
 
-mybatis:
+mybatis-plus:
   mapper-locations: classpath:mapper/*.xml
 
 file:
