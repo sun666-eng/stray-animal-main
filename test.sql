@@ -23,7 +23,7 @@ CREATE TABLE `t_account` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '款项公示ID',
   `alabel` varchar(100) NOT NULL COMMENT '款项名称',
   `auname` varchar(100) NOT NULL COMMENT '经手人名字',
-  `avalue` double NOT NULL COMMENT '款项金额',
+  `avalue` decimal(19,2) NOT NULL COMMENT '款项金额',
   `adescribe` varchar(355) DEFAULT NULL COMMENT '款项用途详情',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8;
@@ -57,7 +57,7 @@ CREATE TABLE `t_adopt` (
   `wechat` varchar(20) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL COMMENT '微信号',
   `vstate` int(12) DEFAULT '0' COMMENT '申请状态',
   `apic` varchar(255) DEFAULT NULL COMMENT '动物图片',
-  `uname` varchar(20) DEFAULT NULL COMMENT '用户姓名',
+  `uname` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '用户姓名快照',
   `aname` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`aid`,`uid`),
   KEY `uid` (`uid`),
@@ -84,7 +84,7 @@ CREATE TABLE `t_animal` (
   `tname` varchar(20) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL DEFAULT '大壮' COMMENT '动物名字',
   `ttype` varchar(20) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL DEFAULT '狗' COMMENT '动物品种',
   `tsex` varchar(3) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL DEFAULT '未知' COMMENT '动物性别',
-  `tbirthday` date NOT NULL DEFAULT '2021-03-01' COMMENT '动物生日',
+  `tbirthday` date DEFAULT NULL COMMENT '动物生日（未知时为空）',
   `tpic` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT '动物图片',
   `tstate` int(12) NOT NULL DEFAULT '2' COMMENT '动物状态',
   `tdescribe` varchar(100) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT '无' COMMENT '动物描述',
@@ -194,7 +194,7 @@ CREATE TABLE `t_proof` (
   `paid` bigint(20) NOT NULL COMMENT '领养ID',
   `puid` bigint(20) NOT NULL,
   `aname` varchar(20) DEFAULT NULL,
-  `uname` varchar(20) DEFAULT NULL,
+  `uname` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '用户姓名快照',
   PRIMARY KEY (`id`),
   KEY `paid` (`paid`),
   KEY `puid` (`puid`),
@@ -241,7 +241,7 @@ CREATE TABLE `t_user` (
   `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '密码',
   `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '邮箱',
   `phone` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '手机号',
-  `avatar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT '1' COMMENT '头像',
+  `avatar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '头像文件flag',
   `role` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '角色列表(JSON，须 TEXT 防截断)',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `uni` (`username`) USING BTREE
@@ -283,6 +283,29 @@ INSERT INTO `t_visit` VALUES ('6', '10003', '2021-05-04', '5', '1620646663964', 
 INSERT INTO `t_visit` VALUES ('7', '10003', '2021-05-03', '4', '1620655507688', '动物状态较好，有一点皮肤病', '张文玥', '21', '默默');
 INSERT INTO `t_visit` VALUES ('8', '10009', '2021-05-03', '4', '1620663306862', '动物在新家适应较好，有待持续观察', '黎明', '1', '某某');
 INSERT INTO `t_visit` VALUES ('9', '10003', '2021-04-03', '4', '1620694917691', '动物基本状态较为良好，有待进一步观察', '张文玥', '21', '默默');
+
+DROP TABLE IF EXISTS `t_file_asset`;
+CREATE TABLE `t_file_asset` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `flag` varchar(64) NOT NULL,
+  `stored_name` varchar(512) NOT NULL,
+  `original_name` varchar(512) DEFAULT NULL,
+  `owner_id` bigint DEFAULT NULL,
+  `purpose` varchar(32) NOT NULL DEFAULT 'private',
+  `visibility` varchar(16) NOT NULL DEFAULT 'private',
+  `business_type` varchar(32) DEFAULT NULL,
+  `business_id` bigint DEFAULT NULL,
+  `content_type` varchar(128) DEFAULT NULL,
+  `size_bytes` bigint DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `bound_at` datetime DEFAULT NULL,
+  `deleted` tinyint NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_file_flag` (`flag`),
+  KEY `idx_file_owner` (`owner_id`),
+  KEY `idx_file_purpose` (`purpose`),
+  KEY `idx_file_business` (`business_type`,`business_id`,`deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ----------------------------
 -- Table structure for `t_volunteer`

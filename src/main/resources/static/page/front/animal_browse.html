@@ -2,163 +2,237 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>动物浏览</title>
-    <link rel="stylesheet" href="../../css/base.css">
-    <link rel="stylesheet" href="../../css/theme.css">
-    <link rel="stylesheet" href="../../css/element.css">
-    <style>
-        body { margin: 0; background: #F9FAFB; color: #24324a; }
-        .page-shell { max-width: 1200px; margin: 0 auto; padding: 30px 20px 60px; }
-        .nav { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
-        .chip { display: inline-flex; align-items: center; height: 38px; padding: 0 14px; border-radius: 999px; background: #fff; color: #1D4ED8; text-decoration: none; box-shadow: 0 8px 20px rgba(25, 43, 77, 0.06); }
-        .hero { background: linear-gradient(135deg, #93C5FD 0%, #3B82F6 100%); color: #fff; border-radius: 20px; padding: 28px 30px; box-shadow: 0 12px 30px rgba(37, 99, 235, 0.18); margin-bottom: 24px; }
-        .hero h1 { margin: 0 0 8px; font-size: 30px; }
-        .hero p { margin: 0; opacity: 0.95; }
-        .toolbar { display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
-        .toolbar input { flex: 1; min-width: 240px; height: 42px; border: 1px solid #d9e2f2; border-radius: 10px; padding: 0 14px; outline: none; background: #fff; }
-        .toolbar button { height: 42px; padding: 0 18px; border: 0; border-radius: 10px; cursor: pointer; color: #fff; background: #2563EB; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
-        .card { background: #fff; border-radius: 18px; overflow: hidden; box-shadow: 0 8px 24px rgba(25, 43, 77, 0.08); }
-        .card img { width: 100%; height: 200px; object-fit: cover; background: #F0F9FF; }
-        .card-body { padding: 16px; }
-        .card-title { font-size: 20px; font-weight: 700; color: #24324a; margin-bottom: 8px; }
-        .meta { color: #637089; font-size: 14px; line-height: 1.8; }
-        .status { display: inline-block; margin-top: 10px; padding: 4px 10px; border-radius: 999px; font-size: 12px; background: #F0F9FF; color: #1D4ED8; }
-        .actions { display: flex; gap: 10px; margin-top: 14px; }
-        .actions button { flex: 1; height: 38px; border: 0; border-radius: 10px; cursor: pointer; }
-        .btn-primary { background: #2563EB; color: #fff; }
-        .btn-ghost { background: #F0F9FF; color: #1D4ED8; }
-        .pager { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
-        .pager button { height: 38px; padding: 0 14px; border-radius: 10px; border: 1px solid #d6def0; background: #fff; cursor: pointer; }
-        .pager .current { background: #2563EB; color: #fff; border-color: #2563EB; }
-        .empty { background: #fff; border-radius: 18px; padding: 50px 20px; text-align: center; color: #7a8599; box-shadow: 0 8px 24px rgba(25, 43, 77, 0.08); }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="浏览正在等待领养的流浪动物">
+    <title>等待一个家 · 归途计划</title>
+    <link rel="stylesheet" href="../../css/product-ui.css">
 </head>
 <body>
-<div id="user-toolbar" style="position:fixed;right:20px;top:20px;z-index:9999;display:flex;align-items:center;gap:0;background:#fff;border-radius:14px;box-shadow:0 8px 24px rgba(25,43,77,0.12);">
-  <div id="toolbar-trigger" onclick="document.getElementById('toolbar-dropdown').classList.toggle('show')" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 14px;border-radius:14px;">
-    <svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#2563EB"/><circle cx="20" cy="14" r="8" fill="#fff" opacity=".95"/><ellipse cx="20" cy="37" rx="15" ry="11" fill="#fff" opacity=".95"/></svg>
-    <span style="color:#24324a;font-size:16px;font-weight:600;" id="toolbar-username">未登录</span>
-    <svg width="14" height="14" viewBox="0 0 14 14" style="flex-shrink:0;margin-left:2px;"><path d="M3.5 5.25L7 8.75l3.5-3.5" fill="none" stroke="#637089" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  </div>
-  <div id="toolbar-dropdown" style="display:none;position:absolute;right:0;top:64px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(25,43,77,0.15);min-width:140px;padding:6px 0;">
-    <a href="/page/end/person.html" style="display:block;padding:10px 18px;font-size:15px;color:#24324a;text-decoration:none;">个人信息</a>
-    <a href="/page/end/index.html" style="display:block;padding:10px 18px;font-size:15px;color:#1D4ED8;text-decoration:none;">管理后台</a>
-    <a href="javascript:void(0)" onclick="handleLogout()" style="display:block;padding:10px 18px;font-size:15px;color:#c73636;text-decoration:none;">退出登录</a>
-  </div>
-</div>
-<style>
-#toolbar-dropdown.show { display:block !important; }
-#toolbar-dropdown a:hover { background:#F9FAFB; }
-</style>
-<script>
-document.addEventListener('click', function(e) {
-  var d = document.getElementById('toolbar-dropdown');
-  var t = document.getElementById('toolbar-trigger');
-  if (d && t && !t.contains(e.target) && !d.contains(e.target)) {
-    d.classList.remove('show');
-  }
-});
-</script>
-
-<div id="app" class="page-shell">
-    <div class="nav">
-        <a class="chip is-active" href="./animal_browse.html">动物浏览</a>
-        <a class="chip" href="./my_adopt.html">我的领养申请</a>
-        <a class="chip" href="./volunteer_apply.html">义工申请</a>
-        <a class="chip" href="./my_volunteer.html">我的义工申请</a>
-        <a class="chip" href="./rescue_apply.html">救助咨询</a>
-        <a class="chip" href="./my_rescue.html">我的救助</a>
-        <a class="chip" href="./notice_list.html">公告中心</a>
-        <a class="chip" href="./account_public.html">信息公示</a>
-    </div>
-    <div class="hero">
-        <h1>流浪动物浏览</h1>
-        <p>查看当前可领养动物，点击查看详情并发起领养申请。</p>
-    </div>
-    <div class="toolbar">
-        <input v-model="query" type="text" placeholder="输入动物描述或名称关键词搜索">
-        <button @click="loadAnimals(1)">搜索</button>
-        <button class="btn-ghost" @click="resetQuery">重置</button>
-    </div>
-    <div v-if="loading" class="empty">数据加载中...</div>
-    <div v-else-if="animals.length === 0" class="empty">暂无可展示的动物数据</div>
-    <div v-else class="grid">
-        <div class="card" v-for="item in animals" :key="item.id">
-            <img :src="resolveImage(item.tpic)" alt="动物图片" @error="handleImageError">
-            <div class="card-body">
-                <div class="card-title">{{ item.tname || '未命名动物' }}</div>
-                <div class="meta">品种：{{ item.ttype || '未知' }}</div>
-                <div class="meta">性别：{{ item.tsex || '未知' }}</div>
-                <div class="meta">生日：{{ formatDate(item.tbirthday) }}</div>
-                <div class="meta">描述：{{ item.tdescribe || '暂无描述' }}</div>
-                <div class="status">{{ formatState(item.tstate) }}</div>
-                <div class="actions">
-                    <button class="btn-ghost" @click="openDetail(item.id)">查看详情</button>
-                    <button class="btn-primary" @click="goAdopt(item.id)">申请领养</button>
+<div id="app" v-cloak>
+    <header class="ui-header">
+        <div class="ui-header-inner">
+            <a class="ui-brand" href="./index.html" aria-label="归途计划首页">
+                <span class="ui-brand-mark" aria-hidden="true">♡</span>
+                <span class="ui-brand-copy"><strong>归途计划</strong><small>PAWS ON THE WAY HOME</small></span>
+            </a>
+            <nav class="ui-nav" aria-label="主导航">
+                <a href="./index.html">首页</a>
+                <a class="is-active" href="./animal_browse.html" aria-current="page">等待一个家</a>
+                <a href="./notice_list.html">救助动态</a>
+                <a href="./account_public.html">透明公示</a>
+            </nav>
+            <div class="ui-header-actions">
+                <button class="ui-icon-button ui-mobile-toggle" type="button" aria-label="切换导航" :aria-expanded="String(mobileOpen)" @click="mobileOpen = !mobileOpen">☰</button>
+                <div class="ui-account">
+                    <button class="ui-account-trigger" type="button" :aria-expanded="String(accountOpen)" @click.stop="accountOpen = !accountOpen">
+                        <span class="ui-avatar">{{ userInitial }}</span>
+                        <span class="ui-account-name">{{ user ? user.username : '登录' }}</span>
+                    </button>
+                    <div v-if="accountOpen" class="ui-account-menu" @click.stop>
+                        <template v-if="user">
+                            <a href="./index.html">用户首页</a>
+                            <a href="./my_adopt.html">我的领养</a>
+                            <a href="./my_rescue.html">我的救助</a>
+                            <a href="./my_volunteer.html">我的义工</a>
+                            <a href="/page/end/person.html">个人资料</a>
+                            <button class="is-danger" type="button" @click="logout">退出登录</button>
+                        </template>
+                        <template v-else>
+                            <a href="./login.html">登录账户</a>
+                            <a href="./register.html">创建账户</a>
+                        </template>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="pager" v-if="totalPages > 1">
-        <button :disabled="pageNum === 1" @click="loadAnimals(pageNum - 1)">上一页</button>
-        <button v-for="p in pageList" :key="p" :class="{ current: p === pageNum }" @click="loadAnimals(p)">{{ p }}</button>
-        <button :disabled="pageNum === totalPages" @click="loadAnimals(pageNum + 1)">下一页</button>
-        <span>第 {{ pageNum }} / {{ totalPages }} 页</span>
-    </div>
+        <nav class="ui-mobile-nav" :class="{ 'is-open': mobileOpen }" aria-label="移动端导航">
+            <a href="./index.html">首页</a>
+            <a href="./animal_browse.html">等待一个家</a>
+            <a href="./notice_list.html">救助动态</a>
+            <a href="./account_public.html">透明公示</a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="ui-page-head">
+            <div class="ui-container">
+                <div class="ui-breadcrumb"><span>首页</span><span>/</span><strong>等待一个家</strong></div>
+                <div class="ui-page-head-row">
+                    <div>
+                        <h1>和未来的家人，先见一面</h1>
+                        <p>认真了解它们的健康、性格和照护需要。领养不是一次选择，而是一段长期关系的开始。</p>
+                    </div>
+                    <span v-if="!loading && !error" class="ui-badge is-waiting">{{ total }} 只正在等待</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="ui-container">
+            <form class="ui-toolbar" role="search" @submit.prevent="loadAnimals(1)">
+                <label class="ui-search">
+                    <span aria-hidden="true">⌕</span>
+                    <span class="sr-only">搜索动物</span>
+                    <input v-model.trim="query" type="search" placeholder="搜索名字、品种或性格" autocomplete="off">
+                </label>
+                <label class="sr-only" for="animalType">动物类型</label>
+                <select id="animalType" v-model="typeFilter" class="ui-select" @change="loadAnimals(1)">
+                    <option value="">全部动物</option>
+                    <option value="猫">猫咪</option>
+                    <option value="犬类">狗狗</option>
+                </select>
+                <button class="ui-button is-dark" type="submit">搜索</button>
+            </form>
+
+            <div class="ui-filter-row" aria-label="快捷筛选">
+                <button class="ui-filter-chip" :class="{ 'is-active': typeFilter === '' }" type="button" @click="setType('')">全部</button>
+                <button class="ui-filter-chip" :class="{ 'is-active': typeFilter === '猫' }" type="button" @click="setType('猫')">猫咪</button>
+                <button class="ui-filter-chip" :class="{ 'is-active': typeFilter === '犬类' }" type="button" @click="setType('犬类')">狗狗</button>
+                <button v-if="query || typeFilter" class="ui-filter-chip" type="button" @click="resetFilters">清除筛选</button>
+            </div>
+
+            <div v-if="loading" class="ui-card-grid" aria-label="正在加载动物列表">
+                <article v-for="index in 6" :key="index" class="ui-animal-card ui-skeleton-card" aria-hidden="true">
+                    <div class="ui-card-media ui-skeleton"></div>
+                    <div class="ui-skeleton ui-skeleton-line short"></div>
+                    <div class="ui-skeleton ui-skeleton-line"></div>
+                </article>
+            </div>
+
+            <div v-else-if="error" class="ui-state" role="alert">
+                <div><span class="ui-state-mark" aria-hidden="true">!</span><h2>动物列表暂时无法加载</h2><p>{{ error }}</p><button class="ui-button is-dark" type="button" @click="loadAnimals(pageNum)">重新加载</button></div>
+            </div>
+
+            <div v-else-if="animals.length === 0" class="ui-state">
+                <div><span class="ui-state-mark" aria-hidden="true">⌕</span><h2>没有找到匹配的动物</h2><p>换一个关键词或清除筛选后再看看。</p><button class="ui-button is-ghost" type="button" @click="resetFilters">清除筛选</button></div>
+            </div>
+
+            <div v-else class="ui-card-grid">
+                <article v-for="item in animals" :key="item.id" class="ui-animal-card">
+                    <a class="ui-card-media" :href="detailUrl(item.id)" :aria-label="`查看${displayName(item)}的详情`">
+                        <img :src="resolveImage(item.tpic)" :alt="`${displayName(item)}的照片`" loading="lazy" decoding="async" @error="handleImageError">
+                        <span class="ui-badge is-waiting">等待领养</span>
+                    </a>
+                    <div class="ui-card-body">
+                        <div class="ui-card-title-row"><h2>{{ displayName(item) }}</h2><span>#{{ item.id }}</span></div>
+                        <div class="ui-card-meta"><span>{{ item.ttype || '类型待确认' }}</span><span>{{ item.tsex || '性别未知' }}</span><span>{{ formatAge(item.tbirthday) }}</span></div>
+                        <p class="ui-card-description">{{ item.tdescribe || '正在完善介绍，欢迎先查看它的基础信息。' }}</p>
+                        <div class="ui-card-actions">
+                            <a class="ui-button is-ghost" :href="detailUrl(item.id)">了解更多</a>
+                            <a class="ui-button is-primary" :href="adoptUrl(item.id)">申请领养</a>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <div v-if="!loading && !error && totalPages > 1" class="ui-pagination">
+                <span>第 {{ pageNum }} 页，共 {{ total }} 条记录</span>
+                <div class="ui-page-buttons">
+                    <button type="button" :disabled="pageNum === 1" aria-label="上一页" @click="loadAnimals(pageNum - 1)">‹</button>
+                    <button v-for="page in pageList" :key="page" type="button" :class="{ 'is-current': page === pageNum }" @click="loadAnimals(page)">{{ page }}</button>
+                    <button type="button" :disabled="pageNum === totalPages" aria-label="下一页" @click="loadAnimals(pageNum + 1)">›</button>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer class="ui-site-footer"><div class="ui-container ui-footer-inner"><div class="ui-footer-copy"><strong>归途计划</strong><span>© 2026 · 让每一次善意都有回音</span></div><nav class="ui-footer-nav" aria-label="页脚导航"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a href="./notice_list.html">救助动态</a><a href="./rescue_apply.html">发起救助</a><a href="./account_public.html">透明公示</a></nav></div></footer>
+    <div class="ui-toast" :class="{ 'is-show': toast }" role="status" aria-live="polite">{{ toast }}</div>
 </div>
+
 <script src="../../js/jquery.min.js"></script>
 <script src="../../js/vue.min.js"></script>
-<script src="../../js/element.js"></script>
+<script src="../../js/auth-session.js?v=20260722"></script>
 <script>
 new Vue({
   el: '#app',
-  data: { animals: [], query: '', loading: false, pageNum: 1, pageSize: 8, totalPages: 1 },
-  computed: { pageList() { const pages = []; const start = Math.max(1, this.pageNum - 2); const end = Math.min(this.totalPages, start + 4); for (let i = start; i <= end; i++) pages.push(i); return pages; } },
+  data: {
+    user: null,
+    animals: [],
+    query: '',
+    typeFilter: '',
+    loading: true,
+    error: '',
+    pageNum: 1,
+    pageSize: 9,
+    total: 0,
+    totalPages: 1,
+    accountOpen: false,
+    mobileOpen: false,
+    toast: ''
+  },
+  computed: {
+    userInitial() { return this.user && this.user.username ? this.user.username.slice(0, 1).toUpperCase() : '↗'; },
+    pageList() {
+      const pages = [];
+      let start = Math.max(1, this.pageNum - 2);
+      const end = Math.min(this.totalPages, start + 4);
+      start = Math.max(1, end - 4);
+      for (let page = start; page <= end; page += 1) pages.push(page);
+      return pages;
+    }
+  },
   mounted() {
-    try {
+    document.addEventListener('click', this.closeMenus);
+    const start = () => {
+      this.user = window.AuthSession ? AuthSession.getUser() : this.readStoredUser();
+      this.loadAnimals(1);
       if (new URLSearchParams(location.search).get('error') === 'need_admin') {
-        this.$message.warning('当前账号没有后台管理权限，已回到用户端。请使用 admin 从统一登录页进入管理功能。');
+        this.showToast('当前账号没有管理权限，已返回用户端');
         history.replaceState(null, '', location.pathname);
       }
-    } catch (e) {}
-    this.loadAnimals(1);
+    };
+    if (window.AuthSession) AuthSession.bootstrap({ requireAuth: false, onDone: start }); else start();
   },
+  beforeDestroy() { document.removeEventListener('click', this.closeMenus); },
   methods: {
+    readStoredUser() {
+      try { return JSON.parse(sessionStorage.getItem('user') || 'null'); } catch (e) { return null; }
+    },
+    closeMenus() { this.accountOpen = false; },
     loadAnimals(page) {
-      this.loading = true; this.pageNum = page;
-      $.ajax({ url: '/api/animal/page1', type: 'GET', data: { name: this.query, pageNum: this.pageNum, pageSize: this.pageSize } })
-        .then(res => { if (res.code === '0' && res.data) { this.animals = res.data.records || []; this.totalPages = res.data.pages || 1; } else { this.$message.error(res.msg || '加载动物列表失败'); } })
-        .catch(() => { this.$message.error('网络异常，加载动物列表失败'); })
+      this.loading = true;
+      this.error = '';
+      this.pageNum = page;
+      $.ajax({ url: '/api/animal/page1', type: 'GET', data: { name: this.query, type: this.typeFilter, pageNum: page, pageSize: this.pageSize } })
+        .done(res => {
+          if (res && res.code === '0' && res.data) {
+            this.animals = res.data.records || [];
+            this.total = Number(res.data.total || 0);
+            this.totalPages = Math.max(1, Number(res.data.pages || 1));
+          } else {
+            this.error = (res && res.msg) || '服务返回了无法识别的数据';
+          }
+        })
+        .fail(() => { this.error = '请检查网络连接后重试。'; })
         .always(() => { this.loading = false; });
     },
-    resetQuery() { this.query = ''; this.loadAnimals(1); },
-    openDetail(id) { location.href = `./animal_detail.html?id=${id}`; },
-    goAdopt(id) { location.href = `./adopt_apply.html?animalId=${id}`; },
-    formatDate(value) { if (!value) return '未知'; const date = new Date(value); if (Number.isNaN(date.getTime())) return value; const y = date.getFullYear(); const m = String(date.getMonth() + 1).padStart(2, '0'); const d = String(date.getDate()).padStart(2, '0'); return `${y}-${m}-${d}`; },
-    formatState(state) { if (state === 0) return '待领养'; if (state === 1) return '申请中'; if (state === 2) return '已领养'; return '未知状态'; },
-    resolveImage(path) { if (!path) return '/img/b1.jpg'; if (path.startsWith('http://') || path.startsWith('https://')) return path; if (path.startsWith('/')) return path; return `/api/files/${path}`; },
-    handleImageError(e) { e.target.src = '/img/b1.jpg'; }
+    setType(type) { this.typeFilter = type; this.loadAnimals(1); },
+    resetFilters() { this.query = ''; this.typeFilter = ''; this.loadAnimals(1); },
+    displayName(item) { return item && item.tname ? item.tname : '未命名动物'; },
+    detailUrl(id) { return `./animal_detail.html?id=${encodeURIComponent(id)}`; },
+    adoptUrl(id) { return `./adopt_apply.html?animalId=${encodeURIComponent(id)}`; },
+    formatAge(value) {
+      if (!value) return '年龄未知';
+      const birth = new Date(value);
+      if (Number.isNaN(birth.getTime())) return '年龄未知';
+      const months = Math.max(0, Math.floor((Date.now() - birth.getTime()) / 2629800000));
+      return months < 12 ? `${Math.max(1, months)} 个月` : `${Math.floor(months / 12)} 岁`;
+    },
+    resolveImage(path) {
+      return /^[a-zA-Z0-9-]{1,64}$/.test(path || '')
+        ? `/api/files/${encodeURIComponent(path)}`
+        : '/prototype-assets/editorial-01.svg';
+    },
+    handleImageError(event) { event.target.onerror = null; event.target.src = '/prototype-assets/editorial-01.svg'; },
+    showToast(message) {
+      this.toast = message;
+      clearTimeout(this.toastTimer);
+      this.toastTimer = setTimeout(() => { this.toast = ''; }, 2200);
+    },
+    logout() {
+      if (window.AuthSession) AuthSession.logout(); else location.href = './login.html';
+    }
   }
 });
 </script>
-<script>
-(function(){
-  var u = sessionStorage.getItem('user') ? JSON.parse(sessionStorage.getItem('user')) : null;
-  if (u && u.username) { document.getElementById('toolbar-username').textContent = u.username; }
-})();
-function handleLogout() {
-  if (window.AuthSession) { AuthSession.logout(); return; }
-  $.ajax({ url: '/api/user/logout', type: 'POST', contentType: 'application/json', data: '{}', headers: { 'X-CSRF-Token': sessionStorage.getItem('csrfToken') || '' } }).always(function(){
-    sessionStorage.removeItem('user');
-    location.href = '/page/front/login.html';
-  });
-}
-</script>
-<script src="../../js/auth-session.js?v=20260712a"></script>
-<script src="../../js/front-nav.js?v=20260712a"></script>
-<script src="../../js/dark-mode.js"></script>
 </body>
 </html>
-
-

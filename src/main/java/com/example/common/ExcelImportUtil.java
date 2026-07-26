@@ -60,9 +60,15 @@ public final class ExcelImportUtil {
         if (s.isEmpty()) return null;
         for (String p : DATE_PATTERNS) {
             try {
-                return new SimpleDateFormat(p).parse(s);
+                SimpleDateFormat formatter = new SimpleDateFormat(p);
+                formatter.setLenient(false);
+                java.text.ParsePosition position = new java.text.ParsePosition(0);
+                Date parsed = formatter.parse(s, position);
+                if (parsed != null && position.getIndex() == s.length()) {
+                    return parsed;
+                }
             } catch (Exception ignored) {}
         }
-        return null;
+        throw new CustomException("400", "日期格式无效，请使用 yyyy-MM-dd");
     }
 }

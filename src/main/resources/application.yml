@@ -41,11 +41,17 @@ file:
   fallback-static-dir: ${FILE_FALLBACK_STATIC_DIR:}
 
 app:
+  file:
+    staged-cleanup-enabled: ${FILE_STAGED_CLEANUP_ENABLED:true}
+    staged-retention-hours: ${FILE_STAGED_RETENTION_HOURS:24}
+    staged-cleanup-interval-ms: ${FILE_STAGED_CLEANUP_INTERVAL_MS:3600000}
+    max-staged-files-per-user: ${FILE_MAX_STAGED_FILES_PER_USER:20}
+    max-staged-bytes-per-user: ${FILE_MAX_STAGED_BYTES_PER_USER:104857600}
   redis:
     enabled: ${REDIS_ENABLED:false}
   # WebSocket ticket/onlineCount 为进程内状态；生产禁止水平扩容多实例
   websocket:
-    single-instance-only: true
+    single-instance-only: ${WEBSOCKET_SINGLE_INSTANCE_ONLY:true}
   jwt:
     secret: ${JWT_SECRET:}
     # 仅 active 仅为 dev/test 且本开关为 true 时可用开发密钥
@@ -87,6 +93,5 @@ app:
     fail-fast: ${ROLE_GUARD_FAIL_FAST:false}
     demote-user-volunteer: ${ROLE_GUARD_DEMOTE_USER_VOLUNTEER:true}
   volunteer:
-    # 义工审核通过后自动授予的角色 ID：默认 4=认证义工（无后台管理权）。
-    # 旧默认 2=志愿者后台角色权限过重；设为 0 关闭自动赋权。
+    # 义工审核的派生角色同步：4=认证义工（默认），0=仅审状态且不写角色；其他正数拒绝审核。
     auto-grant-role-id: ${VOLUNTEER_ROLE_ID:4}

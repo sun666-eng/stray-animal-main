@@ -1,6 +1,7 @@
 package com.example.component;
 
 import com.example.common.RoleContracts;
+import com.example.common.StartupMutationPolicy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
@@ -24,6 +25,7 @@ import java.util.Set;
 public class RolePermissionGuardRunner implements ApplicationRunner {
 
     private final JdbcTemplate jdbcTemplate;
+    private final StartupMutationPolicy mutationPolicy;
 
     @Value("${app.role-guard.enabled:true}")
     private boolean enabled;
@@ -38,8 +40,9 @@ public class RolePermissionGuardRunner implements ApplicationRunner {
     @Value("${app.role-guard.demote-user-volunteer:true}")
     private boolean demoteUserVolunteer;
 
-    public RolePermissionGuardRunner(JdbcTemplate jdbcTemplate) {
+    public RolePermissionGuardRunner(JdbcTemplate jdbcTemplate, StartupMutationPolicy mutationPolicy) {
         this.jdbcTemplate = jdbcTemplate;
+        this.mutationPolicy = mutationPolicy;
     }
 
     @Override
@@ -48,20 +51,32 @@ public class RolePermissionGuardRunner implements ApplicationRunner {
             log.info("RolePermissionGuard 已关闭");
             return;
         }
-        log.info("RolePermissionGuard 开始，契约版本={}", RoleContracts.CONTRACT_VERSION);
+        // pure-check 禁止任何写修复；与 auto-fix 求交
+        boolean canMutate = autoFix && mutationPolicy.isMutationsAllowed();
+        log.info("RolePermissionGuard 开始，契约版本={} mutationsAllowed={}",
+                RoleContracts.CONTRACT_VERSION, mutationPolicy.isMutationsAllowed());
         List<String> errors = new ArrayList<>();
         try {
-            ensurePermissionFlags(errors);
-            ensureRole3UserLoop(errors);
-            ensureRole4Light(errors);
-            ensureRole1Exists(errors);
-            if (demoteUserVolunteer) {
-                demoteOverPrivilegedUsers(errors);
+            // 临时覆盖 autoFix 语义：方法内部仍读 this.autoFix，改为字段在本 run 内有效
+            boolean previousAutoFix = this.autoFix;
+            this.autoFix = canMutate;
+            try {
+                ensurePermissionFlags(errors);
+                ensureRole3UserLoop(errors);
+                ensureRole4Light(errors);
+                ensureRole1Exists(errors);
+                if (demoteUserVolunteer) {
+                    demoteOverPrivilegedUsers(errors);
+                }
+                // 仅有 role4（空徽章）的用户 permission=[]，自助闭环全断
+                ensureBadgeUsersKeepOrdinaryRole(errors);
+            } finally {
+                this.autoFix = previousAutoFix;
             }
             if (!errors.isEmpty()) {
                 String msg = String.join("; ", errors);
                 log.error("RolePermissionGuard 未通过: {}", msg);
-                if (failFast) {
+                if (failFast || !mutationPolicy.isMutationsAllowed()) {
                     throw new IllegalStateException("[RolePermissionGuard] " + msg);
                 }
                 return;
@@ -227,6 +242,39 @@ public class RolePermissionGuardRunner implements ApplicationRunner {
         }
     }
 
+    /**
+     * 角色 4 权限为空。若用户只有 role4（无 role1/2/3），登录后 flags 为空，前端“有入口、API 全 403”。
+     * 修复为 role3+role4 标准双角色。
+     */
+    private void ensureBadgeUsersKeepOrdinaryRole(List<String> errors) {
+        final String safeDualRoleJson =
+                "[{\"id\":3,\"name\":\"普通用户\",\"description\":\"部分非工作权限\",\"permission\":null},"
+                        + "{\"id\":4,\"name\":\"认证义工\",\"description\":\"义工审核通过标记，无后台管理权限\",\"permission\":null}]";
+        try {
+            // 含 id:4，且不含 id:3 / id:1 / id:2（兼容 "id":4 与 "id": 4）
+            List<Long> ids = jdbcTemplate.query(
+                    "SELECT id FROM t_user WHERE "
+                            + "(role LIKE '%\"id\":4%' OR role LIKE '%\"id\": 4%') "
+                            + "AND role NOT LIKE '%\"id\":3%' AND role NOT LIKE '%\"id\": 3%' "
+                            + "AND role NOT LIKE '%\"id\":1%' AND role NOT LIKE '%\"id\": 1%' "
+                            + "AND role NOT LIKE '%\"id\":2%' AND role NOT LIKE '%\"id\": 2%'",
+                    (rs, i) -> rs.getLong(1));
+            if (ids == null || ids.isEmpty()) {
+                return;
+            }
+            if (!autoFix) {
+                errors.add("发现 " + ids.size() + " 个用户仅有认证义工徽章而无普通用户角色（permission 将为空）");
+                return;
+            }
+            for (Long id : ids) {
+                jdbcTemplate.update("UPDATE t_user SET role = ? WHERE id = ?", safeDualRoleJson, id);
+                log.warn("RolePermissionGuard 用户 id={} 补回角色3（原仅有空徽章 role4）", id);
+            }
+        } catch (Exception e) {
+            log.warn("ensureBadgeUsersKeepOrdinaryRole 跳过: {}", e.getMessage());
+        }
+    }
+
     private String queryRolePermission(long roleId) {
         return jdbcTemplate.query(
                 "SELECT permission FROM t_role WHERE id = ?",
@@ -235,6 +283,10 @@ public class RolePermissionGuardRunner implements ApplicationRunner {
     }
 
     private void writeContractVersion() {
+        if (!mutationPolicy.isMutationsAllowed()) {
+            log.info("RolePermissionGuard pure-check：跳过写入 role_contract_version");
+            return;
+        }
         try {
             jdbcTemplate.execute(
                     "CREATE TABLE IF NOT EXISTS app_schema_meta ("

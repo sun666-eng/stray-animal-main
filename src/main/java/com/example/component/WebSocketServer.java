@@ -3,8 +3,9 @@ package com.example.component;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
+import com.example.common.PermissionUtil;
 import com.example.config.RedisConfig;
-import com.example.common.JwtUtil;
+import com.example.dto.ChatMessageDTO;
 import com.example.entity.User;
 import com.example.service.UserService;
 import org.slf4j.Logger;
@@ -16,16 +17,12 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.websocket.*;
 import javax.websocket.server.PathParam;
-import javax.websocket.server.ServerEndpoint;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-@ServerEndpoint(value = "/api/imserver/{username}")
 @Component
 public class WebSocketServer {
 
@@ -33,7 +30,9 @@ public class WebSocketServer {
 
     private static final AtomicInteger onlineCount = new AtomicInteger(0);
     public static final Map<String, Set<Session>> sessionMap = new ConcurrentHashMap<>();
+    private static final Map<Long, Set<Session>> userSessionMap = new ConcurrentHashMap<>();
     private static final String SESSION_USERNAME = "authenticatedUsername";
+    private static final String SESSION_USER_ID = "authenticatedUserId";
 
     private static StringRedisTemplate staticRedisTemplate;
     private static UserService staticUserService;
@@ -61,21 +60,46 @@ public class WebSocketServer {
         log.info("Redis pub/sub模式: {}", redisEnabled ? "启用" : "禁用(使用本地广播)");
     }
 
-    private void publishToRedis(String message) {
+    public static void publishServerEvent(String message) {
+        broadcastToAuthenticatedClients(message);
+    }
+
+    public static void publishChatMessage(ChatMessageDTO message) {
+        String clientEvent = chatClientEvent(message);
         if (!redisEnabled || staticRedisTemplate == null) {
-            // Redis未启用，直接本地广播
-            for (Set<Session> sessions : sessionMap.values()) {
-                for (Session s : sessions) sendMessage(message, s);
-            }
+            broadcastToAuthenticatedClients(clientEvent);
             return;
         }
         try {
-            // 使用StringRedisSerializer发送，避免双重序列化
-            staticRedisTemplate.convertAndSend(RedisConfig.CHAT_CHANNEL, message);
+            JSONObject canonicalEvent = new JSONObject();
+            canonicalEvent.set("type", RedisConfig.CHAT_EVENT_TYPE);
+            canonicalEvent.set("messageId", message.getId());
+            staticRedisTemplate.convertAndSend(RedisConfig.CHAT_CHANNEL, JSONUtil.toJsonStr(canonicalEvent));
         } catch (Exception e) {
             log.error("发布消息到Redis失败，回退到本地广播", e);
-            for (Set<Session> sessions : sessionMap.values()) {
-                for (Session s : sessions) sendMessage(message, s);
+            broadcastToAuthenticatedClients(clientEvent);
+        }
+    }
+
+    public static String chatClientEvent(ChatMessageDTO message) {
+        JSONObject event = new JSONObject();
+        event.set("type", "chat");
+        event.set("id", message.getId());
+        event.set("username", message.getUsername());
+        event.set("text", message.getText());
+        event.set("createdTime", message.getCreatedTime());
+        return JSONUtil.toJsonStr(event);
+    }
+
+    public static void broadcastToAuthenticatedClients(String message) {
+        for (Set<Session> sessions : sessionMap.values()) {
+            for (Session session : sessions) {
+                Long userId = getUserIdBySession(session);
+                if (loadAuthorizedUser(userId) == null) {
+                    closeUnauthorized(session);
+                    continue;
+                }
+                sendMessage(message, session);
             }
         }
     }
@@ -89,6 +113,7 @@ public class WebSocketServer {
         }
         String username = user.getUsername();
         session.getUserProperties().put(SESSION_USERNAME, username);
+        session.getUserProperties().put(SESSION_USER_ID, user.getId());
         AtomicBoolean firstConnection = new AtomicBoolean(false);
         sessionMap.compute(username, (key, sessions) -> {
             if (sessions == null) {
@@ -98,6 +123,7 @@ public class WebSocketServer {
             sessions.add(session);
             return sessions;
         });
+        userSessionMap.computeIfAbsent(user.getId(), ignored -> ConcurrentHashMap.newKeySet()).add(session);
         if (firstConnection.get()) {
             onlineCount.incrementAndGet();
         }
@@ -114,7 +140,7 @@ public class WebSocketServer {
         JSONObject joinNotice = new JSONObject();
         joinNotice.set("type", "join");
         joinNotice.set("onlineCount", onlineCount.get());
-        publishToRedis(JSONUtil.toJsonStr(joinNotice));
+        publishServerEvent(JSONUtil.toJsonStr(joinNotice));
     }
 
     @OnClose
@@ -123,6 +149,7 @@ public class WebSocketServer {
         if (actualUsername == null) {
             return;
         }
+        removeUserSession(session);
         AtomicBoolean wentOffline = new AtomicBoolean(false);
         sessionMap.computeIfPresent(actualUsername, (key, sessions) -> {
             sessions.remove(session);
@@ -142,7 +169,7 @@ public class WebSocketServer {
             JSONObject leaveNotice = new JSONObject();
             leaveNotice.set("type", "leave");
             leaveNotice.set("onlineCount", onlineCount.get());
-            publishToRedis(JSONUtil.toJsonStr(leaveNotice));
+            publishServerEvent(JSONUtil.toJsonStr(leaveNotice));
         }
     }
 
@@ -153,27 +180,24 @@ public class WebSocketServer {
             closeUnauthorized(session);
             return;
         }
-        log.info("服务端收到用户username={}的聊天消息", username);
+        Long userId = getUserIdBySession(session);
+        if (loadAuthorizedUser(userId) == null) {
+            closeUnauthorized(session);
+            return;
+        }
         JSONObject obj;
         try {
             obj = JSONUtil.parseObj(message);
         } catch (Exception e) {
-            log.warn("忽略用户{}发送的非法聊天消息", username);
+            log.warn("忽略用户{}发送的非法WebSocket消息", username);
             return;
         }
-        String text = obj.getStr("text");
-        if (text == null || text.trim().isEmpty() || text.length() > 1000) {
-            return;
+        if ("ping".equalsIgnoreCase(obj.getStr("type"))) {
+            JSONObject pong = new JSONObject();
+            pong.set("type", "pong");
+            sendMessage(JSONUtil.toJsonStr(pong), session);
         }
-        String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-
-        // 通过Redis广播消息
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.set("from", username);
-        jsonObject.set("text", text);
-        jsonObject.set("time", time);
-        jsonObject.set("type", "chat");
-        publishToRedis(JSONUtil.toJsonStr(jsonObject));
+        // Client messages are never persisted or broadcast. POST /api/help/chat is authoritative.
     }
 
     @OnError
@@ -181,7 +205,7 @@ public class WebSocketServer {
         log.error("WebSocket发生错误", error);
     }
 
-    private void sendMessage(String message, Session toSession) {
+    private static void sendMessage(String message, Session toSession) {
         try {
             if (toSession.isOpen()) {
                 toSession.getBasicRemote().sendText(message);
@@ -197,14 +221,10 @@ public class WebSocketServer {
         }
         Long userId = staticTicketService.consume(ticket);
         if (userId == null) return null;
-        User user = staticUserService.getById(userId);
-        if (user != null) {
-            staticUserService.fillPermissions(user);
-        }
-        return user;
+        return loadAuthorizedUser(userId);
     }
 
-    private void closeUnauthorized(Session session) {
+    private static void closeUnauthorized(Session session) {
         try {
             session.close(new CloseReason(CloseReason.CloseCodes.VIOLATED_POLICY, "unauthorized"));
         } catch (Exception e) {
@@ -215,5 +235,50 @@ public class WebSocketServer {
     private String getUsernameBySession(Session session) {
         Object value = session == null ? null : session.getUserProperties().get(SESSION_USERNAME);
         return value instanceof String ? (String) value : null;
+    }
+
+    public static void closeUserSessions(Long userId) {
+        if (userId == null) {
+            return;
+        }
+        Set<Session> sessions = userSessionMap.remove(userId);
+        if (sessions == null) {
+            return;
+        }
+        for (Session session : sessions) {
+            try {
+                session.close(new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, "logout"));
+            } catch (Exception e) {
+                log.warn("关闭已登出用户WebSocket连接失败, userId={}", userId, e);
+            }
+        }
+    }
+
+    private static void removeUserSession(Session session) {
+        Long userId = getUserIdBySession(session);
+        if (userId == null) {
+            return;
+        }
+        userSessionMap.computeIfPresent(userId, (key, sessions) -> {
+            sessions.remove(session);
+            return sessions.isEmpty() ? null : sessions;
+        });
+    }
+
+    private static Long getUserIdBySession(Session session) {
+        Object value = session == null ? null : session.getUserProperties().get(SESSION_USER_ID);
+        return value instanceof Number ? ((Number) value).longValue() : null;
+    }
+
+    private static User loadAuthorizedUser(Long userId) {
+        if (userId == null || staticUserService == null) {
+            return null;
+        }
+        User user = staticUserService.getById(userId);
+        if (user == null) {
+            return null;
+        }
+        staticUserService.fillPermissions(user);
+        return PermissionUtil.hasAnyFlag(user, "im", "help", "rescue") ? user : null;
     }
 }

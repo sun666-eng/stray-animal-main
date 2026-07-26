@@ -52,7 +52,7 @@ public class AuthInterceptor implements HandlerInterceptor {
         API_FLAG_RULES.put("/api/volunteer", Arrays.asList("volunteer"));
         API_FLAG_RULES.put("/api/account", Arrays.asList("account"));
         API_FLAG_RULES.put("/api/notice", Arrays.asList("notice"));
-        API_FLAG_RULES.put("/api/help", Arrays.asList("help"));
+        API_FLAG_RULES.put("/api/help", Arrays.asList("help", "rescue"));
         API_FLAG_RULES.put("/api/files", Arrays.asList("animal", "adopt", "proof", "visit", "volunteer", "help", "rescue", "user", "my_proof", "apply", "im", "adopt_view"));
 
         PAGE_FLAG_RULES.put("/page/end/user.html", "user");
@@ -69,6 +69,10 @@ public class AuthInterceptor implements HandlerInterceptor {
         PAGE_FLAG_RULES.put("/page/end/rescue.html", "help");
 
         LEGACY_PAGE_REDIRECTS.put("/page/end/im.html", "/page/front/rescue_apply.html");
+        LEGACY_PAGE_REDIRECTS.put("/page/end/register.html", "/page/front/register.html");
+        LEGACY_PAGE_REDIRECTS.put("/page/end/plugins.html", "/page/end/index.html");
+        LEGACY_PAGE_REDIRECTS.put("/page/end/rescue.html", "/page/end/help.html");
+        LEGACY_PAGE_REDIRECTS.put("/prototype.html", "/page/front/index.html");
         LEGACY_PAGE_REDIRECTS.put("/page/end/adopt_view.html", "/page/front/animal_browse.html");
         LEGACY_PAGE_REDIRECTS.put("/page/end/adopt_apply.html", "/page/front/adopt_apply.html");
         LEGACY_PAGE_REDIRECTS.put("/page/end/my_adopt.html", "/page/front/my_adopt.html");
@@ -88,13 +92,25 @@ public class AuthInterceptor implements HandlerInterceptor {
         String path = request.getRequestURI();
 
         if (LEGACY_PAGE_REDIRECTS.containsKey(path)) {
-            response.sendRedirect(LEGACY_PAGE_REDIRECTS.get(path));
+            String target = LEGACY_PAGE_REDIRECTS.get(path);
+            if ("/page/end/adopt_apply.html".equals(path)) {
+                target = appendPositiveLongParameter(target, "animalId", request.getParameter("animalId"));
+            } else if ("/page/end/adopt_proof.html".equals(path)) {
+                target = appendPositiveLongParameter(target, "aid", request.getParameter("aid"));
+            }
+            response.sendRedirect(target);
             return false;
         }
 
         if (path.startsWith("/api/")) {
             // 文件 GET：可选登录，但必须走 getCurrentUser 重载权限（A0.5），再允许匿名访问公开图
             if (path.startsWith("/api/files/") && "GET".equalsIgnoreCase(request.getMethod())) {
+                getCurrentUser(request);
+                return true;
+            }
+            // Animal detail is anonymous-readable for state 0, but managers may see other states.
+            // Refresh any existing session before the controller makes that state-sensitive decision.
+            if ("GET".equalsIgnoreCase(request.getMethod()) && path.matches("^/api/animal/\\d+$")) {
                 getCurrentUser(request);
                 return true;
             }
@@ -118,7 +134,7 @@ public class AuthInterceptor implements HandlerInterceptor {
         User user = getCurrentUser(request);
         if (user != null) {
             String requiredFlag = PAGE_FLAG_RULES.get(path);
-            if (requiredFlag != null && hasPermissionFlag(user, requiredFlag)) {
+            if (requiredFlag != null && hasPagePermission(user, requiredFlag)) {
                 return true;
             }
             if (requiredFlag == null && isAllowedLoggedInPage(path)) {
@@ -169,14 +185,15 @@ public class AuthInterceptor implements HandlerInterceptor {
         if (isPublicAccountRead(path, method)) {
             return true;
         }
-        if ("/api/dashboard/public-stats".equals(path) && "GET".equalsIgnoreCase(method)) {
+        if (("/api/dashboard/public-stats".equals(path) || "/api/dashboard/home-stats".equals(path))
+                && "GET".equalsIgnoreCase(method)) {
             return true;
         }
         return false;
     }
 
     private boolean isExactPublicAnimalGet(String path) {
-        if ("/api/animal".equals(path) || "/api/animal/page".equals(path) || "/api/animal/page1".equals(path)) {
+        if ("/api/animal/page1".equals(path)) {
             return true;
         }
         // /api/animal/{id} 数字 ID
@@ -184,7 +201,7 @@ public class AuthInterceptor implements HandlerInterceptor {
     }
 
     private boolean isExactPublicNoticeGet(String path) {
-        if ("/api/notice".equals(path) || "/api/notice/page".equals(path)) {
+        if ("/api/notice/page".equals(path)) {
             return true;
         }
         return path.matches("^/api/notice/\\d+$");
@@ -256,6 +273,9 @@ public class AuthInterceptor implements HandlerInterceptor {
                 || path.equals("/api/user/me") || path.startsWith("/api/user/me?")) {
             return true;
         }
+        if (path.equals("/api/user/me/profile") && "PUT".equalsIgnoreCase(method)) {
+            return true;
+        }
         // /online：须登录；是否可枚举用户名由 Controller 再判管理 flag
         if (path.startsWith("/api/user/online")) {
             return true;
@@ -264,8 +284,10 @@ public class AuthInterceptor implements HandlerInterceptor {
         if (path.startsWith("/api/user/detail/")) {
             return true;
         }
+        // 通用 PUT /api/user 仅用户管理/超管；普通用户资料必须走 /api/user/me/profile
         if (path.equals("/api/user") && "PUT".equalsIgnoreCase(method)) {
-            return true;
+            return hasAnyPermissionFlag(user, Arrays.asList("user"))
+                    || RoleAssignmentPolicy.hasRoleId(user, RoleAssignmentPolicy.SUPER_ADMIN_ROLE_ID);
         }
         if (path.startsWith("/api/files/upload") && "POST".equalsIgnoreCase(method)) {
             return true;
@@ -276,6 +298,10 @@ public class AuthInterceptor implements HandlerInterceptor {
         if (path.startsWith("/api/help/mine") || path.startsWith("/api/help/chat")) {
             return hasAnyPermissionFlag(user, Arrays.asList("im", "help", "rescue"));
         }
+        // Owner authorization is enforced by HelpController; management accepts the help/rescue aliases.
+        if (path.matches("^/api/help/\\d+$") && "GET".equalsIgnoreCase(method)) {
+            return true;
+        }
         // 普通用户角色种子为 im；help/rescue 为管理端 flag。提交/更新救助表单：im|help|rescue
         // Service 层再做本人归属与状态校验。
         if ("/api/help".equals(path)
@@ -285,11 +311,30 @@ public class AuthInterceptor implements HandlerInterceptor {
         if (path.startsWith("/api/adopt/page2")) {
             return hasAnyPermissionFlag(user, Arrays.asList("my_adopt", "adopt", "adopt_view"));
         }
+        if (path.matches("^/api/adopt/mine/\\d+$") && "GET".equalsIgnoreCase(method)) {
+            return hasAnyPermissionFlag(user, Arrays.asList("my_adopt", "adopt_view", "adopt"));
+        }
+        if (path.matches("^/api/adopt/\\d+/\\d+$")
+                && ("GET".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method))) {
+            // Controller and service enforce the composite-key owner check.
+            return hasAnyPermissionFlag(user, Arrays.asList("my_adopt", "adopt_view", "adopt"));
+        }
         if (path.startsWith("/api/proof/page1")) {
-            return hasAnyPermissionFlag(user, Arrays.asList("my_proof", "proof"));
+            return hasAnyPermissionFlag(user, Arrays.asList("my_proof", "my_adopt", "adopt_view", "proof"));
+        }
+        if (path.matches("^/api/proof/\\d+$") && "GET".equalsIgnoreCase(method)) {
+            return hasAnyPermissionFlag(user, Arrays.asList("my_proof", "my_adopt", "adopt_view", "proof"));
         }
         if (path.startsWith("/api/visit/mine")) {
             // 归属校验在 VisitController；登录用户即可查自己的回访
+            return true;
+        }
+        if (path.matches("^/api/files/staged/[a-zA-Z0-9-]{1,64}$")
+                && "DELETE".equalsIgnoreCase(method)) {
+            return true;
+        }
+        if (path.matches("^/api/visit/\\d+$") && "GET".equalsIgnoreCase(method)) {
+            // Controller enforces owner-or-visit-manager read access.
             return true;
         }
         if (path.startsWith("/api/adopt") && "POST".equalsIgnoreCase(method)) {
@@ -298,10 +343,10 @@ public class AuthInterceptor implements HandlerInterceptor {
         // Proof：Controller 为 PUT /api/proof（无 path id）；删除为 DELETE /api/proof/{id}
         if ("/api/proof".equals(path)
                 && ("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method))) {
-            return hasAnyPermissionFlag(user, Arrays.asList("my_proof", "proof"));
+            return hasAnyPermissionFlag(user, Arrays.asList("my_proof", "my_adopt", "adopt_view", "proof"));
         }
         if (path.matches("^/api/proof/\\d+$") && "DELETE".equalsIgnoreCase(method)) {
-            return hasAnyPermissionFlag(user, Arrays.asList("my_proof", "proof"));
+            return hasAnyPermissionFlag(user, Arrays.asList("my_proof", "my_adopt", "adopt_view", "proof"));
         }
         if ("/api/volunteer".equals(path)
                 && ("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method))) {
@@ -330,6 +375,25 @@ public class AuthInterceptor implements HandlerInterceptor {
             return false;
         }
         return PermissionUtil.hasFlag(user, flag);
+    }
+
+    private String appendPositiveLongParameter(String target, String name, String rawValue) {
+        if (rawValue == null || !rawValue.matches("^[1-9][0-9]{0,18}$")) {
+            return target;
+        }
+        try {
+            Long.parseLong(rawValue);
+            return target + "?" + name + "=" + rawValue;
+        } catch (NumberFormatException ignored) {
+            return target;
+        }
+    }
+
+    private boolean hasPagePermission(User user, String requiredFlag) {
+        if ("help".equals(requiredFlag)) {
+            return hasAnyPermissionFlag(user, Arrays.asList("help", "rescue"));
+        }
+        return hasPermissionFlag(user, requiredFlag);
     }
 
     private void writeJson(HttpServletResponse response, int status, Result<?> result) throws IOException {

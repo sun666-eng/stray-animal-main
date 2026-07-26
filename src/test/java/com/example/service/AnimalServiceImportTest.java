@@ -65,9 +65,9 @@ public class AnimalServiceImportTest {
         ArgumentCaptor<Animal> cap = ArgumentCaptor.forClass(Animal.class);
         verify(animalMapper, times(3)).insert(cap.capture());
         assertEquals("小白", cap.getAllValues().get(0).getTname());
-        assertEquals(Integer.valueOf(0), cap.getAllValues().get(0).getTstate()); // "待领养" → 0
-        assertEquals(Integer.valueOf(1), cap.getAllValues().get(1).getTstate()); // "申请中" → 1
-        assertEquals(Integer.valueOf(0), cap.getAllValues().get(2).getTstate()); // 空 → 默认 0
+        assertEquals(Integer.valueOf(0), cap.getAllValues().get(0).getTstate());
+        assertEquals(Integer.valueOf(0), cap.getAllValues().get(1).getTstate());
+        assertEquals(Integer.valueOf(0), cap.getAllValues().get(2).getTstate());
     }
 
     @Test
@@ -91,7 +91,8 @@ public class AnimalServiceImportTest {
     }
 
     @Test
-    public void import_invalidTstateText_skipped() throws Exception {
+    public void import_workbookStateTextIgnoredAndForcedToZero() throws Exception {
+        when(animalMapper.insert(any(Animal.class))).thenReturn(1);
         MultipartFile file = xlsx(
                 Arrays.asList("名称", "状态"),
                 Arrays.asList(
@@ -100,13 +101,15 @@ public class AnimalServiceImportTest {
 
         ImportResult r = animalService.importFromExcel(file);
 
-        assertEquals(0, r.getSuccessCount());
-        assertEquals(1, r.getFailed().size());
-        assertTrue(r.getFailed().get(0).getReason().contains("状态"));
+        assertEquals(1, r.getSuccessCount());
+        assertTrue(r.getFailed().isEmpty());
+        ArgumentCaptor<Animal> cap = ArgumentCaptor.forClass(Animal.class);
+        verify(animalMapper).insert(cap.capture());
+        assertEquals(Integer.valueOf(0), cap.getValue().getTstate());
     }
 
     @Test
-    public void import_tstateNumber_kept() throws Exception {
+    public void import_workbookNumericStateIgnoredAndForcedToZero() throws Exception {
         when(animalMapper.insert(any(Animal.class))).thenReturn(1);
         MultipartFile file = xlsx(
                 Arrays.asList("名称", "状态"),
@@ -116,24 +119,20 @@ public class AnimalServiceImportTest {
 
         ArgumentCaptor<Animal> cap = ArgumentCaptor.forClass(Animal.class);
         verify(animalMapper).insert(cap.capture());
-        assertEquals(Integer.valueOf(2), cap.getValue().getTstate());
+        assertEquals(Integer.valueOf(0), cap.getValue().getTstate());
     }
 
     @Test
-    public void import_tbirthdayGarbage_succeedsWithNull() throws Exception {
-        when(animalMapper.insert(any(Animal.class))).thenReturn(1);
+    public void import_tbirthdayGarbage_failsRow() throws Exception {
         MultipartFile file = xlsx(
                 Arrays.asList("名称", "生日"),
                 Arrays.asList(Arrays.asList("小白", "明天")));
 
         ImportResult r = animalService.importFromExcel(file);
 
-        assertEquals(1, r.getSuccessCount());
-        assertTrue(r.getFailed().isEmpty());
-
-        ArgumentCaptor<Animal> cap = ArgumentCaptor.forClass(Animal.class);
-        verify(animalMapper).insert(cap.capture());
-        assertNull(cap.getValue().getTbirthday());
+        assertEquals(0, r.getSuccessCount());
+        assertEquals(1, r.getFailed().size());
+        verify(animalMapper, never()).insert(any(Animal.class));
     }
 
     @Test

@@ -1,99 +1,69 @@
-// 管理员端 jQuery ajax 鉴权 + 统一登录态（依赖可选 auth-session.js）
-// 必须在 jquery 之后、Vue 之前加载
-(function () {
-    if (typeof window.jQuery === 'undefined') {
-        return;
-    }
-    var $ = window.jQuery;
+(function (global) {
+  'use strict';
 
-    if (window.AuthSession) {
-        window.AuthSession.installAjaxAuth();
-        window.AuthSession.sanitizeLocalSession();
-        var path = window.location.pathname || '';
-        var isLogin = path.indexOf('login.html') >= 0;
-        if (!isLogin) {
-            window.AuthSession.revalidate(function (ok) {
-                if (!ok && !window.AuthSession.getUser()) {
-                    window.location.href = window.AuthSession.loginUrl();
-                }
-            });
-        }
-    } else {
-        $.ajaxSetup({
-            xhrFields: { withCredentials: true },
-            beforeSend: function (xhr, settings) {
-                var method = (settings && settings.type ? settings.type : 'GET').toUpperCase();
-                if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
-                    var csrf = sessionStorage.getItem('csrfToken');
-                    if (csrf) {
-                        xhr.setRequestHeader('X-CSRF-Token', csrf);
-                    }
-                }
-            }
-        });
-        $(document).ajaxError(function (event, xhr) {
-            if (xhr && xhr.status === 401) {
-                sessionStorage.removeItem('user');
-                sessionStorage.removeItem('token');
-                sessionStorage.removeItem('csrfToken');
-                localStorage.removeItem('token');
-                var current = window.location.pathname + window.location.search;
-                window.location.href = '/page/front/login.html?redirect=' + encodeURIComponent(current);
-            }
-        });
-    }
+  var ROUTES = Object.freeze({
+    user: Object.freeze({ label: '用户管理', href: '/page/end/user.html' }),
+    role: Object.freeze({ label: '角色管理', href: '/page/end/role.html' }),
+    permission: Object.freeze({ label: '权限管理', href: '/page/end/permission.html' }),
+    animal: Object.freeze({ label: '动物档案', href: '/page/end/animal.html' }),
+    adopt: Object.freeze({ label: '领养审核', href: '/page/end/adopt.html' }),
+    proof: Object.freeze({ label: '领养凭证', href: '/page/end/proof.html' }),
+    visit: Object.freeze({ label: '回访管理', href: '/page/end/visit.html' }),
+    volunteer: Object.freeze({ label: '义工审核', href: '/page/end/volunteer.html' }),
+    account: Object.freeze({ label: '资金公示', href: '/page/end/account.html' }),
+    notice: Object.freeze({ label: '公告管理', href: '/page/end/notice.html' }),
+    help: Object.freeze({ label: '救助咨询', href: '/page/end/help.html' }),
+    rescue: Object.freeze({ label: '救助处理', href: '/page/end/help.html' })
+  });
+  var ROUTE_ORDER = Object.freeze([
+    'user', 'role', 'permission', 'animal', 'adopt', 'proof', 'visit',
+    'volunteer', 'account', 'notice', 'help', 'rescue'
+  ]);
 
-    var ADMIN_FLAGS = {
-        user: true,
-        role: true,
-        permission: true,
-        animal: true,
-        adopt: true,
-        proof: true,
-        visit: true,
-        volunteer: true,
-        account: true,
-        notice: true,
-        help: true
-    };
+  function permissionFlags(permissions) {
+    var flags = Object.create(null);
+    if (!Array.isArray(permissions)) return flags;
+    permissions.forEach(function (permission) {
+      var flag = permission && typeof permission.flag === 'string' ? permission.flag : '';
+      if (ROUTES[flag]) flags[flag] = true;
+    });
+    return flags;
+  }
 
-    var LEGACY_FRONT_PATHS = {
-        adopt_view: '/page/front/animal_browse.html',
-        my_adopt: '/page/front/my_adopt.html',
-        my_proof: '/page/front/adopt_proof.html',
-        apply: '/page/front/volunteer_apply.html',
-        im: '/page/front/rescue_apply.html',
-        rescue: '/page/front/rescue_apply.html'
-    };
+  function navigation(permissions) {
+    var flags = permissionFlags(permissions);
+    var seenHrefs = Object.create(null);
+    return ROUTE_ORDER.filter(function (flag) {
+      return flags[flag];
+    }).map(function (flag) {
+      return { flag: flag, label: ROUTES[flag].label, href: ROUTES[flag].href };
+    }).filter(function (route) {
+      if (seenHrefs[route.href]) return false;
+      seenHrefs[route.href] = true;
+      return true;
+    });
+  }
 
-    function dedupePermissionsInSession() {
-        try {
-            var raw = sessionStorage.getItem('user');
-            if (!raw) return;
-            var user = JSON.parse(raw);
-            if (!user || !user.permission || !user.permission.length) return;
-            var seen = {};
-            var deduped = [];
-            for (var i = 0; i < user.permission.length; i++) {
-                var p = user.permission[i];
-                if (!p) continue;
-                if (LEGACY_FRONT_PATHS[p.flag]) {
-                    p.path = LEGACY_FRONT_PATHS[p.flag];
-                }
-                var key = (p.name || '') + '|' + (p.path || '');
-                if (seen[key]) continue;
-                seen[key] = true;
-                if (ADMIN_FLAGS[p.flag]) {
-                    deduped.push(p);
-                }
-            }
-            if (deduped.length !== user.permission.length) {
-                user.permission = deduped;
-                sessionStorage.setItem('user', JSON.stringify(user));
-            }
-        } catch (e) {
-            // ignore
-        }
-    }
-    dedupePermissionsInSession();
-})();
+  function hasFlag(user, flag) {
+    return !!permissionFlags(user && user.permission)[flag];
+  }
+
+  function avatarUrl(flag) {
+    if (!flag || typeof flag !== 'string') return '/api/files/';
+    return '/api/files/' + encodeURIComponent(flag);
+  }
+
+  if (!global.AuthSession) {
+    global.location.replace('/page/front/login.html');
+    return;
+  }
+  global.AuthSession.installAjaxAuth();
+  global.AuthSession.sanitizeLocalSession();
+
+  global.AdminWorkspace = Object.freeze({
+    routes: ROUTES,
+    navigation: navigation,
+    hasFlag: hasFlag,
+    avatarUrl: avatarUrl
+  });
+})(window);

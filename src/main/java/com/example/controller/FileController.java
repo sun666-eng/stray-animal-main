@@ -19,6 +19,7 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URLEncoder;
 import java.nio.file.Files;
@@ -26,6 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -76,6 +78,14 @@ public class FileController {
         }
     }
 
+    @DeleteMapping("/staged/{flag}")
+    public Result<Boolean> retireStaged(@PathVariable String flag, HttpServletRequest request) {
+        if (!isValidFlag(flag)) {
+            return Result.error("400", "文件标识无效");
+        }
+        return Result.success(fileAssetService.retireOwnUnbound(currentUser(request), flag));
+    }
+
     @PostMapping("/upload/multiple")
     public Result<BatchUploadResult> multipleUpload(
             @RequestParam(value = "purpose", required = false) String purpose,
@@ -116,11 +126,13 @@ public class FileController {
 
     @GetMapping({"", "/"})
     public void getRoot(HttpServletResponse response) {
+        applyFileResponseHeaders(response);
         writeDefaultAvatar(response);
     }
 
     @GetMapping("/{flag}")
     public void getFile(@PathVariable String flag, HttpServletResponse response, HttpServletRequest request) {
+        applyFileResponseHeaders(response);
         if (!isValidFlag(flag) || "null".equalsIgnoreCase(flag) || "undefined".equalsIgnoreCase(flag)) {
             // 仅用于页面坏图占位；非业务附件
             writeDefaultAvatar(response);
@@ -156,17 +168,61 @@ public class FileController {
             return;
         }
 
-        try (OutputStream os = response.getOutputStream()) {
-            String name = filePath.getFileName().toString();
-            response.setContentType("application/octet-stream");
-            response.addHeader("Content-Disposition", "attachment;filename=" + URLEncoder.encode(name, "UTF-8"));
-            os.write(Files.readAllBytes(filePath));
+        try (InputStream input = Files.newInputStream(filePath);
+             OutputStream os = response.getOutputStream()) {
+            String name = StrUtil.isBlank(asset.getOriginalName())
+                    ? "download"
+                    : sanitizeFileName(asset.getOriginalName());
+            String contentType = resolveContentType(asset, filePath, name);
+            response.setContentType(contentType);
+            boolean inlineImage = contentType != null && contentType.startsWith("image/");
+            String disposition = (inlineImage ? "inline" : "attachment")
+                    + ";filename=" + URLEncoder.encode(name, "UTF-8");
+            response.setHeader("Content-Disposition", disposition);
+            long size = Files.size(filePath);
+            if (size >= 0 && size <= Integer.MAX_VALUE) {
+                response.setContentLengthLong(size);
+            }
+            byte[] buffer = new byte[8192];
+            int length;
+            while ((length = input.read(buffer)) >= 0) {
+                os.write(buffer, 0, length);
+            }
             os.flush();
         } catch (Exception e) {
             log.error("文件读取异常 - flag: {}", flag, e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             writeJson(response, "500", "文件读取失败");
         }
+    }
+
+    private String resolveContentType(FileAsset asset, Path filePath, String fileName) {
+        if (asset != null && StrUtil.isNotBlank(asset.getContentType())
+                && asset.getContentType().toLowerCase(Locale.ROOT).startsWith("image/")) {
+            return asset.getContentType();
+        }
+        String lower = fileName == null ? "" : fileName.toLowerCase(Locale.ROOT);
+        if (lower.endsWith(".png")) {
+            return "image/png";
+        }
+        if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) {
+            return "image/jpeg";
+        }
+        if (lower.endsWith(".gif")) {
+            return "image/gif";
+        }
+        if (lower.endsWith(".webp")) {
+            return "image/webp";
+        }
+        try {
+            String probed = Files.probeContentType(filePath);
+            if (probed != null && !probed.isEmpty()) {
+                return probed;
+            }
+        } catch (Exception ignored) {
+            // fall through
+        }
+        return "application/octet-stream";
     }
 
     /**
@@ -187,7 +243,7 @@ public class FileController {
         if (StrUtil.isBlank(stored) || stored.endsWith("-legacy")) {
             Path recovered = findByFlagPrefix(searchDirs, flag);
             if (recovered != null) {
-                log.warn("legacy 前缀恢复 flag={}, path={}", flag, recovered);
+                log.warn("legacy 前缀恢复 flag={}", flag);
                 return recovered;
             }
         }
@@ -288,6 +344,12 @@ public class FileController {
         }
     }
 
+    private void applyFileResponseHeaders(HttpServletResponse response) {
+        response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        response.setHeader("Pragma", "no-cache");
+        response.setHeader("X-Content-Type-Options", "nosniff");
+    }
+
     private boolean isValidFlag(String flag) {
         if (StrUtil.isBlank(flag)) {
             return false;
@@ -298,11 +360,15 @@ public class FileController {
         return SAFE_FLAG_PATTERN.matcher(flag).matches();
     }
 
-    private FileVO doUpload(MultipartFile file, Long ownerId, String purpose, String contentType) throws Exception {
+    private synchronized FileVO doUpload(MultipartFile file, Long ownerId, String purpose, String contentType) throws Exception {
+        fileAssetService.assertStagedQuota(ownerId, 1, file.getSize());
         String originalName = file.getOriginalFilename();
+        try (InputStream input = file.getInputStream()) {
+            fileAssetService.validateImageContent(originalName, purpose, input);
+        }
         String flag = UUID.randomUUID().toString().replace("-", "");
-        String safeName = sanitizeFileName(originalName);
-        String storedName = flag + "-" + safeName;
+        String extension = FileUtil.extName(originalName).toLowerCase();
+        String storedName = flag + "." + extension;
         File dir = fileStorage.getRootFile();
         if (!dir.isDirectory()) {
             //noinspection ResultOfMethodCallIgnored

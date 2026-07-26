@@ -1,352 +1,293 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <title>流浪动物救助 - 管理后台</title>
-    <link rel="stylesheet" href="../../css/element.css">
-    <link rel="stylesheet" href="../../css/base.css">
-    <link rel="stylesheet" href="../../css/theme.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>工作台 | 流浪动物救助</title>
+  <link rel="stylesheet" href="../../css/product-ui.css">
+  <link rel="stylesheet" href="../../css/admin-workspace.css">
 </head>
 <body>
-<div id="wrapper" v-cloak>
-    <el-container>
-        <el-aside :width="isCollapse ? '64px' : '200px'" class="admin-sidebar">
-            <div class="sidebar-logo-area">
-                <transition name="el-fade-in-linear">
-                    <span v-show="!isCollapse">
-                        <a href="/page/end/index.html">
-                            <div class="svgContainer">
-                                <svg class="mySVG" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 200 200">
-                                    <defs><circle id="armMaskPath" cx="100" cy="100" r="100"/></defs>
-                                    <clipPath id="armMask"><use xlink:href="#armMaskPath" overflow="visible"/></clipPath>
-                                    <circle cx="100" cy="100" r="100" fill="#a9ddf3"/>
-                                    <g class="body">
-                                        <path class="bodyBGnormal" stroke="#3A5E77" stroke-width="2.5" stroke-linecap="round" fill="#FFFFFF" d="M200,158.5c0-20.2-14.8-36.5-35-36.5h-14.9V72.8c0-27.4-21.7-50.4-49.1-50.8c-28-0.5-50.9,22.1-50.9,50v50H35.8C16,122,0,138,0,157.8L0,213h200L200,158.5z"/>
-                                        <path fill="#DDF1FA" d="M100,156.4c-22.9,0-43,11.1-54.1,27.7c15.6,10,34.2,15.9,54.1,15.9s38.5-5.8,54.1-15.9C143,167.5,122.9,156.4,100,156.4z"/>
-                                    </g>
-                                    <g class="earL">
-                                        <g class="outerEar" fill="#ddf1fa" stroke="#3a5e77" stroke-width="2.5">
-                                            <circle cx="47" cy="83" r="11.5"/>
-                                            <path d="M46.3 78.9c-2.3 0-4.1 1.9-4.1 4.1 0 2.3 1.9 4.1 4.1 4.1" stroke-linecap="round" stroke-linejoin="round"/>
-                                        </g>
-                                    </g>
-                                    <g class="earR">
-                                        <g class="outerEar">
-                                            <circle fill="#DDF1FA" stroke="#3A5E77" stroke-width="2.5" cx="153" cy="83" r="11.5"/>
-                                            <path fill="#DDF1FA" stroke="#3A5E77" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M153.7,78.9c2.3,0,4.1,1.9,4.1,4.1c0,2.3-1.9,4.1-4.1,4.1"/>
-                                        </g>
-                                    </g>
-                                    <path class="chin" d="M84.1 121.6c2.7 2.9 6.1 5.4 9.8 7.5l.9-4.5c2.9 2.5 6.3 4.8 10.2 6.5 0-1.9-.1-3.9-.2-5.8 3 1.2 6.2 2 9.7 2.5-.3-2.1-.7-4.1-1.2-6.1" fill="none" stroke="#3a5e77" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                    <path class="face" fill="#DDF1FA" d="M134.5,46v35.5c0,21.815-15.446,39.5-34.5,39.5s-34.5-17.685-34.5-39.5V46"/>
-                                    <path class="hair" fill="#FFFFFF" stroke="#3A5E77" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M81.457,27.929c1.755-4.084,5.51-8.262,11.253-11.77c0.979,2.565,1.883,5.14,2.712,7.723c3.162-4.265,8.626-8.27,16.272-11.235c-0.737,3.293-1.588,6.573-2.554,9.837c4.857-2.116,11.049-3.64,18.428-4.156c-2.403,3.23-5.021,6.391-7.852,9.474"/>
-                                    <g class="eyebrow">
-                                        <path fill="#FFFFFF" d="M138.142,55.064c-4.93,1.259-9.874,2.118-14.787,2.599c-0.336,3.341-0.776,6.689-1.322,10.037c-4.569-1.465-8.909-3.222-12.996-5.226c-0.98,3.075-2.07,6.137-3.267,9.179c-5.514-3.067-10.559-6.545-15.097-10.329c-1.806,2.889-3.745,5.73-5.816,8.515c-7.916-4.124-15.053-9.114-21.296-14.738l1.107-11.768h73.475V55.064z"/>
-                                        <path fill="#FFFFFF" stroke="#3A5E77" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M63.56,55.102c6.243,5.624,13.38,10.614,21.296,14.738c2.071-2.785,4.01-5.626,5.816-8.515c4.537,3.785,9.583,7.263,15.097,10.329c1.197-3.043,2.287-6.104,3.267-9.179c4.087,2.004,8.427,3.761,12.996,5.226c0.545-3.348,0.986-6.696,1.322-10.037c4.913-0.481,9.857-1.34,14.787-2.599"/>
-                                    </g>
-                                    <g class="eyeL"><circle cx="85.5" cy="78.5" r="3.5" fill="#3a5e77"/><circle cx="84" cy="76" r="1" fill="#fff"/></g>
-                                    <g class="eyeR"><circle cx="114.5" cy="78.5" r="3.5" fill="#3a5e77"/><circle cx="113" cy="76" r="1" fill="#fff"/></g>
-                                    <g class="mouth">
-                                        <path class="mouthBG" fill="#617E92" d="M100.2,101c-0.4,0-1.4,0-1.8,0c-2.7-0.3-5.3-1.1-8-2.5c-0.7-0.3-0.9-1.2-0.6-1.8c0.2-0.5,0.7-0.7,1.2-0.7c0.2,0,0.5,0.1,0.6,0.2c3,1.5,5.8,2.3,8.6,2.3s5.7-0.7,8.6-2.3c0.2-0.1,0.4-0.2,0.6-0.2c0.5,0,1,0.3,1.2,0.7c0.4,0.7,0.1,1.5-0.6,1.9c-2.6,1.4-5.3,2.2-7.9,2.5C101.7,101,100.5,101,100.2,101z"/>
-                                        <defs><path id="mouthMaskPath" d="M100.2,101c-0.4,0-1.4,0-1.8,0c-2.7-0.3-5.3-1.1-8-2.5c-0.7-0.3-0.9-1.2-0.6-1.8c0.2-0.5,0.7-0.7,1.2-0.7c0.2,0,0.5,0.1,0.6,0.2c3,1.5,5.8,2.3,8.6,2.3s5.7-0.7,8.6-2.3c0.2-0.1,0.4-0.2,0.6-0.2c0.5,0,1,0.3,1.2,0.7c0.4,0.7,0.1,1.5-0.6,1.9c-2.6,1.4-5.3,2.2-7.9,2.5C101.7,101,100.5,101,100.2,101z"/></defs>
-                                        <clipPath id="mouthMask"><use xlink:href="#mouthMaskPath" overflow="visible"/></clipPath>
-                                        <g clip-path="url(#mouthMask)"><g class="tongue"><circle cx="100" cy="107" r="8" fill="#cc4a6c"/><ellipse class="tongueHighlight" cx="100" cy="100.5" rx="3" ry="1.5" opacity=".1" fill="#fff"/></g></g>
-                                        <path clip-path="url(#mouthMask)" class="tooth" fill="#FFFFFF;" d="M106,97h-4c-1.1,0-2-0.9-2-2v-2h8v2C108,96.1,107.1,97,106,97z"/>
-                                        <path class="mouthOutline" fill="none" stroke="#3A5E77" stroke-width="2.5" stroke-linejoin="round" d="M100.2,101c-0.4,0-1.4,0-1.8,0c-2.7-0.3-5.3-1.1-8-2.5c-0.7-0.3-0.9-1.2-0.6-1.8c0.2-0.5,0.7-0.7,1.2-0.7c0.2,0,0.5,0.1,0.6,0.2c3,1.5,5.8,2.3,8.6,2.3s5.7-0.7,8.6-2.3c0.2-0.1,0.4-0.2,0.6-0.2c0.5,0,1,0.3,1.2,0.7c0.4,0.7,0.1,1.5-0.6,1.9c-2.6,1.4-5.3,2.2-7.9,2.5C101.7,101,100.5,101,100.2,101z"/>
-                                    </g>
-                                    <path class="nose" d="M97.7 79.9h4.7c1.9 0 3 2.2 1.9 3.7l-2.3 3.3c-.9 1.3-2.9 1.3-3.8 0l-2.3-3.3c-1.3-1.6-.2-3.7 1.8-3.7z" fill="#3a5e77"/>
-                                    <text x="15" y="195" font-size="30" font-weight="bold" fill="#6B7280">流浪动物救助</text>
-                                </svg>
-                            </div>
-                        </a>
-                    </span>
-                </transition>
+<div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
+<div id="workspace" class="admin-shell" v-cloak @keyup.esc="closeMenus">
+  <header class="ui-header admin-header">
+    <div class="ui-header-inner">
+      <a class="ui-brand" href="/page/end/index.html" aria-label="返回管理工作台">
+        <span class="ui-brand-mark" aria-hidden="true">爪</span>
+        <span class="ui-brand-copy"><strong>流浪动物救助</strong><small>RESCUE WORKSPACE</small></span>
+        <span class="admin-brand-note">{{ menuItems.length ? '管理工作台' : '用户工作台' }}</span>
+      </a>
+
+      <nav class="ui-nav admin-desktop-nav" aria-label="管理功能">
+        <a class="is-active" href="/page/end/index.html">概览</a>
+        <a v-for="item in menuItems" :key="item.flag" :href="item.href">{{ item.label }}</a>
+      </nav>
+
+      <div class="ui-header-actions">
+        <button class="ui-icon-button ui-mobile-toggle" type="button" :aria-expanded="String(mobileOpen)" aria-controls="adminMobileNav" aria-label="打开或关闭管理导航" @click="mobileOpen = !mobileOpen">
+          <span aria-hidden="true">{{ mobileOpen ? '×' : '☰' }}</span>
+        </button>
+        <div class="ui-account">
+          <button class="ui-account-trigger admin-account-trigger" type="button" :aria-expanded="String(accountOpen)" aria-controls="adminAccountMenu" @click="accountOpen = !accountOpen">
+            <img class="admin-account-photo" :src="avatarUrl(user.avatar)" alt="" @error="avatarFallback">
+            <span class="ui-account-name">{{ user.username }}</span>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+          </button>
+          <div id="adminAccountMenu" class="ui-account-menu admin-account-menu" :hidden="!accountOpen">
+            <a href="/page/end/person.html">个人资料</a>
+            <a href="/page/front/my_adopt.html">我的领养</a>
+            <a href="/page/front/my_rescue.html">我的救助</a>
+            <a href="/page/front/index.html">用户端首页</a>
+            <button class="is-danger" type="button" @click="logout">退出登录</button>
+          </div>
+        </div>
+      </div>
+
+      <nav id="adminMobileNav" class="ui-mobile-nav admin-mobile-nav" :class="{'is-open': mobileOpen}" aria-label="移动端管理功能">
+        <a href="/page/end/index.html" aria-current="page">工作台概览</a>
+        <strong v-if="menuItems.length">管理功能</strong>
+        <a v-for="item in menuItems" :key="'mobile-' + item.flag" :href="item.href">{{ item.label }}</a>
+        <strong>我的服务</strong>
+        <a v-for="item in userServices" :key="'m-user-' + item.id" :href="item.href">{{ item.label }}</a>
+        <a href="/page/front/index.html">用户端首页</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <section class="admin-hero" aria-labelledby="dashboardTitle">
+      <div>
+        <p class="admin-kicker">Operations overview</p>
+        <h1 id="dashboardTitle">工作台概览</h1>
+        <p>集中查看平台当前真实汇总数据，并从已授权入口继续处理动物档案、申请、公告与救助事务。</p>
+      </div>
+      <div class="admin-hero-meta">
+        <span>当前登录账号</span>
+        <strong>{{ user.username }}</strong>
+      </div>
+    </section>
+
+    <section aria-labelledby="metricTitle">
+      <div class="admin-section-head">
+        <div><h2 id="metricTitle">平台数据</h2><p>数据来自平台聚合接口，反映当前数据库记录。</p></div>
+      </div>
+      <div v-if="statsLoading" class="admin-metric-grid" aria-label="平台数据加载中">
+        <div v-for="n in 4" :key="n" class="admin-metric"><div class="ui-skeleton ui-skeleton-line"></div><div class="ui-skeleton ui-skeleton-line short"></div></div>
+      </div>
+      <div v-else-if="statsError" class="admin-status is-error" role="alert">
+        <div><strong>平台数据暂时无法读取</strong><br>{{ statsError }}<br><button class="ui-button is-ghost" type="button" @click="loadStats">重新加载</button></div>
+      </div>
+      <div v-else class="admin-metric-grid">
+        <article class="admin-metric"><span>已审核通过义工记录</span><strong>{{ stats.volunteers }}</strong><small>审核状态为通过的义工记录数</small></article>
+        <article class="admin-metric"><span>动物档案</span><strong>{{ stats.animals }}</strong><small>平台内全部动物档案数</small></article>
+        <article class="admin-metric"><span>领养申请</span><strong>{{ stats.adopts }}</strong><small>平台内全部领养申请数</small></article>
+        <article class="admin-metric"><span>注册用户</span><strong>{{ stats.users }}</strong><small>平台内注册账号总数</small></article>
+      </div>
+    </section>
+
+    <section v-if="menuItems.length" class="admin-section" aria-labelledby="routeTitle">
+      <div class="admin-section-head">
+        <div><h2 id="routeTitle">已授权功能</h2><p>这里只显示当前账号具有权限的固定管理入口。</p></div>
+      </div>
+      <div class="admin-route-grid">
+        <a v-for="(item, index) in menuItems" :key="'card-' + item.flag" class="admin-route-card" :href="item.href">
+          <span aria-hidden="true">{{ String(index + 1).padStart(2, '0') }}</span>
+          <div><strong>{{ item.label }}</strong><small>进入管理页面</small></div>
+        </a>
+      </div>
+    </section>
+
+    <section v-else class="admin-section" aria-labelledby="routeTitleEmpty">
+      <div class="admin-section-head">
+        <div>
+          <h2 id="routeTitleEmpty">我的服务</h2>
+          <p>当前账号是普通用户。请使用下列用户端功能；管理工作台入口仅对管理员开放。</p>
+        </div>
+      </div>
+      <div class="admin-route-grid">
+        <a v-for="(item, index) in userServices" :key="'user-' + item.id" class="admin-route-card" :href="item.href">
+          <span aria-hidden="true">{{ String(index + 1).padStart(2, '0') }}</span>
+          <div><strong>{{ item.label }}</strong><small>{{ item.desc }}</small></div>
+        </a>
+      </div>
+    </section>
+
+    <section v-if="menuItems.length" class="admin-section" aria-labelledby="userEntryTitle">
+      <div class="admin-section-head">
+        <div><h2 id="userEntryTitle">用户端快捷入口</h2><p>管理员也可从这里进入领养、救助与义工等用户流程。</p></div>
+      </div>
+      <div class="admin-route-grid">
+        <a v-for="(item, index) in userServices.slice(0, 6)" :key="'admin-user-' + item.id" class="admin-route-card" :href="item.href">
+          <span aria-hidden="true">{{ String(index + 1).padStart(2, '0') }}</span>
+          <div><strong>{{ item.label }}</strong><small>{{ item.desc }}</small></div>
+        </a>
+      </div>
+    </section>
+
+    <section class="admin-section" aria-labelledby="insightTitle">
+      <div class="admin-section-head">
+        <div><h2 id="insightTitle">运营信息</h2><p>公告使用公开分页接口；资金分析仅对具有资金权限的账号加载。</p></div>
+      </div>
+      <div class="admin-two-column">
+        <article v-if="hasFlag('account')" class="admin-panel" aria-labelledby="accountTitle">
+          <h3 id="accountTitle">资金分类汇总</h3>
+          <p class="admin-panel-intro">按款项标签展示实际收入与支出聚合，金额单位为元。</p>
+          <div v-if="accountLoading" class="admin-status" role="status">正在读取资金汇总...</div>
+          <div v-else-if="accountError" class="admin-status is-error" role="alert"><div>{{ accountError }}<br><button class="ui-button is-ghost" type="button" @click="loadAccountStats">重新加载</button></div></div>
+          <div v-else>
+            <div class="admin-account-totals">
+              <div class="admin-account-total"><span>收入合计</span><strong class="ui-money-income">{{ money(accountStats.incomeTotal) }}</strong></div>
+              <div class="admin-account-total"><span>支出合计</span><strong class="ui-money-expense">{{ moneyAbs(accountStats.expenseTotal) }}</strong></div>
+              <div class="admin-account-total"><span>当前结余</span><strong>{{ money(accountStats.balance) }}</strong></div>
             </div>
-            <el-menu :default-openeds="['1']" background-color="transparent" text-color="#6B7280" active-text-color="#2563EB"
-                     default-active="home" :collapse="isCollapse">
-                <a href="/page/end/index.html">
-                    <el-menu-item index="home">
-                        <i class="el-icon-data-line"></i>
-                        <span slot="title">首页</span>
-                    </el-menu-item>
-                </a>
-                <el-submenu index="1" v-if="menuPermissions.length > 0">
-                    <template slot="title">
-                        <i class="el-icon-menu"></i>
-                        <span slot="title">功能区域</span>
-                    </template>
-                    <a :href="item.path" v-for="item in menuPermissions" :key="item.flag || item.path || item.name">
-                        <el-menu-item :index="item.flag">
-                            <i class="el-icon-s-data"></i>
-                            <span slot="title">{{item.name}}</span>
-                        </el-menu-item>
-                    </a>
-                </el-submenu>
-            </el-menu>
-        </el-aside>
-        <el-container>
-            <el-header class="admin-header">
-                <el-row>
-                    <el-col :span="1">
-                        <i style="font-size: 22px; cursor: pointer" :class="[isCollapse ? 'el-icon-s-unfold' : 'el-icon-s-fold']" @click="handleCollapse"></i>
-                    </el-col>
-                    <el-col :span="6" :offset="17" style="text-align: right">
-                        <el-dropdown trigger="click">
-                            <span style="display:inline-flex;align-items:center;gap:12px;cursor:pointer;height:60px;">
-                                <span style="font-size:18px;font-weight:700;color:#111827;">{{user.username}}</span>
-                                <img :src="'/api/files/' + user.avatar" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid #E5E7EB;">
-                            </span>
-                            <el-dropdown-menu slot="dropdown">
-                                <el-dropdown-item><a href="/page/end/person.html" style="display:block;padding:4px 12px;font-size:14px;color:#1C1917;text-decoration:none;">个人信息</a></el-dropdown-item>
-                                <el-dropdown-item><a @click="logout" href="#" style="display:block;padding:4px 12px;font-size:14px;color:#DC2626;text-decoration:none;">退出</a></el-dropdown-item>
-                            </el-dropdown-menu>
-                        </el-dropdown>
-                    </el-col>
-                </el-row>
-            </el-header>
-            <el-main class="admin-body">
-                <template v-if="hasAdminAccess()">
-                    <el-divider content-position="left">管理员快捷入口</el-divider>
-                    <div class="entry-grid">
-                        <a v-if="hasFlag('animal')" class="entry-card orange" href="/page/end/animal.html">
-                            <div class="entry-title">后台动物管理</div>
-                            <div class="entry-desc">新增、编辑、删除动物档案并统一维护待领养、申请中、已领养状态。</div>
-                        </a>
-                        <a v-if="hasFlag('adopt')" class="entry-card teal" href="/page/end/adopt.html">
-                            <div class="entry-title">领养审核</div>
-                            <div class="entry-desc">查看领养申请资料，执行待审核、通过、驳回、取消等状态流转。</div>
-                        </a>
-                        <a v-if="hasFlag('volunteer')" class="entry-card indigo" href="/page/end/volunteer.html">
-                            <div class="entry-title">义工审核</div>
-                            <div class="entry-desc">统一查看义工报名数据并处理审核结果。</div>
-                        </a>
-                        <a v-if="hasFlag('notice')" class="entry-card amber" href="/page/end/notice.html">
-                            <div class="entry-title">公告管理</div>
-                            <div class="entry-desc">发布、修改、删除系统公告和活动通知。</div>
-                        </a>
-                        <a v-if="hasFlag('help')" class="entry-card rose" href="/page/end/help.html">
-                            <div class="entry-title">救助管理</div>
-                            <div class="entry-desc">查看和处理用户提交的流浪动物救助请求。</div>
-                        </a>
-                        <a v-if="hasFlag('account')" class="entry-card blue" href="/page/end/account.html">
-                            <div class="entry-title">资金公示</div>
-                            <div class="entry-desc">登记和审阅救助款项的支出、收入与责任人信息。</div>
-                        </a>
-                    </div>
-                </template>
-                <el-divider content-position="left">用户端快捷入口</el-divider>
-                <div class="entry-grid">
-                    <a class="entry-card quick-entry-card" href="/page/front/animal_browse.html">
-                        <div class="entry-title">浏览动物</div>
-                        <div class="entry-desc">以用户视角查看当前可领养动物，进入详情页并发起领养申请。</div>
-                    </a>
-                    <a class="entry-card quick-entry-card" href="/page/front/my_adopt.html">
-                        <div class="entry-title">我的领养申请</div>
-                        <div class="entry-desc">查看当前登录用户的领养申请记录、审核状态和凭证入口。</div>
-                    </a>
-                    <a class="entry-card quick-entry-card" href="/page/front/volunteer_apply.html">
-                        <div class="entry-title">义工申请</div>
-                        <div class="entry-desc">以普通用户视角填写义工报名信息并提交审核。</div>
-                    </a>
-                    <a class="entry-card quick-entry-card" href="/page/front/my_volunteer.html">
-                        <div class="entry-title">我的义工申请</div>
-                        <div class="entry-desc">查看当前用户提交过的义工申请和审核结果。</div>
-                    </a>
-                    <a class="entry-card quick-entry-card" href="/page/front/notice_list.html">
-                        <div class="entry-title">公告中心</div>
-                        <div class="entry-desc">查看系统公告、活动通知和领养相关提醒。</div>
-                    </a>
-                    <a class="entry-card quick-entry-card" href="/page/front/account_public.html">
-                        <div class="entry-title">信息公示</div>
-                        <div class="entry-desc">查看与后台资金公示同步的收入、支出和结余数据。</div>
-                    </a>
-                    <a class="entry-card quick-entry-card" href="/page/front/rescue_apply.html">
-                        <div class="entry-title">救助咨询</div>
-                        <div class="entry-desc">以用户身份提交救助咨询或救助请求。</div>
-                    </a>
-                    <a class="entry-card quick-entry-card" href="/page/front/my_rescue.html">
-                        <div class="entry-title">我的救助</div>
-                        <div class="entry-desc">查看当前用户提交的救助咨询记录和回复状态。</div>
-                    </a>
+            <div v-if="!accountStats.income.length && !accountStats.expense.length" class="admin-status">暂无可展示的资金分类记录。</div>
+            <div v-else class="admin-breakdowns">
+              <div class="admin-breakdown">
+                <h4>收入分类</h4>
+                <div v-if="accountStats.income.length" class="admin-bar-list">
+                  <div v-for="item in accountStats.income" :key="'in-' + item.name" class="admin-bar-row">
+                    <div class="admin-bar-copy"><span>{{ item.name }}</span><strong>{{ money(item.value) }}</strong></div>
+                    <div class="admin-bar-track" aria-hidden="true"><div class="admin-bar-fill" :style="{width: barWidth(item.value, accountStats.income) + '%'}"></div></div>
+                  </div>
                 </div>
-                <el-divider content-position="left">平台数据统计</el-divider>
-                <div class="stat-grid">
-                    <div class="stat-card stat-link" @click="goStat('/page/end/volunteer.html', 'volunteer')" title="查看已审核通过的义工，管理员可在义工审核中管理">
-                        <div class="stat-icon purple"><i class="el-icon-user"></i></div>
-                        <div><div class="stat-value">{{total3}}</div><div class="stat-label">名义工</div><div class="stat-desc">已审核通过；后台在“义工审核”管理</div></div>
-                    </div>
-                    <div class="stat-card stat-link" @click="goStat('/page/end/animal.html', 'animal')" title="查看全部动物档案，用户端只展示待领养动物">
-                        <div class="stat-icon orange"><i class="el-icon-sunrise"></i></div>
-                        <div><div class="stat-value">{{total1}}</div><div class="stat-label">只动物档案</div><div class="stat-desc">用户端在“浏览动物”查看；后台在“动物管理”维护</div></div>
-                    </div>
-                    <div class="stat-card stat-link" @click="goStat('/page/end/adopt.html', 'adopt')" title="查看领养申请，管理员可在领养审核中管理">
-                        <div class="stat-icon teal"><i class="el-icon-star-off"></i></div>
-                        <div><div class="stat-value">{{total2}}</div><div class="stat-label">次领养申请</div><div class="stat-desc">用户端在“我的领养申请”查看；后台在“领养审核”管理</div></div>
-                    </div>
-                    <div class="stat-card stat-link" @click="goStat('/page/end/user.html', 'user')" title="查看注册用户，管理员可在用户管理中维护">
-                        <div class="stat-icon blue"><i class="el-icon-s-custom"></i></div>
-                        <div><div class="stat-value">{{total}}</div><div class="stat-label">爱心用户</div><div class="stat-desc">注册用户总数；后台在“用户管理”维护</div></div>
-                    </div>
+                <div v-else class="admin-inline-message">暂无收入分类。</div>
+              </div>
+              <div class="admin-breakdown is-expense">
+                <h4>支出分类</h4>
+                <div v-if="accountStats.expense.length" class="admin-bar-list">
+                  <div v-for="item in accountStats.expense" :key="'out-' + item.name" class="admin-bar-row">
+                    <div class="admin-bar-copy"><span>{{ item.name }}</span><strong>{{ money(item.value) }}</strong></div>
+                    <div class="admin-bar-track" aria-hidden="true"><div class="admin-bar-fill" :style="{width: barWidth(item.value, accountStats.expense) + '%'}"></div></div>
+                  </div>
                 </div>
-                <el-row :gutter="16" style="padding: 8px 0">
-                    <el-col :span="12">
-                        <el-card>
-                            <div id="main" style="width:100%;height:200px;"></div>
-                            <div id="bar" style="width:100%;height:200px;"></div>
-                        </el-card>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-card>
-                            <div slot="header"><h3 style="font-size:16px;font-weight:700;">系统公告</h3></div>
-                            <el-collapse accordion v-model="active">
-                                <el-collapse-item :name="index" v-for="(item,index) in notices" :key="index">
-                                    <template slot="title">
-                                        <b>{{ item.title }}</b>
-                                        <span style="margin-left:50px;color:#A8A29E;">{{ item.time }}</span>
-                                    </template>
-                                    <div style="padding:0 20px;color:#78716C;">{{ item.content }}</div>
-                                </el-collapse-item>
-                            </el-collapse>
-                        </el-card>
-                    </el-col>
-                </el-row>
-            </el-main>
-        </el-container>
-    </el-container>
+                <div v-else class="admin-inline-message">暂无支出分类。</div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="admin-panel" aria-labelledby="noticeTitle">
+          <h3 id="noticeTitle">公告预览</h3>
+          <p class="admin-panel-intro">公开公告分页接口返回的三条记录，不推断顺序或展示不存在的发布日期。</p>
+          <div v-if="noticeLoading" class="admin-status" role="status">正在读取公告...</div>
+          <div v-else-if="noticeError" class="admin-status is-error" role="alert"><div>{{ noticeError }}<br><button class="ui-button is-ghost" type="button" @click="loadNotices">重新加载</button></div></div>
+          <div v-else-if="!notices.length" class="admin-status">暂无公告。</div>
+          <div v-else class="admin-notice-list">
+            <article v-for="item in notices" :key="item.id" class="admin-notice"><h4>{{ item.title || '未命名公告' }}</h4><p>{{ summary(item.content) }}</p></article>
+          </div>
+          <a class="admin-section-link" href="/page/front/notice_list.html">查看公告中心</a>
+        </article>
+      </div>
+    </section>
+  </main>
 </div>
-<script src="../../js/echarts.min.js"></script>
+
 <script src="../../js/jquery.min.js"></script>
-<script src="../../js/auth-session.js?v=20260712a"></script>
-<script src="../../js/admin-auth.js?v=20260712a"></script>
+<script src="../../js/auth-session.js?v=20260723"></script>
+<script src="../../js/admin-auth.js?v=20260723"></script>
+<script src="../../js/user-workspace.js?v=20260724"></script>
+<script src="../../js/decimal-money.js?v=20260723"></script>
 <script src="../../js/vue.min.js"></script>
-<script src="../../js/element.js"></script>
 <script>
-    $(document).ajaxError(function(event, xhr) {
-        if (xhr.status === 401) { location.href = '/page/front/login.html'; }
-    });
-    $.ajaxSetup({
-        xhrFields: { withCredentials: true },
-        beforeSend: function(xhr, settings) {
-            var method = (settings && settings.type ? settings.type : 'GET').toUpperCase();
-            if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
-                var csrf = sessionStorage.getItem('csrfToken');
-                if (csrf) { xhr.setRequestHeader('X-CSRF-Token', csrf); }
-            }
-        }
-    });
-    let pieOption = { title:{text:"支出统计"}, legend:{x:"left",y:"center",orient:"vertical",data:[]}, tooltip:{show:true}, xAxis:null, yAxis:null, series:[{type:"pie",radius:"55%",data:[]}] };
-    let pieOption1 = { title:{text:"收入统计"}, legend:{x:"left",y:"center",orient:"vertical",data:[]}, tooltip:{show:true}, xAxis:null, yAxis:null, series:[{type:"pie",radius:"55%",data:[]}] };
-    new Vue({
-        el: "#wrapper",
-        data: { active:0, users:[], animals:[], adopts:[], notices:[], volunteers:[], accounts:[], user:{}, tableData:[], pageNum:1, pageSize:10, total:0, total1:0, total2:0, total3:0, dialogFormVisible:false, entity:{}, isCollapse:false },
-        computed: {
-            menuPermissions() {
-                const list = (this.user && this.user.permission) ? this.user.permission : [];
-                const adminFlags = ["user", "role", "permission", "animal", "adopt", "proof", "visit", "volunteer", "account", "notice", "help"];
-                const seen = new Set();
-                const out = [];
-                for (const item of list) {
-                    if (!item) continue;
-                    if (!adminFlags.includes(item.flag)) continue;
-                    const key = (item.flag || '') + '|' + (item.path || '') + '|' + (item.name || '');
-                    if (seen.has(key)) continue;
-                    seen.add(key);
-                    out.push(item);
-                }
-                return out;
-            }
+(function () {
+  'use strict';
+  AuthSession.bootstrap({
+    requireAuth: true,
+    allowCachedOnNetworkError: false,
+    onDone: function (ok, authenticatedUser) {
+      if (!ok || !authenticatedUser) return;
+      document.getElementById('authWait').hidden = true;
+      new Vue({
+        el: '#workspace',
+        data: {
+          user: authenticatedUser,
+          menuItems: AdminWorkspace.navigation(authenticatedUser.permission),
+          userServices: window.UserWorkspace ? UserWorkspace.services() : [],
+          mobileOpen: false,
+          accountOpen: false,
+          statsLoading: true,
+          statsError: '',
+          stats: { volunteers: 0, animals: 0, adopts: 0, users: 0 },
+          noticeLoading: true,
+          noticeError: '',
+          notices: [],
+          accountLoading: false,
+          accountError: '',
+          accountStats: { income: [], expense: [], incomeTotal: 0, expenseTotal: 0, balance: 0 }
         },
-        created() {
-            this.user = sessionStorage.getItem("user") ? JSON.parse(sessionStorage.getItem("user")) : {};
-            if (!this.user.id) { location.href = "/page/front/login.html"; return; }
-            const error = new URLSearchParams(location.search).get("error");
-            if (error === "forbidden") {
-                this.$message.warning("当前账号缺少该菜单权限。请确认已用管理员登录，并退出后重新登录以刷新权限。");
-                history.replaceState(null, "", location.pathname);
-            } else if (error === "need_admin") {
-                this.$message.info("该功能需要管理权限，已返回系统首页。");
-                history.replaceState(null, "", location.pathname);
-            }
-            this.refreshCurrentUser().always(() => {
-                this.$nextTick(() => { this.load(); this.loadEcharts(); });
-            });
+        created: function () {
+          this.loadStats();
+          this.loadNotices();
+          if (this.hasFlag('account')) this.loadAccountStats();
         },
         methods: {
-            loadEcharts() {
-                if (!this.hasFlag("account")) {
-                    return;
-                }
-                // B7：管理端收支分标签聚合，与 incomeTotal/expenseTotal 口径一致
-                let pieChart = echarts.init(document.getElementById('main'));
-                let pieChart1 = echarts.init(document.getElementById('bar'));
-                $.get("/api/account/stats/by-label?_=" + Date.now()).then(res => {
-                    if (res.code !== '0' || !res.data) return;
-                    const expense = (res.data.expenseByLabel || [])
-                        .map(v => ({ name: v.name, value: Number(v.value) || 0 }));
-                    const income = (res.data.incomeByLabel || [])
-                        .map(v => ({ name: v.name, value: Number(v.value) || 0 }));
-                    pieOption.legend.data = expense.map(v => v.name);
-                    pieOption.series[0].data = expense;
-                    pieChart.setOption(pieOption);
-                    pieOption1.legend.data = income.map(v => v.name);
-                    pieOption1.series[0].data = income;
-                    pieChart1.setOption(pieOption1);
-                });
-            },
-            GroupBy(datas,keys,callBack) {
-                const list = datas || []; const groups = [];
-                list.forEach(v => { const key = {}; keys.forEach(k => { key[k] = v[k]; }); let group = groups.find(v => v._key === JSON.stringify(key)); if (!group) { group = { _key:JSON.stringify(key), name:key.name, key:key }; groups.push(group); } if(callBack) { group.value = callBack(group.value,v); group.total = group.total||0; group.total++; } else { group.value = group.value||[]; group.value.push(v); } });
-                return groups;
-            },
-            refreshCurrentUser() {
-                if (!this.user || !this.user.username) {
-                    return $.Deferred().resolve().promise();
-                }
-                return $.get("/api/user/detail/" + encodeURIComponent(this.user.username)).then(res => {
-                    if (res.code === "0" && res.data) {
-                        this.user = res.data;
-                        sessionStorage.setItem("user", JSON.stringify(res.data));
-                    }
-                });
-            },
-            load() {
-                $.get("/api/dashboard/public-stats?_=" + Date.now()).then(res => {
-                    const stats = res.data || {};
-                    this.total3 = stats.volunteers || 0;
-                    this.total1 = stats.animals || 0;
-                    this.total2 = stats.adopts || 0;
-                    this.total = stats.users || 0;
-                });
-                $.get("/api/notice/").then(res => { this.notices = res.data; });
-                $.get("/api/animal/").then(res => { this.animals = res.data; });
-                if (this.hasFlag("volunteer")) {
-                    $.get("/api/volunteer/approved").then(res => { this.volunteers = res.data || []; });
-                }
-                if (this.hasFlag("user")) {
-                    $.get("/api/user/").then(res => { this.users = res.data; });
-                }
-                if (this.hasFlag("adopt")) {
-                    $.get("/api/adopt/").then(res => { this.adopts = res.data; });
-                }
-            },
-            handleCollapse() { this.isCollapse = !this.isCollapse; },
-            logout() { if (window.AuthSession) { AuthSession.logout(); } else { location.href="/page/front/login.html"; } },
-            goStat(path, flag) {
-                if (this.hasFlag(flag)) {
-                    location.href = path;
-                    return;
-                }
-                this.$message.info("当前账号没有该后台管理权限");
-            },
-            hasAdminAccess() {
-                return ["user", "role", "permission", "animal", "adopt", "proof", "visit", "volunteer", "account", "notice", "help", "rescue"].some(flag => this.hasFlag(flag));
-            },
-            hasFlag(flag) {
-                const permissions = this.user && this.user.permission ? this.user.permission : [];
-                return permissions.some(item => item && item.flag === flag);
-            }
+          hasFlag: function (flag) { return AdminWorkspace.hasFlag(this.user, flag); },
+          avatarUrl: function (flag) { return AdminWorkspace.avatarUrl(flag); },
+          avatarFallback: function (event) { event.target.src = '/api/files/'; },
+          closeMenus: function () { this.mobileOpen = false; this.accountOpen = false; },
+          logout: function () { AuthSession.logout(); },
+          loadStats: function () {
+            var vm = this;
+            vm.statsLoading = true;
+            vm.statsError = '';
+            $.ajax({ url: '/api/dashboard/public-stats', type: 'GET', cache: false }).done(function (res) {
+              if (!res || res.code !== '0' || !res.data) { vm.statsError = (res && res.msg) || '服务返回了无法识别的数据。'; return; }
+              vm.stats = {
+                volunteers: Number(res.data.volunteers || 0),
+                animals: Number(res.data.animals || 0),
+                adopts: Number(res.data.adopts || 0),
+                users: Number(res.data.users || 0)
+              };
+            }).fail(function () { vm.statsError = '请检查网络连接后重试。'; }).always(function () { vm.statsLoading = false; });
+          },
+          loadNotices: function () {
+            var vm = this;
+            vm.noticeLoading = true;
+            vm.noticeError = '';
+            $.ajax({ url: '/api/notice/page', type: 'GET', data: { pageNum: 1, pageSize: 3 }, cache: false }).done(function (res) {
+              if (!res || res.code !== '0' || !res.data) { vm.noticeError = (res && res.msg) || '服务返回了无法识别的数据。'; return; }
+              vm.notices = Array.isArray(res.data.records) ? res.data.records : [];
+            }).fail(function () { vm.noticeError = '请检查网络连接后重试。'; }).always(function () { vm.noticeLoading = false; });
+          },
+          loadAccountStats: function () {
+            var vm = this;
+            if (!vm.hasFlag('account')) return;
+            vm.accountLoading = true;
+            vm.accountError = '';
+            $.ajax({ url: '/api/account/stats/by-label', type: 'GET', cache: false }).done(function (res) {
+              if (!res || res.code !== '0' || !res.data) { vm.accountError = (res && res.msg) || '服务返回了无法识别的数据。'; return; }
+              vm.accountStats = {
+                income: vm.normalizeBreakdown(res.data.incomeByLabel),
+                expense: vm.normalizeBreakdown(res.data.expenseByLabel),
+                incomeTotal: String(res.data.incomeTotal || '0.00'),
+                expenseTotal: String(res.data.expenseTotal || '0.00'),
+                balance: String(res.data.balance || '0.00')
+              };
+            }).fail(function () { vm.accountError = '资金汇总读取失败，请稍后重试。'; }).always(function () { vm.accountLoading = false; });
+          },
+          normalizeBreakdown: function (rows) {
+            return (Array.isArray(rows) ? rows : []).map(function (row) {
+              return { name: String((row && row.name) || '未分类'), value: String((row && row.value) || '0.00') };
+            });
+          },
+          barWidth: function (value, rows) {
+            var max = rows.reduce(function (current, row) {
+              var candidate = String((row && row.value) || '0.00');
+              return BigInt(candidate.replace('.', '')) > BigInt(current.replace('.', '')) ? candidate : current;
+            }, '0.00');
+            return DecimalMoney.percent(value, max);
+          },
+          money: function (value) { return DecimalMoney.format(value); },
+          moneyAbs: function (value) { return DecimalMoney.format(value, { absolute: true }); },
+          summary: function (content) {
+            var text = String(content || '暂无内容').replace(/\s+/g, ' ').trim();
+            return text.length > 100 ? text.slice(0, 100) + '…' : text;
+          }
         }
-    });
+      });
+    }
+  });
+})();
 </script>
-<script src="../../js/dark-mode.js"></script>
 </body>
 </html>

@@ -6,9 +6,11 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.common.ExcelImportUtil;
 import com.example.dto.ImportResult;
 import com.example.entity.Animal;
+import com.example.entity.Adopt;
 import com.example.entity.User;
 import com.example.exception.CustomException;
 import com.example.mapper.AnimalMapper;
+import com.example.mapper.AdoptMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -17,9 +19,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDate;
+import java.time.ZoneId;
 
 @Service
 public class AnimalService extends ServiceImpl<AnimalMapper, Animal> {
@@ -34,12 +37,32 @@ public class AnimalService extends ServiceImpl<AnimalMapper, Animal> {
     @Resource
     private FileAssetService fileAssetService;
 
+    @Resource
+    private AdoptMapper adoptMapper;
+
+    public Integer lockState(Long id) {
+        return id == null ? null : animalMapper.selectStateForUpdate(id);
+    }
+
+    public boolean compareAndSetState(Long id, Integer expectedState, Integer nextState) {
+        if (id == null || expectedState == null || nextState == null) {
+            return false;
+        }
+        if (expectedState.equals(nextState)) {
+            return true;
+        }
+        return animalMapper.compareAndSetState(id, expectedState, nextState) == 1;
+    }
+
     @Transactional
     public boolean saveAnimal(Animal animal, User user) {
-        if (animal.getTstate() == null) {
-            animal.setTstate(0);
+        if (animal == null) {
+            throw new CustomException("400", "动物信息不能为空");
         }
-        boolean ok = save(animal);
+        animal.setId(null);
+        animal.setTstate(0);
+        normalizeAndValidate(animal);
+        boolean ok = animalMapper.insert(animal) == 1;
         if (!ok) {
             throw new CustomException("500", "动物信息保存失败");
         }
@@ -55,11 +78,14 @@ public class AnimalService extends ServiceImpl<AnimalMapper, Animal> {
         if (animal == null || animal.getId() == null) {
             throw new CustomException("400", "动物 ID 无效");
         }
-        Animal existing = getOne(Wrappers.<Animal>lambdaQuery()
+        Animal existing = animalMapper.selectOne(Wrappers.<Animal>lambdaQuery()
                 .eq(Animal::getId, animal.getId()).last("FOR UPDATE"));
         if (existing == null) {
             throw new CustomException("404", "动物不存在");
         }
+        Animal updated = merge(existing, animal);
+        updated.setTstate(existing.getTstate());
+        normalizeAndValidate(updated);
         String oldPic = existing.getTpic();
         String newPic = animal.getTpic();
         if (newPic != null) {
@@ -70,7 +96,7 @@ public class AnimalService extends ServiceImpl<AnimalMapper, Animal> {
                         "animal", animal.getId(), true);
             }
         }
-        if (!updateById(animal)) {
+        if (animalMapper.updateById(updated) != 1) {
             throw new CustomException("409", "业务记录已变化，请刷新后重试");
         }
         if (newPic != null) {
@@ -89,13 +115,19 @@ public class AnimalService extends ServiceImpl<AnimalMapper, Animal> {
 
     @Transactional
     public boolean deleteAnimal(Long id) {
-        Animal existing = getOne(Wrappers.<Animal>lambdaQuery()
+        if (id == null) {
+            throw new CustomException("400", "动物 ID 无效");
+        }
+        Animal existing = animalMapper.selectOne(Wrappers.<Animal>lambdaQuery()
                 .eq(Animal::getId, id).last("FOR UPDATE"));
         if (existing == null) {
-            return true;
+            throw new CustomException("404", "动物不存在");
         }
-        fileAssetService.unbindAllForBusiness("animal", id);
-        if (!removeById(id)) {
+        if (hasAdoptionReference(id)) {
+            throw new CustomException("409", "动物已有领养申请，不能删除");
+        }
+        fileAssetService.retireAllForBusiness("animal", id);
+        if (animalMapper.deleteById(id) != 1) {
             throw new CustomException("409", "删除失败，请刷新后重试");
         }
         return true;
@@ -114,12 +146,17 @@ public class AnimalService extends ServiceImpl<AnimalMapper, Animal> {
 
         ImportResult result = new ImportResult();
         result.setTotal(rows.size());
+        result.setWorkflowNote("所有成功导入的动物状态均强制为0（待领养），工作簿状态不会被采用");
 
         int rowNum = 2;
         for (Map<String, Object> raw : rows) {
             try {
                 Animal a = parseRow(raw);
-                save(a);
+                a.setTstate(0);
+                normalizeAndValidate(a);
+                if (animalMapper.insert(a) != 1) {
+                    throw new CustomException("500", "动物信息保存失败");
+                }
                 result.setSuccessCount(result.getSuccessCount() + 1);
             } catch (Exception e) {
                 String reason = sanitize(e);
@@ -138,30 +175,74 @@ public class AnimalService extends ServiceImpl<AnimalMapper, Animal> {
             throw new CustomException("400", "名字不能为空");
         }
         a.setTname(name);
-        a.setTtype(ExcelImportUtil.asString(r.get("品种")));
-        a.setTsex(ExcelImportUtil.asString(r.get("性别")));
+        String type = ExcelImportUtil.asString(r.get("品种"));
+        String sex = ExcelImportUtil.asString(r.get("性别"));
+        a.setTtype(StrUtil.isBlank(type) ? "未知" : type);
+        a.setTsex(StrUtil.isBlank(sex) ? "未知" : sex);
         a.setTdescribe(ExcelImportUtil.asString(r.get("描述")));
         a.setTbirthday(ExcelImportUtil.asDate(r.get("生日")));
-        a.setTstate(parseTstate(r.get("状态")));
+        a.setTstate(0);
         return a;
     }
 
-    private Integer parseTstate(Object v) {
-        if (v == null || ExcelImportUtil.asString(v).isEmpty()) return 0;
-        Integer asNum = ExcelImportUtil.asInt(v);
-        if (asNum != null) {
-            if (asNum == 0 || asNum == 1 || asNum == 2) return asNum;
-            throw new CustomException("400", "无效的状态值：" + v);
+    private boolean hasAdoptionReference(Long animalId) {
+        Long count = adoptMapper.selectCount(Wrappers.<Adopt>lambdaQuery().eq(Adopt::getAid, animalId));
+        return count != null && count > 0;
+    }
+
+    private Animal merge(Animal existing, Animal patch) {
+        Animal result = new Animal();
+        result.setId(existing.getId());
+        result.setTname(patch.getTname() == null ? existing.getTname() : patch.getTname());
+        result.setTtype(patch.getTtype() == null ? existing.getTtype() : patch.getTtype());
+        result.setTsex(patch.getTsex() == null ? existing.getTsex() : patch.getTsex());
+        // The management form is a complete replacement contract; null explicitly means unknown.
+        result.setTbirthday(patch.getTbirthday());
+        result.setTpic(patch.getTpic() == null ? existing.getTpic() : patch.getTpic());
+        result.setTstate(existing.getTstate());
+        result.setTdescribe(patch.getTdescribe() == null ? existing.getTdescribe() : patch.getTdescribe());
+        return result;
+    }
+
+    private void normalizeAndValidate(Animal animal) {
+        animal.setTname(required(animal.getTname(), 20, "动物名称"));
+        animal.setTtype(required(animal.getTtype(), 20, "动物品种"));
+        animal.setTsex(required(animal.getTsex(), 3, "动物性别"));
+        if (!"公".equals(animal.getTsex()) && !"母".equals(animal.getTsex()) && !"未知".equals(animal.getTsex())) {
+            throw new CustomException("400", "动物性别仅允许公、母或未知");
         }
-        Map<String, Integer> textMap = new HashMap<>();
-        textMap.put("待领养", 0);
-        textMap.put("申请中", 1);
-        textMap.put("已领养", 2);
-        Integer mapped = textMap.get(ExcelImportUtil.asString(v));
-        if (mapped == null) {
-            throw new CustomException("400", "无效的状态值：" + v);
+        if (animal.getTstate() == null || animal.getTstate() < 0 || animal.getTstate() > 2) {
+            throw new CustomException("400", "动物状态仅允许0待领养、1申请中或2已领养");
         }
-        return mapped;
+        animal.setTpic(optional(animal.getTpic(), 100, "动物图片标识"));
+        animal.setTdescribe(optional(animal.getTdescribe(), 100, "动物描述"));
+        if (animal.getTbirthday() != null) {
+            ZoneId productZone = ZoneId.of("Asia/Shanghai");
+            LocalDate birthday = animal.getTbirthday().toInstant().atZone(productZone).toLocalDate();
+            if (birthday.isAfter(LocalDate.now(productZone))) {
+                throw new CustomException("400", "动物生日不能晚于今天");
+            }
+        }
+    }
+
+    private String required(String value, int max, String field) {
+        String normalized = value == null ? "" : value.trim();
+        if (normalized.isEmpty()) {
+            throw new CustomException("400", field + "不能为空");
+        }
+        if (normalized.length() > max) {
+            throw new CustomException("400", field + "不能超过" + max + "个字符");
+        }
+        return normalized;
+    }
+
+    private String optional(String value, int max, String field) {
+        if (value == null) return null;
+        String normalized = value.trim();
+        if (normalized.length() > max) {
+            throw new CustomException("400", field + "不能超过" + max + "个字符");
+        }
+        return normalized;
     }
 
     private String sanitize(Exception e) {

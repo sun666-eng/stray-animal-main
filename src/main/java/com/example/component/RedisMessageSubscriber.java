@@ -1,5 +1,10 @@
 package com.example.component;
 
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
+import com.example.config.RedisConfig;
+import com.example.dto.ChatMessageDTO;
+import com.example.service.HelpService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -9,9 +14,6 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
-import javax.websocket.Session;
-import java.util.Map;
-import java.util.Set;
 
 @Component
 @ConditionalOnProperty(name = "app.redis.enabled", havingValue = "true")
@@ -22,34 +24,39 @@ public class RedisMessageSubscriber implements MessageListener {
     @Resource
     private StringRedisTemplate stringRedisTemplate;
 
+    @Resource
+    private HelpService helpService;
+
     @Override
     public void onMessage(Message message, byte[] pattern) {
         try {
             String body = stringRedisTemplate.getStringSerializer().deserialize(message.getBody());
-            log.info("Redis收到消息: {}", body);
-            if (body != null && body.startsWith("{")) {
-                broadcastToWebSocketClients(body);
-            }
+            handleBody(body);
         } catch (Exception e) {
-            log.error("处理Redis消息异常", e);
+            log.warn("忽略无效Redis聊天事件", e);
         }
     }
 
-    private void broadcastToWebSocketClients(String message) {
-        Map<String, Set<Session>> sessionMap = WebSocketServer.sessionMap;
-        int successCount = 0;
-        for (Map.Entry<String, Set<Session>> entry : sessionMap.entrySet()) {
-            for (Session session : entry.getValue()) {
-                try {
-                    if (session.isOpen()) {
-                        session.getAsyncRemote().sendText(message);
-                        successCount++;
-                    }
-                } catch (Exception e) {
-                    log.error("发送消息给用户{}失败", entry.getKey(), e);
-                }
-            }
+    void handleBody(String body) {
+        if (body == null || body.length() > 256) {
+            return;
         }
-        log.info("广播消息完成，成功发送给{}个用户", successCount);
+        try {
+            JSONObject event = JSONUtil.parseObj(body);
+            if (!RedisConfig.CHAT_EVENT_TYPE.equals(event.getStr("type"))) {
+                return;
+            }
+            Long messageId = event.getLong("messageId");
+            if (messageId == null || messageId <= 0) {
+                return;
+            }
+            ChatMessageDTO message = helpService.getPersistedChatMessage(messageId);
+            if (message == null) {
+                return;
+            }
+            WebSocketServer.broadcastToAuthenticatedClients(WebSocketServer.chatClientEvent(message));
+        } catch (Exception e) {
+            log.warn("忽略无法验证的Redis聊天事件");
+        }
     }
 }

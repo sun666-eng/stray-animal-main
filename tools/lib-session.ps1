@@ -88,16 +88,23 @@ function Invoke-ApiJson {
       Ok         = $true
     }
   } catch {
+    $requestError = $_
     Clear-AppSessionStickyHeaders -AppSession $AppSession
     $status = 0
     $content = ""
     $json = $null
-    if ($_.Exception.Response) {
-      $status = [int]$_.Exception.Response.StatusCode
+    if ($requestError.Exception.Response) {
+      $status = [int]$requestError.Exception.Response.StatusCode
+      if ($requestError.ErrorDetails -and $requestError.ErrorDetails.Message) {
+        $content = [string]$requestError.ErrorDetails.Message
+        try { $json = $content | ConvertFrom-Json } catch {}
+      }
       try {
-        $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
-        $content = $reader.ReadToEnd()
-        $json = $content | ConvertFrom-Json
+        if (-not $content -and $requestError.Exception.Response.GetResponseStream) {
+          $reader = New-Object System.IO.StreamReader($requestError.Exception.Response.GetResponseStream())
+          $content = $reader.ReadToEnd()
+          $json = $content | ConvertFrom-Json
+        }
       } catch {}
     }
     return [pscustomobject]@{
@@ -105,7 +112,7 @@ function Invoke-ApiJson {
       Json       = $json
       Content    = $content
       Ok         = $false
-      Error      = $_.Exception.Message
+      Error      = $requestError.Exception.Message
     }
   }
 }

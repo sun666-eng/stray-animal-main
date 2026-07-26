@@ -8,6 +8,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.stream.Collectors;
@@ -44,5 +45,10 @@ public class GlobalExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining("; "));
         return ResponseEntity.status(400).body(Result.error("400", msg));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Result<?>> unreadableJson(HttpServletRequest request, HttpMessageNotReadableException e) {
+        return ResponseEntity.status(400).body(Result.error("400", "请求 JSON 格式或日期格式无效"));
     }
 }

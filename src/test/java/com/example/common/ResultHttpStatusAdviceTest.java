@@ -35,6 +35,25 @@ public class ResultHttpStatusAdviceTest {
     }
 
     @Test
+    public void setsHttp409_whenBodyCodeIs409() throws Exception {
+        ResultHttpStatusAdvice advice = new ResultHttpStatusAdvice();
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        MockHttpServletResponse res = new MockHttpServletResponse();
+        MethodParameter param = new MethodParameter(
+                ResultHttpStatusAdviceTest.class.getDeclaredMethod("sampleResult"), -1);
+
+        advice.beforeBodyWrite(
+                Result.error("409", "冲突"),
+                param,
+                MediaType.APPLICATION_JSON,
+                null,
+                new ServletServerHttpRequest(req),
+                new ServletServerHttpResponse(res));
+
+        assertEquals(409, res.getStatus());
+    }
+
+    @Test
     public void keeps200_whenSuccess() throws Exception {
         ResultHttpStatusAdvice advice = new ResultHttpStatusAdvice();
         MockHttpServletRequest req = new MockHttpServletRequest();

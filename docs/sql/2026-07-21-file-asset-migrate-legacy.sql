@@ -12,6 +12,7 @@
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS t_file_asset_migration_conflict (
   id BIGINT NOT NULL AUTO_INCREMENT,
+  run_id VARCHAR(64) NOT NULL DEFAULT 'legacy',
   flag VARCHAR(64) NOT NULL,
   reason VARCHAR(255) NOT NULL,
   sources TEXT,

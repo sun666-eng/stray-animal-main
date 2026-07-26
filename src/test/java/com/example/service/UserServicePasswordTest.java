@@ -118,6 +118,18 @@ public class UserServicePasswordTest {
     }
 
     @Test
+    public void save_rejectsPasswordBeyondBcryptByteLimit() {
+        User user = new User();
+        user.setUsername("admin2");
+        user.setPassword(String.join("", java.util.Collections.nCopies(25, "密码")));
+
+        com.example.exception.CustomException error = assertThrows(
+                com.example.exception.CustomException.class, () -> userService.save(user));
+
+        assertEquals("400", error.getCode());
+    }
+
+    @Test
     public void login_plaintextRejectedWhenSwitchOff() {
         userService.setAllowPlaintextLogin(false);
         User stored = new User();

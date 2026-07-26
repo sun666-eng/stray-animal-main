@@ -333,7 +333,7 @@
                 sessionStorage.setItem("tpic", tpic);
                 console.log(tpic);
                 sessionStorage.setItem("tname", tname);
-                location.href = "/page/end/adopt_apply.html";
+                location.href = "/page/front/adopt_apply.html?animalId=" + encodeURIComponent(id);
 
             },
             add() {

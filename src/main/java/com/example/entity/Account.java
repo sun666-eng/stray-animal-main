@@ -6,6 +6,10 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.extension.activerecord.Model;
 import com.baomidou.mybatisplus.annotation.TableId;
 
+import java.math.BigDecimal;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+
 
 @Data
 @TableName("t_account")
@@ -30,7 +34,8 @@ public class Account extends Model<Account> {
     /**
       * 款项金额 
       */
-    private Double avalue;
+    @JsonSerialize(using = ToStringSerializer.class)
+    private BigDecimal avalue;
 
     /**
       * 款项用途详情 

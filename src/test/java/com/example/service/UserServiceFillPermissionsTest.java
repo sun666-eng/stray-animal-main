@@ -129,6 +129,28 @@ public class UserServiceFillPermissionsTest {
         assertTrue(user.getPermission().stream().anyMatch(p -> "adopt_view".equals(p.getFlag())));
     }
 
+    @Test
+    public void stalePermissionId_doesNotFallBackToEmbeddedFlagOrPath() {
+        Permission stale = new Permission();
+        stale.setId(999L);
+        stale.setFlag("role");
+        stale.setPath("/page/end/role.html");
+        Role role = new Role();
+        role.setId(2L);
+        role.setPermission(Collections.singletonList(stale));
+        when(roleService.getById(2L)).thenReturn(role);
+        when(permissionService.getById(999L)).thenReturn(null);
+        User user = new User();
+        Role slim = new Role();
+        slim.setId(2L);
+        user.setRole(Collections.singletonList(slim));
+
+        userService.fillPermissions(user);
+
+        assertFalse(user.getPermission().stream().anyMatch(p -> "role".equals(p.getFlag())));
+        assertTrue(user.getPermission().isEmpty());
+    }
+
     private static List<Permission> listOf(Permission... items) {
         List<Permission> list = new ArrayList<Permission>();
         Collections.addAll(list, items);

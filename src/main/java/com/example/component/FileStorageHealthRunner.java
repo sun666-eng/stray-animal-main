@@ -1,6 +1,7 @@
 package com.example.component;
 
 import com.example.common.FileStorage;
+import com.example.common.StartupMutationPolicy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -9,7 +10,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 /**
- * 启动时记录上传目录并写入 app_schema_meta，便于运维确认「文件落盘位置」不漂移。
+ * 启动时记录上传目录；仅在允许启动写库时写入 app_schema_meta。
  */
 @Slf4j
 @Component
@@ -18,16 +19,24 @@ public class FileStorageHealthRunner implements ApplicationRunner {
 
     private final FileStorage fileStorage;
     private final JdbcTemplate jdbcTemplate;
+    private final StartupMutationPolicy mutationPolicy;
 
-    public FileStorageHealthRunner(FileStorage fileStorage, JdbcTemplate jdbcTemplate) {
+    public FileStorageHealthRunner(FileStorage fileStorage,
+                                   JdbcTemplate jdbcTemplate,
+                                   StartupMutationPolicy mutationPolicy) {
         this.fileStorage = fileStorage;
         this.jdbcTemplate = jdbcTemplate;
+        this.mutationPolicy = mutationPolicy;
     }
 
     @Override
     public void run(ApplicationArguments args) {
         String abs = fileStorage.getRootAbsolutePath();
         log.info("FileStorageHealth: uploadRoot={}", abs);
+        if (!mutationPolicy.isMutationsAllowed()) {
+            log.info("FileStorageHealth pure-check：仅记录路径，不写 app_schema_meta");
+            return;
+        }
         try {
             jdbcTemplate.execute(
                     "CREATE TABLE IF NOT EXISTS app_schema_meta ("
@@ -35,7 +44,6 @@ public class FileStorageHealthRunner implements ApplicationRunner {
                             + "meta_value VARCHAR(512) NOT NULL,"
                             + "updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
                             + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-            // 路径可能较长，截断写入 meta
             String meta = abs.length() > 500 ? abs.substring(0, 500) : abs;
             jdbcTemplate.update(
                     "INSERT INTO app_schema_meta (meta_key, meta_value) VALUES ('upload_root', ?) "

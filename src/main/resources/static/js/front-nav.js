@@ -1,8 +1,10 @@
 (function () {
   var FRONT_BASE = '/page/front/';
-  // 与管理端共用 end/index 作为「首页」；普通用户只看到用户快捷入口（功能更少）
-  var USER_HOME = '/page/end/index.html';
+  // 普通用户默认首页：front/index（含「我的服务」）；管理员：end/index
+  var MEMBER_HOME = '/page/front/index.html';
+  var ADMIN_HOME = '/page/end/index.html';
   var FRONT_PAGES = {
+    'index.html': true,
     'animal_browse.html': true,
     'animal_detail.html': true,
     'adopt_apply.html': true,
@@ -53,17 +55,27 @@
     return '/page/front/login.html?redirect=' + encodeURIComponent(redirect);
   }
 
-  // 管理员端的 admin flag 集合，与 end/index.html 的 hasAdminAccess 保持一致
-  var ADMIN_FLAGS = ['user','role','permission','animal','adopt','proof','visit','volunteer','account','notice','help'];
+  // 与 UserWorkspace / RoleContracts 管理 flags 对齐（含 rescue）
+  var ADMIN_FLAGS = ['user','role','permission','animal','adopt','proof','visit','volunteer','account','notice','help','rescue'];
 
   function userHasAdminAccess() {
     var user = getUser();
+    if (window.UserWorkspace && typeof window.UserWorkspace.hasAdminAccess === 'function') {
+      return window.UserWorkspace.hasAdminAccess(user);
+    }
     if (!user || !user.id || !Array.isArray(user.permission)) return false;
     for (var i = 0; i < user.permission.length; i++) {
       var p = user.permission[i];
       if (p && ADMIN_FLAGS.indexOf(p.flag) >= 0) return true;
     }
     return false;
+  }
+
+  function resolveHome(user) {
+    if (window.UserWorkspace && typeof window.UserWorkspace.defaultHome === 'function') {
+      return window.UserWorkspace.defaultHome(user || getUser());
+    }
+    return userHasAdminAccess() ? ADMIN_HOME : MEMBER_HOME;
   }
 
   function normalizeFrontHref(href) {
@@ -116,11 +128,13 @@
   function injectHomeButton() {
     var path = window.location.pathname || '';
     var current = path.split('/').pop() || 'animal_browse.html';
-    if (current === 'login.html' || current === 'register.html') {
+    if (current === 'login.html' || current === 'register.html' || current === 'index.html') {
       return;
     }
-    // 已在系统首页（end/index）时不显示，避免点击无效果
-    if (path === USER_HOME || path.indexOf('/page/end/index.html') === 0) {
+    var user = getUser();
+    var home = resolveHome(user);
+    // 已在角色对应首页时不显示
+    if (path === home || path.indexOf(home) === 0 || path === MEMBER_HOME || path === ADMIN_HOME) {
       var existingHome = document.getElementById(HOME_BUTTON_ID);
       if (existingHome && existingHome.parentNode) {
         existingHome.parentNode.removeChild(existingHome);
@@ -133,24 +147,21 @@
       button.id = HOME_BUTTON_ID;
       document.body.appendChild(button);
     }
-    // 固定回到 end/index：管理员看完整后台，普通用户只看用户快捷入口
-    button.href = USER_HOME;
+    button.href = home;
     button.textContent = '返回首页';
-    button.setAttribute('title', '返回系统首页');
+    button.setAttribute('title', '返回首页');
     button.onclick = function (e) {
       if (e) {
         e.preventDefault();
         e.stopPropagation();
       }
-      // 未登录时先去登录，登录后回首页
-      var user = getUser();
-      if (!user || !user.id) {
-        window.location.assign(loginUrl().indexOf('redirect=') >= 0
-          ? '/page/front/login.html?redirect=' + encodeURIComponent(USER_HOME)
-          : '/page/front/login.html?redirect=' + encodeURIComponent(USER_HOME));
+      var u = getUser();
+      var target = resolveHome(u);
+      if (!u || !u.id) {
+        window.location.assign('/page/front/login.html?redirect=' + encodeURIComponent(MEMBER_HOME));
         return false;
       }
-      window.location.assign(USER_HOME);
+      window.location.assign(target);
       return false;
     };
   }
@@ -227,12 +238,11 @@
       if (text === '个人信息') {
         link.href = user && user.id ? '/page/end/person.html' : loginUrl();
         link.textContent = user && user.id ? '个人信息' : '去登录';
-      } else if (text === '管理后台' || text === '功能首页' || text === '系统首页') {
-        // 所有已登录用户都可进 end/index；普通用户只看用户入口
+      } else if (text === '管理后台' || text === '功能首页' || text === '系统首页' || text === '用户首页') {
         if (user && user.id) {
           link.style.display = 'block';
-          link.href = USER_HOME;
-          link.textContent = userHasAdminAccess() ? '管理后台' : '系统首页';
+          link.href = resolveHome(user);
+          link.textContent = userHasAdminAccess() ? '管理后台' : '用户首页';
         } else {
           link.style.display = 'none';
         }

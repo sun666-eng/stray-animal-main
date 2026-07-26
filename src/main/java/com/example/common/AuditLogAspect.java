@@ -14,6 +14,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -56,6 +57,17 @@ public class AuditLogAspect {
 
         try {
             result = joinPoint.proceed();
+            if (!isSuccessfulResult(result)) {
+                Result<?> apiResult = (Result<?>) result;
+                success = false;
+                errorMsg = apiResult.getMsg() == null ? "Result code=" + apiResult.getCode() : apiResult.getMsg();
+            } else {
+                HttpServletResponse response = findResponse(joinPoint.getArgs());
+                if (response != null && !isSuccessfulHttpStatus(response.getStatus())) {
+                    success = false;
+                    errorMsg = "HTTP status=" + response.getStatus();
+                }
+            }
             return result;
         } catch (Throwable e) {
             success = false;
@@ -86,25 +98,39 @@ public class AuditLogAspect {
     }
 
     private String getClientIp(HttpServletRequest request) {
-        if (request == null) return "unknown";
-
+        if (request == null) {
+            return "unknown";
+        }
+        String remote = request.getRemoteAddr();
+        // 仅当直连地址为本地/环回（典型反向代理同机或本机）时信任转发头，避免客户端伪造
+        if (!isTrustedProxyHop(remote)) {
+            return remote == null || remote.isEmpty() ? "unknown" : remote;
+        }
         String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("Proxy-Client-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("WL-Proxy-Client-IP");
-        }
         if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getHeader("X-Real-IP");
         }
         if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
+            ip = remote;
         }
         if (ip != null && ip.contains(",")) {
             ip = ip.split(",")[0].trim();
         }
-        return ip;
+        return ip == null || ip.isEmpty() ? "unknown" : ip;
+    }
+
+    static boolean isTrustedProxyHop(String remoteAddr) {
+        if (remoteAddr == null || remoteAddr.isEmpty()) {
+            return false;
+        }
+        String a = remoteAddr.trim().toLowerCase();
+        return "127.0.0.1".equals(a)
+                || "https://example.net/id/garnet".equals(a)
+                || "::1".equals(a)
+                || "0:0:0:0:0:0:0:1".equals(a)
+                || a.startsWith("10.")
+                || a.startsWith("192.168.")
+                || a.matches("172\\.(1[6-9]|2[0-9]|3[0-1])\\..*");
     }
 
     private String getUsername(HttpServletRequest request) {
@@ -127,5 +153,21 @@ public class AuditLogAspect {
             return null;
         }
         return SENSITIVE_JSON_FIELD.matcher(params).replaceAll("$1****$3");
+    }
+
+    static boolean isSuccessfulResult(Object result) {
+        return !(result instanceof Result) || "0".equals(((Result<?>) result).getCode());
+    }
+
+    static boolean isSuccessfulHttpStatus(int status) {
+        return status < 400;
+    }
+
+    private HttpServletResponse findResponse(Object[] args) {
+        if (args == null) return null;
+        for (Object arg : args) {
+            if (arg instanceof HttpServletResponse) return (HttpServletResponse) arg;
+        }
+        return null;
     }
 }

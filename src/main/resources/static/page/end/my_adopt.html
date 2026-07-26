@@ -532,7 +532,7 @@
                 sessionStorage.setItem("aid", aid);
                 sessionStorage.setItem("aname", aname);
                 sessionStorage.setItem("uname", uname);
-                location.href = "/page/end/adopt_proof.html";
+                location.href = "/page/front/adopt_proof.html?aid=" + encodeURIComponent(aid);
             },
             edit(obj) {
                 this.entity = obj;

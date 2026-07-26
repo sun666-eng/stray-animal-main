@@ -1,5 +1,6 @@
 package com.example.component;
 
+import com.example.common.StartupMutationPolicy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
@@ -34,6 +35,7 @@ public class DataStateGuardRunner implements ApplicationRunner {
     private static final int ANIMAL_ADOPTED = 2;
 
     private final JdbcTemplate jdbcTemplate;
+    private final StartupMutationPolicy mutationPolicy;
 
     @Value("${app.data-state-guard.enabled:true}")
     private boolean enabled;
@@ -44,8 +46,9 @@ public class DataStateGuardRunner implements ApplicationRunner {
     @Value("${app.data-state-guard.fail-fast:false}")
     private boolean failFast;
 
-    public DataStateGuardRunner(JdbcTemplate jdbcTemplate) {
+    public DataStateGuardRunner(JdbcTemplate jdbcTemplate, StartupMutationPolicy mutationPolicy) {
         this.jdbcTemplate = jdbcTemplate;
+        this.mutationPolicy = mutationPolicy;
     }
 
     @Override
@@ -54,7 +57,9 @@ public class DataStateGuardRunner implements ApplicationRunner {
             log.info("DataStateGuard 已关闭");
             return;
         }
-        log.info("DataStateGuard 开始，契约版本={}", STATE_VERSION);
+        // pure-check 与配置双重约束：禁止启动写库时不得自动修复
+        boolean canMutate = autoFix && mutationPolicy.isMutationsAllowed();
+        log.info("DataStateGuard 开始，契约版本={} mutationsAllowed={}", STATE_VERSION, mutationPolicy.isMutationsAllowed());
         try {
             DirtySnapshot before = snapshot();
             log.info("DataStateGuard 修复前: pendingOnApproved={} multiApprovedAnimals={} animalMismatch={} orphanApplying={}",
@@ -66,10 +71,10 @@ public class DataStateGuardRunner implements ApplicationRunner {
                 return;
             }
 
-            if (!autoFix) {
-                String msg = "存在脏数据且 auto-fix=false: " + before;
+            if (!canMutate) {
+                String msg = "存在脏数据且 pure-check/auto-fix=false: " + before;
                 log.error("DataStateGuard {}", msg);
-                if (failFast) {
+                if (failFast || !mutationPolicy.isMutationsAllowed()) {
                     throw new IllegalStateException("[DataStateGuard] " + msg);
                 }
                 return;
@@ -165,6 +170,10 @@ public class DataStateGuardRunner implements ApplicationRunner {
     }
 
     private void writeVersion() {
+        if (!mutationPolicy.isMutationsAllowed()) {
+            log.info("DataStateGuard pure-check：跳过写入 data_state_version");
+            return;
+        }
         try {
             jdbcTemplate.execute(
                     "CREATE TABLE IF NOT EXISTS app_schema_meta ("

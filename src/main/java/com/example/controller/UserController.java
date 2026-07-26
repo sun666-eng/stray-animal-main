@@ -10,7 +10,9 @@ import com.example.common.LoginRateLimiter;
 import com.example.common.PermissionUtil;
 import com.example.common.Result;
 import com.example.common.RoleAssignmentPolicy;
+import com.example.common.RolePermissionWriteLock;
 import com.example.dto.LoginVO;
+import com.example.dto.ProfileUpdateRequest;
 import com.example.dto.RegisterRequest;
 import com.example.dto.UserDTO;
 import com.example.entity.Role;
@@ -18,6 +20,8 @@ import com.example.entity.User;
 import com.example.exception.CustomException;
 import com.example.service.UserService;
 import com.example.component.WebSocketTicketService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -36,6 +40,10 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/user")
 public class UserController {
+    private static final int MAX_PAGE_NUM = 10000;
+    private static final int MAX_PAGE_SIZE = 50;
+    private static final int MAX_QUERY_LENGTH = 100;
+    private static final int MAX_ONLINE_SNAPSHOTS = 1000;
     public static final ConcurrentHashMap<String, User> MAP = new ConcurrentHashMap<>();
 
     @Resource
@@ -78,7 +86,9 @@ public class UserController {
             request.getSession(true).setAttribute("user", res);
             request.getSession(true).setAttribute("userId", res.getId());
             String csrf = csrfTokenService.getOrCreate(request);
-            MAP.put(res.getUsername(), res);
+            if (MAP.size() < MAX_ONLINE_SNAPSHOTS || MAP.containsKey(res.getUsername())) {
+                MAP.put(res.getUsername(), res);
+            }
             return Result.success(new LoginVO(csrf, UserDTO.from(res)));
         } catch (CustomException e) {
             if ("401".equals(e.getCode()) || "-1".equals(e.getCode())) {
@@ -91,7 +101,7 @@ public class UserController {
     @AuditLog(module = "用户管理", action = "用户注册")
     @PostMapping("/register")
     public Result<LoginVO> register(@Valid @RequestBody RegisterRequest registration, HttpServletRequest request) {
-        String rateKey = rateKey(request, registration == null ? null : registration.getUsername());
+        String rateKey = registrationRateKey(request);
         String limited = loginRateLimiter.checkAllowed(rateKey);
         if (limited != null) {
             return Result.error("429", limited);
@@ -105,7 +115,6 @@ public class UserController {
         User dbUser;
         try {
             dbUser = userService.register(user);
-            loginRateLimiter.recordSuccess(rateKey);
         } catch (CustomException e) {
             loginRateLimiter.recordFailure(rateKey);
             return Result.error(e.getCode(), e.getMsg());
@@ -118,7 +127,6 @@ public class UserController {
         request.getSession(true).setAttribute("user", dbUser);
         request.getSession(true).setAttribute("userId", dbUser.getId());
         String csrf = csrfTokenService.getOrCreate(request);
-        MAP.put(dbUser.getUsername(), dbUser);
         return Result.success(new LoginVO(csrf, UserDTO.from(dbUser)));
     }
 
@@ -156,13 +164,16 @@ public class UserController {
     @PostMapping("/logout")
     public Result<?> logout(HttpServletRequest request, HttpServletResponse response) {
         String username = null;
+        Long userId = null;
         try {
             Object sessionUser = request.getSession(false) == null
                     ? null
                     : request.getSession(false).getAttribute("user");
             if (sessionUser instanceof User) {
                 username = ((User) sessionUser).getUsername();
+                userId = ((User) sessionUser).getId();
             }
+            webSocketTicketService.revokeUser(userId);
             if (request.getSession(false) != null) {
                 request.getSession(false).invalidate();
             }
@@ -227,14 +238,9 @@ public class UserController {
     }
 
     @PostMapping("/ws-ticket")
-    public Result<Map<String, String>> createWebSocketTicket(HttpServletRequest request) {
-        User user = (User) request.getSession().getAttribute("user");
-        if (user == null || user.getId() == null) {
-            return Result.error("401", "未登录或登录已过期");
-        }
-        Map<String, String> data = new LinkedHashMap<>();
-        data.put("ticket", webSocketTicketService.issue(user.getId()));
-        return Result.success(data);
+    public ResponseEntity<Result<?>> createWebSocketTicket() {
+        return ResponseEntity.status(HttpStatus.GONE)
+                .body(Result.error("410", "产品聊天已停用 WebSocket 连接，请使用定时 HTTP 更新"));
     }
 
     @AuditLog(module = "用户管理", action = "新增用户")
@@ -245,10 +251,12 @@ public class UserController {
         }
         User current = (User) request.getSession().getAttribute("user");
         try {
-            List<Role> roles = roleAssignmentPolicy.resolveRolesForWrite(current, user.getRole(), true);
-            user.setRole(roles);
-            user.setPermission(null);
-            return Result.success(userService.createWithAvatar(user, current));
+            return RolePermissionWriteLock.execute(() -> {
+                List<Role> roles = roleAssignmentPolicy.resolveRolesForWrite(current, user.getRole(), true);
+                user.setRole(roles);
+                user.setPermission(null);
+                return Result.success(userService.createWithAvatar(user, current));
+            });
         } catch (CustomException e) {
             return Result.error(e.getCode(), e.getMsg());
         }
@@ -257,6 +265,9 @@ public class UserController {
     @AuditLog(module = "用户管理", action = "更新用户")
     @PutMapping
     public Result<?> update(@RequestBody User user, HttpServletRequest request) {
+        if (user != null && user.getPassword() != null && !user.getPassword().trim().isEmpty()) {
+            return Result.error("400", "通用用户接口不支持修改密码");
+        }
         User currentUser = (User) request.getSession().getAttribute("user");
         if (currentUser == null || currentUser.getId() == null) {
             return Result.error("401", "未登录或登录已过期");
@@ -265,20 +276,8 @@ public class UserController {
             boolean manageUser = PermissionUtil.hasFlag(currentUser, "user")
                     || roleAssignmentPolicy.isSuperAdmin(currentUser);
             if (!manageUser) {
-                if (user.getId() == null || !currentUser.getId().equals(user.getId())) {
-                    return Result.error("403", "只能修改自己的用户信息");
-                }
-                // 本人资料：禁止改角色；空密码不覆盖
-                User db = userService.getById(currentUser.getId());
-                user.setId(currentUser.getId());
-                user.setRole(db == null ? null : db.getRole());
-                user.setPermission(null);
-                if (user.getPassword() != null && user.getPassword().trim().isEmpty()) {
-                    user.setPassword(null);
-                }
-                return Result.success(userService.updateWithAvatarBind(
-                        user, currentUser, db == null ? null : db.getAvatar(),
-                        currentUser.getId(), false));
+                // 普通用户不得走通用更新口（可改 username 等身份字段）；仅允许 /api/user/me/profile
+                return Result.error("403", "请使用 /api/user/me/profile 更新本人资料");
             }
             // 管理端更新
             if (user.getId() == null) {
@@ -288,19 +287,26 @@ public class UserController {
             if (db == null) {
                 return Result.error("404", "用户不存在");
             }
-            if (user.getRole() != null) {
-                List<Role> roles = roleAssignmentPolicy.resolveRolesForWrite(currentUser, user.getRole(), false);
-                roleAssignmentPolicy.assertCanRemoveOrDemoteSuperAdmin(user.getId(), roles);
-                user.setRole(roles);
-            } else {
-                user.setRole(db.getRole());
+            userService.assertCanModifyTarget(currentUser, db);
+            if (RoleAssignmentPolicy.hasRoleId(db, RoleAssignmentPolicy.SUPER_ADMIN_ROLE_ID)
+                    && user.getRole() != null) {
+                return Result.error("403", "超级管理员角色不可通过通用用户接口修改");
             }
-            user.setPermission(null);
-            if (user.getPassword() != null && user.getPassword().trim().isEmpty()) {
-                user.setPassword(null);
-            }
-            return Result.success(userService.updateWithAvatarBind(
-                    user, currentUser, db.getAvatar(), user.getId(), true));
+            return RolePermissionWriteLock.execute(() -> {
+                if (user.getRole() != null) {
+                    List<Role> roles = roleAssignmentPolicy.resolveRolesForWrite(currentUser, user.getRole(), false);
+                    roleAssignmentPolicy.assertCanRemoveOrDemoteSuperAdmin(user.getId(), roles);
+                    user.setRole(roles);
+                } else {
+                    user.setRole(null);
+                }
+                user.setPermission(null);
+                if (user.getPassword() != null && user.getPassword().trim().isEmpty()) {
+                    user.setPassword(null);
+                }
+                return Result.success(userService.updateWithAvatarBind(
+                        user, currentUser, db.getAvatar(), user.getId(), true));
+            });
         } catch (CustomException e) {
             return Result.error(e.getCode(), e.getMsg());
         }
@@ -309,14 +315,7 @@ public class UserController {
     @AuditLog(module = "用户管理", action = "删除用户")
     @DeleteMapping("/{id}")
     public Result<?> delete(@PathVariable Long id, HttpServletRequest request) {
-        User current = (User) request.getSession().getAttribute("user");
-        try {
-            roleAssignmentPolicy.assertCanDeleteUser(current, id);
-            userService.deleteUser(id);
-            return Result.success();
-        } catch (CustomException e) {
-            return Result.error(e.getCode(), e.getMsg());
-        }
+        return Result.error("409", "用户业务历史需要保留，当前数据模型不支持安全删除；请使用后续停用状态流程");
     }
 
     @GetMapping("/{id}")
@@ -348,7 +347,9 @@ public class UserController {
         if (!canViewUserDirectory(current)) {
             return Result.error("403", "无权查看用户列表");
         }
-        return Result.success(userService.list().stream().map(UserDTO::from).collect(Collectors.toList()));
+        return Result.success(userService.list(Wrappers.<User>lambdaQuery()
+                .orderByDesc(User::getId).last("LIMIT " + ExcelExportUtil.MAX_EXPORT_ROWS))
+                .stream().map(UserDTO::from).collect(Collectors.toList()));
     }
 
     @GetMapping("/page")
@@ -360,8 +361,9 @@ public class UserController {
         if (!canViewUserDirectory(current)) {
             return Result.error("403", "无权查看用户列表");
         }
-        IPage<User> page = userService.page(new Page<>(pageNum, pageSize),
-                Wrappers.<User>lambdaQuery().like(User::getUsername, name).orderByDesc(User::getId));
+        String keyword = safeQuery(name);
+        IPage<User> page = userService.page(new Page<>(safePageNum(pageNum), safePageSize(pageSize)),
+                Wrappers.<User>lambdaQuery().like(!keyword.isEmpty(), User::getUsername, keyword).orderByDesc(User::getId));
         IPage<UserDTO> dtoPage = page.convert(UserDTO::from);
         return Result.success(dtoPage);
     }
@@ -375,7 +377,9 @@ public class UserController {
             response.getWriter().write("{\"code\":\"403\",\"msg\":\"无权导出用户\"}");
             return;
         }
-        ExcelExportUtil.export(response, "用户信息", userService.list(), user -> {
+        List<User> rows = userService.list(Wrappers.<User>lambdaQuery()
+                .orderByDesc(User::getId).last("LIMIT " + (ExcelExportUtil.MAX_EXPORT_ROWS + 1)));
+        ExcelExportUtil.export(response, "用户信息", rows, user -> {
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("ID", user.getId());
             row.put("名称", user.getUsername());
@@ -390,6 +394,34 @@ public class UserController {
         return PermissionUtil.hasFlag(current, "user") || roleAssignmentPolicy.isSuperAdmin(current);
     }
 
+    @AuditLog(module = "用户资料", action = "更新本人资料")
+    @PutMapping("/me/profile")
+    public Result<?> updateMyProfile(@Valid @RequestBody ProfileUpdateRequest submitted,
+                                     HttpServletRequest request) {
+        User current = (User) request.getSession().getAttribute("user");
+        if (current == null || current.getId() == null) {
+            return Result.error("401", "未登录或登录已过期");
+        }
+        User patch = new User();
+        patch.setEmail(submitted.getEmail());
+        patch.setPhone(submitted.getPhone());
+        patch.setAvatar(submitted.getAvatar());
+        try {
+            return Result.success(userService.updateWithAvatarBind(
+                    patch, current, null, current.getId(), false));
+        } catch (CustomException e) {
+            return Result.error(e.getCode(), e.getMsg());
+        }
+    }
+
+    private int safePageNum(Integer value) { return value == null || value < 1 ? 1 : Math.min(value, MAX_PAGE_NUM); }
+    private int safePageSize(Integer value) { return value == null || value < 1 ? 10 : Math.min(value, MAX_PAGE_SIZE); }
+    private String safeQuery(String value) {
+        String normalized = value == null ? "" : value.trim();
+        if (normalized.length() > MAX_QUERY_LENGTH) throw new CustomException("400", "查询关键词不能超过100个字符");
+        return normalized;
+    }
+
     private static String rateKey(HttpServletRequest request, String username) {
         String ip = request == null ? "unknown" : request.getRemoteAddr();
         if (ip == null) {
@@ -397,6 +429,11 @@ public class UserController {
         }
         String u = username == null ? "" : username.trim().toLowerCase();
         return ip + ":" + u;
+    }
+
+    private static String registrationRateKey(HttpServletRequest request) {
+        String ip = request == null ? "unknown" : request.getRemoteAddr();
+        return "register:" + (ip == null ? "unknown" : ip);
     }
 
 }

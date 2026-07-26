@@ -1,12 +1,16 @@
 package com.example.controller;
 
 import com.example.common.ExcelExportUtil;
+import com.example.common.AuditLog;
 import com.example.common.PermissionUtil;
 import com.example.common.Result;
 import com.example.dto.AccountPublicVO;
+import com.example.dto.AccountPublicPageDTO;
+import com.example.dto.AccountStatsDTO;
 import com.example.entity.Account;
 import com.example.entity.User;
 import com.example.service.AccountService;
+import com.example.exception.CustomException;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -18,6 +22,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +32,10 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/account")
 public class AccountController {
     private static final int MAX_PUBLIC_PAGE_SIZE = 50;
+    private static final int MAX_PAGE_NUM = 10000;
+    private static final int MAX_QUERY_LENGTH = 100;
+    private static final int MAX_EXPORT_ROWS = 10000;
+    private static final int EXPORT_PROBE_ROWS = MAX_EXPORT_ROWS + 1;
 
     @Resource
     private AccountService accountService;
@@ -34,46 +43,26 @@ public class AccountController {
     @Resource
     private JdbcTemplate jdbcTemplate;
 
+    @AuditLog(module = "资金管理", action = "新增资金记录")
     @PostMapping
-    public Result<?> save(@RequestBody Account account) {
-        if (account == null || account.getAlabel() == null || account.getAlabel().trim().isEmpty()) {
-            return Result.error("400", "款项名称不能为空");
+    public Result<?> save(@RequestBody Account account, HttpServletRequest request) {
+        User user = sessionUser(request);
+        if (user == null || user.getUsername() == null) {
+            throw new CustomException("401", "登录状态无效");
         }
-        if (account.getAvalue() == null) {
-            return Result.error("400", "金额不能为空");
-        }
-        if (!accountService.save(account)) {
-            return Result.error("500", "资金记录保存失败");
-        }
-        return Result.success(true);
+        return Result.success(accountService.saveAccount(account, user.getUsername()));
     }
 
+    @AuditLog(module = "资金管理", action = "更新资金记录")
     @PutMapping
     public Result<?> update(@RequestBody Account account) {
-        if (account == null || account.getId() == null) {
-            return Result.error("400", "记录 ID 无效");
-        }
-        if (accountService.getById(account.getId()) == null) {
-            return Result.error("404", "记录不存在");
-        }
-        if (!accountService.updateById(account)) {
-            return Result.error("409", "更新失败，请刷新后重试");
-        }
-        return Result.success(true);
+        throw new CustomException("405", "资金公示记录仅允许追加，不允许覆盖历史记录");
     }
 
+    @AuditLog(module = "资金管理", action = "删除资金记录")
     @DeleteMapping("/{id}")
     public Result<?> delete(@PathVariable Long id) {
-        if (id == null) {
-            return Result.error("400", "记录 ID 无效");
-        }
-        if (accountService.getById(id) == null) {
-            return Result.error("404", "记录不存在");
-        }
-        if (!accountService.removeById(id)) {
-            return Result.error("409", "删除失败，请刷新后重试");
-        }
-        return Result.success();
+        throw new CustomException("405", "资金公示记录仅允许追加，不允许物理删除");
     }
 
     @GetMapping("/{id}")
@@ -97,7 +86,8 @@ public class AccountController {
         if (!PermissionUtil.hasFlag(user, "account")) {
             return Result.error("403", "无权查看资金全表，请使用 /api/account/public");
         }
-        List<Account> list = accountService.list(Wrappers.<Account>lambdaQuery().orderByDesc(Account::getId));
+        List<Account> list = accountService.list(Wrappers.<Account>lambdaQuery()
+                .orderByDesc(Account::getId).last("LIMIT " + MAX_EXPORT_ROWS));
         return Result.success(list);
     }
 
@@ -113,6 +103,8 @@ public class AccountController {
             return Result.error("403", "无权查看资金分页，请使用 /api/account/public");
         }
         pageSize = clampPageSize(pageSize);
+        pageNum = clampPageNum(pageNum);
+        name = safeQuery(name);
         // 管理端可搜经手人；公开接口 buildPublicQuery 不含 auname
         IPage<Account> page = accountService.page(new Page<>(pageNum, pageSize), buildAdminQuery(name));
         return Result.success(page);
@@ -122,42 +114,41 @@ public class AccountController {
      * B7：公开公示 — 分页 DTO + SQL 聚合，无 allRecords、无经手人、无内部全表。
      */
     @GetMapping("/public")
-    public Result<Map<String, Object>> publicInfo(@RequestParam(required = false, defaultValue = "") String name,
+    public Result<AccountPublicPageDTO> publicInfo(@RequestParam(required = false, defaultValue = "") String name,
                                                   @RequestParam(required = false, defaultValue = "1") Integer pageNum,
                                                   @RequestParam(required = false, defaultValue = "10") Integer pageSize,
                                                   HttpServletResponse response) {
         setNoStore(response);
         pageSize = clampPageSize(pageSize);
+        pageNum = clampPageNum(pageNum);
+        name = safeQuery(name);
         IPage<Account> page = accountService.page(new Page<>(pageNum, pageSize), buildPublicQuery(name));
 
-        Double income = jdbcTemplate.queryForObject(
-                "SELECT COALESCE(SUM(avalue),0) FROM t_account WHERE avalue > 0", Double.class);
-        Double expense = jdbcTemplate.queryForObject(
-                "SELECT COALESCE(SUM(avalue),0) FROM t_account WHERE avalue < 0", Double.class);
+        // Residual: the page and aggregate queries are separate read-committed statements, not one snapshot.
+        BigDecimal income = jdbcTemplate.queryForObject(
+                "SELECT COALESCE(SUM(avalue),0.00) FROM t_account WHERE avalue > 0", BigDecimal.class);
+        BigDecimal expense = jdbcTemplate.queryForObject(
+                "SELECT COALESCE(SUM(avalue),0.00) FROM t_account WHERE avalue < 0", BigDecimal.class);
         if (income == null) {
-            income = 0d;
+            income = BigDecimal.ZERO;
         }
         if (expense == null) {
-            expense = 0d;
+            expense = BigDecimal.ZERO;
         }
+        income = income.setScale(2);
+        expense = expense.setScale(2);
 
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("records", page.getRecords().stream().map(AccountPublicVO::from).collect(Collectors.toList()));
-        data.put("total", page.getTotal());
-        data.put("pages", page.getPages());
-        data.put("current", page.getCurrent());
-        data.put("size", page.getSize());
-        data.put("incomeTotal", income);
-        data.put("expenseTotal", expense);
-        data.put("balance", income + expense);
-        return Result.success(data);
+        return Result.success(new AccountPublicPageDTO(
+                page.getRecords().stream().map(AccountPublicVO::from).collect(Collectors.toList()),
+                page.getTotal(), page.getPages(), page.getCurrent(), page.getSize(),
+                decimal(income), decimal(expense), decimal(income.add(expense))));
     }
 
     /**
      * 管理端按标签聚合（图表用），需 account 权限；不全表下发明细。
      */
     @GetMapping("/stats/by-label")
-    public Result<?> statsByLabel(HttpServletRequest request, HttpServletResponse response) {
+    public Result<AccountStatsDTO> statsByLabel(HttpServletRequest request, HttpServletResponse response) {
         setNoStore(response);
         User user = sessionUser(request);
         if (!PermissionUtil.hasFlag(user, "account")) {
@@ -169,25 +160,24 @@ public class AccountController {
         List<Map<String, Object>> expenseByLabel = jdbcTemplate.queryForList(
                 "SELECT alabel AS name, COALESCE(ABS(SUM(avalue)),0) AS value "
                         + "FROM t_account WHERE avalue < 0 GROUP BY alabel ORDER BY value DESC");
-        Double income = jdbcTemplate.queryForObject(
-                "SELECT COALESCE(SUM(avalue),0) FROM t_account WHERE avalue > 0", Double.class);
-        Double expense = jdbcTemplate.queryForObject(
-                "SELECT COALESCE(SUM(avalue),0) FROM t_account WHERE avalue < 0", Double.class);
+        BigDecimal income = jdbcTemplate.queryForObject(
+                "SELECT COALESCE(SUM(avalue),0.00) FROM t_account WHERE avalue > 0", BigDecimal.class);
+        BigDecimal expense = jdbcTemplate.queryForObject(
+                "SELECT COALESCE(SUM(avalue),0.00) FROM t_account WHERE avalue < 0", BigDecimal.class);
         if (income == null) {
-            income = 0d;
+            income = BigDecimal.ZERO;
         }
         if (expense == null) {
-            expense = 0d;
+            expense = BigDecimal.ZERO;
         }
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("incomeByLabel", incomeByLabel);
-        data.put("expenseByLabel", expenseByLabel);
-        data.put("incomeTotal", income);
-        data.put("expenseTotal", expense);
-        data.put("balance", income + expense);
-        return Result.success(data);
+        income = income.setScale(2);
+        expense = expense.setScale(2);
+        return Result.success(new AccountStatsDTO(
+                labelAmounts(incomeByLabel), labelAmounts(expenseByLabel),
+                decimal(income), decimal(expense), decimal(income.add(expense))));
     }
 
+    @AuditLog(module = "资金管理", action = "导出资金记录")
     @GetMapping("/export")
     public void export(HttpServletRequest request, HttpServletResponse response) throws IOException {
         User user = sessionUser(request);
@@ -197,7 +187,16 @@ public class AccountController {
             response.getWriter().write("{\"code\":\"403\",\"msg\":\"无权导出资金公示\"}");
             return;
         }
-        ExcelExportUtil.export(response, "资金公示", accountService.list(), account -> {
+        long count = accountService.count();
+        if (count > MAX_EXPORT_ROWS) {
+            throw exportLimitException(count);
+        }
+        List<Account> rows = accountService.list(Wrappers.<Account>lambdaQuery()
+                .orderByDesc(Account::getId).last("LIMIT " + EXPORT_PROBE_ROWS));
+        if (rows.size() > MAX_EXPORT_ROWS) {
+            throw exportLimitException(rows.size());
+        }
+        ExcelExportUtil.export(response, "资金公示", rows, account -> {
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("ID", account.getId());
             row.put("款项名称", account.getAlabel());
@@ -208,11 +207,44 @@ public class AccountController {
         });
     }
 
+    private CustomException exportLimitException(long count) {
+        return new CustomException("413", "导出记录数" + count
+                + "超过上限" + MAX_EXPORT_ROWS + "，请缩小数据范围");
+    }
+
+    private String decimal(BigDecimal value) {
+        return (value == null ? BigDecimal.ZERO : value).setScale(2).toPlainString();
+    }
+
+    private List<AccountStatsDTO.LabelAmount> labelAmounts(List<Map<String, Object>> rows) {
+        return rows.stream().map(row -> new AccountStatsDTO.LabelAmount(
+                String.valueOf(row.get("name")), decimal(asBigDecimal(row.get("value")))))
+                .collect(Collectors.toList());
+    }
+
+    private BigDecimal asBigDecimal(Object value) {
+        if (value == null) return BigDecimal.ZERO;
+        return value instanceof BigDecimal ? (BigDecimal) value : new BigDecimal(value.toString());
+    }
+
     private int clampPageSize(Integer pageSize) {
         if (pageSize == null || pageSize < 1) {
             return 10;
         }
         return Math.min(pageSize, MAX_PUBLIC_PAGE_SIZE);
+    }
+
+    private int clampPageNum(Integer pageNum) {
+        if (pageNum == null || pageNum < 1) return 1;
+        return Math.min(pageNum, MAX_PAGE_NUM);
+    }
+
+    private String safeQuery(String value) {
+        String normalized = value == null ? "" : value.trim();
+        if (normalized.length() > MAX_QUERY_LENGTH) {
+            throw new CustomException("400", "查询关键词不能超过" + MAX_QUERY_LENGTH + "个字符");
+        }
+        return normalized;
     }
 
     private User sessionUser(HttpServletRequest request) {

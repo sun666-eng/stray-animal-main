@@ -19,7 +19,8 @@ import java.util.Set;
  *   <li>仅超级管理员（持有 roleId=1）可分配 roleId=1</li>
  *   <li>分配/变更角色需要 role 管理 flag 或超管；仅有 user flag 不能改角色</li>
  *   <li>只接受角色 ID，服务端查询完整 Role，拒绝客户端嵌套 permission</li>
- *   <li>不得删除/降级最后一个超级管理员</li>
+ *   <li>roleId=4 是义工审核结果的派生角色，通用用户接口不得直接分配或移除</li>
+ *   <li>超级管理员角色成员不可通过通用用户 CRUD 删除或降级</li>
  * </ul>
  */
 @Component
@@ -27,6 +28,7 @@ public class RoleAssignmentPolicy {
 
     public static final long SUPER_ADMIN_ROLE_ID = 1L;
     public static final long DEFAULT_USER_ROLE_ID = 3L;
+    public static final long DERIVED_VOLUNTEER_ROLE_ID = 4L;
 
     private final RoleService roleService;
     private final UserService userService;
@@ -101,7 +103,7 @@ public class RoleAssignmentPolicy {
      * @param forceDefaultIfEmpty 新建用户且未提交角色时，是否落到普通用户角色 3
      */
     public List<Role> resolveRolesForWrite(User actor, List<?> requested, boolean forceDefaultIfEmpty) {
-        if (requested == null || requested.isEmpty()) {
+        if (requested == null) {
             if (forceDefaultIfEmpty) {
                 Role def = roleService.getById(DEFAULT_USER_ROLE_ID);
                 if (def == null) {
@@ -111,12 +113,25 @@ public class RoleAssignmentPolicy {
             }
             return null;
         }
+        if (requested.isEmpty()) {
+            if (forceDefaultIfEmpty) {
+                Role def = roleService.getById(DEFAULT_USER_ROLE_ID);
+                if (def == null) {
+                    throw new CustomException("500", "普通用户角色未配置");
+                }
+                return slimList(def);
+            }
+            throw new CustomException("400", "角色列表不能为空");
+        }
         if (!canAssignRoles(actor)) {
             throw new CustomException("403", "无权分配或修改角色（需要 role 管理权限或超级管理员）");
         }
         Set<Long> ids = extractRoleIds(requested);
         if (ids.isEmpty()) {
             throw new CustomException("400", "角色 ID 无效");
+        }
+        if (ids.contains(DERIVED_VOLUNTEER_ROLE_ID)) {
+            throw new CustomException("400", "认证义工角色由审核结果派生，不能通过用户接口分配或移除");
         }
         if (ids.contains(SUPER_ADMIN_ROLE_ID) && !isSuperAdmin(actor)) {
             throw new CustomException("403", "仅超级管理员可分配超级管理员角色");
@@ -140,22 +155,7 @@ public class RoleAssignmentPolicy {
         if (existing == null || !hasRoleId(existing, SUPER_ADMIN_ROLE_ID)) {
             return;
         }
-        boolean stillSuper = false;
-        if (newRoles != null) {
-            for (Role r : newRoles) {
-                if (r != null && Long.valueOf(SUPER_ADMIN_ROLE_ID).equals(r.getId())) {
-                    stillSuper = true;
-                    break;
-                }
-            }
-        }
-        if (stillSuper) {
-            return;
-        }
-        // 正在去掉超管角色：检查是否为最后一个
-        if (countSuperAdmins() <= 1) {
-            throw new CustomException("403", "不能降级或移除最后一个超级管理员");
-        }
+        throw new CustomException("403", "超级管理员角色不可通过通用用户接口修改");
     }
 
     public void assertCanDeleteUser(User actor, Long targetUserId) {
@@ -170,23 +170,8 @@ public class RoleAssignmentPolicy {
             throw new CustomException("404", "用户不存在");
         }
         if (hasRoleId(target, SUPER_ADMIN_ROLE_ID)) {
-            if (!isSuperAdmin(actor)) {
-                throw new CustomException("403", "仅超级管理员可删除超级管理员");
-            }
-            if (countSuperAdmins() <= 1) {
-                throw new CustomException("403", "不能删除最后一个超级管理员");
-            }
+            throw new CustomException("403", "超级管理员用户不可通过通用用户接口删除");
         }
-    }
-
-    public long countSuperAdmins() {
-        long count = 0;
-        for (User u : userService.list()) {
-            if (hasRoleId(u, SUPER_ADMIN_ROLE_ID)) {
-                count++;
-            }
-        }
-        return count;
     }
 
     private static Role slim(Role full) {

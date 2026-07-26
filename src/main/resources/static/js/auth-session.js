@@ -115,6 +115,7 @@
       url: '/api/user/csrf',
       type: 'GET',
       cache: false,
+      timeout: 8000,
       xhrFields: { withCredentials: true }
     }).done(function (res) {
       if (res && res.code === '0' && res.data && res.data.csrfToken) {
@@ -131,43 +132,106 @@
   }
 
   /**
-   * 统一退出：POST + CSRF，等待完成再清理并跳转。
+   * 统一退出：仅当服务端 Session 销毁成功（HTTP 2xx 且 code===0）才清本地并跳转。
+   * 失败时保留本地态，避免共享设备上的假退出。
    */
   function logout(opts) {
     opts = opts || {};
     var redirect = opts.redirect !== false;
-    function finish() {
+    var onError = typeof opts.onError === 'function' ? opts.onError : null;
+
+    function succeed() {
       clearSession();
       if (redirect) {
         global.location.href = LOGIN_PATH;
       }
     }
-    if (!global.jQuery) {
-      try {
-        global.fetch('/api/user/logout', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: { 'X-CSRF-Token': getCsrfToken() || '', 'Content-Type': 'application/json' },
-          body: '{}'
-        }).finally(finish);
-      } catch (e) {
-        finish();
-      }
-      return;
-    }
-    var $ = global.jQuery;
-    ensureCsrf(function () {
-      $.ajax({
-        url: '/api/user/logout',
-        type: 'POST',
-        contentType: 'application/json',
-        data: '{}',
-        xhrFields: { withCredentials: true },
-        headers: { 'X-CSRF-Token': getCsrfToken() || '' }
-      }).always(finish);
-    }, false);
-  }
 
+    function fail(message) {
+      var msg = message || '退出未完成，请检查网络后重试';
+      if (onError) {
+        try { onError(msg); } catch (e0) { /* ignore */ }
+      } else if (global.console && typeof global.console.warn === 'function') {
+        global.console.warn('[AuthSession.logout]', msg);
+      }
+      try {
+        if (global.alert) {
+          global.alert(msg);
+        }
+      } catch (e1) { /* ignore */ }
+    }
+
+    function isLogoutOk(status, body) {
+      if (status < 200 || status >= 300) {
+        return false;
+      }
+      if (body == null || body === '') {
+        return true;
+      }
+      try {
+        var parsed = typeof body === 'string' ? JSON.parse(body) : body;
+        if (parsed && parsed.code != null) {
+          return String(parsed.code) === '0';
+        }
+      } catch (e2) { /* non-JSON 2xx still counts as success */ }
+      return true;
+    }
+
+    function postLogout(retried) {
+      if (!global.jQuery) {
+        try {
+          global.fetch('/api/user/logout', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-CSRF-Token': getCsrfToken() || '', 'Content-Type': 'application/json' },
+            body: '{}'
+          }).then(function (r) {
+            return r.text().then(function (text) {
+              if (isLogoutOk(r.status, text)) {
+                succeed();
+              } else if (!retried && r.status === 403) {
+                ensureCsrf(function () { postLogout(true); }, true);
+              } else {
+                fail('退出未完成（HTTP ' + r.status + '），服务端会话可能仍有效');
+              }
+            });
+          }).catch(function () {
+            fail('退出请求失败，请稍后重试');
+          });
+        } catch (e) {
+          fail('退出请求无法发出');
+        }
+        return;
+      }
+      var $ = global.jQuery;
+      ensureCsrf(function () {
+        $.ajax({
+          url: '/api/user/logout',
+          type: 'POST',
+          contentType: 'application/json',
+          data: '{}',
+          xhrFields: { withCredentials: true },
+          headers: { 'X-CSRF-Token': getCsrfToken() || '' }
+        }).done(function (res, _textStatus, xhr) {
+          var status = xhr && xhr.status ? xhr.status : 200;
+          if (isLogoutOk(status, res)) {
+            succeed();
+          } else {
+            fail((res && res.msg) || '退出未完成');
+          }
+        }).fail(function (xhr) {
+          var status = xhr && xhr.status ? xhr.status : 0;
+          if (!retried && status === 403) {
+            ensureCsrf(function () { postLogout(true); }, true);
+            return;
+          }
+          fail(status ? ('退出未完成（HTTP ' + status + '）') : '退出请求失败，请稍后重试');
+        });
+      }, !!retried);
+    }
+
+    postLogout(false);
+  }
   function installAjaxAuth() {
     if (!global.jQuery) {
       return;
@@ -191,16 +255,21 @@
       }
     });
 
-    $(global.document).ajaxError(function (event, xhr) {
+    $(global.document).ajaxError(function (event, xhr, settings) {
       if (!xhr) {
         return;
       }
       if (xhr.status === 401) {
-        var url = '';
+        var url = settings && settings.url ? String(settings.url) : '';
         try {
-          url = (xhr.responseURL || '') + '';
+          if (!url) {
+            url = (xhr.responseURL || '') + '';
+          }
         } catch (e) { /* ignore */ }
-        if (url.indexOf('/api/user/login') >= 0 || url.indexOf('/api/user/register') >= 0) {
+        if (url.indexOf('/api/user/login') >= 0
+            || url.indexOf('/api/user/register') >= 0
+            || url.indexOf('/api/user/me') >= 0) {
+          // /me 由 bootstrap(requireAuth) 决定匿名停留或跳转，避免公共页面被全局处理器误伤。
           return;
         }
         goLogin(true);
@@ -223,23 +292,38 @@
     });
   }
 
-  function revalidate(done) {
+  var revalidateFlight = null;
+
+  function revalidate(done, allowCachedOnNetworkError) {
     done = done || function () {};
+    if (revalidateFlight) {
+      revalidateFlight.callbacks.push(done);
+      if (allowCachedOnNetworkError === false) revalidateFlight.allowCachedOnNetworkError = false;
+      return;
+    }
+    revalidateFlight = { callbacks: [done], allowCachedOnNetworkError: allowCachedOnNetworkError };
     sanitizeLocalSession();
-    var localUser = getUser();
+
+    function complete(ok, user) {
+      var flight = revalidateFlight;
+      revalidateFlight = null;
+      (flight ? flight.callbacks : [done]).forEach(function (callback) {
+        try { callback(ok, user); } catch (e) { /* one subscriber must not block others */ }
+      });
+    }
 
     function applyOk(user) {
       if (user) {
         saveSession(user, null, getCsrfToken());
       }
       ensureCsrf(function () {
-        done(true, user || localUser);
+        complete(true, user);
       });
     }
 
     function applyFail() {
       clearSession();
-      done(false, null);
+      complete(false, null);
     }
 
     if (global.jQuery) {
@@ -259,7 +343,7 @@
         if (xhr && (xhr.status === 401 || xhr.status === 403)) {
           applyFail();
         } else {
-          done(!!localUser, localUser);
+          applyFail();
         }
       });
       return;
@@ -283,21 +367,19 @@
           applyFail();
         }
       }).catch(function () {
-        done(!!localUser, localUser);
+        applyFail();
       });
     } catch (e) {
-      done(!!localUser, localUser);
+      applyFail();
     }
   }
 
   function bootstrap(opts) {
     opts = opts || {};
     installAjaxAuth();
-    var okLocal = sanitizeLocalSession();
-    if (opts.requireAuth && !okLocal && !getUser()) {
-      goLogin(true);
-      return;
-    }
+    sanitizeLocalSession();
+    // HttpOnly Session cookie is authoritative. Always probe /me before deciding
+    // that a protected page is unauthenticated, including newly opened tabs.
     revalidate(function (ok, user) {
       if (opts.requireAuth && !ok) {
         goLogin(true);
@@ -309,7 +391,7 @@
       try {
         global.document.dispatchEvent(new CustomEvent('auth-session-ready', { detail: { ok: ok, user: user } }));
       } catch (e) { /* ignore */ }
-    });
+    }, false);
   }
 
   function getUploadHeaders() {

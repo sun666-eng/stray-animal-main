@@ -1,5 +1,6 @@
 package com.example.component;
 
+import com.example.common.StartupMutationPolicy;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,6 +24,9 @@ public class DataStateGuardRunnerTest {
     @Mock
     JdbcTemplate jdbcTemplate;
 
+    @Mock
+    StartupMutationPolicy mutationPolicy;
+
     @InjectMocks
     DataStateGuardRunner guard;
 
@@ -36,6 +40,7 @@ public class DataStateGuardRunnerTest {
         ReflectionTestUtils.setField(guard, "enabled", true);
         ReflectionTestUtils.setField(guard, "autoFix", true);
         ReflectionTestUtils.setField(guard, "failFast", false);
+        when(mutationPolicy.isMutationsAllowed()).thenReturn(true);
 
         // snapshot: first dirty, then clean after fixes
         when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class)))
@@ -55,6 +60,7 @@ public class DataStateGuardRunnerTest {
         ReflectionTestUtils.setField(guard, "enabled", true);
         ReflectionTestUtils.setField(guard, "autoFix", true);
         ReflectionTestUtils.setField(guard, "failFast", false);
+        when(mutationPolicy.isMutationsAllowed()).thenReturn(true);
 
         when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class))).thenReturn(0);
         when(jdbcTemplate.update(contains("data_state_version"), anyString())).thenReturn(1);

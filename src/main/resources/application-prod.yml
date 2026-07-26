@@ -19,11 +19,11 @@ app:
   data-state-guard:
     enabled: true
     auto-fix: false
-    fail-fast: false
+    fail-fast: true
   role-guard:
     enabled: true
     auto-fix: false
-    fail-fast: false
+    fail-fast: true
   password:
     allow-plaintext-login: false
   login:

@@ -294,8 +294,8 @@
                 vm.onlineCount = data.onlineCount || 0;
             }
             if (data.type === 'chat') {
-                var isSelf = (data.from === vm.user.username);
-                appendMessage(data.from, data.text, isSelf, data.time);
+                var isSelf = (data.username === vm.user.username);
+                appendMessage(data.username, data.text, isSelf, data.createdTime);
             } else if (data.type === 'join') {
                 if (typeof data.onlineCount === 'number') {
                     vm.onlineCount = data.onlineCount;
@@ -436,8 +436,8 @@
                         var records = res.data;
                         for (var i = 0; i < records.length; i++) {
                             var item = records[i];
-                            var isSelf = (item.uname === self.user.username);
-                            appendMessage(item.uname, item.description, isSelf, item.createTime);
+                            var isSelf = (item.username === self.user.username);
+                            appendMessage(item.username, item.text, isSelf, item.createdTime);
                         }
                     }
                 });
@@ -446,7 +446,7 @@
                 var self = this;
                 $.get("/api/help/mine?uid=" + self.user.id).then(function(res) {
                     if (res.code === '0') {
-                        self.myApplications = res.data || [];
+                        self.myApplications = res.data && res.data.records ? res.data.records : [];
                     }
                 });
             },
@@ -477,15 +477,9 @@
                     url: "/api/help/chat",
                     type: "POST",
                     contentType: "application/json",
-                    data: JSON.stringify({
-                        uid: self.user.id,
-                        uname: self.user.username,
-                        description: msg
-                    })
+                    data: JSON.stringify({ text: msg })
                 }).then(function(res) {
-                    var saved = res.data || {};
-                    socket.send(JSON.stringify({ text: msg, time: saved.createTime }));
-                    self.text = '';
+                    if (res.code === '0') self.text = '';
                 });
             },
             submitSymptom: function() {

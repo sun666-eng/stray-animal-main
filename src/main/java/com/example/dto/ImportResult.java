@@ -11,6 +11,7 @@ public class ImportResult {
 
     private int total;
     private int successCount;
+    private String workflowNote;
     private List<FailedRow> failed = new ArrayList<>();
 
     @Data

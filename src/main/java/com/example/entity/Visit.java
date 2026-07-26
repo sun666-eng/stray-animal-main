@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.extension.activerecord.Model;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.example.common.StrictDateDeserializer;
 
 import java.util.Date;
 
@@ -20,6 +22,7 @@ public class Visit extends Model<Visit> {
     private Long uid;
 
     @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
+    @JsonDeserialize(using = StrictDateDeserializer.class)
     private Date vtime;
 
     private Integer state;

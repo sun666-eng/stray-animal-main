@@ -2,152 +2,43 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>公告中心</title>
-    <link rel="stylesheet" href="../../css/base.css">
-    <link rel="stylesheet" href="../../css/theme.css">
-    <link rel="stylesheet" href="../../css/element.css">
-    <style>
-        body { margin: 0; background: #F9FAFB; color: #24324a; }
-        .page-shell { max-width: 1080px; margin: 0 auto; padding: 28px 20px 60px; }
-        .nav { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
-        .chip { display: inline-flex; align-items: center; height: 38px; padding: 0 14px; border-radius: 999px; background: #fff; color: #1D4ED8; text-decoration: none; box-shadow: 0 8px 20px rgba(25, 43, 77, 0.06); }
-        .hero { background: linear-gradient(135deg, #93C5FD 0%, #3B82F6 100%); color: #fff; border-radius: 20px; padding: 28px 30px; box-shadow: 0 12px 30px rgba(37, 99, 235, 0.2); margin-bottom: 22px; }
-        .hero h1 { margin: 0 0 8px; font-size: 30px; }
-        .toolbar { display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
-        .toolbar input { flex: 1; min-width: 240px; height: 42px; border: 1px solid #d9e2f2; border-radius: 10px; padding: 0 14px; outline: none; background: #fff; }
-        .toolbar button { height: 42px; padding: 0 18px; border: 0; border-radius: 10px; cursor: pointer; }
-        .btn-primary { background: #2563EB; color: #fff; }
-        .btn-ghost { background: #F0F9FF; color: #b85e23; }
-        .list { display: grid; gap: 16px; }
-        .notice-card { background: #fff; border-radius: 18px; padding: 20px 22px; box-shadow: 0 8px 24px rgba(25, 43, 77, 0.08); }
-        .notice-title { font-size: 22px; font-weight: 700; margin-bottom: 10px; }
-        .notice-content { color: #556277; line-height: 1.9; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-        .notice-actions { margin-top: 14px; }
-        .notice-actions a { color: #1D4ED8; text-decoration: none; }
-        .empty { background: #fff; border-radius: 18px; padding: 60px 20px; text-align: center; color: #7a8599; box-shadow: 0 8px 24px rgba(25, 43, 77, 0.08); }
-        .pager { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
-        .pager button { height: 38px; padding: 0 14px; border-radius: 10px; border: 1px solid #d6def0; background: #fff; cursor: pointer; }
-        .pager .current { background: #2563EB; color: #fff; border-color: #2563EB; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="查看归途计划的救助动态、领养活动与平台公告">
+    <title>救助动态 · 归途计划</title>
+    <link rel="stylesheet" href="../../css/product-ui.css">
 </head>
 <body>
-<div id="user-toolbar" style="position:fixed;right:20px;top:20px;z-index:9999;display:flex;align-items:center;gap:0;background:#fff;border-radius:14px;box-shadow:0 8px 24px rgba(25,43,77,0.12);">
-  <div id="toolbar-trigger" onclick="document.getElementById('toolbar-dropdown').classList.toggle('show')" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 14px;border-radius:14px;">
-    <svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#2563EB"/><circle cx="20" cy="14" r="8" fill="#fff" opacity=".95"/><ellipse cx="20" cy="37" rx="15" ry="11" fill="#fff" opacity=".95"/></svg>
-    <span style="color:#24324a;font-size:16px;font-weight:600;" id="toolbar-username">未登录</span>
-    <svg width="14" height="14" viewBox="0 0 14 14" style="flex-shrink:0;margin-left:2px;"><path d="M3.5 5.25L7 8.75l3.5-3.5" fill="none" stroke="#637089" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  </div>
-  <div id="toolbar-dropdown" style="display:none;position:absolute;right:0;top:64px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(25,43,77,0.15);min-width:140px;padding:6px 0;">
-    <a href="/page/end/person.html" style="display:block;padding:10px 18px;font-size:15px;color:#24324a;text-decoration:none;">个人信息</a>
-    <a href="/page/end/index.html" style="display:block;padding:10px 18px;font-size:15px;color:#1D4ED8;text-decoration:none;">管理后台</a>
-    <a href="javascript:void(0)" onclick="handleLogout()" style="display:block;padding:10px 18px;font-size:15px;color:#c73636;text-decoration:none;">退出登录</a>
-  </div>
-</div>
-<style>
-#toolbar-dropdown.show { display:block !important; }
-#toolbar-dropdown a:hover { background:#F9FAFB; }
-</style>
-<script>
-document.addEventListener('click', function(e) {
-  var d = document.getElementById('toolbar-dropdown');
-  var t = document.getElementById('toolbar-trigger');
-  if (d && t && !t.contains(e.target) && !d.contains(e.target)) {
-    d.classList.remove('show');
-  }
-});
-</script>
-
-<div id="app" class="page-shell">
-    <div class="nav">
-        <a class="chip" href="./animal_browse.html">动物浏览</a>
-        <a class="chip" href="./my_adopt.html">我的领养申请</a>
-        <a class="chip" href="./volunteer_apply.html">义工申请</a>
-        <a class="chip" href="./my_volunteer.html">我的义工申请</a>
-            <a class="chip" href="./rescue_apply.html">救助咨询</a>
-            <a class="chip" href="./my_rescue.html">我的救助</a>
-        <a class="chip" href="./notice_list.html">公告中心</a>
-        <a class="chip" href="/page/front/login.html" v-if="!user.id">登录页</a>
-    </div>
-    <div class="hero">
-        <h1>公告中心</h1>
-        <p>查看系统公告、领养活动和志愿活动通知。</p>
-    </div>
-    <div class="toolbar">
-        <input v-model.trim="query" type="text" placeholder="输入标题关键词搜索公告">
-        <button class="btn-primary" @click="loadNotices(1)">搜索</button>
-        <button class="btn-ghost" @click="resetQuery">重置</button>
-    </div>
-    <div v-if="loading" class="empty">公告加载中...</div>
-    <div v-else-if="notices.length === 0" class="empty">暂无公告内容</div>
-    <div v-else class="list">
-        <div class="notice-card" v-for="item in notices" :key="item.id">
-            <div class="notice-title">{{ item.title || '未命名公告' }}</div>
-            <div class="notice-content">{{ item.content || '暂无内容' }}</div>
-            <div class="notice-actions"><a :href="`./notice_detail.html?id=${item.id}`">查看详情</a></div>
+<div id="app" v-cloak>
+    <header class="ui-header">
+        <div class="ui-header-inner">
+            <a class="ui-brand" href="./index.html"><span class="ui-brand-mark">♡</span><span class="ui-brand-copy"><strong>归途计划</strong><small>PAWS ON THE WAY HOME</small></span></a>
+            <nav class="ui-nav" aria-label="主导航"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a class="is-active" href="./notice_list.html" aria-current="page">救助动态</a><a href="./account_public.html">透明公示</a></nav>
+            <div class="ui-header-actions"><button class="ui-icon-button ui-mobile-toggle" type="button" aria-label="切换导航" :aria-expanded="String(mobileOpen)" @click="mobileOpen = !mobileOpen">☰</button><a class="ui-account-trigger" :href="user ? './index.html' : './login.html'"><span class="ui-avatar">{{ userInitial }}</span><span class="ui-account-name">{{ user ? user.username : '登录' }}</span></a></div>
         </div>
-    </div>
-    <div class="pager" v-if="totalPages > 1">
-        <button :disabled="pageNum === 1" @click="loadNotices(pageNum - 1)">上一页</button>
-        <button v-for="p in pageList" :key="p" :class="{ current: p === pageNum }" @click="loadNotices(p)">{{ p }}</button>
-        <button :disabled="pageNum === totalPages" @click="loadNotices(pageNum + 1)">下一页</button>
-        <span>第 {{ pageNum }} / {{ totalPages }} 页</span>
-    </div>
+        <nav class="ui-mobile-nav" :class="{ 'is-open': mobileOpen }" aria-label="移动端导航"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a href="./notice_list.html">救助动态</a><a href="./account_public.html">透明公示</a></nav>
+    </header>
+
+    <main>
+        <section class="ui-page-head"><div class="ui-container"><div class="ui-breadcrumb"><a href="./index.html" style="color:inherit;text-decoration:none">首页</a><span>/</span><strong>救助动态</strong></div><div class="ui-page-head-row"><div><h1>最近发生的温暖小事</h1><p>查看救助进展、领养活动、志愿者通知和平台公开信息。</p></div><span v-if="!loading && !error" class="ui-badge is-done">{{ total }} 条公开内容</span></div></div></section>
+        <section class="ui-container ui-public-section">
+            <form class="ui-toolbar" role="search" @submit.prevent="loadNotices(1)"><label class="ui-search"><span>⌕</span><span class="sr-only">搜索公告</span><input v-model.trim="query" type="search" placeholder="搜索公告标题" autocomplete="off"></label><button class="ui-button is-dark" type="submit">搜索</button><button v-if="query" class="ui-button is-ghost" type="button" @click="resetQuery">清除</button></form>
+            <div v-if="loading" class="ui-notice-list" aria-label="正在加载公告"><article v-for="n in 4" :key="n" class="ui-notice-card" aria-hidden="true"><div class="ui-notice-date ui-skeleton" style="height:68px"></div><div><div class="ui-skeleton ui-skeleton-line short"></div><div class="ui-skeleton ui-skeleton-line"></div></div></article></div>
+            <div v-else-if="error" class="ui-state" role="alert"><div><span class="ui-state-mark">!</span><h2>救助动态暂时无法加载</h2><p>{{ error }}</p><button class="ui-button is-dark" type="button" @click="loadNotices(pageNum)">重新加载</button></div></div>
+            <div v-else-if="notices.length === 0" class="ui-state"><div><span class="ui-state-mark">⌕</span><h2>没有找到相关公告</h2><p>换一个关键词，或清除当前搜索条件。</p><button class="ui-button is-ghost" type="button" @click="resetQuery">清除搜索</button></div></div>
+            <div v-else class="ui-notice-list"><article v-for="(item,index) in notices" :key="item.id" class="ui-notice-card"><div class="ui-notice-date"><strong>{{ String(index + 1).padStart(2, '0') }}</strong><span>NOTICE</span></div><div class="ui-notice-copy"><h2>{{ item.title || '未命名公告' }}</h2><p>{{ summary(item.content) }}</p></div><a class="ui-button is-ghost" :href="detailUrl(item.id)">阅读全文</a></article></div>
+            <div v-if="!loading && !error && totalPages > 1" class="ui-pagination"><span>第 {{ pageNum }} 页，共 {{ total }} 条记录</span><div class="ui-page-buttons"><button type="button" :disabled="pageNum === 1" @click="loadNotices(pageNum - 1)">‹</button><button v-for="page in pageList" :key="page" type="button" :class="{ 'is-current': page === pageNum }" @click="loadNotices(page)">{{ page }}</button><button type="button" :disabled="pageNum === totalPages" @click="loadNotices(pageNum + 1)">›</button></div></div>
+        </section>
+    </main>
+    <footer class="ui-site-footer"><div class="ui-container ui-footer-inner"><div class="ui-footer-copy"><strong>归途计划</strong><span>© 2026 · 让每一次善意都有回音</span></div><nav class="ui-footer-nav" aria-label="页脚导航"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a href="./notice_list.html">救助动态</a><a href="./rescue_apply.html">发起救助</a><a href="./account_public.html">透明公示</a></nav></div></footer>
 </div>
-<script src="../../js/jquery.min.js"></script>
-<script src="../../js/vue.min.js"></script>
-<script src="../../js/element.js"></script>
+<script src="../../js/jquery.min.js"></script><script src="../../js/vue.min.js"></script><script src="../../js/auth-session.js?v=20260723"></script>
 <script>
 new Vue({
-  el: '#app',
-  data: { user: {}, notices: [], query: '', loading: false, pageNum: 1, pageSize: 8, totalPages: 1 },
-  created() { this.user = sessionStorage.getItem('user') ? JSON.parse(sessionStorage.getItem('user')) : {}; },
-  computed: {
-    pageList() {
-      const pages = [];
-      const start = Math.max(1, this.pageNum - 2);
-      const end = Math.min(this.totalPages, start + 4);
-      for (let i = start; i <= end; i++) pages.push(i);
-      return pages;
-    }
-  },
-  mounted() { this.loadNotices(1); },
-  methods: {
-    loadNotices(page) {
-      this.loading = true;
-      this.pageNum = page;
-      $.ajax({ url: '/api/notice/page', type: 'GET', data: { name: this.query, pageNum: this.pageNum, pageSize: this.pageSize } })
-        .then(res => {
-          if (res.code === '0' && res.data) {
-            this.notices = res.data.records || [];
-            this.totalPages = res.data.pages || 1;
-          } else {
-            this.$message.error(res.msg || '加载公告失败');
-          }
-        })
-        .catch(() => { this.$message.error('网络异常，加载公告失败'); })
-        .always(() => { this.loading = false; });
-    },
-    resetQuery() { this.query = ''; this.loadNotices(1); }
-  }
+  el:'#app',data:{user:null,notices:[],query:'',loading:true,error:'',pageNum:1,pageSize:8,total:0,totalPages:1,mobileOpen:false},
+  computed:{userInitial(){return this.user&&this.user.username?this.user.username.slice(0,1).toUpperCase():'↗';},pageList(){const pages=[];let start=Math.max(1,this.pageNum-2);const end=Math.min(this.totalPages,start+4);start=Math.max(1,end-4);for(let page=start;page<=end;page+=1)pages.push(page);return pages;}},
+  mounted(){const start=()=>{this.user=window.AuthSession?AuthSession.getUser():null;this.loadNotices(1);};if(window.AuthSession)AuthSession.bootstrap({requireAuth:false,onDone:start});else start();},
+  methods:{loadNotices(page){this.loading=true;this.error='';this.pageNum=page;$.ajax({url:'/api/notice/page',type:'GET',data:{name:this.query,pageNum:page,pageSize:this.pageSize}}).done(res=>{if(res&&res.code==='0'&&res.data){this.notices=res.data.records||[];this.total=Number(res.data.total||0);this.totalPages=Math.max(1,Number(res.data.pages||1));}else this.error=(res&&res.msg)||'服务返回了无法识别的数据';}).fail(()=>{this.error='请检查网络连接后重试。';}).always(()=>{this.loading=false;});},resetQuery(){this.query='';this.loadNotices(1);},summary(content){const text=String(content||'暂无内容').replace(/\s+/g,' ').trim();return text.length>120?text.slice(0,120)+'…':text;},detailUrl(id){return './notice_detail.html?id='+encodeURIComponent(id);}}
 });
 </script>
-<script>
-(function(){
-  var u = sessionStorage.getItem('user') ? JSON.parse(sessionStorage.getItem('user')) : null;
-  if (u && u.username) { document.getElementById('toolbar-username').textContent = u.username; }
-})();
-function handleLogout() {
-  if (window.AuthSession) { AuthSession.logout(); return; }
-  $.ajax({ url: '/api/user/logout', type: 'POST', contentType: 'application/json', data: '{}', headers: { 'X-CSRF-Token': sessionStorage.getItem('csrfToken') || '' } }).always(function(){
-    sessionStorage.removeItem('user');
-    location.href = '/page/front/login.html';
-  });
-}
-</script>
-<script src="../../js/auth-session.js?v=20260712a"></script>
-<script src="../../js/front-nav.js?v=20260712a"></script>
-<script src="../../js/dark-mode.js"></script>
 </body>
 </html>
-
-

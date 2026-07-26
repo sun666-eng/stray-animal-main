@@ -1,8 +1,11 @@
--- B3-F 迁移预检（只读报告，不写 t_file_asset 业务数据）
--- 用法：在副本库执行；检查结果后再跑 apply
--- 输出依赖临时表与冲突表
+-- B3-F 迁移预检（只读报告：不写 t_file_asset 业务数据，不创建持久表）
+-- 用法：在已选中的应用库 / 副本库执行；检查结果后再跑 apply
+-- 冲突结果仅存在于会话级 TEMPORARY 表，会话结束自动消失。
 
-CREATE TABLE IF NOT EXISTS t_file_asset_migration_conflict (
+SET @run_id := DATE_FORMAT(NOW(), '%Y%m%d%H%i%s');
+
+DROP TEMPORARY TABLE IF EXISTS tmp_file_asset_migration_conflict;
+CREATE TEMPORARY TABLE tmp_file_asset_migration_conflict (
   id BIGINT NOT NULL AUTO_INCREMENT,
   run_id VARCHAR(64) NOT NULL DEFAULT 'default',
   flag VARCHAR(64) NOT NULL,
@@ -13,10 +16,6 @@ CREATE TABLE IF NOT EXISTS t_file_asset_migration_conflict (
   KEY idx_mig_conflict_run (run_id),
   KEY idx_mig_conflict_flag (flag)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-SET @run_id := DATE_FORMAT(NOW(), '%Y%m%d%H%i%s');
-
-DELETE FROM t_file_asset_migration_conflict WHERE run_id = @run_id;
 
 DROP TEMPORARY TABLE IF EXISTS tmp_file_asset_sources;
 CREATE TEMPORARY TABLE tmp_file_asset_sources (
@@ -41,7 +40,8 @@ SELECT TRIM(u.avatar), 'user', u.id, u.id, 'avatar', 'public'
 FROM t_user u
 WHERE u.avatar IS NOT NULL AND TRIM(u.avatar) <> ''
   AND u.avatar NOT LIKE '%/%' AND u.avatar NOT LIKE '%\\%'
-  AND CHAR_LENGTH(TRIM(u.avatar)) BETWEEN 8 AND 64;
+  AND CHAR_LENGTH(TRIM(u.avatar)) BETWEEN 8 AND 64
+  AND TRIM(u.avatar) <> '1';
 
 INSERT INTO tmp_file_asset_sources
 SELECT TRIM(p.ppic), 'proof', p.id, p.puid, 'proof', 'private'
@@ -73,7 +73,7 @@ WHERE vi.pic IS NOT NULL AND TRIM(vi.pic) <> ''
   AND CHAR_LENGTH(TRIM(vi.pic)) BETWEEN 8 AND 64;
 
 -- 多业务同 flag
-INSERT INTO t_file_asset_migration_conflict (run_id, flag, reason, sources)
+INSERT INTO tmp_file_asset_migration_conflict (run_id, flag, reason, sources)
 SELECT @run_id, s.flag, 'MULTI_BUSINESS',
        GROUP_CONCAT(DISTINCT CONCAT(s.source_type, ':', s.business_id) ORDER BY s.source_type SEPARATOR ',')
 FROM tmp_file_asset_sources s
@@ -101,13 +101,13 @@ SELECT s.flag,
        CASE WHEN SUM(s.desired_visibility = 'private') > 0 THEN 'private' ELSE 'public' END
 FROM tmp_file_asset_sources s
 WHERE s.flag NOT IN (
-  SELECT c.flag FROM t_file_asset_migration_conflict c WHERE c.run_id = @run_id AND c.reason = 'MULTI_BUSINESS'
+  SELECT c.flag FROM tmp_file_asset_migration_conflict c WHERE c.run_id = @run_id AND c.reason = 'MULTI_BUSINESS'
 )
 GROUP BY s.flag
 HAVING COUNT(DISTINCT CONCAT(s.source_type, ':', s.business_id)) = 1;
 
 -- 已有活动元数据与 resolved 不一致
-INSERT INTO t_file_asset_migration_conflict (run_id, flag, reason, sources)
+INSERT INTO tmp_file_asset_migration_conflict (run_id, flag, reason, sources)
 SELECT @run_id, f.flag,
        CASE
          WHEN f.visibility = 'private' AND r.visibility = 'public' THEN 'EXISTING_STRICTER_OR_DRIFT'
@@ -130,7 +130,7 @@ WHERE f.deleted = 0
   );
 
 -- 软删除同 flag
-INSERT INTO t_file_asset_migration_conflict (run_id, flag, reason, sources)
+INSERT INTO tmp_file_asset_migration_conflict (run_id, flag, reason, sources)
 SELECT @run_id, r.flag, 'SOFT_DELETED_EXISTS',
        CONCAT('file_asset_id=', f.id, ',deleted=1')
 FROM tmp_file_asset_resolved r
@@ -139,16 +139,22 @@ WHERE NOT EXISTS (
   SELECT 1 FROM t_file_asset a WHERE a.flag = r.flag AND a.deleted = 0
 );
 
+-- 历史头像占位
+INSERT INTO tmp_file_asset_migration_conflict (run_id, flag, reason, sources)
+SELECT @run_id, '1', 'LEGACY_AVATAR_PLACEHOLDER',
+       CONCAT('count=', COUNT(*))
+FROM t_user u
+WHERE TRIM(IFNULL(u.avatar,'')) = '1'
+HAVING COUNT(*) > 0;
+
 -- 报告
 SELECT @run_id AS run_id;
-SELECT reason, COUNT(*) AS cnt FROM t_file_asset_migration_conflict WHERE run_id = @run_id GROUP BY reason;
+SELECT reason, COUNT(*) AS cnt FROM tmp_file_asset_migration_conflict WHERE run_id = @run_id GROUP BY reason;
 SELECT COUNT(*) AS source_rows FROM tmp_file_asset_sources;
 SELECT COUNT(*) AS resolved_flags FROM tmp_file_asset_resolved;
-SELECT COUNT(*) AS conflict_rows FROM t_file_asset_migration_conflict WHERE run_id = @run_id;
+SELECT COUNT(*) AS conflict_rows FROM tmp_file_asset_migration_conflict WHERE run_id = @run_id;
 
--- NEED_TIGHTEN_TO_PRIVATE 可在 apply 自动收紧；下列视为阻断 apply：
--- MULTI_BUSINESS, BUSINESS_BIND_MISMATCH, SOFT_DELETED_EXISTS(若策略不恢复)
 SELECT COUNT(*) AS blocking_conflicts
-FROM t_file_asset_migration_conflict
+FROM tmp_file_asset_migration_conflict
 WHERE run_id = @run_id
-  AND reason IN ('MULTI_BUSINESS', 'BUSINESS_BIND_MISMATCH', 'SOFT_DELETED_EXISTS', 'EXISTING_STRICTER_OR_DRIFT');
+  AND reason IN ('MULTI_BUSINESS', 'BUSINESS_BIND_MISMATCH', 'SOFT_DELETED_EXISTS', 'EXISTING_STRICTER_OR_DRIFT', 'LEGACY_AVATAR_PLACEHOLDER');

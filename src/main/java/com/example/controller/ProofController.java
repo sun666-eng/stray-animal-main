@@ -23,6 +23,10 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/proof")
 public class ProofController {
+    private static final int MAX_PAGE_NUM = 10000;
+    private static final int MAX_PAGE_SIZE = 50;
+    private static final int MAX_QUERY_LENGTH = 100;
+    private static final int MAX_EXPORT_ROWS = 10000;
     @Resource
     private ProofService proofService;
 
@@ -116,7 +120,8 @@ public class ProofController {
         if (!PermissionUtil.hasFlag(user, "proof")) {
             return Result.error("403", "无权查看全部凭证");
         }
-        return Result.success(proofService.list());
+        return Result.success(proofService.list(Wrappers.<Proof>lambdaQuery()
+                .orderByDesc(Proof::getId).last("LIMIT " + MAX_EXPORT_ROWS)));
     }
 
     @GetMapping("/page")
@@ -128,20 +133,25 @@ public class ProofController {
         if (!PermissionUtil.hasFlag(user, "proof")) {
             return Result.error("403", "无权查看凭证列表");
         }
-        return Result.success(proofService.page(new Page<>(pageNum, pageSize), Wrappers.<Proof>lambdaQuery().like(Proof::getUname, name)));
+        String keyword = safeQuery(name);
+        return Result.success(proofService.page(new Page<>(safePageNum(pageNum), safePageSize(pageSize)),
+                Wrappers.<Proof>lambdaQuery().like(!keyword.isEmpty(), Proof::getUname, keyword)
+                        .orderByDesc(Proof::getId)));
     }
 
     @GetMapping("/page1")
     public Result<IPage<Proof>> findPage1(@RequestParam(required = false, defaultValue = "") String name,
                                          @RequestParam(required = false, defaultValue = "1") Integer pageNum,
                                          @RequestParam(required = false, defaultValue = "10") Integer pageSize,
-                                          @RequestParam Long uid,
+                                           @RequestParam(required = false) Long uid,
+                                           @RequestParam(required = false) Long paid,
                                           HttpServletRequest request) {
         User user = (User) request.getSession().getAttribute("user");
-        if (!PermissionUtil.hasFlag(user, "proof") && (user == null || user.getId() == null || !user.getId().equals(uid))) {
-            return Result.error("403", "只能查看自己的凭证");
-        }
-        return Result.success(proofService.page(new Page<>(pageNum, pageSize), Wrappers.<Proof>lambdaQuery().eq(Proof::getPuid, uid)));
+        if (user == null || user.getId() == null) return Result.error("401", "未登录或登录已过期");
+        Long targetUid = PermissionUtil.hasFlag(user, "proof") && uid != null ? uid : user.getId();
+        return Result.success(proofService.page(new Page<>(safePageNum(pageNum), safePageSize(pageSize)),
+                Wrappers.<Proof>lambdaQuery().eq(Proof::getPuid, targetUid)
+                        .eq(paid != null, Proof::getPaid, paid).orderByDesc(Proof::getId)));
     }
 
     @GetMapping("/export")
@@ -153,7 +163,10 @@ public class ProofController {
             response.getWriter().write("{\"code\":\"403\",\"msg\":\"无权导出凭证\"}");
             return;
         }
-        ExcelExportUtil.export(response, "领养凭证", proofService.list(), proof -> {
+        List<Proof> rows = proofService.list(Wrappers.<Proof>lambdaQuery()
+                .orderByDesc(Proof::getId).last("LIMIT " + (MAX_EXPORT_ROWS + 1)));
+        if (rows.size() > MAX_EXPORT_ROWS) throw new CustomException("413", "导出记录超过上限" + MAX_EXPORT_ROWS);
+        ExcelExportUtil.export(response, "领养凭证", rows, proof -> {
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("ID", proof.getId());
             row.put("领养动物ID", proof.getPaid());
@@ -165,5 +178,13 @@ public class ProofController {
             row.put("审核状态", proof.getPstatus());
             return row;
         });
+    }
+
+    private int safePageNum(Integer value) { return value == null || value < 1 ? 1 : Math.min(value, MAX_PAGE_NUM); }
+    private int safePageSize(Integer value) { return value == null || value < 1 ? 10 : Math.min(value, MAX_PAGE_SIZE); }
+    private String safeQuery(String value) {
+        String normalized = value == null ? "" : value.trim();
+        if (normalized.length() > MAX_QUERY_LENGTH) throw new CustomException("400", "查询关键词不能超过100个字符");
+        return normalized;
     }
 }

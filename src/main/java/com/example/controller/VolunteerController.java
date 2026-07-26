@@ -2,6 +2,7 @@ package com.example.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.example.common.ExcelExportUtil;
+import com.example.common.AuditLog;
 import com.example.common.PermissionUtil;
 import com.example.common.Result;
 import com.example.entity.User;
@@ -48,9 +49,22 @@ public class VolunteerController {
     }
 
     @DeleteMapping("/{id}")
-    public Result<?> delete(@PathVariable Long id) {
+    public Result<?> delete(@PathVariable Long id, HttpServletRequest request) {
         try {
-            return Result.success(volunteerService.deleteVolunteer(id));
+            User user = (User) request.getSession().getAttribute("user");
+            return Result.success(volunteerService.deleteVolunteer(id, user));
+        } catch (CustomException e) {
+            return Result.error(e.getCode(), e.getMsg());
+        }
+    }
+
+    @AuditLog(module = "义工管理", action = "审核义工申请")
+    @PutMapping("/{id}/state/{state}")
+    public Result<?> audit(@PathVariable Long id, @PathVariable Integer state,
+                           HttpServletRequest request) {
+        try {
+            User user = (User) request.getSession().getAttribute("user");
+            return Result.success(volunteerService.auditVolunteer(id, state, user));
         } catch (CustomException e) {
             return Result.error(e.getCode(), e.getMsg());
         }
@@ -75,9 +89,11 @@ public class VolunteerController {
 
     @GetMapping("/page")
     public Result<IPage<Volunteer>> findPage(@RequestParam(required = false, defaultValue = "") String name,
-                                                 @RequestParam(required = false, defaultValue = "1") Integer pageNum,
-                                                 @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
-        return Result.success(volunteerService.page(new Page<>(pageNum, pageSize), Wrappers.<Volunteer>lambdaQuery().like(Volunteer::getLocation, name)));
+                                                  @RequestParam(required = false, defaultValue = "1") Integer pageNum,
+                                                  @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
+        long safePageNum = pageNum == null ? 1 : Math.max(1, pageNum);
+        long safePageSize = pageSize == null ? 10 : Math.max(1, Math.min(50, pageSize));
+        return Result.success(volunteerService.page(new Page<>(safePageNum, safePageSize), Wrappers.<Volunteer>lambdaQuery().like(Volunteer::getLocation, name)));
     }
 
     @GetMapping("/mine")
@@ -88,6 +104,8 @@ public class VolunteerController {
                                              @RequestParam(required = false, defaultValue = "10") Integer pageSize,
                                              HttpServletRequest request) {
         User user = (User) request.getSession().getAttribute("user");
+        long safePageNum = pageNum == null ? 1 : Math.max(1, pageNum);
+        long safePageSize = pageSize == null ? 10 : Math.max(1, Math.min(50, pageSize));
         if (!PermissionUtil.hasFlag(user, "volunteer")) {
             if (user == null || user.getId() == null) {
                 return Result.error("403", "只能查看自己的义工申请");
@@ -97,7 +115,7 @@ public class VolunteerController {
                     .eq(Volunteer::getUid, user.getId())
                     .orderByDesc(Volunteer::getId);
             try {
-                return Result.success(volunteerService.page(new Page<>(pageNum, pageSize), mine));
+                return Result.success(volunteerService.page(new Page<>(safePageNum, safePageSize), mine));
             } catch (Exception e) {
                 // 常见：旧库缺少 uid/apic 列 → Unknown column
                 String msg = e.getMessage() == null ? "" : e.getMessage();
@@ -116,7 +134,7 @@ public class VolunteerController {
         String queryPhone = phone;
         String queryEmail = email;
         if (queryUsername.trim().isEmpty() && queryPhone.trim().isEmpty() && queryEmail.trim().isEmpty()) {
-            return Result.success(new Page<>(pageNum, pageSize));
+            return Result.success(new Page<>(safePageNum, safePageSize));
         }
         LambdaQueryWrapper<Volunteer> wrapper = Wrappers.<Volunteer>lambdaQuery();
         wrapper.and(q -> {
@@ -139,7 +157,7 @@ public class VolunteerController {
                 q.eq(Volunteer::getEmail, queryEmail.trim());
             }
         }).orderByDesc(Volunteer::getId);
-        return Result.success(volunteerService.page(new Page<>(pageNum, pageSize), wrapper));
+        return Result.success(volunteerService.page(new Page<>(safePageNum, safePageSize), wrapper));
     }
 
     private String safeValue(String value) {
@@ -154,7 +172,9 @@ public class VolunteerController {
             response.getWriter().write("{\"code\":\"403\",\"msg\":\"无权导出义工申请\"}");
             return;
         }
-        ExcelExportUtil.export(response, "义工申请", volunteerService.list(), volunteer -> {
+        List<Volunteer> rows = volunteerService.list(Wrappers.<Volunteer>lambdaQuery()
+                .orderByDesc(Volunteer::getId).last("LIMIT " + (ExcelExportUtil.MAX_EXPORT_ROWS + 1)));
+        ExcelExportUtil.export(response, "义工申请", rows, volunteer -> {
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("ID", volunteer.getId());
             row.put("名称", volunteer.getName());

@@ -115,10 +115,15 @@ public class ExcelImportUtilTest {
     }
 
     @Test
-    public void asDate_acceptsCommonFormats() {
+    public void asDate_acceptsCommonFormatsAndRejectsInvalidText() {
         assertNotNull(ExcelImportUtil.asDate("2024-01-15"));
         assertNotNull(ExcelImportUtil.asDate("2024/01/15"));
-        assertNull(ExcelImportUtil.asDate("明天"));
+        assertThrows(com.example.exception.CustomException.class,
+                () -> ExcelImportUtil.asDate("明天"));
+        assertThrows(com.example.exception.CustomException.class,
+                () -> ExcelImportUtil.asDate("2024-02-30"));
+        assertThrows(com.example.exception.CustomException.class,
+                () -> ExcelImportUtil.asDate("2024-01-15junk"));
         assertNull(ExcelImportUtil.asDate(null));
         assertNull(ExcelImportUtil.asDate(""));
 

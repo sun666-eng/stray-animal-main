@@ -2,82 +2,115 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>用户注册 - 流浪动物救助</title>
-    <link rel="stylesheet" href="../../css/element.css">
-    <link rel="stylesheet" href="../../css/base.css">
-    <link rel="stylesheet" href="../../css/theme.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="注册归途计划流浪动物救助平台账户">
+    <title>创建账户 · 归途计划</title>
+    <link rel="stylesheet" href="../../css/product-ui.css">
 </head>
 <body>
-<div id="wrapper" v-cloak>
-    <div style="width: 500px; margin: 120px auto; background-color:#b3e19d; border-radius: 10px; padding-bottom: 30px;">
-        <div style="width: 100%; height: 90px; font-size: 28px;line-height: 90px; text-align: center; color: #1D4ED8">注册流浪动物救助账号</div>
-        <div style="width: 60%; margin: 0 auto">
-            <input v-model="user.username" type="text" style="border: 1px solid #ccc; height: 40px; padding: 10px; width: 100%" placeholder="请输入账号">
-            <input v-model="user.password" type="password" style="border: 1px solid #ccc; height: 40px; padding: 10px; width: 100%; margin-top: 18px" placeholder="请输入密码">
-            <input v-model="user.email" type="text" style="border: 1px solid #ccc; height: 40px; padding: 10px; width: 100%; margin-top: 18px" placeholder="请输入邮箱（可选）">
-            <input v-model="user.phone" type="text" style="border: 1px solid #ccc; height: 40px; padding: 10px; width: 100%; margin-top: 18px" placeholder="请输入手机号（可选）">
-            <button type="button" @click="register" :disabled="submitting" style="height: 42px; width: 100%; margin-top: 22px; background-color: #2563EB; color: white; border: 0; border-radius: 6px; cursor: pointer;">
-                {{ submitting ? '注册中...' : '注册并进入用户端' }}
-            </button>
-            <a style="width: 100%; text-align: right; display: inline-block; margin-top: 18px; color: #1D4ED8" href="/page/front/login.html">已有账号？去登录</a>
-            <a style="width: 100%; text-align: right; display: inline-block; margin-top: 10px; color: #1D4ED8" href="/page/front/animal_browse.html">先看看可领养动物</a>
-        </div>
-    </div>
+<div id="app" v-cloak class="ui-auth-page">
+    <section class="ui-auth-visual" aria-label="归途计划品牌故事">
+        <img src="/prototype-assets/editorial-03.svg" alt="等待领养动物的视觉占位图">
+        <a class="ui-brand ui-auth-brand" href="./index.html"><span class="ui-brand-mark">♡</span><span class="ui-brand-copy"><strong>归途计划</strong><small>PAWS ON THE WAY HOME</small></span></a>
+        <div class="ui-auth-story"><small>JOIN THE JOURNEY</small><h1>让你的善意，成为它们回家的路。</h1><p>创建账户后可以提交领养、救助和志愿服务申请，并持续查看进度。</p></div>
+    </section>
+    <main class="ui-auth-main">
+        <form class="ui-auth-form" novalidate @submit.prevent="register">
+            <a class="ui-back-link" href="./animal_browse.html">← 返回动物浏览</a>
+            <h2>创建账户</h2>
+            <p class="ui-auth-intro">基础账户默认不包含任何管理权限。完成注册后可以使用用户端服务。</p>
+            <div class="ui-form-grid">
+                <div class="ui-form-field is-full">
+                    <label for="registerUsername">账号 <small>2–32 个字符</small></label>
+                    <input id="registerUsername" v-model.trim="form.username" class="ui-form-input" type="text" autocomplete="username" :aria-invalid="String(!!errors.username)" aria-describedby="registerUsernameError">
+                    <p v-if="errors.username" id="registerUsernameError" class="ui-field-error">{{ errors.username }}</p>
+                </div>
+                <div class="ui-form-field is-full">
+                    <label for="registerPassword">密码 <small>建议至少 8 位</small></label>
+                    <input id="registerPassword" v-model="form.password" class="ui-form-input" type="password" autocomplete="new-password" :aria-invalid="String(!!errors.password)" aria-describedby="registerPasswordHelp registerPasswordError">
+                    <p id="registerPasswordHelp" class="ui-password-hint">避免使用与账号相同的密码，不要复用其他网站密码。</p>
+                    <p v-if="errors.password" id="registerPasswordError" class="ui-field-error">{{ errors.password }}</p>
+                </div>
+                <div class="ui-form-field is-full">
+                    <label for="registerPasswordConfirm">确认密码</label>
+                    <input id="registerPasswordConfirm" v-model="form.passwordConfirm" class="ui-form-input" type="password" autocomplete="new-password" :aria-invalid="String(!!errors.passwordConfirm)" aria-describedby="registerPasswordConfirmError">
+                    <p v-if="errors.passwordConfirm" id="registerPasswordConfirmError" class="ui-field-error">{{ errors.passwordConfirm }}</p>
+                </div>
+                <div class="ui-form-field">
+                    <label for="registerEmail">邮箱 <small>选填</small></label>
+                    <input id="registerEmail" v-model.trim="form.email" class="ui-form-input" type="email" autocomplete="email" :aria-invalid="String(!!errors.email)" aria-describedby="registerEmailError">
+                    <p v-if="errors.email" id="registerEmailError" class="ui-field-error">{{ errors.email }}</p>
+                </div>
+                <div class="ui-form-field">
+                    <label for="registerPhone">手机号 <small>选填</small></label>
+                    <input id="registerPhone" v-model.trim="form.phone" class="ui-form-input" type="tel" autocomplete="tel" :aria-invalid="String(!!errors.phone)" aria-describedby="registerPhoneError">
+                    <p v-if="errors.phone" id="registerPhoneError" class="ui-field-error">{{ errors.phone }}</p>
+                </div>
+            </div>
+            <label class="ui-checkbox"><input v-model="accepted" type="checkbox"><span>我已阅读并同意平台服务规则与隐私政策，理解联系方式仅用于救助和申请沟通。</span></label>
+            <div v-if="formError" class="ui-form-alert" role="alert">{{ formError }}</div>
+            <button class="ui-button is-primary ui-auth-submit" type="submit" :disabled="submitting">{{ submitting ? '正在创建账户…' : '创建账户并进入工作台' }}</button>
+            <div class="ui-auth-links"><span>已有账户？</span><a href="./login.html">直接登录</a></div>
+            <div class="sr-only" aria-live="polite">{{ liveMessage }}</div>
+        </form>
+    </main>
 </div>
+
 <script src="../../js/jquery.min.js"></script>
 <script src="../../js/vue.min.js"></script>
-<script src="../../js/element.js"></script>
+<script src="../../js/auth-session.js?v=20260723"></script>
+<script src="../../js/user-workspace.js?v=20260724"></script>
 <script>
 new Vue({
-  el: '#wrapper',
-  data: { user: {}, submitting: false },
+  el: '#app',
+  data: { form: { username: '', password: '', passwordConfirm: '', email: '', phone: '' }, accepted: false, errors: {}, formError: '', submitting: false, liveMessage: '' },
+  mounted: function () {
+    if (window.AuthSession) {
+      AuthSession.bootstrap({ requireAuth: false, allowCachedOnNetworkError: false, onDone: function (ok, user) {
+        if (ok) location.replace(window.UserWorkspace ? UserWorkspace.defaultHome(user) : '/page/front/index.html');
+      }});
+    }
+  },
   methods: {
-    register() {
-      if (!this.user.username) {
-        this.$message({ message: '请输入用户名', type: 'error' });
-        return;
-      }
-      if (!this.user.password) {
-        this.$message({ message: '请输入密码', type: 'error' });
-        return;
-      }
-      if (this.submitting) return;
+    validate: function () {
+      this.errors = {};
+      if (!this.form.username) this.errors.username = '请输入账号';
+      else if (!/^[\u4e00-\u9fa5a-zA-Z0-9_.-]{2,32}$/.test(this.form.username)) this.errors.username = '仅允许中文、字母、数字、下划线、短横线和点，长度 2–32';
+      if (!this.form.password) this.errors.password = '请输入密码';
+      else if (this.form.password.length < 8) this.errors.password = '密码至少需要 8 位';
+      else if (this.form.password === this.form.username) this.errors.password = '密码不能与账号相同';
+      if (!this.form.passwordConfirm) this.errors.passwordConfirm = '请再次输入密码';
+      else if (this.form.passwordConfirm !== this.form.password) this.errors.passwordConfirm = '两次输入的密码不一致';
+      if (this.form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.form.email)) this.errors.email = '邮箱格式不正确';
+      if (this.form.phone && !/^1\d{10}$/.test(this.form.phone)) this.errors.phone = '请输入 11 位手机号';
+      if (!this.accepted) this.formError = '请先阅读并同意服务规则与隐私政策'; else this.formError = '';
+      return Object.keys(this.errors).length === 0 && this.accepted;
+    },
+    register: function () {
+      if (this.submitting || !this.validate()) return;
       this.submitting = true;
-      // 不传 role/id，服务端强制普通用户
-      const payload = {
-        username: this.user.username,
-        password: this.user.password,
-        email: this.user.email || '',
-        phone: this.user.phone || ''
-      };
-      $.ajax({
-        url: '/api/user/register',
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify(payload),
-        timeout: 8000
-      }).then(res => {
-        if (res.code === '0') {
-          this.$message({ message: '注册成功', type: 'success' });
-          if (window.AuthSession) {
-            window.AuthSession.saveSession(res.data.user, null, res.data.csrfToken);
-          } else {
-            sessionStorage.setItem('user', JSON.stringify(res.data.user));
-            sessionStorage.removeItem('token');
-            if (res.data.csrfToken) sessionStorage.setItem('csrfToken', res.data.csrfToken);
+      this.formError = '';
+      this.liveMessage = '正在创建账户';
+      var payload = { username: this.form.username, password: this.form.password, email: this.form.email || '', phone: this.form.phone || '' };
+      $.ajax({ url: '/api/user/register', type: 'POST', contentType: 'application/json', data: JSON.stringify(payload), timeout: 8000 })
+        .done(res => {
+          if (res && res.code === '0' && res.data && res.data.user) {
+            if (window.AuthSession) AuthSession.saveSession(res.data.user, null, res.data.csrfToken);
+            this.liveMessage = '注册成功，正在进入用户首页';
+            location.replace('/page/front/index.html');
+            return;
           }
-          setTimeout(() => { location.href = '/page/end/index.html'; }, 800);
-        } else {
-          this.$message({ message: res.msg || '注册失败', type: 'error' });
-        }
-      }).fail(() => {
-        this.$message({ message: '网络异常，注册失败', type: 'error' });
-      }).always(() => { this.submitting = false; });
+          this.formError = (res && res.msg) || '注册未完成，请检查填写内容';
+          this.liveMessage = this.formError;
+        })
+        .fail(xhr => {
+          this.formError = xhr && xhr.status === 429 ? '请求过于频繁，请稍后再试' : '网络连接异常，请稍后重试';
+          this.liveMessage = this.formError;
+        })
+        .always(() => { this.submitting = false; });
     }
   }
 });
 </script>
-<script src="../../js/dark-mode.js"></script>
-<script src="../../js/auth-session.js?v=20260712a"></script>
 </body>
 </html>

@@ -6,6 +6,8 @@ import com.example.entity.User;
 import com.example.exception.CustomException;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
+import java.util.Base64;
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -18,8 +20,8 @@ public class FileAssetServiceTest {
     private final FileAssetService service = new FileAssetService();
 
     @Test
-    public void animalPurposeIsPublic() {
-        assertEquals(FileAssetService.VIS_PUBLIC, service.visibilityForPurpose("animal"));
+    public void animalUploadIsPrivateUntilBound() {
+        assertEquals(FileAssetService.VIS_PRIVATE, service.visibilityForPurpose("animal"));
         assertEquals(FileAssetService.VIS_PRIVATE, service.visibilityForPurpose("proof"));
     }
 
@@ -44,7 +46,7 @@ public class FileAssetServiceTest {
     }
 
     @Test
-    public void proofAdminCanReadPrivateProof() {
+    public void proofAdminCannotReadUnboundPrivateProof() {
         FileAsset asset = new FileAsset();
         asset.setVisibility(FileAssetService.VIS_PRIVATE);
         asset.setOwnerId(5L);
@@ -55,7 +57,7 @@ public class FileAssetServiceTest {
         Permission p = new Permission();
         p.setFlag("proof");
         admin.setPermission(Collections.singletonList(p));
-        assertTrue(service.canRead(admin, asset));
+        assertFalse(service.canRead(admin, asset));
     }
 
     @Test
@@ -114,8 +116,54 @@ public class FileAssetServiceTest {
     }
 
     @Test
-    public void proof_allowsNonImage() {
-        service.assertImageExtension("scan.pdf", "proof");
+    public void volunteer_imageOnly_rejectsPdfAndAcceptsImage() {
+        CustomException ex = assertThrows(CustomException.class,
+                () -> service.assertImageExtension("application.pdf", "volunteer"));
+        assertEquals("400", ex.getCode());
+        service.assertImageExtension("application.webp", "volunteer");
+    }
+
+    @Test
+    public void avatar_renamedArbitraryBytes_areRejected() {
+        CustomException ex = assertThrows(CustomException.class,
+                () -> service.validateImageContent("face.png", "avatar",
+                        new ByteArrayInputStream(new byte[]{1, 2, 3, 4})));
+        assertEquals("400", ex.getCode());
+    }
+
+    @Test
+    public void volunteer_validTinyPng_isDecoded() {
+        byte[] png = Base64.getDecoder().decode(
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
+        service.validateImageContent("portrait.png", "volunteer", new ByteArrayInputStream(png));
+    }
+
+    @Test
+    public void avatar_webpWithoutJavaReader_isRejectedClearly() {
+        CustomException ex = assertThrows(CustomException.class,
+                () -> service.validateImageContent("face.webp", "avatar",
+                        new ByteArrayInputStream(new byte[]{'R', 'I', 'F', 'F'})));
+        assertEquals("400", ex.getCode());
+        assertTrue(ex.getMsg().contains("webp"));
+    }
+
+    @Test
+    public void proofAndVisitRequireDecodedImages() {
+        assertThrows(CustomException.class,
+                () -> service.assertImageExtension("scan.pdf", "proof"));
+        assertThrows(CustomException.class,
+                () -> service.assertImageExtension("report.xlsx", "visit"));
+        assertThrows(CustomException.class,
+                () -> service.validateImageContent("scan.png", "proof",
+                        new ByteArrayInputStream("not an image".getBytes())));
+    }
+
+    @Test
+    public void helpUpload_rejectsAdvertisedImageWithInvalidContent() {
+        CustomException ex = assertThrows(CustomException.class,
+                () -> service.validateImageContent("rescue.png", "help",
+                        new ByteArrayInputStream("not an image".getBytes())));
+        assertEquals("400", ex.getCode());
     }
 
     @Test
@@ -149,4 +197,3 @@ public class FileAssetServiceTest {
         assertFalse(service.isImageName("noext"));
     }
 }
-

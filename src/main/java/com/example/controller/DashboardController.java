@@ -2,6 +2,8 @@ package com.example.controller;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.example.common.Result;
+import com.example.dto.HomeStatsDTO;
+import com.example.entity.Animal;
 import com.example.entity.Volunteer;
 import com.example.service.AdoptService;
 import com.example.service.AnimalService;
@@ -36,5 +38,22 @@ public class DashboardController {
         stats.put("adopts", adoptService.count());
         stats.put("users", userService.count());
         return Result.success(stats);
+    }
+
+    @GetMapping("/home-stats")
+    public Result<HomeStatsDTO> homeStats() {
+        long availableAnimals = animalService.count(
+                Wrappers.<Animal>lambdaQuery().eq(Animal::getTstate, 0));
+        long adoptedAnimals = animalService.count(
+                Wrappers.<Animal>lambdaQuery().eq(Animal::getTstate, 2));
+        Long approvedVolunteers = volunteerService.getObj(
+                Wrappers.<Volunteer>query()
+                        .select("COUNT(DISTINCT uid)")
+                        .eq("vstate", 1),
+                value -> value == null ? 0L : ((Number) value).longValue());
+        return Result.success(new HomeStatsDTO(
+                availableAnimals,
+                adoptedAnimals,
+                approvedVolunteers == null ? 0L : approvedVolunteers));
     }
 }

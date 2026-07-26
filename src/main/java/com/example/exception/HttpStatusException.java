@@ -33,6 +33,10 @@ public class HttpStatusException extends RuntimeException {
                 return 403;
             case "404":
                 return 404;
+            case "409":
+                return 409;
+            case "413":
+                return 413;
             case "429":
                 return 429;
             case "0":

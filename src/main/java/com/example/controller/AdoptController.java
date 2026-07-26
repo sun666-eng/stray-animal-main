@@ -10,6 +10,7 @@ import com.example.common.PermissionUtil;
 import com.example.common.Result;
 import com.example.entity.Adopt;
 import com.example.entity.User;
+import com.example.exception.CustomException;
 import com.example.service.AdoptService;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,6 +25,10 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/adopt")
 public class AdoptController {
+    private static final int MAX_PAGE_NUM = 10000;
+    private static final int MAX_PAGE_SIZE = 50;
+    private static final int MAX_QUERY_LENGTH = 100;
+    private static final int MAX_EXPORT_ROWS = 10000;
     @Resource
       private AdoptService adoptService;
 
@@ -47,16 +52,8 @@ public class AdoptController {
                 && (user == null || user.getId() == null || !user.getId().equals(uid))) {
             return Result.error("403", "只能修改自己的领养申请");
         }
-        QueryWrapper<Adopt> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("aid", aid);
-        queryWrapper.eq("uid", uid);
-        // 清除可能被客户端塞入的状态字段
-        if (adopt != null) {
-            adopt.setVstate(null);
-            adopt.setAid(aid);
-            adopt.setUid(uid);
-        }
-        return Result.success(adoptService.update(adopt, queryWrapper));
+        return Result.success(adoptService.updateAdopt(
+                aid, uid, adopt, user, PermissionUtil.hasFlag(user, "adopt")));
     }
 
     @AuditLog(module = "领养管理", action = "删除领养申请")
@@ -83,6 +80,21 @@ public class AdoptController {
         return Result.success(adoptService.list(queryWrapper));
     }
 
+    @GetMapping("/mine/{aid}")
+    public Result<Adopt> findMine(@PathVariable Long aid, HttpServletRequest request) {
+        User user = (User) request.getSession().getAttribute("user");
+        if (user == null || user.getId() == null) {
+            return Result.error("401", "未登录或登录已过期");
+        }
+        Adopt adopt = adoptService.getOne(Wrappers.<Adopt>lambdaQuery()
+                .eq(Adopt::getAid, aid)
+                .eq(Adopt::getUid, user.getId()), false);
+        if (adopt == null) {
+            return Result.error("404", "领养申请不存在");
+        }
+        return Result.success(adopt);
+    }
+
 
     @GetMapping
     public Result<List<Adopt>> findAll(HttpServletRequest request) {
@@ -90,7 +102,8 @@ public class AdoptController {
         if (!PermissionUtil.hasFlag(user, "adopt")) {
             return Result.error("403", "无权查看全部领养申请");
         }
-        return Result.success(adoptService.list());
+        return Result.success(adoptService.list(Wrappers.<Adopt>lambdaQuery()
+                .orderByDesc(Adopt::getAid).orderByDesc(Adopt::getUid).last("LIMIT " + MAX_EXPORT_ROWS)));
     }
 
     @GetMapping("/page")
@@ -102,7 +115,10 @@ public class AdoptController {
         if (!PermissionUtil.hasFlag(user, "adopt")) {
             return Result.error("403", "无权查看领养列表");
         }
-        return Result.success(adoptService.page(new Page<>(pageNum, pageSize), Wrappers.<Adopt>lambdaQuery().like(Adopt::getAname, name)));
+        String keyword = safeQuery(name);
+        return Result.success(adoptService.page(new Page<>(safePageNum(pageNum), safePageSize(pageSize)),
+                Wrappers.<Adopt>lambdaQuery().like(!keyword.isEmpty(), Adopt::getAname, keyword)
+                        .orderByDesc(Adopt::getAid).orderByDesc(Adopt::getUid)));
     }
     @GetMapping("/page1")
     public Result<IPage<Adopt>> findPage1(@RequestParam(required = false, defaultValue = "") String name,
@@ -113,20 +129,24 @@ public class AdoptController {
         if (!PermissionUtil.hasFlag(user, "adopt")) {
             return Result.error("403", "无权查看领养列表");
         }
-        return Result.success(adoptService.page(new Page<>(pageNum, pageSize), Wrappers.<Adopt>lambdaQuery().like(Adopt::getUname, name)));
+        String keyword = safeQuery(name);
+        return Result.success(adoptService.page(new Page<>(safePageNum(pageNum), safePageSize(pageSize)),
+                Wrappers.<Adopt>lambdaQuery().like(!keyword.isEmpty(), Adopt::getUname, keyword)
+                        .orderByDesc(Adopt::getAid).orderByDesc(Adopt::getUid)));
     }
     @GetMapping("/page2")
     public Result<IPage<Adopt>> findPage2(@RequestParam(required = false, defaultValue = "") String name,
                                           @RequestParam(required = false, defaultValue = "1") Integer pageNum,
                                           @RequestParam(required = false, defaultValue = "10") Integer pageSize,
-                                          @RequestParam Long uid,
+                                           @RequestParam(required = false) Long uid,
                                           HttpServletRequest request) {
         User user = (User) request.getSession().getAttribute("user");
-        if (!PermissionUtil.hasFlag(user, "adopt") && (user == null || user.getId() == null || !user.getId().equals(uid))) {
-            return Result.error("403", "只能查看自己的领养申请");
-        }
-
-        return Result.success(adoptService.page(new Page<>(pageNum, pageSize), Wrappers.<Adopt>lambdaQuery().like(Adopt::getAid, name).eq(Adopt::getUid,uid)));
+        if (user == null || user.getId() == null) return Result.error("401", "未登录或登录已过期");
+        Long targetUid = PermissionUtil.hasFlag(user, "adopt") && uid != null ? uid : user.getId();
+        String keyword = safeQuery(name);
+        return Result.success(adoptService.page(new Page<>(safePageNum(pageNum), safePageSize(pageSize)),
+                Wrappers.<Adopt>lambdaQuery().like(!keyword.isEmpty(), Adopt::getAid, keyword)
+                        .eq(Adopt::getUid, targetUid).orderByDesc(Adopt::getAid)));
     }
 
     @GetMapping("/export")
@@ -138,7 +158,10 @@ public class AdoptController {
             response.getWriter().write("{\"code\":\"403\",\"msg\":\"无权导出领养申请\"}");
             return;
         }
-        ExcelExportUtil.export(response, "领养申请", adoptService.list(), adopt -> {
+        List<Adopt> rows = adoptService.list(Wrappers.<Adopt>lambdaQuery()
+                .orderByDesc(Adopt::getAid).orderByDesc(Adopt::getUid).last("LIMIT " + (MAX_EXPORT_ROWS + 1)));
+        if (rows.size() > MAX_EXPORT_ROWS) throw new CustomException("413", "导出记录超过上限" + MAX_EXPORT_ROWS);
+        ExcelExportUtil.export(response, "领养申请", rows, adopt -> {
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("动物ID", adopt.getAid());
             row.put("用户ID", adopt.getUid());
@@ -153,5 +176,13 @@ public class AdoptController {
             row.put("审核状态", adopt.getVstate());
             return row;
         });
+    }
+
+    private int safePageNum(Integer value) { return value == null || value < 1 ? 1 : Math.min(value, MAX_PAGE_NUM); }
+    private int safePageSize(Integer value) { return value == null || value < 1 ? 10 : Math.min(value, MAX_PAGE_SIZE); }
+    private String safeQuery(String value) {
+        String normalized = value == null ? "" : value.trim();
+        if (normalized.length() > MAX_QUERY_LENGTH) throw new CustomException("400", "查询关键词不能超过100个字符");
+        return normalized;
     }
 }

@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS t_file_asset (
   id BIGINT NOT NULL AUTO_INCREMENT,
-  flag VARCHAR(64) NOT NULL COMMENT '对外文件标识',
+  flag VARCHAR(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '对外文件标识',
   stored_name VARCHAR(512) NOT NULL COMMENT '磁盘文件名',
   original_name VARCHAR(512) DEFAULT NULL,
   owner_id BIGINT DEFAULT NULL COMMENT '上传用户ID',
@@ -19,5 +19,6 @@ CREATE TABLE IF NOT EXISTS t_file_asset (
   PRIMARY KEY (id),
   UNIQUE KEY uk_file_flag (flag),
   KEY idx_file_owner (owner_id),
-  KEY idx_file_purpose (purpose)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  KEY idx_file_purpose (purpose),
+  KEY idx_file_business (business_type, business_id, deleted)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

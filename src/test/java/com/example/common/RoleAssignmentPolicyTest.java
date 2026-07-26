@@ -91,6 +91,41 @@ public class RoleAssignmentPolicyTest {
                 () -> policy.resolveRolesForWrite(actor, Collections.singletonList(reqSuper), false));
     }
 
+    @Test
+    public void explicitEmptyRoleList_isRejectedForUpdate() {
+        CustomException ex = assertThrows(CustomException.class,
+                () -> policy.resolveRolesForWrite(superAdmin(), Collections.emptyList(), false));
+
+        assertEquals("400", ex.getCode());
+    }
+
+    @Test
+    public void derivedVolunteerRole_cannotBeManuallyGranted() {
+        Role requested = new Role();
+        requested.setId(RoleAssignmentPolicy.DERIVED_VOLUNTEER_ROLE_ID);
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> policy.resolveRolesForWrite(superAdmin(),
+                        Collections.singletonList(requested), false));
+
+        assertEquals("400", ex.getCode());
+    }
+
+    @Test
+    public void superAdminUser_cannotBeDemotedOrDeletedRegardlessOfCount() {
+        User target = superAdmin();
+        target.setId(20L);
+        when(userService.getById(20L)).thenReturn(target);
+
+        CustomException demote = assertThrows(CustomException.class,
+                () -> policy.assertCanRemoveOrDemoteSuperAdmin(20L, Collections.emptyList()));
+        CustomException delete = assertThrows(CustomException.class,
+                () -> policy.assertCanDeleteUser(superAdmin(), 20L));
+
+        assertEquals("403", demote.getCode());
+        assertEquals("403", delete.getCode());
+    }
+
     private static User userWithFlags(String... flags) {
         User u = new User();
         u.setId(10L);

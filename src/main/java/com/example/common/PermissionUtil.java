@@ -1,7 +1,6 @@
 package com.example.common;
 
 import com.example.entity.Permission;
-import com.example.entity.Role;
 import com.example.entity.User;
 
 import java.util.Arrays;
@@ -33,42 +32,6 @@ public class PermissionUtil {
                     Object f = ((Map<?, ?>) item).get("flag");
                     if (flag.equals(f)) {
                         return true;
-                    }
-                }
-            }
-        }
-        if (user.getRole() != null) {
-            for (Object roleItem : user.getRole()) {
-                if (roleItem instanceof Role) {
-                    Role role = (Role) roleItem;
-                    if (role.getPermission() == null) continue;
-                    for (Object perm : role.getPermission()) {
-                        if (perm instanceof Permission) {
-                            if (flag.equals(((Permission) perm).getFlag())) {
-                                return true;
-                            }
-                        } else if (perm instanceof Map) {
-                            Object f = ((Map<?, ?>) perm).get("flag");
-                            if (flag.equals(f)) {
-                                return true;
-                            }
-                        }
-                    }
-                } else if (roleItem instanceof Map) {
-                    Object perms = ((Map<?, ?>) roleItem).get("permission");
-                    if (perms instanceof Iterable) {
-                        for (Object perm : (Iterable<?>) perms) {
-                            if (perm instanceof Permission) {
-                                if (flag.equals(((Permission) perm).getFlag())) {
-                                    return true;
-                                }
-                            } else if (perm instanceof Map) {
-                                Object f = ((Map<?, ?>) perm).get("flag");
-                                if (flag.equals(f)) {
-                                    return true;
-                                }
-                            }
-                        }
                     }
                 }
             }

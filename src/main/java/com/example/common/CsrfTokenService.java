@@ -41,11 +41,18 @@ public class CsrfTokenService {
         if (expected == null || expected.isEmpty()) {
             return false;
         }
+        // 仅接受 Header，避免 token 进入 URL/Referer/访问日志
         String provided = request.getHeader(HEADER_NAME);
         if (provided == null || provided.isEmpty()) {
-            provided = request.getParameter(PARAM_NAME);
+            // 兼容标准表单 POST body 参数（非 query string）
+            String contentType = request.getContentType();
+            if (contentType != null
+                    && contentType.toLowerCase().contains("application/x-www-form-urlencoded")
+                    && "POST".equalsIgnoreCase(request.getMethod())) {
+                provided = request.getParameter(PARAM_NAME);
+            }
         }
-        return expected.equals(provided);
+        return expected != null && expected.equals(provided);
     }
 
     public void rotate(HttpServletRequest request) {
