@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="提交正式动物救助请求，并加入已认证用户的全局救助社区聊天室">
-  <title>发起救助 | 归途计划</title>
+  <title>发起救助 · 归途计划</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
   <link rel="stylesheet" href="../../css/product-ui.css?v=20260726">
 </head>
 <body>
@@ -12,7 +13,7 @@
 <div id="app" v-cloak @keyup.esc="closeMenus">
   <header class="ui-header">
     <div class="ui-header-inner">
-      <a class="ui-brand" href="./index.html"><span class="ui-brand-mark" aria-hidden="true">GT</span><span class="ui-brand-copy"><strong>归途计划</strong><small>PAWS ON THE WAY HOME</small></span></a>
+      <a class="ui-brand" href="./index.html"><span class="ui-brand-mark" aria-hidden="true">♡</span><span class="ui-brand-copy"><strong>归途计划</strong><small>PAWS ON THE WAY HOME</small></span></a>
       <nav class="ui-nav" aria-label="主导航"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a href="./notice_list.html">救助动态</a><a class="is-active" href="./rescue_apply.html" aria-current="page">发起救助</a><a href="./account_public.html">透明公示</a></nav>
       <div class="ui-header-actions">
         <button class="ui-icon-button ui-mobile-toggle" type="button" aria-controls="mobileNav" :aria-expanded="String(mobileOpen)" aria-label="打开或关闭导航" @click="mobileOpen=!mobileOpen"><span aria-hidden="true">{{ mobileOpen ? '关闭' : '菜单' }}</span></button>
@@ -47,7 +48,7 @@
       </section>
 
       <section class="ui-panel ui-rescue-chat" aria-labelledby="communityTitle">
-        <div class="ui-rescue-chat-head"><div><h2 id="communityTitle">已认证全局救助社区聊天室</h2><p>所有已登录用户共享，消息会持久保存；这不是私人会话。</p></div><span class="ui-connection is-connected">定时更新</span></div>
+        <div class="ui-rescue-chat-head"><div><h2 id="communityTitle">已认证全局救助社区聊天室</h2><p>所有已登录用户共享，消息会持久保存；这不是私人会话。</p></div><span class="ui-connection" :class="connectionClass" aria-live="polite">{{ connectionText }}</span></div>
         <div class="ui-chat-notice" role="note">请勿发布不必要的个人信息。正式救助、位置和联系电话应提交到左侧表单，由工单流程处理。</div>
         <div ref="chatBox" class="ui-chat-messages" aria-live="polite" aria-relevant="additions text">
           <div v-if="historyLoading" class="ui-chat-empty" role="status">正在读取最近的社区消息...</div>
@@ -97,6 +98,7 @@
           formFeedback: '',
           messages: [],
           historyLoading: true,
+          connectionState: 'connecting',
           historyRequestActive: false,
           historyError: '',
           chatText: '',
@@ -104,6 +106,14 @@
           chatError: ''
         },
         computed: {
+          connectionClass: function () {
+            return this.connectionState === 'connected' ? 'is-connected'
+                 : this.connectionState === 'error' ? 'is-error' : 'is-connecting';
+          },
+          connectionText: function () {
+            return this.connectionState === 'connected' ? '每 10 秒更新'
+                 : this.connectionState === 'error' ? '连接异常' : '更新中…';
+          },
           userInitial: function () { return this.user.username ? this.user.username.slice(0, 1).toUpperCase() : 'U'; }
         },
         created: function () { this.startPolling(); },
@@ -235,7 +245,8 @@
               if (generation !== pollingGeneration) return;
               if (!res || res.code !== '0' || !Array.isArray(res.data) || res.data.length > 500) { page.historyError = (res && res.msg) || '社区消息返回格式无效。'; return; }
               page.mergeMessages(res.data);
-            }).fail(function (xhr, status) { if (generation === pollingGeneration && status !== 'abort') page.historyError = (xhr.responseJSON && xhr.responseJSON.msg) || '最近社区消息暂时无法读取。'; }).always(function () { if (generation !== pollingGeneration) return; historyRequest = null; page.historyRequestActive = false; page.historyLoading = false; page.schedulePoll(); });
+              page.connectionState = 'connected';
+            }).fail(function (xhr, status) { if (generation === pollingGeneration && status !== 'abort') page.historyError = (xhr.responseJSON && xhr.responseJSON.msg) || '最近社区消息暂时无法读取。'; page.connectionState = 'error'; }).always(function () { if (generation !== pollingGeneration) return; historyRequest = null; page.historyRequestActive = false; page.historyLoading = false; page.schedulePoll(); });
           },
           sendChat: function () {
             if (this.chatSending || !this.chatText) return;

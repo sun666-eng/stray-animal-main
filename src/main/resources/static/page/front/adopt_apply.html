@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="提交流浪动物领养申请">
     <title>提交领养申请 · 归途计划</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
     <link rel="stylesheet" href="../../css/product-ui.css?v=20260726">
 </head>
 <body>
@@ -47,7 +48,7 @@
     </main>
     <footer class="ui-site-footer"><div class="ui-container ui-footer-inner"><div class="ui-footer-copy"><strong>归途计划</strong><span>© 2026 · 让每一次善意都有回音</span></div><nav class="ui-footer-nav" aria-label="页脚导航"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a href="./notice_list.html">救助动态</a><a href="./rescue_apply.html">发起救助</a><a href="./account_public.html">透明公示</a></nav></div></footer>
 </div>
-<script src="../../js/jquery.min.js"></script><script src="../../js/vue.min.js"></script><script src="../../js/auth-session.js?v=20260726"></script>
+<script src="../../js/jquery.min.js"></script><script src="../../js/vue.min.js"></script><script src="../../js/auth-session.js?v=20260726"></script><script src="../../js/status-text.js?v=20260726"></script>
 <script>
 AuthSession.bootstrap({requireAuth:true,allowCachedOnNetworkError:false,onDone:function(ok,user){if(!ok||!user)return;document.getElementById('authWait').hidden=true;new Vue({
   el:'#app',
@@ -58,7 +59,7 @@ AuthSession.bootstrap({requireAuth:true,allowCachedOnNetworkError:false,onDone:f
     loadAnimal(){const id=new URLSearchParams(location.search).get('animalId');if(!id){this.loading=false;this.pageError='缺少动物编号，请从动物详情页重新进入。';return;}$.ajax({url:'/api/animal/'+encodeURIComponent(id),type:'GET'}).done(res=>{if(res&&res.code==='0'&&res.data)this.animal=res.data;else this.pageError=(res&&res.msg)||'动物不存在。';}).fail(()=>{this.pageError='动物信息读取失败，请稍后重试。';}).always(()=>{this.loading=false;});},
     validate(){if(![0,1].includes(Number(this.animal.tstate)))return '该动物当前不可申请';if(!this.form.age||Number(this.form.age)<18||Number(this.form.age)>100)return '申请人年龄需在 18–100 岁之间';if(!this.form.gender)return '请选择性别';if(!/^1\d{10}$/.test(this.form.tel))return '请输入正确的 11 位手机号';if(!this.form.wechat)return '请输入微信号';if(!this.form.occupation)return '请输入职业';if(this.form.maritalstatus===null||this.form.fixresident===null||this.form.income===null||this.form.experience===null||this.form.familyagree===null)return '请完成所有选择项';if(this.form.petnum===null||Number(this.form.petnum)<0)return '宠物数量不能小于 0';if(!this.form.location)return '请输入家庭住址';return '';},
     submit(){if(this.submitting)return;this.formError=this.validate();if(this.formError)return;this.submitting=true;this.liveMessage='正在提交领养申请';const payload={aid:Number(this.animal.id),gender:this.form.gender,age:Number(this.form.age),maritalstatus:Number(this.form.maritalstatus),occupation:this.form.occupation,tel:String(this.form.tel),location:this.form.location,fixresident:Number(this.form.fixresident),income:Number(this.form.income),experience:Number(this.form.experience),petnum:Number(this.form.petnum),familyagree:Number(this.form.familyagree),wechat:this.form.wechat};$.ajax({url:'/api/adopt',type:'POST',contentType:'application/json',data:JSON.stringify(payload)}).done(res=>{if(res&&res.code==='0'&&res.data===true){this.liveMessage='申请提交成功';location.replace('./my_adopt.html');return;}this.formError=(res&&res.msg)||'申请未提交，请稍后重试。';this.liveMessage=this.formError;}).fail(xhr=>{this.formError=(xhr.responseJSON&&xhr.responseJSON.msg)||'申请未提交，请检查网络后重试。';this.liveMessage=this.formError;}).always(()=>{this.submitting=false;});},
-    stateText(value){return Number(value)===0?'可申请':Number(value)===1?'已有待审申请':'已领养';},
+    stateText(value){return StatusText.animal(value);},
     imageUrl(flag){return flag?'/api/files/'+encodeURIComponent(flag):'/prototype-assets/editorial-01.svg';},
     imageFallback(event){event.target.src='/prototype-assets/editorial-01.svg';}
   }

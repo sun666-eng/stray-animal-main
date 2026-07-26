@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="了解待领养动物的详细信息">
     <title>动物详情 · 归途计划</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
     <link rel="stylesheet" href="../../css/product-ui.css?v=20260726">
 </head>
 <body>
@@ -67,7 +68,7 @@
 
 <script src="../../js/jquery.min.js"></script>
 <script src="../../js/vue.min.js"></script>
-<script src="../../js/auth-session.js?v=20260726"></script>
+<script src="../../js/auth-session.js?v=20260726"></script><script src="../../js/status-text.js?v=20260726"></script>
 <script>
 new Vue({
   el: '#app',
@@ -101,7 +102,7 @@ new Vue({
         .fail(() => { this.error = '网络连接异常，请稍后重试。'; })
         .always(() => { this.loading = false; });
     },
-    formatState(state) { const value = Number(state); return value === 0 ? '等待领养' : value === 1 ? '申请沟通中' : value === 2 ? '已找到新家' : '状态待确认'; },
+    formatState(state) { return StatusText.animal(state); },
     formatAge(value) {
       if (!value) return '年龄未知';
       const birth = new Date(value);

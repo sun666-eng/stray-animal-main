@@ -6,7 +6,8 @@
       name="viewport"
       content="width=device-width,initial-scale=1,viewport-fit=cover"
     />
-    <title>领养管理 | 流浪动物救助</title>
+    <title>领养管理 · 归途计划管理</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
     <link rel="stylesheet" href="../../css/product-ui.css?v=20260726" />
     <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260726" />
   </head>
@@ -18,9 +19,9 @@
       <header class="ui-header admin-header">
         <div class="ui-header-inner">
           <a class="ui-brand" href="/page/end/index.html"
-            ><span class="ui-brand-mark" aria-hidden="true">GT</span
+            ><span class="ui-brand-mark" aria-hidden="true">爪</span
             ><span class="ui-brand-copy"
-              ><strong>流浪动物救助</strong
+              ><strong>归途计划</strong
               ><small>RESCUE WORKSPACE</small></span
             ><span class="admin-brand-note">管理工作台</span></a
           >
@@ -560,7 +561,7 @@
       </div>
     </div>
     <script src="../../js/jquery.min.js"></script>
-    <script src="../../js/auth-session.js?v=20260726"></script>
+    <script src="../../js/auth-session.js?v=20260726"></script><script src="../../js/status-text.js?v=20260726"></script>
     <script src="../../js/admin-auth.js?v=20260726"></script>
     <script src="../../js/vue.min.js"></script>
     <script>
@@ -638,11 +639,8 @@
                   else this.detailItem = null;
                 },
                 stateText: function (v) {
-                  return (
-                    { 0: "待审核", 1: "已通过", 2: "已驳回", 3: "其他状态" }[
-                      Number(v)
-                    ] || "状态未知"
-                  );
+                  // 状态词统一走 StatusText（此前用户端「未通过」/管理端「已驳回」两套并存）
+                  return StatusText.adopt(v);
                 },
                 badgeClass: function (v) {
                   return Number(v) === 1

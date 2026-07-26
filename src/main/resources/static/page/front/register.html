@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="注册归途计划流浪动物救助平台账户">
     <title>创建账户 · 归途计划</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
     <link rel="stylesheet" href="../../css/product-ui.css?v=20260726">
 </head>
 <body>
@@ -49,7 +50,7 @@
             </div>
             <label class="ui-checkbox"><input v-model="accepted" type="checkbox"><span>我已阅读并同意平台服务规则与隐私政策，理解联系方式仅用于救助和申请沟通。</span></label>
             <div v-if="formError" class="ui-form-alert" role="alert">{{ formError }}</div>
-            <button class="ui-button is-primary ui-auth-submit" type="submit" :disabled="submitting">{{ submitting ? '正在创建账户…' : '创建账户并进入工作台' }}</button>
+            <button class="ui-button is-primary ui-auth-submit" type="submit" :disabled="submitting">{{ submitting ? '正在创建账户…' : '创建账户' }}</button>
             <div class="ui-auth-links"><span>已有账户？</span><a href="./login.html">直接登录</a></div>
             <div class="sr-only" aria-live="polite">{{ liveMessage }}</div>
         </form>

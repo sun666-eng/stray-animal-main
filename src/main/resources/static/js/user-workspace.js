@@ -14,7 +14,8 @@
   var USER_SERVICES = Object.freeze([
     Object.freeze({ id: 'browse', label: '浏览待领养动物', href: '/page/front/animal_browse.html', desc: '查看可领养档案并提交申请' }),
     Object.freeze({ id: 'my_adopt', label: '我的领养申请', href: '/page/front/my_adopt.html', desc: '查看审核进度与结果' }),
-    Object.freeze({ id: 'proof', label: '提交领养凭证', href: '/page/front/adopt_proof.html', desc: '通过申请后上传证明材料' }),
+    // 凭证必须挂在具体申请下：入口指向「我的领养」，从已通过的申请进入上传（直接进 adopt_proof 无 aid 是死路）
+    Object.freeze({ id: 'proof', label: '提交领养凭证', href: '/page/front/my_adopt.html', desc: '在已通过的申请中上传证明材料' }),
     Object.freeze({ id: 'visit', label: '我的回访记录', href: '/page/front/my_visit.html', desc: '查看工作人员回访' }),
     Object.freeze({ id: 'volunteer', label: '申请成为义工', href: '/page/front/volunteer_apply.html', desc: '提交义工申请' }),
     Object.freeze({ id: 'my_volunteer', label: '我的义工申请', href: '/page/front/my_volunteer.html', desc: '查看义工审核状态' }),

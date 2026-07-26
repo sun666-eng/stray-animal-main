@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>义工审核 | 流浪动物救助</title>
+  <title>义工审核 · 归途计划管理</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
   <link rel="stylesheet" href="../../css/product-ui.css?v=20260726">
   <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260726">
 </head>
@@ -12,7 +13,7 @@
 <div id="workspace" class="admin-shell" v-cloak @keyup.esc="closeTopLayer">
   <header class="ui-header admin-header">
     <div class="ui-header-inner">
-      <a class="ui-brand" href="/page/end/index.html" aria-label="返回管理工作台"><span class="ui-brand-mark" aria-hidden="true">爪</span><span class="ui-brand-copy"><strong>流浪动物救助</strong><small>RESCUE WORKSPACE</small></span><span class="admin-brand-note">管理工作台</span></a>
+      <a class="ui-brand" href="/page/end/index.html" aria-label="返回管理工作台"><span class="ui-brand-mark" aria-hidden="true">爪</span><span class="ui-brand-copy"><strong>归途计划</strong><small>RESCUE WORKSPACE</small></span><span class="admin-brand-note">管理工作台</span></a>
       <nav class="ui-nav admin-desktop-nav" aria-label="管理功能"><a href="/page/end/index.html">概览</a><a v-for="item in menuItems" :key="item.flag" :class="{'is-active':item.flag==='volunteer'}" :aria-current="item.flag==='volunteer'?'page':null" :href="item.href">{{ item.label }}</a></nav>
       <div class="ui-header-actions">
         <button class="ui-icon-button ui-mobile-toggle" type="button" aria-controls="adminMobileNav" :aria-expanded="String(mobileOpen)" aria-label="打开或关闭管理导航" @click="mobileOpen=!mobileOpen"><span aria-hidden="true">{{ mobileOpen ? '×' : '☰' }}</span></button>

@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>救助管理 | 流浪动物救助</title>
+  <title>救助管理 · 归途计划管理</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
   <link rel="stylesheet" href="../../css/product-ui.css?v=20260726">
   <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260726">
 </head>
@@ -11,7 +12,7 @@
 <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
 <div id="workspace" class="admin-shell" v-cloak @keyup.esc="closeTopLayer">
   <header class="ui-header admin-header"><div class="ui-header-inner">
-    <a class="ui-brand" href="/page/end/index.html" aria-label="返回管理工作台"><span class="ui-brand-mark" aria-hidden="true">GT</span><span class="ui-brand-copy"><strong>流浪动物救助</strong><small>RESCUE WORKSPACE</small></span><span class="admin-brand-note">管理工作台</span></a>
+    <a class="ui-brand" href="/page/end/index.html" aria-label="返回管理工作台"><span class="ui-brand-mark" aria-hidden="true">爪</span><span class="ui-brand-copy"><strong>归途计划</strong><small>RESCUE WORKSPACE</small></span><span class="admin-brand-note">管理工作台</span></a>
     <nav class="ui-nav admin-desktop-nav" aria-label="管理功能"><a href="/page/end/index.html">概览</a><a v-for="item in menuItems" :key="item.flag" :class="{'is-active':item.flag==='help'}" :aria-current="item.flag==='help'?'page':null" :href="item.href">{{ item.label }}</a></nav>
     <div class="ui-header-actions"><button class="ui-icon-button ui-mobile-toggle" type="button" aria-controls="adminMobileNav" :aria-expanded="String(mobileOpen)" aria-label="打开或关闭管理导航" @click="mobileOpen=!mobileOpen"><span aria-hidden="true">{{ mobileOpen ? '关闭' : '菜单' }}</span></button><div class="ui-account"><button class="ui-account-trigger admin-account-trigger" type="button" aria-controls="adminAccountMenu" :aria-expanded="String(accountOpen)" @click="accountOpen=!accountOpen"><img class="admin-account-photo" :src="avatarUrl(user.avatar)" alt="" @error="avatarFallback"><span class="ui-account-name">{{ user.username }}</span><span aria-hidden="true">更多</span></button><div id="adminAccountMenu" class="ui-account-menu admin-account-menu" :hidden="!accountOpen"><a href="/page/end/person.html">个人资料</a><a href="/page/front/rescue_apply.html">访问救助用户端</a><button class="is-danger" type="button" @click="logout">退出登录</button></div></div></div>
     <nav id="adminMobileNav" class="ui-mobile-nav admin-mobile-nav" :class="{'is-open':mobileOpen}" aria-label="移动端管理功能"><a href="/page/end/index.html">工作台概览</a><strong v-if="menuItems.length">管理功能</strong><a v-for="item in menuItems" :key="'mobile-'+item.flag" :href="item.href" :aria-current="item.flag==='help'?'page':null">{{ item.label }}</a><strong>常用入口</strong><a href="/page/end/person.html">个人资料</a><a href="/page/front/rescue_apply.html">访问救助用户端</a></nav>
@@ -37,7 +38,7 @@
       </section>
 
       <aside class="admin-panel admin-help-chat" aria-labelledby="adminCommunityTitle">
-        <div class="ui-rescue-chat-head"><div><h2 id="adminCommunityTitle">已认证全局救助社区聊天室</h2><p>所有已登录用户共享的公共房间，不是私人申请人会话。</p></div><span class="ui-connection is-connected">定时更新</span></div>
+        <div class="ui-rescue-chat-head"><div><h2 id="adminCommunityTitle">已认证全局救助社区聊天室</h2><p>所有已登录用户共享的公共房间，不是私人申请人会话。</p></div><span class="ui-connection" :class="connectionClass" aria-live="polite">{{ connectionText }}</span></div>
         <div class="ui-chat-notice" role="note">聊天消息通过 HTTP 保存；页面可见时每 10 秒读取数据库中的最近消息。</div>
         <div ref="chatBox" class="ui-chat-messages" aria-live="polite" aria-relevant="additions text">
           <div v-if="historyLoading" class="ui-chat-empty" role="status">正在读取最近的社区消息...</div>
@@ -97,6 +98,7 @@
           manageError: '',
           messages: [],
           historyLoading: true,
+          connectionState: 'connecting',
           historyRequestActive: false,
           historyError: '',
           chatText: '',
@@ -104,6 +106,14 @@
           chatError: ''
         },
         computed: {
+          connectionClass: function () {
+            return this.connectionState === 'connected' ? 'is-connected'
+                 : this.connectionState === 'error' ? 'is-error' : 'is-connecting';
+          },
+          connectionText: function () {
+            return this.connectionState === 'connected' ? '每 10 秒更新'
+                 : this.connectionState === 'error' ? '连接异常' : '更新中…';
+          },
           pages: function () { var result = []; var start = Math.max(1, this.pageNum - 2); var end = Math.min(this.totalPages, start + 4); start = Math.max(1, end - 4); for (var page = start; page <= end; page += 1) result.push(page); return result; }
         },
         created: function () { this.load(1); this.startPolling(); },
@@ -200,7 +210,8 @@
               if (generation !== pollingGeneration) return;
               if (!res || res.code !== '0' || !Array.isArray(res.data) || res.data.length > 500) { view.historyError = (res && res.msg) || '社区消息返回格式无效。'; return; }
               view.mergeMessages(res.data);
-            }).fail(function (xhr, status) { if (generation === pollingGeneration && status !== 'abort') view.historyError = (xhr.responseJSON && xhr.responseJSON.msg) || '最近社区消息暂时无法读取。'; }).always(function () { if (generation !== pollingGeneration) return; historyRequest = null; view.historyRequestActive = false; view.historyLoading = false; view.schedulePoll(); });
+              view.connectionState = 'connected';
+            }).fail(function (xhr, status) { if (generation === pollingGeneration && status !== 'abort') view.historyError = (xhr.responseJSON && xhr.responseJSON.msg) || '最近社区消息暂时无法读取。'; view.connectionState = 'error'; }).always(function () { if (generation !== pollingGeneration) return; historyRequest = null; view.historyRequestActive = false; view.historyLoading = false; view.schedulePoll(); });
           },
           sendChat: function () {
             if (this.chatSending || !this.chatText) return;
