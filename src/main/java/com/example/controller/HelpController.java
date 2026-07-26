@@ -12,6 +12,7 @@ import com.example.dto.ChatMessageRequest;
 import com.example.dto.HelpManageRequest;
 import com.example.entity.Help;
 import com.example.entity.User;
+import com.example.component.ChatMessagePublisher;
 import com.example.exception.CustomException;
 import com.example.service.HelpService;
 import org.springframework.web.bind.annotation.*;
@@ -31,6 +32,9 @@ public class HelpController {
 
     @Resource
     private HelpService helpService;
+
+    @Resource
+    private ChatMessagePublisher chatMessagePublisher;
 
     @AuditLog(module = "救助咨询", action = "提交救助请求")
     @PostMapping
@@ -157,7 +161,9 @@ public class HelpController {
     public Result<ChatMessageDTO> saveChatMessage(@Valid @RequestBody ChatMessageRequest message,
                                                    HttpServletRequest request) {
         User user = (User) request.getSession().getAttribute("user");
-        return Result.success(helpService.submitChatMessage(message.getText(), user));
+        ChatMessageDTO saved = helpService.submitChatMessage(message.getText(), user);
+        chatMessagePublisher.publish(saved);
+        return Result.success(saved);
     }
 
     @GetMapping("/chat/history")

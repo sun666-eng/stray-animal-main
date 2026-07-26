@@ -17,12 +17,18 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.websocket.*;
 import javax.websocket.server.PathParam;
+import javax.websocket.server.ServerEndpoint;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * 路径参数为一次性 ws-ticket（历史命名 username）。
+ * 容器按连接实例化本类，依赖通过 {@link #init()} 写入静态字段供各实例共享。
+ */
+@ServerEndpoint("/api/imserver/{username}")
 @Component
 public class WebSocketServer {
 
@@ -207,8 +213,11 @@ public class WebSocketServer {
 
     private static void sendMessage(String message, Session toSession) {
         try {
-            if (toSession.isOpen()) {
-                toSession.getBasicRemote().sendText(message);
+            // getBasicRemote 非线程安全，并发广播同一 Session 会抛 TEXT_FULL_WRITING 丢消息
+            synchronized (toSession) {
+                if (toSession.isOpen()) {
+                    toSession.getBasicRemote().sendText(message);
+                }
             }
         } catch (Exception e) {
             log.error("服务端发送消息给客户端失败", e);
