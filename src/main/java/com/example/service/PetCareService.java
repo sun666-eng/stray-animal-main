@@ -23,16 +23,21 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * AI 动物照顾助手（DELIVERY-PLAN.md §三）。
+ * AI 动物照顾助手（设计与原理详见根目录 AI-AGENT-GUIDE.md）。
  *
- * 两层架构：
- * 1) 内置知识库（默认）：关键词加权匹配，零外部依赖，离线可演示，内容可控；
- * 2) 可选 LLM 增强（app.ai.enabled=true）：OpenAI 兼容 /chat/completions
- *    （base-url/api-key/model 可配，兼容 DeepSeek/Moonshot 等），
- *    Java 17 内置 HttpClient，超时或任何失败自动降级回知识库，用户无感。
+ * <p>三种运行模式，按可用资源自动降级：
+ * <ol>
+ *   <li><b>agent 模式</b>（app.ai.enabled=true + 已配 base-url/api-key）：
+ *       真正的 agent 循环——模型可自主决定调用 {@link PetCareTools} 里的只读工具
+ *       查询当前用户的领养/回访/义工数据与动物档案，拿到结果后继续推理，
+ *       直到给出最终回答。支持多轮对话历史。</li>
+ *   <li><b>知识库模式</b>（未配 AI 或调用失败）：14 主题关键词加权匹配，
+ *       零外部依赖、离线可演示、内容完全可控。</li>
+ *   <li>两者之间自动衔接：agent 任一环节异常都静默降级到知识库，用户无感。</li>
+ * </ol>
  *
- * 边界：仅回答动物照顾话题（LLM 由系统提示词约束）；回答不构成兽医诊断
- * （页面与 LLM 提示词双重声明）；与业务数据完全解耦。
+ * <p>安全边界：工具全部只读且身份由服务端注入（模型无法指定查谁的数据，
+ * 见 PetCareTools 类注释）；话题由系统提示词限定；回答不构成兽医诊断。
  */
 @Slf4j
 @Service
@@ -57,6 +62,17 @@ public class PetCareService {
     @Value("${app.ai.timeout-ms:8000}")
     private long aiTimeoutMs;
 
+    /** agent 循环的最大工具调用轮次——防止模型陷入"反复查同一个工具"的死循环。 */
+    @Value("${app.ai.max-tool-rounds:3}")
+    private int maxToolRounds;
+
+    /** 携带的历史对话条数上限（user+assistant 合计），控制上下文体积与成本。 */
+    @Value("${app.ai.max-history:8}")
+    private int maxHistory;
+
+    @jakarta.annotation.Resource
+    private PetCareTools petCareTools;
+
     private final ConcurrentHashMap<Long, Deque<Long>> askTimestamps = new ConcurrentHashMap<>();
 
     /** 供前端快捷按钮使用的引导问题。 */
@@ -72,6 +88,16 @@ public class PetCareService {
     }
 
     public PetCareAnswer ask(Long userId, String rawQuestion) {
+        return ask(userId, rawQuestion, java.util.Collections.emptyList());
+    }
+
+    /**
+     * 回答一个问题。
+     *
+     * @param history 之前的对话（按时间正序，元素为 {role: user|assistant, text: ...}），
+     *                用于让追问（"那它多大能打疫苗"）能解析指代。仅在 agent 模式生效。
+     */
+    public PetCareAnswer ask(Long userId, String rawQuestion, List<ChatTurn> history) {
         if (userId == null) {
             throw new CustomException("401", "未登录或登录已过期");
         }
@@ -85,17 +111,23 @@ public class PetCareService {
         checkRateLimit(userId);
 
         KnowledgeEntry local = bestMatch(question);
-        if (aiEnabled && !aiBaseUrl.trim().isEmpty() && !aiApiKey.trim().isEmpty()) {
-            String aiAnswer = tryAskLlm(question);
-            if (aiAnswer != null && !aiAnswer.trim().isEmpty()) {
-                return new PetCareAnswer(aiAnswer.trim(), "ai", local == null ? "综合" : local.topic);
+        if (agentAvailable()) {
+            AgentResult agent = runAgentLoop(userId, question, history);
+            if (agent != null && agent.answer != null && !agent.answer.trim().isEmpty()) {
+                return new PetCareAnswer(agent.answer.trim(), "ai",
+                        local == null ? "综合" : local.topic, agent.toolsUsed);
             }
-            // LLM 失败静默降级到知识库
+            // agent 任一环节失败 → 静默降级到知识库
         }
         if (local != null) {
             return new PetCareAnswer(local.answer, "local", local.topic);
         }
         return new PetCareAnswer(fallbackAnswer(), "local", "综合");
+    }
+
+    private boolean agentAvailable() {
+        return aiEnabled && aiBaseUrl != null && !aiBaseUrl.trim().isEmpty()
+                && aiApiKey != null && !aiApiKey.trim().isEmpty();
     }
 
     // ==================== 内置知识库 ====================
@@ -209,18 +241,103 @@ public class PetCareService {
     private static final String SYSTEM_PROMPT =
             "你是流浪动物救助平台「归途计划」的动物照顾助手。只回答与猫、狗等伴侣动物的日常照顾、喂养、健康护理、"
                     + "行为习惯、领养适应相关的问题；与此无关的问题请礼貌说明只能解答动物照顾话题。"
+                    + "你可以调用工具查询当前登录用户自己的领养申请、回访记录、义工状态和动物档案——"
+                    + "当用户的问题涉及「我的动物」「我领养的」等具体情况时，应先查询再给出针对该动物"
+                    + "（品种、年龄、状态）的具体建议，而不是泛泛而谈。若工具返回 count 为 0，"
+                    + "说明用户还没有相关记录，据实说明并给出通用建议。"
                     + "回答用中文，简洁分点，控制在 300 字以内。涉及疾病症状时必须提醒「不能替代兽医诊断，异常请及时就医」。";
 
-    private String tryAskLlm(String question) {
+    /**
+     * ===== agent 循环（本类的核心）=====
+     *
+     * 一次 ask 可能触发多次 LLM 调用，这正是 agent 与"单轮补全"的分界：
+     *
+     * <pre>
+     *   messages = [system, ...history, user]
+     *   循环（至多 maxToolRounds 轮）：
+     *     (1) POST /chat/completions（带 tools 声明）
+     *     (2) 模型返回两种可能：
+     *         a. tool_calls 非空 → 它想查数据
+     *            → 服务端执行工具（身份注入、只读、鉴权）
+     *            → 把 assistant(tool_calls) 与每个 tool 结果 append 进 messages
+     *            → 回到 (1)，让模型带着数据继续推理
+     *         b. 返回 content → 这是最终回答，退出循环
+     *   超过轮次上限仍未收敛 → 返回 null，由调用方降级到知识库
+     * </pre>
+     *
+     * 关键点：<b>messages 是唯一的状态载体</b>。模型本身无记忆，
+     * 它每轮看到的是我们累积起来的完整对话（含它自己上一轮的工具调用和结果），
+     * "连续推理"的错觉就来自这个不断增长的数组。
+     */
+    private AgentResult runAgentLoop(Long userId, String question, List<ChatTurn> history) {
+        try {
+            JSONArray messages = new JSONArray();
+            messages.add(msg("system", SYSTEM_PROMPT));
+            appendHistory(messages, history);
+            messages.add(msg("user", question));
+
+            JSONArray toolSpecs = petCareTools.toolSpecs();
+            List<String> toolsUsed = new ArrayList<>();
+
+            for (int round = 0; round <= maxToolRounds; round++) {
+                // 最后一轮不再给工具，强制模型用已有信息作答（避免"想查但没机会"而空转）
+                boolean allowTools = round < maxToolRounds;
+                JSONObject choice = callLlm(messages, allowTools ? toolSpecs : null);
+                if (choice == null) {
+                    return null;
+                }
+                JSONObject message = choice.getJSONObject("message");
+                if (message == null) {
+                    return null;
+                }
+                JSONArray toolCalls = message.getJSONArray("tool_calls");
+
+                if (toolCalls == null || toolCalls.isEmpty()) {
+                    // 分支 b：模型给出最终回答
+                    String content = message.getStr("content");
+                    return content == null ? null : new AgentResult(content, toolsUsed);
+                }
+
+                // 分支 a：模型要调工具。先把它的决策原样放回 messages（协议要求）
+                messages.add(message);
+                for (int i = 0; i < toolCalls.size(); i++) {
+                    JSONObject call = toolCalls.getJSONObject(i);
+                    JSONObject fn = call.getJSONObject("function");
+                    String name = fn == null ? "" : fn.getStr("name");
+                    JSONObject args = parseArgs(fn == null ? null : fn.getStr("arguments"));
+
+                    // 身份从服务端注入：模型只说"查哪个工具"，查谁由我们决定
+                    String result = petCareTools.execute(userId, name, args);
+                    toolsUsed.add(name);
+                    log.debug("照顾助手 agent 调用工具 {}，返回 {} 字节", name, result.length());
+
+                    JSONObject toolMsg = new JSONObject();
+                    toolMsg.set("role", "tool");
+                    toolMsg.set("tool_call_id", call.getStr("id"));
+                    toolMsg.set("name", name);
+                    toolMsg.set("content", result);
+                    messages.add(toolMsg);
+                }
+                // 继续下一轮：模型这次能看到工具返回的真实数据
+            }
+            return null;
+        } catch (Exception e) {
+            log.warn("照顾助手 agent 循环失败，降级到知识库: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /** 单次 LLM 调用，返回 choices[0]；任何非 200/异常都返回 null 交由上层降级。 */
+    private JSONObject callLlm(JSONArray messages, JSONArray toolSpecs) {
         try {
             JSONObject payload = new JSONObject();
             payload.set("model", aiModel);
-            JSONArray messages = new JSONArray();
-            messages.add(new JSONObject().set("role", "system").set("content", SYSTEM_PROMPT));
-            messages.add(new JSONObject().set("role", "user").set("content", question));
             payload.set("messages", messages);
-            payload.set("max_tokens", 600);
-
+            payload.set("max_tokens", 700);
+            if (toolSpecs != null && !toolSpecs.isEmpty()) {
+                payload.set("tools", toolSpecs);
+                payload.set("tool_choice", "auto");
+            }
             String endpoint = aiBaseUrl.trim().replaceAll("/+$", "") + "/chat/completions";
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(endpoint))
@@ -232,22 +349,73 @@ public class PetCareService {
             HttpClient client = HttpClient.newBuilder()
                     .connectTimeout(Duration.ofMillis(Math.min(aiTimeoutMs, 5000)))
                     .build();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            HttpResponse<String> response = client.send(request,
+                    HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             if (response.statusCode() != 200) {
-                log.warn("AI 服务返回非 200：{}，降级到本地知识库", response.statusCode());
+                log.warn("AI 服务返回非 200：{}", response.statusCode());
                 return null;
             }
-            JSONObject body = JSONUtil.parseObj(response.body());
-            JSONArray choices = body.getJSONArray("choices");
-            if (choices == null || choices.isEmpty()) {
-                return null;
-            }
-            JSONObject message = choices.getJSONObject(0).getJSONObject("message");
-            return message == null ? null : message.getStr("content");
+            JSONArray choices = JSONUtil.parseObj(response.body()).getJSONArray("choices");
+            return choices == null || choices.isEmpty() ? null : choices.getJSONObject(0);
         } catch (Exception e) {
-            log.warn("AI 服务调用失败，降级到本地知识库: {}", e.getMessage());
+            log.warn("AI 服务调用失败: {}", e.getMessage());
             return null;
         }
+    }
+
+    private JSONObject msg(String role, String content) {
+        return new JSONObject().set("role", role).set("content", content);
+    }
+
+    /** 只取最近 maxHistory 条历史，且逐条限长——历史无限增长会推高成本并挤掉工具结果。 */
+    private void appendHistory(JSONArray messages, List<ChatTurn> history) {
+        if (history == null || history.isEmpty()) {
+            return;
+        }
+        int from = Math.max(0, history.size() - maxHistory);
+        for (int i = from; i < history.size(); i++) {
+            ChatTurn turn = history.get(i);
+            if (turn == null || turn.getText() == null || turn.getText().trim().isEmpty()) {
+                continue;
+            }
+            String role = "assistant".equals(turn.getRole()) ? "assistant" : "user";
+            String text = turn.getText().length() > 800 ? turn.getText().substring(0, 800) : turn.getText();
+            messages.add(msg(role, text));
+        }
+    }
+
+    private JSONObject parseArgs(String raw) {
+        if (raw == null || raw.trim().isEmpty()) {
+            return new JSONObject();
+        }
+        try {
+            return JSONUtil.parseObj(raw);
+        } catch (Exception e) {
+            // 模型偶尔生成不合法 JSON；返回空参数让工具层给出 bad_argument，模型可自行重试
+            return new JSONObject();
+        }
+    }
+
+    /** agent 循环的内部结果：最终回答 + 本次实际调用过的工具名（前端展示与可观测性）。 */
+    private static final class AgentResult {
+        final String answer;
+        final List<String> toolsUsed;
+
+        AgentResult(String answer, List<String> toolsUsed) {
+            this.answer = answer;
+            this.toolsUsed = toolsUsed;
+        }
+    }
+
+    /** 前端传来的一轮历史对话。 */
+    public static final class ChatTurn {
+        private String role;
+        private String text;
+
+        public String getRole() { return role; }
+        public void setRole(String role) { this.role = role; }
+        public String getText() { return text; }
+        public void setText(String text) { this.text = text; }
     }
 
     // ==================== 限流 ====================
@@ -279,15 +447,23 @@ public class PetCareService {
         private final String answer;
         private final String source;
         private final String topic;
+        private final List<String> toolsUsed;
 
         public PetCareAnswer(String answer, String source, String topic) {
+            this(answer, source, topic, java.util.Collections.emptyList());
+        }
+
+        public PetCareAnswer(String answer, String source, String topic, List<String> toolsUsed) {
             this.answer = answer;
             this.source = source;
             this.topic = topic;
+            this.toolsUsed = toolsUsed == null ? java.util.Collections.emptyList() : toolsUsed;
         }
 
         public String getAnswer() { return answer; }
         public String getSource() { return source; }
         public String getTopic() { return topic; }
+        /** 本次回答实际查询过的工具名，前端可展示「已查询你的领养记录」增强可信度。 */
+        public List<String> getToolsUsed() { return toolsUsed; }
     }
 }

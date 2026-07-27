@@ -146,4 +146,5 @@ app:
 2. Excel 导入流式改造(crash-hardening P1.4);
 3. 前端 P3 结构性去重(front 头部共享注入/admin mixin/内联脚本外置,见 frontend-optimization-plan §P3);
 4. 角色规范化 Phase 2(user_role,触发条件见 role_permission Phase 1 提交说明);
-5. AI 助手后续可选:对话历史持久化、管理端知识库编辑界面、流式输出。
+5. AI 助手已升级为**真 agent**(工具调用 + 多轮循环),原理与扩展见根目录 AI-AGENT-GUIDE.md;
+   后续可选:对话历史持久化、流式输出、更多只读工具。

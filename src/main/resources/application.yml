@@ -71,6 +71,10 @@ app:
     api-key: ${AI_API_KEY:}
     model: ${AI_MODEL:deepseek-chat}
     timeout-ms: ${AI_TIMEOUT_MS:8000}
+    # agent 循环上限：一次问答最多几轮工具调用（防模型死循环，每轮都是真实 API 成本）
+    max-tool-rounds: ${AI_MAX_TOOL_ROUNDS:3}
+    # 携带的历史对话条数（多轮追问的上下文，越多成本越高）
+    max-history: ${AI_MAX_HISTORY:8}
   auth:
     # 鉴权用户快照缓存 TTL（毫秒）：消除每请求 getById+fillPermissions 的 N+1。
     # 写路径均有主动失效（AuthUserCache）；设为 0 可完全停用缓存回退每请求查库。

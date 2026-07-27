@@ -24,7 +24,7 @@
                 <div v-for="(msg, idx) in messages" :key="idx" class="ui-chat-message" :class="{'is-self': msg.role==='user'}">
                     <span class="ui-chat-avatar">{{ msg.role==='user' ? userInitial : '♡' }}</span>
                     <div>
-                        <div class="ui-chat-meta"><span>{{ msg.role==='user' ? (user.username||'我') : '照顾助手' }}</span><span v-if="msg.topic">{{ msg.topic }}</span></div>
+                        <div class="ui-chat-meta"><span>{{ msg.role==='user' ? (user.username||'我') : '照顾助手' }}</span><span v-if="msg.topic">{{ msg.topic }}</span><span v-if="msg.tools">{{ msg.tools }}</span></div>
                         <div class="ui-chat-bubble" style="white-space:pre-wrap">{{ msg.text }}</div>
                     </div>
                 </div>
@@ -38,7 +38,7 @@
             <form class="ui-chat-compose" @submit.prevent="submit">
                 <label for="petCareInput">输入你的问题</label>
                 <div class="ui-chat-compose-row">
-                    <textarea id="petCareInput" v-model.trim="draft" class="ui-form-textarea" maxlength="500" rows="2" placeholder="例如：刚领养的猫一直躲着不出来怎么办？" :disabled="asking"></textarea>
+                    <textarea id="petCareInput" v-model.trim="draft" class="ui-form-textarea" maxlength="500" rows="2" placeholder="例如：我领养的那只猫现在该注意什么？" :disabled="asking"></textarea>
                     <button class="ui-button is-primary" type="submit" :disabled="asking||!draft">{{ asking ? '请稍候' : '提问' }}</button>
                 </div>
                 <p class="ui-chat-feedback" :class="{'is-error':error}" aria-live="polite">{{ error || '每分钟最多提问 10 次 · 回答不构成医疗建议' }}</p>
@@ -70,6 +70,19 @@ AuthSession.bootstrap({ requireAuth: true, allowCachedOnNetworkError: false, onD
           if (res && res.code === '0' && Array.isArray(res.data)) vm.quickQuestions = res.data;
         });
       },
+      // 把工具名翻译成用户能懂的说明，展示 agent 实际查了什么（可信度 + 可观测性）
+      toolLabels: function (names) {
+        if (!Array.isArray(names) || names.length === 0) return '';
+        var map = {
+          get_my_adoptions: '已查询你的领养申请',
+          get_animal_profile: '已读取动物档案',
+          get_my_visits: '已查询你的回访记录',
+          get_my_volunteer_status: '已查询你的义工申请'
+        };
+        var seen = [];
+        names.forEach(function (n) { var t = map[n]; if (t && seen.indexOf(t) < 0) seen.push(t); });
+        return seen.join(' · ');
+      },
       askQuick: function (q) { this.draft = q; this.submit(); },
       submit: function () {
         var vm = this;
@@ -80,10 +93,11 @@ AuthSession.bootstrap({ requireAuth: true, allowCachedOnNetworkError: false, onD
         vm.error = '';
         vm.asking = true;
         vm.scrollDown();
-        $.ajax({ url: '/api/petcare/ask', type: 'POST', contentType: 'application/json', data: JSON.stringify({ question: question }) })
+        var history = vm.messages.slice(0, -1).slice(-8).map(function (m) { return { role: m.role, text: m.text }; });
+        $.ajax({ url: '/api/petcare/ask', type: 'POST', contentType: 'application/json', data: JSON.stringify({ question: question, history: history }) })
           .done(function (res) {
             if (res && res.code === '0' && res.data && res.data.answer) {
-              vm.messages.push({ role: 'assistant', text: res.data.answer, topic: res.data.topic });
+              vm.messages.push({ role: 'assistant', text: res.data.answer, topic: res.data.topic, tools: vm.toolLabels(res.data.toolsUsed) });
             } else {
               vm.error = (res && res.msg) || '回答生成失败，请稍后重试。';
             }

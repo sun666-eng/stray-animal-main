@@ -42,7 +42,8 @@ public class PetCareController {
         if (user == null || user.getId() == null) {
             throw new CustomException("401", "未登录或登录已过期");
         }
-        return Result.success(petCareService.ask(user.getId(), body.getQuestion()));
+        // userId 来自 Session，绝不接受客户端提供——agent 的工具层据此隔离数据访问
+        return Result.success(petCareService.ask(user.getId(), body.getQuestion(), body.getHistory()));
     }
 
     public static class AskRequest {
@@ -50,7 +51,16 @@ public class PetCareController {
         @Size(max = 500, message = "问题不能超过 500 字")
         private String question;
 
+        /**
+         * 之前的对话（按时间正序）。由前端携带而非服务端存储：
+         * 保持无状态、不引入会话表；服务端只取最近若干条并逐条限长（见 PetCareService）。
+         */
+        @Size(max = 20, message = "历史对话过多")
+        private List<PetCareService.ChatTurn> history;
+
         public String getQuestion() { return question; }
         public void setQuestion(String question) { this.question = question; }
+        public List<PetCareService.ChatTurn> getHistory() { return history; }
+        public void setHistory(List<PetCareService.ChatTurn> history) { this.history = history; }
     }
 }
