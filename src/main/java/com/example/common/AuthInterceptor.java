@@ -368,6 +368,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             // 归属校验在 VisitController；登录用户即可查自己的回访
             return true;
         }
+        if (path.startsWith("/api/visit-plans/mine")) return true;
         if (path.matches("^/api/files/staged/[a-zA-Z0-9-]{1,64}$")
                 && "DELETE".equalsIgnoreCase(method)) {
             return true;

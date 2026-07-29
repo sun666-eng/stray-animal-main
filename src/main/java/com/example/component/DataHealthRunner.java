@@ -35,7 +35,7 @@ public class DataHealthRunner implements ApplicationRunner {
             Integer available = queryCount("SELECT COUNT(*) FROM t_animal WHERE tstate = 0");
             Integer applyingOrphan = queryCount(
                     "SELECT COUNT(*) FROM t_animal a WHERE a.tstate = 1 AND NOT EXISTS ("
-                            + "SELECT 1 FROM t_adopt d WHERE d.aid = a.id AND d.vstate IN (0,1))");
+                            + "SELECT 1 FROM t_adopt d WHERE d.aid = a.id AND d.vstate IN (0,1,3))");
             Integer pendingWhenApproved = queryCount(
                     "SELECT COUNT(*) FROM t_adopt d WHERE d.vstate = 0 AND EXISTS ("
                             + "SELECT 1 FROM t_adopt x WHERE x.aid = d.aid AND x.vstate = 1)");
@@ -46,20 +46,17 @@ public class DataHealthRunner implements ApplicationRunner {
             Integer mismatch = queryCount(
                     "SELECT COUNT(*) FROM t_animal a WHERE a.tstate <> ("
                             + "CASE "
-                            + "WHEN EXISTS (SELECT 1 FROM t_adopt d WHERE d.aid = a.id AND d.vstate = 1) THEN 2 "
-                            + "WHEN EXISTS (SELECT 1 FROM t_adopt d WHERE d.aid = a.id AND d.vstate = 0) THEN 1 "
+                            + "WHEN EXISTS (SELECT 1 FROM t_adopt d WHERE d.aid = a.id AND d.vstate = 4) THEN 2 "
+                            + "WHEN EXISTS (SELECT 1 FROM t_adopt d WHERE d.aid = a.id AND d.vstate IN (0,1,3)) THEN 1 "
                             + "ELSE 0 END)");
 
-            log.info("DataHealth: 可领养={} | 孤儿申请中={} | 有通过仍待审={} | 一动物多通过={} | 动物状态不一致={}",
+            log.info("DataHealth: 可领养={} | 孤儿申请中={} | 预留下候补申请={} | 一动物多预留={} | 动物状态不一致={}",
                     available, applyingOrphan, pendingWhenApproved, multiApproved, mismatch);
 
             if (available != null && available == 0) {
                 log.warn("DataHealth: 当前无可领养动物(tstate=0)，用户端浏览列表将为空（非错误，需运营补货）");
             }
-            if (pendingWhenApproved != null && pendingWhenApproved > 0) {
-                log.warn("DataHealth: 仍有 {} 条「已有通过却仍待审」申请（DataStateGuard 应已处理；若仍出现请查 auto-fix）",
-                        pendingWhenApproved);
-            }
+            // v2 中“已预留 + 其他待审”是合法候补关系，完成交接时才关闭竞争申请。
             if (multiApproved != null && multiApproved > 0) {
                 log.warn("DataHealth: 仍有 {} 只动物存在多条已通过领养", multiApproved);
             }

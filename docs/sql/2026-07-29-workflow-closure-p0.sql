@@ -1,4 +1,4 @@
--- Schema contract: 2026.07.29-workflow-closure-p0-v10.
+-- Schema contract: 2026.07.29-workflow-operations-v11.
 -- P0 业务闭环迁移：执行前必须选择业务库并完成备份。脚本不删除业务行。
 
 SET @current_db := DATABASE();
@@ -38,6 +38,18 @@ CREATE TABLE IF NOT EXISTS t_notification (
   read_at DATETIME(3) NULL,
   UNIQUE KEY uk_notification_event (user_id,event_key),
   KEY idx_notification_inbox (user_id,read_flag,created_at,id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS t_visit_plan (
+  id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  aid BIGINT NOT NULL, uid BIGINT NOT NULL,
+  plan_type VARCHAR(24) NOT NULL, due_at DATE NOT NULL,
+  status INT NOT NULL DEFAULT 0,
+  assignee_id BIGINT NULL, completed_visit_id BIGINT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  UNIQUE KEY uk_visit_plan (aid,uid,plan_type),
+  KEY idx_visit_plan_queue (status,due_at,assignee_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DELIMITER $$
@@ -98,5 +110,5 @@ UPDATE t_animal a SET a.tstate=CASE
   ELSE 0 END;
 
 INSERT INTO app_schema_meta(meta_key,meta_value)
-VALUES('schema_version','2026.07.29-workflow-closure-p0-v10')
+VALUES('schema_version','2026.07.29-workflow-operations-v11')
 ON DUPLICATE KEY UPDATE meta_value=VALUES(meta_value);

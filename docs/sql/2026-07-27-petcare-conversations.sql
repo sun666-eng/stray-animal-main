@@ -1,6 +1,6 @@
 -- 照顾知识助手：可命名、可恢复的用户级会话。
 -- 旧 t_petcare_chat 数据的 conversation_id 保持 NULL，用户首次读取会话列表时自动归档。
--- Schema contract: 2026.07.29-workflow-closure-p0-v10.
+-- Schema contract: 2026.07.29-workflow-operations-v11.
 
 CREATE TABLE IF NOT EXISTS t_petcare_conversation (
   id BIGINT NOT NULL AUTO_INCREMENT,

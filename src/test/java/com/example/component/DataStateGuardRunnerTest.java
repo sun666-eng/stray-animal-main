@@ -51,6 +51,7 @@ public class DataStateGuardRunnerTest {
 
         assertDoesNotThrow(() -> guard.run(null));
         verify(jdbcTemplate, atLeastOnce()).update(contains("MIN(uid)"));
+        verify(jdbcTemplate, atLeastOnce()).update(contains("存在回访记录"));
         verify(jdbcTemplate, atLeastOnce()).update(contains("UPDATE t_animal"));
     }
 

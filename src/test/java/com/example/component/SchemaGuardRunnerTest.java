@@ -41,7 +41,7 @@ public class SchemaGuardRunnerTest {
 
     @Test
     public void schemaVersionConstant_isStable() {
-        assertEquals("2026.07.29-workflow-closure-p0-v10", SchemaGuardRunner.SCHEMA_VERSION);
+        assertEquals("2026.07.29-workflow-operations-v11", SchemaGuardRunner.SCHEMA_VERSION);
     }
 
     @Test

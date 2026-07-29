@@ -31,7 +31,7 @@ import java.util.Map;
 public class SchemaGuardRunner implements ApplicationRunner {
 
     /** 结构契约版本：变更闭环必需列/角色时递增，并写入 app_schema_meta */
-    public static final String SCHEMA_VERSION = "2026.07.29-workflow-closure-p0-v10";
+    public static final String SCHEMA_VERSION = "2026.07.29-workflow-operations-v11";
 
     private static final String FILE_FLAG_COLLATION = "utf8mb4_unicode_ci";
 
@@ -196,6 +196,16 @@ public class SchemaGuardRunner implements ApplicationRunner {
                         + "created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),read_at DATETIME(3) NULL,"
                         + "UNIQUE KEY uk_notification_event (user_id,event_key),"
                         + "INDEX idx_notification_inbox (user_id,read_flag,created_at,id)"
+                        + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci", errors);
+        ensureWorkflowTable("t_visit_plan",
+                "CREATE TABLE IF NOT EXISTS t_visit_plan ("
+                        + "id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,aid BIGINT NOT NULL,uid BIGINT NOT NULL,"
+                        + "plan_type VARCHAR(24) NOT NULL,due_at DATE NOT NULL,status INT NOT NULL DEFAULT 0,"
+                        + "assignee_id BIGINT NULL,completed_visit_id BIGINT NULL,"
+                        + "created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),"
+                        + "updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),"
+                        + "UNIQUE KEY uk_visit_plan (aid,uid,plan_type),"
+                        + "INDEX idx_visit_plan_queue (status,due_at,assignee_id)"
                         + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci", errors);
     }
 

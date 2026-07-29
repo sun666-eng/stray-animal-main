@@ -1,5 +1,5 @@
 -- 角色权限规范化 Phase 1：role_permission 关联表
--- Schema contract: 2026.07.29-workflow-closure-p0-v10.
+-- Schema contract: 2026.07.29-workflow-operations-v11.
 -- 适用：生产 pure-check 模式（app.schema-guard.auto-migrate=false）须先手工执行本脚本；
 --       dev/auto-migrate 环境由 SchemaGuardRunner 自动建表，无需手工执行。
 -- 数据回填：应用启动时 RolePermissionSyncRunner（@Order(70)）自动从 t_role.permission JSON

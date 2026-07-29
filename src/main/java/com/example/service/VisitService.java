@@ -33,6 +33,9 @@ public class VisitService extends ServiceImpl<VisitMapper, Visit> {
     @Resource
     private FileAssetService fileAssetService;
 
+    @Resource
+    private VisitPlanService visitPlanService;
+
     /**
      * 新增回访：仅允许「已审核通过」的领养关系 (petId=aid, uid)。
      */
@@ -60,6 +63,7 @@ public class VisitService extends ServiceImpl<VisitMapper, Visit> {
             fileAssetService.bindToBusiness(user, visit.getPic(), "visit",
                     "visit", visit.getId(), true);
         }
+        if (visitPlanService != null) visitPlanService.completeNearest(visit.getPetId(), visit.getUid(), visit.getId(), visit.getState());
         return true;
     }
 

@@ -1,5 +1,5 @@
 -- =============================================================================
--- 闭环结构唯一手工入口（与 SchemaGuard 契约 SCHEMA_VERSION=2026.07.29-workflow-closure-p0-v10 对齐）
+-- 闭环结构唯一手工入口（与 SchemaGuard 契约 SCHEMA_VERSION=2026.07.29-workflow-operations-v11 对齐）
 -- 新库：可先导 test.sql（已含闭环列），再可选执行本脚本（幂等）
 -- 旧库：本脚本只补齐结构；历史业务图片元数据必须按 file-asset-migrate-RUNBOOK 执行迁移
 -- 调用方必须先选择目标库（mysql client: USE your_db; 或 -D your_db），禁止脚本内硬编码库名。
@@ -49,6 +49,21 @@ CREATE TABLE IF NOT EXISTS t_notification (
   read_at DATETIME(3) NULL,
   UNIQUE KEY uk_notification_event (user_id, event_key),
   KEY idx_notification_inbox (user_id, read_flag, created_at, id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS t_visit_plan (
+  id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  aid BIGINT NOT NULL,
+  uid BIGINT NOT NULL,
+  plan_type VARCHAR(24) NOT NULL,
+  due_at DATE NOT NULL,
+  status INT NOT NULL DEFAULT 0,
+  assignee_id BIGINT NULL,
+  completed_visit_id BIGINT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  UNIQUE KEY uk_visit_plan (aid,uid,plan_type),
+  KEY idx_visit_plan_queue (status,due_at,assignee_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS t_file_asset (
@@ -603,5 +618,5 @@ INSERT INTO t_permission (name, description, path, flag)
 SELECT 'AI管理助手', '使用管理员只读AI助手', '/page/end/admin_agent.html', 'admin_agent'
 WHERE NOT EXISTS (SELECT 1 FROM t_permission WHERE flag = 'admin_agent');
 
-INSERT INTO app_schema_meta (meta_key, meta_value) VALUES ('schema_version', '2026.07.29-workflow-closure-p0-v10')
+INSERT INTO app_schema_meta (meta_key, meta_value) VALUES ('schema_version', '2026.07.29-workflow-operations-v11')
   ON DUPLICATE KEY UPDATE meta_value = VALUES(meta_value);

@@ -63,6 +63,10 @@ public class DataStateGuardRunner implements ApplicationRunner {
         boolean canMutate = autoFix && mutationPolicy.isMutationsAllowed();
         log.info("DataStateGuard 开始，契约版本={} mutationsAllowed={}", STATE_VERSION, mutationPolicy.isMutationsAllowed());
         try {
+            int promotedLegacy = canMutate ? promoteLegacyApprovedWithVisits() : 0;
+            if (promotedLegacy > 0) {
+                log.info("DataStateGuard 将 {} 条已有回访的历史审核通过申请提升为已完成交接", promotedLegacy);
+            }
             DirtySnapshot before = snapshot();
             log.info("DataStateGuard 修复前: pendingOnApproved={} multiApprovedAnimals={} animalMismatch={} orphanApplying={}",
                     before.pendingWhenHasApproved, before.multiApprovedAnimals, before.animalStateMismatch, before.orphanApplying);
@@ -121,6 +125,16 @@ public class DataStateGuardRunner implements ApplicationRunner {
                 + ") m ON d.aid = m.aid AND d.vstate = " + ADOPT_APPROVED + " AND d.uid <> m.keep_uid "
                 + "SET d.vstate = " + ADOPT_REJECTED;
         return jdbcTemplate.update(sql);
+    }
+
+    /** 历史 v1 只有“审核通过”语义；存在回访记录可作为完成交接的保守证据。 */
+    int promoteLegacyApprovedWithVisits() {
+        return jdbcTemplate.update("UPDATE t_adopt a SET a.vstate = " + ADOPT_COMPLETED
+                + ", a.handover_at = COALESCE(a.handover_at, CURRENT_TIMESTAMP(3))"
+                + ", a.handover_note = COALESCE(a.handover_note, '历史数据：存在回访记录，迁移为已完成交接')"
+                + ", a.updated_at = CURRENT_TIMESTAMP(3), a.version = COALESCE(a.version,0) + 1"
+                + " WHERE a.vstate = " + ADOPT_APPROVED
+                + " AND EXISTS (SELECT 1 FROM t_visit v WHERE v.pet_id=a.aid AND v.uid=a.uid)");
     }
 
     /**

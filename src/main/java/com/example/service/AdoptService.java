@@ -54,6 +54,9 @@ public class AdoptService extends ServiceImpl<AdoptMapper, Adopt> {
     @Resource
     private NotificationService notificationService;
 
+    @Resource
+    private VisitPlanService visitPlanService;
+
     @Transactional
     public boolean submitAdopt(Adopt adopt, User user, boolean canManageAdopt) {
         if (user == null || user.getId() == null) {
@@ -261,6 +264,16 @@ public class AdoptService extends ServiceImpl<AdoptMapper, Adopt> {
         }
 
         boolean owner = actor != null && actor.getId() != null && actor.getId().equals(uid);
+        if ("WITHDRAW".equals(action)) {
+            if (!owner) throw new CustomException("403", "只能撤回自己的领养申请");
+        } else {
+            requireManager(manager);
+        }
+        int desired = desiredTarget(action);
+        if (current == desired) {
+            syncAnimalState(aid);
+            return true;
+        }
         int target;
         switch (action) {
             case "REQUEST_MATERIAL" -> {
@@ -330,6 +343,7 @@ public class AdoptService extends ServiceImpl<AdoptMapper, Adopt> {
         if (!update(new Adopt(), cas)) throw new CustomException("409", "状态已变化，请刷新后重试");
 
         if (target == ADOPT_COMPLETED) closeCompetingApplications(aid, uid, actor, now);
+        if (target == ADOPT_COMPLETED && visitPlanService != null) visitPlanService.createDefaultPlans(aid, uid, now);
         syncAnimalState(aid);
         recordEvent(aid, uid, current, target, action, actor, cleanReason, null, actorType);
         notifyApplicant(aid, uid, target, cleanReason, version + 1);
@@ -485,6 +499,19 @@ public class AdoptService extends ServiceImpl<AdoptMapper, Adopt> {
             throw new CustomException("400", "不支持的状态操作");
         }
         return clean;
+    }
+
+    private int desiredTarget(String action) {
+        return switch (action) {
+            case "REQUEST_MATERIAL" -> ADOPT_MATERIAL_REQUIRED;
+            case "APPROVE" -> ADOPT_APPROVED;
+            case "REJECT" -> ADOPT_REJECTED;
+            case "COMPLETE_HANDOVER" -> ADOPT_COMPLETED;
+            case "WITHDRAW" -> ADOPT_WITHDRAWN;
+            case "CANCEL" -> ADOPT_CANCELLED;
+            case "REOPEN" -> ADOPT_PENDING;
+            default -> throw new CustomException("400", "不支持的状态操作");
+        };
     }
 
     private String requireReason(String action, String reason) {

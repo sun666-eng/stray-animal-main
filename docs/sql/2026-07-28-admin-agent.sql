@@ -1,5 +1,5 @@
 -- Administrator AI Agent migration
--- Schema contract: 2026.07.29-workflow-closure-p0-v10
+-- Schema contract: 2026.07.29-workflow-operations-v11
 -- Select the application database before running this script.
 
 ALTER TABLE t_permission
@@ -145,5 +145,5 @@ SELECT 'AI管理助手', '使用管理员只读AI助手', '/page/end/admin_agent
 WHERE NOT EXISTS (SELECT 1 FROM t_permission WHERE flag = 'admin_agent');
 
 INSERT INTO app_schema_meta (meta_key, meta_value)
-VALUES ('schema_version', '2026.07.29-workflow-closure-p0-v10')
+VALUES ('schema_version', '2026.07.29-workflow-operations-v11')
 ON DUPLICATE KEY UPDATE meta_value = VALUES(meta_value);

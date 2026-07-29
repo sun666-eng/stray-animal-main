@@ -1,6 +1,6 @@
 -- 用户级照顾助手 API 配置。
 -- API Key 只保存 AES-GCM 密文；调用方必须先选择目标业务库。
--- Schema contract: 2026.07.29-workflow-closure-p0-v10.
+-- Schema contract: 2026.07.29-workflow-operations-v11.
 
 CREATE TABLE IF NOT EXISTS t_petcare_ai_config (
   user_id BIGINT NOT NULL COMMENT '登录用户ID，一名用户一条配置',

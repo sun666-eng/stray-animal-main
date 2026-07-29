@@ -1,6 +1,6 @@
 -- 照顾知识助手个人聊天历史。
 -- 调用方必须先选择目标业务库；本脚本不会选择或创建数据库。
--- Schema contract: 2026.07.29-workflow-closure-p0-v10.
+-- Schema contract: 2026.07.29-workflow-operations-v11.
 
 CREATE TABLE IF NOT EXISTS t_petcare_chat (
   id BIGINT NOT NULL AUTO_INCREMENT,
