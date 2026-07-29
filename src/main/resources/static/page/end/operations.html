@@ -244,6 +244,19 @@
               </p>
               <div class="ops-actions">
                 <button
+                  v-if="Number(item.assignee_id)!==Number(user.id)"
+                  class="ui-button is-ghost"
+                  @click="updateWork(item,item.status,item.priority,'self')"
+                >
+                  领取给我</button
+                ><button
+                  v-else
+                  class="ui-button is-ghost"
+                  @click="updateWork(item,item.status,item.priority,'release')"
+                >
+                  释放待办</button
+                >
+                <button
                   class="ui-button is-ghost"
                   @click="updateWork(item,1,item.priority)"
                 >
@@ -437,9 +450,17 @@
                 rows="4"
               ></textarea>
             </label>
+            <label class="wide"
+              >医疗附件（选填）<input
+                ref="medicalFile"
+                type="file"
+                accept="image/jpeg,image/png,image/gif,application/pdf"
+                @change="medicalFile=$event.target.files[0]||null" />
+              <small>支持 JPG、PNG、GIF 或 PDF；公开记录的附件公开，其他范围按记录权限读取。</small>
+            </label>
             <div class="wide">
-              <button class="ui-button is-primary" :disabled="saving">
-                保存医疗记录
+              <button class="ui-button is-primary" :disabled="saving||uploading">
+                {{uploading?'正在上传附件...':saving?'正在保存...':'保存医疗记录'}}
               </button>
             </div>
           </form>
@@ -467,6 +488,9 @@
               </div>
               <h3>{{item.title}}</h3>
               <p>{{item.content||'无补充说明'}}</p>
+              <p v-if="item.asset_flag">
+                <a :href="fileUrl(item.asset_flag)" target="_blank" rel="noopener">查看医疗附件</a>
+              </p>
               <small>{{formatTime(item.occurred_at)}}</small>
             </article>
           </div>
@@ -516,6 +540,7 @@
                 ],
                 loading: false,
                 saving: false,
+                uploading: false,
                 message: "",
                 messageError: false,
                 summary: {},
@@ -525,6 +550,7 @@
                 signups: [],
                 medicalAnimalId: null,
                 medicalRecords: [],
+                medicalFile: null,
                 taskForm: {
                   title: "",
                   location: "",
@@ -562,15 +588,11 @@
                 loadWork: function () {
                   var vm = this;
                   vm.loading = true;
-                  $.when(
-                    this.request({ url: "/api/operations/admin/work-items" }),
-                    this.request({
-                      url: "/api/operations/admin/work-items/summary",
-                    }),
-                  )
-                    .done(function (a, b) {
-                      vm.workItems = a[0].data || [];
-                      vm.summary = b[0].data || {};
+                  this.request({ url: "/api/operations/admin/dashboard" })
+                    .done(function (r) {
+                      var data = (r && r.data) || {};
+                      vm.workItems = data.items || [];
+                      vm.summary = data.summary || {};
                     })
                     .fail(function (x) {
                       vm.notify(
@@ -583,8 +605,11 @@
                       vm.loading = false;
                     });
                 },
-                updateWork: function (item, status, priority) {
+                updateWork: function (item, status, priority, assignment) {
                   var vm = this;
+                  var assigneeId = item.assignee_id;
+                  if (assignment === "self") assigneeId = this.user.id;
+                  if (assignment === "release") assigneeId = null;
                   this.request({
                     url: "/api/operations/admin/work-items/" + item.id,
                     type: "PUT",
@@ -592,7 +617,7 @@
                     data: JSON.stringify({
                       status: status,
                       priority: priority,
-                      assigneeId: item.assignee_id,
+                      assigneeId: assigneeId,
                       expectedVersion: item.version,
                     }),
                   })
@@ -766,7 +791,43 @@
                 },
                 createMedical: function () {
                   var vm = this;
+                  if (vm.saving || vm.uploading) return;
                   vm.saving = true;
+                  if (!vm.medicalFile) {
+                    vm.persistMedical(null);
+                    return;
+                  }
+                  var data = new FormData();
+                  data.append("file", vm.medicalFile);
+                  data.append("purpose", "medical");
+                  vm.uploading = true;
+                  vm.request({
+                    url: "/api/files/upload",
+                    type: "POST",
+                    data: data,
+                    processData: false,
+                    contentType: false,
+                  })
+                    .done(function (r) {
+                      var flag = r && r.code === "0" && r.data && (r.data.flag || r.data);
+                      if (!/^[a-zA-Z0-9-]{1,64}$/.test(String(flag || ""))) {
+                        vm.notify((r && r.msg) || "医疗附件上传失败", true);
+                        vm.saving = false;
+                        return;
+                      }
+                      vm.persistMedical(String(flag));
+                    })
+                    .fail(function (x) {
+                      vm.notify((x.responseJSON && x.responseJSON.msg) || "医疗附件上传失败", true);
+                      vm.saving = false;
+                    })
+                    .always(function () {
+                      vm.uploading = false;
+                    });
+                },
+                persistMedical: function (assetFlag) {
+                  var vm = this;
+                  var payload = Object.assign({}, this.medicalForm, {assetFlag: assetFlag});
                   this.request({
                     url:
                       "/api/operations/admin/animals/" +
@@ -774,16 +835,22 @@
                       "/medical",
                     type: "POST",
                     contentType: "application/json",
-                    data: JSON.stringify(this.medicalForm),
+                    data: JSON.stringify(payload),
                   })
                     .done(function (r) {
                       if (r.code === "0") {
                         vm.notify("医疗记录已保存");
                         vm.medicalAnimalId = vm.medicalForm.animalId;
+                        vm.medicalFile = null;
+                        if (vm.$refs.medicalFile) vm.$refs.medicalFile.value = "";
                         vm.loadMedical();
-                      } else vm.notify(r.msg, true);
+                      } else {
+                        vm.retireStage(assetFlag);
+                        vm.notify(r.msg, true);
+                      }
                     })
                     .fail(function (x) {
+                      vm.retireStage(assetFlag);
                       vm.notify(
                         (x.responseJSON && x.responseJSON.msg) || "保存失败",
                         true,
@@ -792,6 +859,10 @@
                     .always(function () {
                       vm.saving = false;
                     });
+                },
+                retireStage: function (flag) {
+                  if (!/^[a-zA-Z0-9-]{1,64}$/.test(String(flag || ""))) return;
+                  this.request({url:"/api/files/staged/"+encodeURIComponent(flag),type:"DELETE"});
                 },
                 loadMedical: function () {
                   var vm = this;
@@ -846,6 +917,11 @@
                       other: "其他",
                     }[v] || v
                   );
+                },
+                fileUrl: function (flag) {
+                  return /^[a-zA-Z0-9-]{1,64}$/.test(String(flag || ""))
+                    ? "/api/files/" + encodeURIComponent(flag)
+                    : "";
                 },
                 formatTime: function (v) {
                   if (!v) return "-";

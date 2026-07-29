@@ -71,6 +71,17 @@ class BootstrapSqlSafetyTest {
         assertTrue(bootstrap.contains("UNIQUE KEY uk_admin_agent_automation_request (actor_id, request_id)"));
         assertTrue(bootstrap.contains("UNIQUE KEY uk_admin_agent_automation_item (run_id, animal_id, applicant_id)"));
         assertTrue(bootstrap.contains("flag = 'admin_agent'"));
+        for (String table : Arrays.asList(
+                "t_volunteer_task", "t_volunteer_signup", "t_volunteer_service_record",
+                "t_animal_medical_record", "t_work_item", "t_animal_favorite",
+                "t_notification_outbox")) {
+            assertTrue(bootstrap.contains("CREATE TABLE IF NOT EXISTS " + table),
+                    "bootstrap-all must create " + table + " before marking v12");
+        }
+        int p12Table = bootstrap.indexOf("CREATE TABLE IF NOT EXISTS t_volunteer_task");
+        int v12Marker = bootstrap.lastIndexOf("INSERT INTO app_schema_meta (meta_key, meta_value) VALUES ('schema_version'");
+        assertTrue(p12Table >= 0 && v12Marker > p12Table,
+                "schema version must only be written after P1/P2 tables are present");
     }
 
     @Test

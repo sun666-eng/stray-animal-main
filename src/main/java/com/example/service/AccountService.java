@@ -6,6 +6,7 @@ import com.example.mapper.AccountMapper;
 import com.example.exception.CustomException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -27,6 +28,9 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> {
 
     @Resource
     private FileAssetService fileAssetService;
+
+    @Resource
+    private JdbcTemplate jdbcTemplate;
 
     @Transactional
     public boolean saveAccount(Account account, User actor) {
@@ -98,6 +102,7 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> {
             if (!BUSINESS_TYPES.contains(businessType)) throw new CustomException("400", "关联业务类型无效");
             account.setBusinessType(businessType);
             account.setBusinessId(businessId);
+            validateBusinessReference(businessType, businessId);
         }
         account.setReceiptFlag(optional(account.getReceiptFlag(), 64, "票据文件"));
         BigDecimal amount = account.getAvalue();
@@ -122,6 +127,41 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> {
         String normalized = value.trim();
         if (normalized.length() > max) throw new CustomException("400", field + "不能超过" + max + "个字符");
         return normalized;
+    }
+
+    private void validateBusinessReference(String type, String id) {
+        if ("other".equals(type)) return;
+        long count;
+        if ("adopt".equals(type)) {
+            String[] parts = id.split(":", -1);
+            if (parts.length != 2) throw new CustomException("400", "领养申请业务编号格式应为 动物ID:用户ID");
+            long animalId = positiveId(parts[0], "动物编号");
+            long userId = positiveId(parts[1], "用户编号");
+            count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM t_adopt WHERE aid=? AND uid=?", Long.class, animalId, userId);
+        } else {
+            long numericId = positiveId(id, "业务编号");
+            String table;
+            switch (type) {
+                case "animal": table = "t_animal"; break;
+                case "rescue": table = "t_help"; break;
+                case "proof": table = "t_proof"; break;
+                case "volunteer_task": table = "t_volunteer_task"; break;
+                default: throw new CustomException("400", "关联业务类型无效");
+            }
+            count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM " + table + " WHERE id=?", Long.class, numericId);
+        }
+        if (count != 1) throw new CustomException("404", "关联业务记录不存在");
+    }
+
+    private long positiveId(String value, String field) {
+        try {
+            long parsed = Long.parseLong(value);
+            if (parsed < 1) throw new NumberFormatException();
+            return parsed;
+        } catch (NumberFormatException e) {
+            throw new CustomException("400", field + "无效");
+        }
     }
 
 }

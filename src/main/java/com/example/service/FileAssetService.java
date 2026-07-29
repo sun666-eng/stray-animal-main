@@ -22,6 +22,7 @@ import com.example.mapper.VolunteerMapper;
 import com.example.mapper.AccountMapper;
 import com.example.entity.Account;
 import org.springframework.stereotype.Service;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.annotation.Transactional;
@@ -82,6 +83,9 @@ public class FileAssetService extends ServiceImpl<FileAssetMapper, FileAsset> {
     @Resource
     private AccountMapper accountMapper;
 
+    @Resource
+    private JdbcTemplate jdbcTemplate;
+
     public static final String VIS_PUBLIC = "public";
     public static final String VIS_PRIVATE = "private";
 
@@ -91,7 +95,7 @@ public class FileAssetService extends ServiceImpl<FileAssetMapper, FileAsset> {
 
     /** private 上传后仅允许升为这些明确私有用途；图片用途必须在上传时完成内容解码。 */
     private static final Set<String> SPECIFIC_PRIVATE = new HashSet<>(Arrays.asList(
-            "help", "account"
+            "help", "account", "medical"
     ));
 
     // 崩溃预防 P1.1：25MP 单张解码峰值约 100MB 堆（ARGB），并发上传即 OOM 源；
@@ -101,7 +105,7 @@ public class FileAssetService extends ServiceImpl<FileAssetMapper, FileAsset> {
     // 审计修复 L6：移除 purpose=notice——公告无图片字段、全系统零绑定点零前端调用，
     // 该用途上传的文件只会在 24h 后被静默清理，属无出口的死分支。
     private static final Set<String> KNOWN_PURPOSES = new HashSet<>(Arrays.asList(
-            "animal", "avatar", "proof", "visit", "volunteer", "help", "account", "private"
+            "animal", "avatar", "proof", "visit", "volunteer", "help", "account", "medical", "private"
     ));
 
     private static final Set<String> IMAGE_EXT = new HashSet<>(Arrays.asList(
@@ -226,6 +230,18 @@ public class FileAssetService extends ServiceImpl<FileAssetMapper, FileAsset> {
             }
             return "animal";
         }
+        if ("medical".equals(req)) {
+            if (!PermissionUtil.hasFlag(user, "animal")) {
+                throw new CustomException("403", "无权上传动物医疗附件");
+            }
+            return "medical";
+        }
+        if ("account".equals(req)) {
+            if (!PermissionUtil.hasFlag(user, "account")) {
+                throw new CustomException("403", "无权上传资金票据");
+            }
+            return "account";
+        }
         if ("avatar".equals(req)) {
             if (user == null || user.getId() == null) {
                 throw new CustomException("401", "未登录不能上传头像");
@@ -305,6 +321,9 @@ public class FileAssetService extends ServiceImpl<FileAssetMapper, FileAsset> {
 
         if (!isMatchingBusinessPurpose(asset)) {
             return false;
+        }
+        if ("animal_medical".equals(asset.getBusinessType())) {
+            return canReadMedicalRecord(user, asset.getBusinessId());
         }
         Long businessOwnerId = resolveBusinessOwnerId(asset);
         if (businessOwnerId == null) {
@@ -476,6 +495,8 @@ public class FileAssetService extends ServiceImpl<FileAssetMapper, FileAsset> {
             case "help":
             case "account":
                 return businessType.equals(purpose);
+            case "animal_medical":
+                return "medical".equals(purpose);
             case "user":
                 return "avatar".equals(purpose);
             default:
@@ -506,6 +527,10 @@ public class FileAssetService extends ServiceImpl<FileAssetMapper, FileAsset> {
                 case "account":
                     Account account = accountMapper.selectById(businessId);
                     return account == null ? null : account.getCreatedBy();
+                case "animal_medical":
+                    return jdbcTemplate.queryForObject(
+                            "SELECT created_by FROM t_animal_medical_record WHERE id=?",
+                            Long.class, businessId);
                 default:
                     return null;
             }
@@ -590,6 +615,18 @@ public class FileAssetService extends ServiceImpl<FileAssetMapper, FileAsset> {
         boolean ok = update(asset, uw);
         if (!ok) {
             throw new CustomException("409", "文件绑定冲突，请重新上传");
+        }
+    }
+
+    @Transactional
+    public void bindMedicalRecord(User user, String flag, Long recordId, String recordVisibility) {
+        bindToBusiness(user, flag, "medical", "animal_medical", recordId, false);
+        String visibility = "public".equalsIgnoreCase(recordVisibility) ? VIS_PUBLIC : VIS_PRIVATE;
+        UpdateWrapper<FileAsset> update = new UpdateWrapper<>();
+        update.eq("flag", flag).eq("business_type", "animal_medical").eq("business_id", recordId)
+                .eq("deleted", 0).set("visibility", visibility);
+        if (!update(update)) {
+            throw new CustomException("409", "医疗附件可见范围更新失败");
         }
     }
 
@@ -759,10 +796,23 @@ public class FileAssetService extends ServiceImpl<FileAssetMapper, FileAsset> {
                 return PermissionUtil.hasFlag(user, "animal");
             case "account":
                 return PermissionUtil.hasFlag(user, "account");
+            case "medical":
+                return PermissionUtil.hasFlag(user, "animal");
             case "avatar":
                 return PermissionUtil.hasFlag(user, "user");
             default:
                 return false;
         }
+    }
+
+    private boolean canReadMedicalRecord(User user, Long recordId) {
+        if (user == null || user.getId() == null || recordId == null) return false;
+        if (PermissionUtil.hasFlag(user, "animal")) return true;
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM t_animal_medical_record m "
+                        + "WHERE m.id=? AND (m.created_by=? OR (m.visibility IN ('public','owner') "
+                        + "AND EXISTS(SELECT 1 FROM t_adopt a WHERE a.aid=m.animal_id AND a.uid=? AND a.vstate=4)))",
+                Integer.class, recordId, user.getId(), user.getId());
+        return count != null && count > 0;
     }
 }

@@ -406,6 +406,22 @@
               <dt>金额语义</dt>
               <dd>{{ amountMeaning(detailItem.avalue) }}</dd>
             </div>
+            <div>
+              <dt>关联业务</dt>
+              <dd>{{ businessText(detailItem) }}</dd>
+            </div>
+            <div>
+              <dt>票据附件</dt>
+              <dd>
+                <a
+                  v-if="receiptFlag(detailItem)"
+                  :href="fileUrl(receiptFlag(detailItem))"
+                  target="_blank"
+                  rel="noopener"
+                >查看或下载票据</a>
+                <span v-else>未上传</span>
+              </dd>
+            </div>
           </dl>
           <div class="admin-detail-statement">
             <strong>用途详情</strong>
@@ -698,6 +714,7 @@
                 form: {},
                 saving: false,
                 receiptFile: null,
+                stagedReceiptFlag: "",
                 editError: "",
                 deleteItem: null,
                 deleting: false,
@@ -901,6 +918,27 @@
                   };
                   return payload;
                 },
+                receiptFlag: function (item) {
+                  return item && (item.receiptFlag || item.receipt_flag) || "";
+                },
+                fileUrl: function (flag) {
+                  return /^[a-zA-Z0-9-]{1,64}$/.test(String(flag || ""))
+                    ? "/api/files/" + encodeURIComponent(flag)
+                    : "";
+                },
+                businessText: function (item) {
+                  if (!item) return "未关联";
+                  var type = item.businessType || item.business_type;
+                  var id = item.businessId || item.business_id;
+                  if (!type || !id) return "未关联";
+                  return type + " #" + id;
+                },
+                retireStagedReceipt: function () {
+                  var flag = this.stagedReceiptFlag;
+                  this.stagedReceiptFlag = "";
+                  if (!/^[a-zA-Z0-9-]{1,64}$/.test(String(flag || ""))) return;
+                  $.ajax({url:"/api/files/staged/"+encodeURIComponent(flag),type:"DELETE"});
+                },
                 save: function () {
                   var vm = this;
                   if (
@@ -924,8 +962,10 @@
                       contentType: false,
                     })
                       .done(function (res) {
-                        if (res && res.code === "0" && res.data) {
-                          vm.persistAccount(res.data);
+                        var flag = res && res.code === "0" && res.data && (res.data.flag || res.data);
+                        if (/^[a-zA-Z0-9-]{1,64}$/.test(String(flag || ""))) {
+                          vm.stagedReceiptFlag = String(flag);
+                          vm.persistAccount(vm.stagedReceiptFlag);
                         } else {
                           vm.editError = (res && res.msg) || "票据上传失败。";
                           vm.saving = false;
@@ -951,12 +991,14 @@
                   })
                     .done(function (res) {
                       if (!res || res.code !== "0" || res.data !== true) {
+                        vm.retireStagedReceipt();
                         vm.editError = (res && res.msg) || "资金记录保存失败。";
                         return;
                       }
                       var id = vm.form.id;
                       vm.editOpen = false;
                       vm.receiptFile = null;
+                      vm.stagedReceiptFlag = "";
                       vm.load(vm.pageNum);
                       vm.loadStats();
                       vm.messageType = "success";
@@ -965,6 +1007,7 @@
                         : "资金记录已新增。";
                     })
                     .fail(function (xhr) {
+                      vm.retireStagedReceipt();
                       vm.editError =
                         (xhr.responseJSON && xhr.responseJSON.msg) ||
                         "网络异常，资金记录未保存。";

@@ -109,7 +109,7 @@ public class OperationsController {
     public Result<?> createMedical(@PathVariable Long animalId, @RequestBody Map<String, Object> body,
                                    HttpServletRequest request) {
         User actor = require(request, "animal");
-        return Result.success(service.createMedicalRecord(actor.getId(), animalId, body));
+        return Result.success(service.createMedicalRecord(actor, animalId, body));
     }
 
     @GetMapping("/admin/work-items")
@@ -117,6 +117,13 @@ public class OperationsController {
                                HttpServletRequest request) {
         requireOperationsManager(request);
         return Result.success(service.workItems(includeClosed));
+    }
+
+    @GetMapping("/admin/dashboard")
+    public Result<?> workDashboard(@RequestParam(defaultValue = "false") boolean includeClosed,
+                                   HttpServletRequest request) {
+        requireOperationsManager(request);
+        return Result.success(service.workDashboard(includeClosed));
     }
 
     @GetMapping("/admin/work-items/summary")

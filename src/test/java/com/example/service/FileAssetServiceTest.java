@@ -103,6 +103,23 @@ public class FileAssetServiceTest {
     }
 
     @Test
+    public void operationalAttachmentsRequireMatchingAdminPermission() {
+        User normal = new User();
+        normal.setId(2L);
+        assertEquals("403", assertThrows(CustomException.class,
+                () -> service.resolvePurposeForUpload(normal, "medical")).getCode());
+        assertEquals("403", assertThrows(CustomException.class,
+                () -> service.resolvePurposeForUpload(normal, "account")).getCode());
+
+        User animalAdmin = new User();
+        animalAdmin.setId(3L);
+        Permission animal = new Permission();
+        animal.setFlag("animal");
+        animalAdmin.setPermission(Collections.singletonList(animal));
+        assertEquals("medical", service.resolvePurposeForUpload(animalAdmin, "medical"));
+    }
+
+    @Test
     public void avatar_imageOnly_rejectsPdf() {
         CustomException ex = assertThrows(CustomException.class,
                 () -> service.assertImageExtension("report.pdf", "avatar"));

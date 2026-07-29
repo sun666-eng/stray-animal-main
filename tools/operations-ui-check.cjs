@@ -37,16 +37,41 @@ async function login(browser, username, password, viewport) {
         const response = await page.goto(base + item.route, { waitUntil: 'networkidle' });
         await page.waitForTimeout(350);
         const body = await page.locator('body').innerText();
+        const featureChecks = [];
+        if (item.route === '/page/end/operations.html') {
+          const medicalTab = page.getByRole('button', { name: '医疗档案', exact: true });
+          await medicalTab.click();
+          featureChecks.push({
+            name: 'medical attachment control',
+            ok: await page.locator('input[type=file][accept*="application/pdf"]').count() === 1
+          });
+          featureChecks.push({
+            name: 'single dashboard request contract',
+            ok: await page.locator('body').innerText().then(text => text.includes('动物医疗档案'))
+          });
+        }
+        if (item.route === '/page/end/account.html') {
+          const detailButton = page.getByRole('button', { name: /详情/ }).first();
+          if (await detailButton.count()) {
+            await detailButton.click();
+            featureChecks.push({
+              name: 'receipt detail surface',
+              ok: await page.getByText('票据附件', { exact: true }).count() === 1
+            });
+          }
+        }
         const geometry = await page.evaluate(() => ({
           horizontalOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
           visibleDialogs: [...document.querySelectorAll('[role=dialog]')].filter(x => getComputedStyle(x).display !== 'none').length
         }));
         const ok = !!response && response.status() === 200 && body.includes(item.text)
-          && errors.length === 0 && geometry.horizontalOverflow <= 2;
+          && errors.length === 0 && geometry.horizontalOverflow <= 2
+          && featureChecks.every(check => check.ok);
         const slug = path.basename(item.route.split('?')[0], '.html');
         await page.screenshot({ path: path.join(out, `${spec.role}-${viewport.width}-${slug}.png`), fullPage: true });
         results.push({ role: spec.role, viewport: `${viewport.width}x${viewport.height}`, route: item.route,
-          status: response && response.status(), expectedText: body.includes(item.text), errors, ...geometry, ok });
+          status: response && response.status(), expectedText: body.includes(item.text), errors,
+          featureChecks, ...geometry, ok });
       }
       await context.close();
     }

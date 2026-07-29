@@ -1,6 +1,7 @@
 package com.example.service;
 
 import com.example.exception.CustomException;
+import com.example.entity.User;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -28,12 +29,17 @@ public class OperationsService {
     private final JdbcTemplate jdbc;
     private final NotificationService notifications;
     private final WorkflowEventService workflow;
+    private final WorkItemRefreshService workItemRefresh;
+    private final FileAssetService fileAssets;
 
     public OperationsService(JdbcTemplate jdbc, NotificationService notifications,
-                             WorkflowEventService workflow) {
+                             WorkflowEventService workflow, WorkItemRefreshService workItemRefresh,
+                             FileAssetService fileAssets) {
         this.jdbc = jdbc;
         this.notifications = notifications;
         this.workflow = workflow;
+        this.workItemRefresh = workItemRefresh;
+        this.fileAssets = fileAssets;
     }
 
     public List<Map<String, Object>> volunteerTasks(Long userId, boolean mine) {
@@ -217,25 +223,42 @@ public class OperationsService {
     }
 
     @Transactional
-    public Long createMedicalRecord(Long actorId, Long animalId, Map<String, Object> body) {
+    public Long createMedicalRecord(User actor, Long animalId, Map<String, Object> body) {
         requirePositive(animalId, "动物编号");
+        if (actor == null || actor.getId() == null) throw new CustomException("401", "登录状态无效");
         long exists = jdbc.queryForObject("SELECT COUNT(*) FROM t_animal WHERE id=?", Long.class, animalId);
         if (exists != 1) throw new CustomException("404", "动物档案不存在");
         String type = enumValue(body.get("recordType"), new String[]{"exam", "vaccine", "deworm", "treatment", "surgery", "other"}, "记录类型");
         String title = required(body.get("title"), 120, "记录标题");
         String content = optional(body.get("content"), 2000);
         String visibility = enumValue(body.get("visibility"), new String[]{"public", "owner", "admin"}, "可见范围");
+        String assetFlag = optional(body.get("assetFlag"), 64);
         Timestamp occurredAt = timestamp(body.get("occurredAt"), "发生时间");
-        Long id = insert("INSERT INTO t_animal_medical_record(animal_id,record_type,title,content,occurred_at,visibility,created_by) "
-                        + "VALUES(?,?,?,?,?,?,?)", animalId, type, title, content, occurredAt, visibility, actorId);
+        Long id = insert("INSERT INTO t_animal_medical_record(animal_id,record_type,title,content,occurred_at,visibility,asset_flag,created_by) "
+                        + "VALUES(?,?,?,?,?,?,?,?)", animalId, type, title, content, occurredAt, visibility,
+                assetFlag, actor.getId());
+        if (assetFlag != null) {
+            fileAssets.bindMedicalRecord(actor, assetFlag, id, visibility);
+        }
         workflow.record("animal_medical", String.valueOf(id), null, 1, "CREATE",
-                actorId, "admin", title, null, "{\"animalId\":" + animalId + "}");
+                actor.getId(), "admin", title, null, "{\"animalId\":" + animalId + "}");
         return id;
     }
 
-    @Transactional
     public List<Map<String, Object>> workItems(boolean includeClosed) {
-        refreshWorkItems();
+        workItemRefresh.refresh();
+        return queryWorkItems(includeClosed);
+    }
+
+    public Map<String, Object> workDashboard(boolean includeClosed) {
+        workItemRefresh.refresh();
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("items", queryWorkItems(includeClosed));
+        result.put("summary", queryWorkSummary());
+        return result;
+    }
+
+    private List<Map<String, Object>> queryWorkItems(boolean includeClosed) {
         return jdbc.queryForList("SELECT w.id,w.business_type,w.business_id,w.title,w.priority,w.assignee_id,u.username assignee_name,"
                 + "w.due_at,w.status,w.created_at,w.updated_at,w.completed_at,w.version FROM t_work_item w "
                 + "LEFT JOIN t_user u ON u.id=w.assignee_id WHERE (?=1 OR w.status<>2) "
@@ -250,6 +273,9 @@ public class OperationsService {
         int status = integer(body.get("status"), 0, 2, "待办状态");
         int priority = integer(body.get("priority"), 0, 3, "优先级");
         Long assignee = nullableLong(body.get("assigneeId"));
+        if (assignee != null && !assignee.equals(actorId)) {
+            throw new CustomException("403", "当前阶段仅支持管理员领取给自己，不能代替他人领取");
+        }
         int updated = jdbc.update("UPDATE t_work_item SET status=?,priority=?,assignee_id=?,completed_at=IF(?=2,CURRENT_TIMESTAMP(3),NULL),"
                 + "version=version+1 WHERE id=? AND version=?", status, priority, assignee, status, id, expected);
         if (updated != 1) throw new CustomException("409", "待办更新冲突");
@@ -259,7 +285,11 @@ public class OperationsService {
     }
 
     public Map<String, Object> workSummary() {
-        refreshWorkItems();
+        workItemRefresh.refresh();
+        return queryWorkSummary();
+    }
+
+    private Map<String, Object> queryWorkSummary() {
         List<Map<String, Object>> rows = jdbc.queryForList("SELECT business_type,COUNT(*) total,"
                 + "SUM(CASE WHEN priority>=2 THEN 1 ELSE 0 END) urgent FROM t_work_item WHERE status<>2 GROUP BY business_type");
         long open = jdbc.queryForObject("SELECT COUNT(*) FROM t_work_item WHERE status<>2", Long.class);
@@ -267,25 +297,6 @@ public class OperationsService {
         result.put("open", open);
         result.put("groups", rows);
         return result;
-    }
-
-    private void refreshWorkItems() {
-        jdbc.update("INSERT IGNORE INTO t_work_item(business_type,business_id,title,priority,due_at,status,source_event_key) "
-                + "SELECT 'adopt',CONCAT(aid,':',uid),CONCAT('审核领养申请：',COALESCE(aname,aid)),2,NULL,0,CONCAT('adopt:',aid,':',uid) "
-                + "FROM t_adopt WHERE vstate IN (0,3)");
-        jdbc.update("INSERT IGNORE INTO t_work_item(business_type,business_id,title,priority,due_at,status,source_event_key) "
-                + "SELECT 'proof',CAST(id AS CHAR),CONCAT('审核领养凭证 #',id),1,NULL,0,CONCAT('proof:',id) FROM t_proof WHERE pstatus=0");
-        jdbc.update("INSERT IGNORE INTO t_work_item(business_type,business_id,title,priority,due_at,status,source_event_key) "
-                + "SELECT 'rescue',CAST(id AS CHAR),CONCAT('处理救助事件 #',id),GREATEST(1,priority),NULL,0,CONCAT('rescue:',id) "
-                + "FROM t_help WHERE status<>2");
-        jdbc.update("INSERT IGNORE INTO t_work_item(business_type,business_id,title,priority,due_at,status,source_event_key) "
-                + "SELECT 'visit_plan',CAST(id AS CHAR),CONCAT('逾期回访计划 #',id),2,CAST(due_at AS DATETIME),0,CONCAT('visit-plan:',id) "
-                + "FROM t_visit_plan WHERE status=2");
-        jdbc.update("UPDATE t_work_item w SET status=2,completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP(3)),version=version+1 "
-                + "WHERE w.status<>2 AND ((w.business_type='adopt' AND NOT EXISTS(SELECT 1 FROM t_adopt a WHERE BINARY CONCAT(a.aid,':',a.uid)=BINARY w.business_id AND a.vstate IN(0,3))) "
-                + "OR (w.business_type='proof' AND NOT EXISTS(SELECT 1 FROM t_proof p WHERE p.id=CAST(w.business_id AS UNSIGNED) AND p.pstatus=0)) "
-                + "OR (w.business_type='rescue' AND NOT EXISTS(SELECT 1 FROM t_help h WHERE h.id=CAST(w.business_id AS UNSIGNED) AND h.status<>2)) "
-                + "OR (w.business_type='visit_plan' AND NOT EXISTS(SELECT 1 FROM t_visit_plan v WHERE v.id=CAST(w.business_id AS UNSIGNED) AND v.status=2)))");
     }
 
     public List<Map<String, Object>> favorites(Long userId) {

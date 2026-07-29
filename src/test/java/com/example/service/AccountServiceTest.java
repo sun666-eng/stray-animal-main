@@ -3,6 +3,7 @@ package com.example.service;
 import com.example.entity.Account;
 import com.example.exception.CustomException;
 import com.example.mapper.AccountMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -19,6 +20,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class AccountServiceTest {
     @Mock AccountMapper mapper;
+    @Mock JdbcTemplate jdbcTemplate;
     @InjectMocks AccountService service;
 
     /** Mockito 5 不注入继承的泛型字段 M baseMapper（MP 3.5.7 起访问会断言非空），须显式注入。 */
@@ -52,6 +54,23 @@ class AccountServiceTest {
         when(mapper.insert(any(Account.class))).thenReturn(0);
         assertEquals("500", assertThrows(CustomException.class,
                 () -> service.saveAccount(validAccount, "authenticated-admin")).getCode());
+    }
+
+    @Test
+    void rejectsMalformedOrMissingBusinessReference() {
+        Account malformed = valid();
+        malformed.setBusinessType("adopt");
+        malformed.setBusinessId("10011");
+        assertEquals("400", assertThrows(CustomException.class,
+                () -> service.saveAccount(malformed, "authenticated-admin")).getCode());
+
+        Account missing = valid();
+        missing.setBusinessType("animal");
+        missing.setBusinessId("999999");
+        when(jdbcTemplate.queryForObject(any(String.class), any(Class.class), any(Object.class)))
+                .thenReturn(0L);
+        assertEquals("404", assertThrows(CustomException.class,
+                () -> service.saveAccount(missing, "authenticated-admin")).getCode());
     }
 
     private void assert400(Account account) {
