@@ -116,7 +116,13 @@ async function runViewport(browser, viewport, name, exercise) {
     await page.getByText('启用受控模式前必须确认两项安全边界').waitFor();
     await page.locator('.admin-agent-guarded-checks input[type="checkbox"]').nth(0).check();
     await page.locator('.admin-agent-guarded-checks input[type="checkbox"]').nth(1).check();
+    await page.locator('#automationPhrase').fill('启动受控自动通过');
+    await save.click();
+    await page.getByText(/第 2 个字应为“用”/).first().waitFor();
+    assert.equal(captured.configCalls, 1);
+    assert.equal(await page.locator('#automationPhrase').getAttribute('aria-invalid'), 'true');
     await page.locator('#automationPhrase').fill('启用受控自动通过');
+    await page.getByText('确认短语一致，可以保存。').waitFor();
     await save.click();
     await page.getByText('控制设置已保存').waitFor();
     assert.equal(await run.isEnabled(), true);

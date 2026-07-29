@@ -16,6 +16,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -51,7 +52,21 @@ class AdminAgentAutomationServiceTest {
         CustomException error = assertThrows(CustomException.class, () -> service.saveConfig(actor, 1, true,
                 "guarded", 3, true, true, "我确认"));
         assertEquals("400", error.getCode());
+        assertTrue(error.getMsg().contains("确认短语不匹配"));
+        assertTrue(error.getMsg().contains("我确认"));
         verify(repository, never()).saveConfig(any(), anyLong(), any(Boolean.class), anyString(), any(Integer.class));
+    }
+
+    @Test void guardedModeDistinguishesMissingPhraseFromTypo() {
+        User actor = user(true);
+        CustomException missing = assertThrows(CustomException.class, () -> service.saveConfig(actor, 1, true,
+                "guarded", 3, true, true, "  "));
+        assertTrue(missing.getMsg().contains("尚未填写"));
+
+        CustomException typo = assertThrows(CustomException.class, () -> service.saveConfig(actor, 1, true,
+                "guarded", 3, true, true, "启动受控自动通过"));
+        assertTrue(typo.getMsg().contains("你输入了“启动受控自动通过”"));
+        assertTrue(typo.getMsg().contains("要求为“启用受控自动通过”"));
     }
 
     @Test void repeatedRunRequestReturnsStoredEvidenceWithoutAnotherPaidCall() {

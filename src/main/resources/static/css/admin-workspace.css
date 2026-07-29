@@ -862,6 +862,10 @@
 .admin-agent-guarded-checks input[type="checkbox"] { width: 18px; height: 18px; accent-color: #d63a1f; }
 .admin-agent-guarded-checks .is-phrase { display: grid; gap: 7px; }.admin-agent-guarded-checks .is-phrase span { font-size: 12px; font-weight: 800; }
 .admin-agent-guarded-checks .is-phrase input { min-height: 44px; padding: 0 12px; border: 1px solid #d9a79d; border-radius: 8px; background: #fff; font: inherit; }
+.admin-agent-guarded-checks .is-phrase input[aria-invalid="true"] { border-color: #cf311c; box-shadow: 0 0 0 3px rgba(207,49,28,.1); }
+.admin-agent-guarded-checks .is-phrase small { min-height: 18px; color: #78716c; font-size: 12px; line-height: 1.5; }
+.admin-agent-guarded-checks .is-phrase small.is-match { color: #23714a; font-weight: 700; }
+.admin-agent-guarded-checks .is-phrase small.is-mismatch { color: #b52c1c; font-weight: 700; }
 .admin-agent-automation-feedback { display: grid; gap: 3px; padding: 13px 16px; border-left: 3px solid #2d7655; color: #245f46; background: #eaf6ef; font-size: 12px; }
 .admin-agent-automation-feedback.is-error { border-left-color: #c93620; color: #a62e1c; background: #fff0ed; }
 .admin-agent-automation-section-head { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 12px; }

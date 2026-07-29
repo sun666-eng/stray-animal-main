@@ -46,8 +46,13 @@ public class AdminAgentAutomationService {
             if (!acknowledgeNoAutoReject || !acknowledgeHumanFallback) {
                 throw new CustomException("400", "启用受控模式前必须确认两项安全边界");
             }
-            if (!GUARDED_CONFIRMATION.equals(confirmationText == null ? "" : confirmationText.trim())) {
-                throw new CustomException("400", "请输入确认短语：" + GUARDED_CONFIRMATION);
+            String cleanConfirmation = confirmationText == null ? "" : confirmationText.trim();
+            if (cleanConfirmation.isEmpty()) {
+                throw new CustomException("400", "确认短语尚未填写，请逐字输入：“" + GUARDED_CONFIRMATION + "”");
+            }
+            if (!GUARDED_CONFIRMATION.equals(cleanConfirmation)) {
+                throw new CustomException("400", "确认短语不匹配：你输入了“" + safe(cleanConfirmation, 40)
+                        + "”，要求为“" + GUARDED_CONFIRMATION + "”");
             }
         }
         repository.saveConfig(actor.getId(), expectedVersion, enabled, cleanMode, maxBatch);
