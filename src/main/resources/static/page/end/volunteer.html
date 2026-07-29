@@ -5,23 +5,89 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>义工审核 · 归途计划管理</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-  <link rel="stylesheet" href="../../css/product-ui.css?v=20260728c">
-  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260728e">
+  <link rel="stylesheet" href="../../css/product-ui.css?v=20260729b">
+  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260729b">
 </head>
 <body>
 <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
-<div id="workspace" class="admin-shell" v-cloak @keyup.esc="closeTopLayer">
-  <header class="ui-header admin-header">
+<div id="workspace" :class="{'is-nav-open': mobileOpen}" class="admin-shell" v-cloak @keyup.esc="closeTopLayer" @click="closeMenus">
+  <header class="ui-header admin-header" @click.stop>
     <div class="ui-header-inner">
-      <a class="ui-brand" href="/page/end/index.html" aria-label="返回管理工作台"><span class="ui-brand-mark" aria-hidden="true">爪</span><span class="ui-brand-copy"><strong>归途计划</strong><small>RESCUE WORKSPACE</small></span><span class="admin-brand-note">管理工作台</span></a>
-      <nav class="ui-nav admin-desktop-nav" aria-label="管理功能"><a href="/page/end/index.html">概览</a><a v-for="item in menuItems" :key="item.flag" :class="{'is-active':item.flag==='volunteer'}" :aria-current="item.flag==='volunteer'?'page':null" :href="item.href">{{ item.label }}</a></nav>
+      <a class="ui-brand" href="/page/end/index.html" aria-label="返回管理工作台">
+        <span class="ui-brand-mark" aria-hidden="true">爪</span>
+        <span class="ui-brand-copy"><strong>归途计划</strong><small>RESCUE WORKSPACE</small></span>
+        <span class="admin-brand-note">义工审核</span>
+      </a>
+      <nav class="ui-nav admin-desktop-nav" aria-label="管理功能">
+        <a href="/page/end/index.html" :class="{'is-active': isOverviewActive()}" :aria-current="isOverviewActive() ? 'page' : null">概览</a>
+        <a v-for="item in desktopNav.primary" :key="'desk-'+item.flag"
+           :class="{'is-active': isNavActive(item.flag)}"
+           :aria-current="isNavActive(item.flag) ? 'page' : null"
+           :href="item.href">
+          <span class="admin-nav-short">{{ item.shortLabel }}</span>
+          <span class="admin-nav-full">{{ item.label }}</span>
+        </a>
+        <div v-if="desktopNav.more && desktopNav.more.length" class="admin-nav-more">
+          <button class="admin-nav-more-trigger" type="button"
+                  :class="{'is-current': isMoreCurrent()}"
+                  :aria-expanded="String(moreOpen)"
+                  aria-controls="adminNavMoreMenu"
+                  aria-haspopup="true"
+                  @click.stop="toggleMore">
+            更多
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+          </button>
+          <div id="adminNavMoreMenu" class="admin-nav-more-menu" role="menu" :hidden="!moreOpen">
+            <a v-for="item in desktopNav.more" :key="'more-'+item.flag" role="menuitem"
+               :class="{'is-active': isNavActive(item.flag)}"
+               :aria-current="isNavActive(item.flag) ? 'page' : null"
+               :href="item.href">{{ item.label }}</a>
+          </div>
+        </div>
+      </nav>
       <div class="ui-header-actions">
-        <button class="ui-icon-button ui-mobile-toggle" type="button" aria-controls="adminMobileNav" :aria-expanded="String(mobileOpen)" aria-label="打开或关闭管理导航" @click="mobileOpen=!mobileOpen"><span aria-hidden="true">{{ mobileOpen ? '×' : '☰' }}</span></button>
-        <div class="ui-account"><button class="ui-account-trigger admin-account-trigger" type="button" aria-controls="adminAccountMenu" :aria-expanded="String(accountOpen)" @click="accountOpen=!accountOpen"><img class="admin-account-photo" :src="avatarUrl(user.avatar)" alt="" @error="avatarFallback"><span class="ui-account-name">{{ user.username }}</span><span aria-hidden="true">⌄</span></button><div id="adminAccountMenu" class="ui-account-menu admin-account-menu" :hidden="!accountOpen"><a href="/page/end/person.html">个人资料</a><a href="/page/front/index.html">访问用户端</a><button class="is-danger" type="button" @click="logout">退出登录</button></div></div>
+        <button class="ui-icon-button ui-mobile-toggle" type="button"
+                :aria-expanded="String(mobileOpen)"
+                aria-controls="adminMobileNav"
+                :aria-label="mobileOpen ? '关闭管理导航' : '打开管理导航'"
+                @click.stop="toggleMobile">
+          <span aria-hidden="true">{{ mobileOpen ? '×' : '☰' }}</span>
+        </button>
+        <div class="ui-account">
+          <button class="ui-account-trigger admin-account-trigger" type="button"
+                  :aria-expanded="String(accountOpen)"
+                  aria-controls="adminAccountMenu"
+                  @click.stop="toggleAccount">
+            <img class="admin-account-photo" :src="avatarUrl(user.avatar)" alt="" @error="avatarFallback">
+            <span class="ui-account-name">{{ user.username }}</span>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+          </button>
+          <div id="adminAccountMenu" class="ui-account-menu admin-account-menu" :hidden="!accountOpen" @click.stop>
+            <a href="/page/end/person.html">个人资料</a>
+            <a href="/page/front/index.html">用户端首页</a>
+            <button class="is-danger" type="button" @click="logout">退出登录</button>
+          </div>
+        </div>
       </div>
-      <nav id="adminMobileNav" class="ui-mobile-nav admin-mobile-nav" :class="{'is-open':mobileOpen}" aria-label="移动端管理功能"><a href="/page/end/index.html">工作台概览</a><strong v-if="menuItems.length">管理功能</strong><a v-for="item in menuItems" :key="'mobile-'+item.flag" :href="item.href" :aria-current="item.flag==='volunteer'?'page':null">{{ item.label }}</a><strong>常用入口</strong><a href="/page/end/person.html">个人资料</a><a href="/page/front/index.html">访问用户端</a></nav>
+      <nav id="adminMobileNav" class="ui-mobile-nav admin-mobile-nav"
+           :class="{'is-open': mobileOpen}"
+           aria-label="移动端管理功能"
+           @click.stop>
+        <a class="admin-mobile-home" href="/page/end/index.html" :aria-current="isOverviewActive() ? 'page' : null">工作台概览</a>
+        <template v-for="group in menuGroups">
+          <strong :key="'g-'+group.id">{{ group.label }}</strong>
+          <a v-for="item in group.items" :key="'m-'+item.flag"
+             :class="{'is-active': isNavActive(item.flag)}"
+             :aria-current="isNavActive(item.flag) ? 'page' : null"
+             :href="item.href">{{ item.label }}</a>
+        </template>
+        <strong>账户</strong>
+        <a href="/page/end/person.html">个人资料</a>
+        <a href="/page/front/index.html">用户端首页</a>
+      </nav>
     </div>
   </header>
+  <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
 
   <main class="admin-main">
     <section class="admin-hero" aria-labelledby="volunteerAdminTitle">
@@ -77,7 +143,7 @@
 </div>
 <script src="../../js/jquery.min.js"></script>
 <script src="../../js/auth-session.js?v=20260728"></script>
-<script src="../../js/admin-auth.js?v=20260728a"></script>
+<script src="../../js/admin-auth.js?v=20260729b"></script>
 <script src="../../js/vue.min.js"></script>
 <script>
 (function () {
@@ -97,6 +163,10 @@
         data: {
           user: authenticatedUser,
           menuItems: AdminWorkspace.navigation(authenticatedUser.permission),
+          menuGroups: AdminWorkspace.navigationGroups(authenticatedUser.permission),
+          desktopNav: AdminWorkspace.desktopNavigation(authenticatedUser.permission),
+          currentNavFlag: 'volunteer',
+          moreOpen: false,
           mobileOpen: false,
           accountOpen: false,
           search: '',
@@ -128,10 +198,18 @@
         },
         created: function () { this.load(1); },
         methods: {
+          closeMenus: function () { this.mobileOpen = false; this.accountOpen = false; this.moreOpen = false; },
+          toggleMore: function () { this.moreOpen = !this.moreOpen; this.accountOpen = false; this.mobileOpen = false; },
+          toggleMobile: function () { this.mobileOpen = !this.mobileOpen; this.accountOpen = false; this.moreOpen = false; },
+          toggleAccount: function () { this.accountOpen = !this.accountOpen; this.moreOpen = false; this.mobileOpen = false; },
+          isNavActive: function (flag) { return AdminWorkspace.flagsMatch(flag, this.currentNavFlag); },
+          isMoreCurrent: function () { var vm = this; var more = (this.desktopNav && this.desktopNav.more) || []; return more.some(function (item) { return AdminWorkspace.flagsMatch(item.flag, vm.currentNavFlag); }); },
+          isOverviewActive: function () { return !this.currentNavFlag; },
+
           avatarUrl: function (flag) { return AdminWorkspace.avatarUrl(flag); },
           avatarFallback: function (event) { AdminWorkspace.avatarFallback(event); },
           logout: function () { AuthSession.logout(); },
-          closeTopLayer: function () { if (this.auditItem) this.cancelAudit(); else if (this.detailItem) this.closeDetail(); else { this.mobileOpen = false; this.accountOpen = false; } },
+          closeTopLayer: function () { if (this.closeMenus) this.closeMenus();  if (this.auditItem) this.cancelAudit(); else if (this.detailItem) this.closeDetail(); else { this.mobileOpen = false; this.accountOpen = false; } },
           load: function (page) {
             var vm = this;
             vm.loading = true;

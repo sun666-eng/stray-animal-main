@@ -6,42 +6,89 @@
   <meta name="description" content="管理员 AI Agent 与受控自动审核工作台">
   <title>AI 管理助手 · 归途计划管理</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-  <link rel="stylesheet" href="../../css/product-ui.css?v=20260728d">
-  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260729i">
+  <link rel="stylesheet" href="../../css/product-ui.css?v=20260729b">
+  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260729b">
 </head>
 <body>
 <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
-<div id="workspace" class="admin-shell" v-cloak @keyup.esc="closeLayers">
-  <header class="ui-header admin-header">
+<div id="workspace" :class="{'is-nav-open': mobileOpen}" class="admin-shell" v-cloak @keyup.esc="closeLayers" @click="closeMenus">
+  <header class="ui-header admin-header" @click.stop>
     <div class="ui-header-inner">
       <a class="ui-brand" href="/page/end/index.html" aria-label="返回管理工作台">
         <span class="ui-brand-mark" aria-hidden="true">爪</span>
         <span class="ui-brand-copy"><strong>归途计划</strong><small>RESCUE WORKSPACE</small></span>
-        <span class="admin-brand-note">管理工作台</span>
+        <span class="admin-brand-note">AI 助手</span>
       </a>
       <nav class="ui-nav admin-desktop-nav" aria-label="管理功能">
-        <a href="/page/end/index.html">概览</a>
-        <a v-for="item in menuItems" :key="item.flag" :class="{'is-active':item.flag==='admin_agent'}" :href="item.href">{{ item.label }}</a>
+        <a href="/page/end/index.html" :class="{'is-active': isOverviewActive()}" :aria-current="isOverviewActive() ? 'page' : null">概览</a>
+        <a v-for="item in desktopNav.primary" :key="'desk-'+item.flag"
+           :class="{'is-active': isNavActive(item.flag)}"
+           :aria-current="isNavActive(item.flag) ? 'page' : null"
+           :href="item.href">
+          <span class="admin-nav-short">{{ item.shortLabel }}</span>
+          <span class="admin-nav-full">{{ item.label }}</span>
+        </a>
+        <div v-if="desktopNav.more && desktopNav.more.length" class="admin-nav-more">
+          <button class="admin-nav-more-trigger" type="button"
+                  :class="{'is-current': isMoreCurrent()}"
+                  :aria-expanded="String(moreOpen)"
+                  aria-controls="adminNavMoreMenu"
+                  aria-haspopup="true"
+                  @click.stop="toggleMore">
+            更多
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+          </button>
+          <div id="adminNavMoreMenu" class="admin-nav-more-menu" role="menu" :hidden="!moreOpen">
+            <a v-for="item in desktopNav.more" :key="'more-'+item.flag" role="menuitem"
+               :class="{'is-active': isNavActive(item.flag)}"
+               :aria-current="isNavActive(item.flag) ? 'page' : null"
+               :href="item.href">{{ item.label }}</a>
+          </div>
+        </div>
       </nav>
       <div class="ui-header-actions">
-        <button class="ui-icon-button ui-mobile-toggle" type="button" :aria-expanded="String(mobileOpen)" aria-controls="adminMobileNav" aria-label="打开或关闭管理导航" @click="mobileOpen=!mobileOpen">{{ mobileOpen ? '×' : '☰' }}</button>
+        <button class="ui-icon-button ui-mobile-toggle" type="button"
+                :aria-expanded="String(mobileOpen)"
+                aria-controls="adminMobileNav"
+                :aria-label="mobileOpen ? '关闭管理导航' : '打开管理导航'"
+                @click.stop="toggleMobile">
+          <span aria-hidden="true">{{ mobileOpen ? '×' : '☰' }}</span>
+        </button>
         <div class="ui-account">
-          <button class="ui-account-trigger admin-account-trigger" type="button" :aria-expanded="String(accountOpen)" aria-controls="adminAccountMenu" @click="accountOpen=!accountOpen">
+          <button class="ui-account-trigger admin-account-trigger" type="button"
+                  :aria-expanded="String(accountOpen)"
+                  aria-controls="adminAccountMenu"
+                  @click.stop="toggleAccount">
             <img class="admin-account-photo" :src="avatarUrl(user.avatar)" alt="" @error="avatarFallback">
             <span class="ui-account-name">{{ user.username }}</span>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
           </button>
-          <div id="adminAccountMenu" class="ui-account-menu admin-account-menu" :hidden="!accountOpen">
-            <a href="/page/end/person.html">个人资料</a><a href="/page/front/index.html">用户端首页</a>
+          <div id="adminAccountMenu" class="ui-account-menu admin-account-menu" :hidden="!accountOpen" @click.stop>
+            <a href="/page/end/person.html">个人资料</a>
+            <a href="/page/front/index.html">用户端首页</a>
             <button class="is-danger" type="button" @click="logout">退出登录</button>
           </div>
         </div>
       </div>
-      <nav id="adminMobileNav" class="ui-mobile-nav admin-mobile-nav" :class="{'is-open':mobileOpen}" aria-label="移动端管理功能">
-        <a href="/page/end/index.html">工作台概览</a>
-        <a v-for="item in menuItems" :key="'mobile-'+item.flag" :href="item.href" :aria-current="item.flag==='admin_agent'?'page':null">{{ item.label }}</a>
+      <nav id="adminMobileNav" class="ui-mobile-nav admin-mobile-nav"
+           :class="{'is-open': mobileOpen}"
+           aria-label="移动端管理功能"
+           @click.stop>
+        <a class="admin-mobile-home" href="/page/end/index.html" :aria-current="isOverviewActive() ? 'page' : null">工作台概览</a>
+        <template v-for="group in menuGroups">
+          <strong :key="'g-'+group.id">{{ group.label }}</strong>
+          <a v-for="item in group.items" :key="'m-'+item.flag"
+             :class="{'is-active': isNavActive(item.flag)}"
+             :aria-current="isNavActive(item.flag) ? 'page' : null"
+             :href="item.href">{{ item.label }}</a>
+        </template>
+        <strong>账户</strong>
+        <a href="/page/end/person.html">个人资料</a>
+        <a href="/page/front/index.html">用户端首页</a>
       </nav>
     </div>
   </header>
+  <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
 
   <main class="admin-main admin-agent-main">
     <section class="admin-agent-hero" aria-labelledby="agentTitle">
@@ -241,16 +288,28 @@
   </div>
 </div>
 
-<script src="../../js/jquery.min.js"></script><script src="../../js/auth-session.js?v=20260728"></script><script src="../../js/admin-auth.js?v=20260728a"></script><script src="../../js/vue.min.js"></script><script src="../../js/admin-agent-markdown.js?v=20260728b"></script>
+<script src="../../js/jquery.min.js"></script><script src="../../js/auth-session.js?v=20260728"></script><script src="../../js/admin-auth.js?v=20260729b"></script><script src="../../js/vue.min.js"></script><script src="../../js/admin-agent-markdown.js?v=20260728b"></script>
 <script>
 (function(){'use strict';
   Vue.component('agent-rich-inline',{functional:true,props:{parts:{type:Array,default:function(){return[];}}},render:function(h,context){return h('span',{class:'admin-agent-rich-inline'},context.props.parts.map(function(part,index){var tag=part.type==='strong'?'strong':(part.type==='code'?'code':'span');return h(tag,{key:index},[part.text||'']);}));}});
   Vue.component('agent-rich-answer',{props:{text:{type:String,default:''}},computed:{blocks:function(){return AdminAgentMarkdown.parse(this.text);}},template:'<div class="admin-agent-rich-answer"><template v-for="(block,bi) in blocks"><h3 v-if="block.type===\'heading\'&&block.level<=2" :key="\'h3-\'+bi"><agent-rich-inline :parts="block.parts"></agent-rich-inline></h3><h4 v-else-if="block.type===\'heading\'" :key="\'h4-\'+bi"><agent-rich-inline :parts="block.parts"></agent-rich-inline></h4><p v-else-if="block.type===\'paragraph\'" :key="\'p-\'+bi"><agent-rich-inline :parts="block.parts"></agent-rich-inline></p><blockquote v-else-if="block.type===\'quote\'" :key="\'q-\'+bi"><agent-rich-inline :parts="block.parts"></agent-rich-inline></blockquote><hr v-else-if="block.type===\'divider\'" :key="\'d-\'+bi"><ol v-else-if="block.type===\'list\'&&block.ordered" :key="\'ol-\'+bi" :start="block.start||1"><li v-for="(item,ii) in block.items" :key="ii"><agent-rich-inline :parts="item"></agent-rich-inline><ul v-if="item.children&&item.children.length"><li v-for="(child,ci) in item.children" :key="ci"><agent-rich-inline :parts="child"></agent-rich-inline></li></ul></li></ol><ul v-else-if="block.type===\'list\'" :key="\'ul-\'+bi"><li v-for="(item,ii) in block.items" :key="ii"><agent-rich-inline :parts="item"></agent-rich-inline><ul v-if="item.children&&item.children.length"><li v-for="(child,ci) in item.children" :key="ci"><agent-rich-inline :parts="child"></agent-rich-inline></li></ul></li></ul><div v-else-if="block.type===\'table\'" class="admin-agent-answer-table" :key="\'t-\'+bi"><table><thead><tr><th v-for="(cell,ci) in block.headers" :key="ci"><agent-rich-inline :parts="cell.parts"></agent-rich-inline></th></tr></thead><tbody><tr v-for="(row,ri) in block.rows" :key="ri"><td v-for="(cell,ci) in row" :key="ci" :data-label="block.headers[ci].plain"><agent-rich-inline :parts="cell"></agent-rich-inline></td></tr></tbody></table></div></template></div>'});
   AuthSession.bootstrap({requireAuth:true,allowCachedOnNetworkError:false,onDone:function(ok,user){if(!ok||!user)return;document.getElementById('authWait').hidden=true;
-    new Vue({el:'#workspace',data:{user:user,menuItems:AdminWorkspace.navigation(user.permission),mobileOpen:false,accountOpen:false,historyOpen:false,pageError:'',statusLoading:true,status:{configured:false,enabled:false,apiKeyConfigured:false,canConfigure:false,connected:false,connectionStatus:'untested',connectionMessage:'',baseUrl:'',model:'',apiKeyHint:''},overviewLoading:true,overview:{},historyLoading:true,conversationLoading:false,conversations:[],activeConversationId:null,activeTitle:'',turns:[],draft:'',asking:false,askError:'',configOpen:false,saving:false,testing:false,configError:'',configMessage:'',showApiKey:false,configForm:{enabled:true,baseUrl:'',model:'',apiKey:''},automationOpen:false,automationLoading:false,automationSaving:false,automationRunning:false,automationError:'',automationMessage:'',automationRuns:[],automationCurrent:null,automationSavedSignature:'',automationGuardedPhrase:'启用受控自动通过',automationForm:{enabled:false,mode:'shadow',maxBatch:3,expectedVersion:1,acknowledgeNoAutoReject:false,acknowledgeHumanFallback:false,confirmationText:''},quickPrompts:['汇总当前待办并按优先级排序','列出待审核领养申请并提示风险','检查动物档案的数据质量问题','汇总尚未完成的救助请求']},
+    new Vue({el:'#workspace',data:{user:user,menuItems: AdminWorkspace.navigation(user.permission),
+          menuGroups: AdminWorkspace.navigationGroups(user.permission),
+          desktopNav: AdminWorkspace.desktopNavigation(user.permission),
+          currentNavFlag: 'admin_agent',
+          moreOpen: false,mobileOpen:false,accountOpen:false,historyOpen:false,pageError:'',statusLoading:true,status:{configured:false,enabled:false,apiKeyConfigured:false,canConfigure:false,connected:false,connectionStatus:'untested',connectionMessage:'',baseUrl:'',model:'',apiKeyHint:''},overviewLoading:true,overview:{},historyLoading:true,conversationLoading:false,conversations:[],activeConversationId:null,activeTitle:'',turns:[],draft:'',asking:false,askError:'',configOpen:false,saving:false,testing:false,configError:'',configMessage:'',showApiKey:false,configForm:{enabled:true,baseUrl:'',model:'',apiKey:''},automationOpen:false,automationLoading:false,automationSaving:false,automationRunning:false,automationError:'',automationMessage:'',automationRuns:[],automationCurrent:null,automationSavedSignature:'',automationGuardedPhrase:'启用受控自动通过',automationForm:{enabled:false,mode:'shadow',maxBatch:3,expectedVersion:1,acknowledgeNoAutoReject:false,acknowledgeHumanFallback:false,confirmationText:''},quickPrompts:['汇总当前待办并按优先级排序','列出待审核领养申请并提示风险','检查动物档案的数据质量问题','汇总尚未完成的救助请求']},
       computed:{configBusy:function(){return this.saving||this.testing;},automationBusy:function(){return this.automationSaving||this.automationRunning;},automationDirty:function(){return JSON.stringify([!!this.automationForm.enabled,this.automationForm.mode,Number(this.automationForm.maxBatch)])!==this.automationSavedSignature;},automationPhraseState:function(){var value=(this.automationForm.confirmationText||'').trim();if(!value)return'empty';return value===this.automationGuardedPhrase?'match':'mismatch';},automationPhraseHint:function(){var value=(this.automationForm.confirmationText||'').trim();if(!value)return'这是受控写入确认，需完整输入上方短语。';if(value===this.automationGuardedPhrase)return'确认短语一致，可以保存。';if(value==='启动受控自动通过')return'你输入的是“启动”；第 2 个字应为“用”，请改为“启用”。';return'确认短语不一致，请对照上方内容逐字检查。';},statusLabel:function(){if(this.statusLoading)return'状态读取中';if(this.status.connected)return'真实模型已连接';if(this.status.connectionStatus==='failed')return'连接失败';if(this.status.configured&&this.status.enabled)return'等待连接测试';if(this.status.configured)return'Agent 已停用';return'平台模型未配置';},statusClass:function(){return{'is-connected':this.status.connected,'is-error':this.status.connectionStatus==='failed','is-pending':this.status.configured&&!this.status.connected};},metricCards:function(){var o=this.overview||{};return[{key:'adopt',label:'待审领养',value:this.metric(o.pending_adoptions),note:'需要 adopt 权限'},{key:'proof',label:'待审凭证',value:this.metric(o.pending_proofs),note:'需要 proof 权限'},{key:'volunteer',label:'待审义工',value:this.metric(o.pending_volunteers),note:'需要 volunteer 权限'},{key:'rescue',label:'处理中救助',value:this.metric(o.open_rescues),note:'需要 help / rescue 权限'},{key:'animal',label:'可用动物档案',value:this.metric(o.available_animals),note:'需要 animal 权限'}];}},
       created:function(){this.loadAll();},
       methods:{
+          closeMenus: function () { this.mobileOpen = false; this.accountOpen = false; this.moreOpen = false; },
+          toggleMore: function () { this.moreOpen = !this.moreOpen; this.accountOpen = false; this.mobileOpen = false; },
+          toggleMobile: function () { this.mobileOpen = !this.mobileOpen; this.accountOpen = false; this.moreOpen = false; },
+          toggleAccount: function () { this.accountOpen = !this.accountOpen; this.moreOpen = false; this.mobileOpen = false; },
+          isNavActive: function (flag) { return AdminWorkspace.flagsMatch(flag, this.currentNavFlag); },
+          isMoreCurrent: function () { var vm = this; var more = (this.desktopNav && this.desktopNav.more) || []; return more.some(function (item) { return AdminWorkspace.flagsMatch(item.flag, vm.currentNavFlag); }); },
+          isOverviewActive: function () { return !this.currentNavFlag; },
+
         api:function(options){return $.ajax(Object.assign({contentType:'application/json;charset=UTF-8',cache:false},options));},
         messageOf:function(res,xhr){if(res&&res.msg)return res.msg;if(xhr&&xhr.responseJSON&&xhr.responseJSON.msg)return xhr.responseJSON.msg;return'请求失败，请稍后重试。';},
         metric:function(value){return value===null||typeof value==='undefined'?'无权限':Number(value||0);},

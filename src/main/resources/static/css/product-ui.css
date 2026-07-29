@@ -545,10 +545,42 @@ img { display: block; max-width: 100%; }
 
 @media (max-width: 960px) {
   .ui-nav { display: none; }
-  .ui-mobile-toggle { display: grid; }
-  .ui-mobile-nav { position: absolute; left: 0; right: 0; top: 84px; padding: 12px 24px 18px; border-bottom: 1px solid var(--ui-line); background: #fff; }
-  .ui-mobile-nav.is-open { display: grid; }
-  .ui-mobile-nav a { padding: 11px 0; color: var(--ui-ink); text-decoration: none; font-size: 12px; }
+  .ui-mobile-toggle { display: grid; min-width: 44px; min-height: 44px; border-radius: 10px; font-size: 15px; font-weight: 700; }
+  .ui-mobile-toggle[aria-expanded="true"] { border-color: var(--ui-ink); background: var(--ui-ink); color: #fff; }
+  .ui-mobile-nav {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 84px;
+    z-index: 40;
+    padding: 10px 20px 18px;
+    border-bottom: 1px solid var(--ui-line);
+    background: linear-gradient(180deg, #fffcf8 0%, #f7f7f5 100%);
+    box-shadow: 0 16px 32px rgba(17,18,17,.08);
+  }
+  .ui-mobile-nav.is-open { display: grid; gap: 2px; }
+  .ui-mobile-nav a {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    border-radius: 10px;
+    color: var(--ui-ink);
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 650;
+  }
+  .ui-mobile-nav a:hover,
+  .ui-mobile-nav a:focus-visible { background: rgba(17,18,17,.05); outline: none; }
+  .ui-mobile-nav a[aria-current="page"],
+  .ui-mobile-nav a.is-active {
+    background: rgba(214,58,31,.09);
+    color: var(--ui-accent-strong);
+    font-weight: 760;
+    box-shadow: inset 3px 0 0 var(--ui-accent-strong);
+  }
+  .ui-account-menu a,
+  .ui-account-menu button { min-height: 44px; font-size: 13px; }
   .ui-card-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 22px; }
   .ui-detail { grid-template-columns: 1fr; gap: 28px; }
   .ui-detail-media { position: static; }
