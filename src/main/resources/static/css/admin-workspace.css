@@ -357,9 +357,45 @@
 .admin-volunteer-table td strong, .admin-volunteer-table td small, .admin-volunteer-table td span { display: block; }
 .admin-volunteer-table td small { max-width: 185px; margin-top: 5px; overflow: hidden; color: var(--ui-muted); text-overflow: ellipsis; white-space: nowrap; }
 .admin-volunteer-table td .ui-badge { display: inline-flex; }
-.admin-row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
-.admin-row-actions button { min-height: 34px; padding: 0 10px; border: 1px solid var(--ui-line); border-radius: 8px; color: var(--ui-ink); background: #fff; font-size: 11px; }
-.admin-row-actions button.is-primary { color: #fff; border-color: var(--ui-ink); background: var(--ui-ink); }
+.admin-row-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  max-width: 100%;
+}
+.admin-row-actions button,
+.admin-row-actions .ui-button {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 1px solid var(--ui-line);
+  border-radius: 10px;
+  color: var(--ui-ink);
+  background: #fff;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.admin-row-actions button.is-primary,
+.admin-row-actions .ui-button.is-primary {
+  color: #fff;
+  border-color: var(--ui-ink);
+  background: var(--ui-ink);
+}
+.admin-row-actions button.is-primary:hover { background: #1c1d1c; }
+.admin-row-actions button .ui-icon,
+.admin-row-actions .ui-button .ui-icon {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  min-height: 16px;
+}
 /* 禁用态必须可辨：否则内置角色的「删除」看起来可点却无响应 */
 .admin-row-actions button:disabled,
 .admin-card-actions button:disabled,
@@ -809,7 +845,47 @@
 .admin-record-table td > strong, .admin-record-table td > small { display: block; }
 .admin-record-table td > small { margin-top: 5px; color: var(--ui-muted); }
 .admin-cell-summary { max-width: 330px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.admin-row-actions button.is-danger { color: var(--ui-danger); border-color: #efcbc7; }
+.admin-row-actions button.is-danger,
+.admin-row-actions .ui-button.is-danger {
+  color: var(--ui-danger);
+  border-color: #efcbc7;
+  background: #fff;
+}
+.admin-row-actions button.is-danger:hover {
+  background: #fff5f4;
+  border-color: #e2a8a2;
+}
+/* 行操作稳定顺序视觉：主操作偏墨黑，危险靠后 */
+.admin-dialog-close {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 1px solid var(--ui-line);
+  border-radius: 10px;
+  color: var(--ui-ink);
+  background: #fff;
+  font-size: 13px;
+  font-weight: 650;
+}
+.admin-dialog-close .ui-icon { width: 18px; height: 18px; }
+.admin-dialog-close:hover { background: #f7f7f5; }
+.admin-nav-more-trigger .ui-icon,
+.admin-account-trigger .ui-icon {
+  width: 14px;
+  height: 14px;
+  min-width: 14px;
+  min-height: 14px;
+}
+.admin-header .ui-mobile-toggle .ui-icon {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+}
 .admin-record-cards { display: none; }
 .admin-animal-identity { display: flex; align-items: center; gap: 10px; }
 .admin-animal-identity img, .admin-animal-identity > span { width: 54px; height: 54px; flex: 0 0 auto; border-radius: 9px; object-fit: cover; background: var(--ui-soft); }

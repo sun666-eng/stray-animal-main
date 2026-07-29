@@ -351,7 +351,7 @@ $draftRepositoryJava = Read-Utf8 (Join-Path $root "src/main/java/com/example/ser
 $adminAgentControllerJava = Read-Utf8 (Join-Path $root "src/main/java/com/example/controller/AdminAgentController.java")
 $schemaGuardJava = Read-Utf8 (Join-Path $root "src/main/java/com/example/component/SchemaGuardRunner.java")
 Assert-True ($adminAdoptHtml -match 'canUseAgent:\s*AdminWorkspace\.hasFlag\(user,\s*"admin_agent"\)' -and ([regex]::Matches($adminAdoptHtml, 'openAiDraft\(item\)').Count -ge 2)) "admin adopt 3A: AI draft entry requires agent permission with desktop/mobile parity"
-Assert-True ($adminAdoptHtml -match 'admin-workspace\.css\?v=20260729b' -and $adminWorkspaceCss -match '\.admin-agent-draft-boundary' -and $adminWorkspaceCss -match 'admin-agent-draft-verdict') "admin adopt 3B: cache-busted stylesheet contains the human-confirmation layout"
+Assert-True ($adminAdoptHtml -match 'admin-workspace\.css\?v=20260729c' -and $adminWorkspaceCss -match '\.admin-agent-draft-boundary' -and $adminWorkspaceCss -match 'admin-agent-draft-verdict') "admin adopt 3B: cache-busted stylesheet contains the human-confirmation layout"
 Assert-True ($adminAdoptHtml -match '/api/admin-agent/adoption-drafts/generate' -and $draftSaveBlock -match '/api/admin-agent/adoption-drafts/' -and $draftSaveBlock -notmatch '/api/adopt/audit/|askAction\(') "admin adopt 3A: draft generation and save cannot invoke approval or rejection endpoints"
 Assert-True ($adminAdoptHtml -match '保存仍只更新个人草稿' -and $adminAdoptHtml -match '进入人工确认' -and $adminWorkspaceCss -match '\.admin-agent-draft-boundary' -and $adminWorkspaceCss -match '@media\s*\(max-width:\s*600px\)[\s\S]*?\.admin-agent-draft-verdict') "admin adopt 3A: saving a draft remains non-mutating and responsive"
 Assert-True ($draftFinalizeBlock -match '/api/admin-agent/adoption-drafts/' -and $draftFinalizeBlock -match '/finalize' -and $draftFinalizeBlock -notmatch '/api/adopt/audit/|askAction\(') "admin adopt 3B: browser submits only the dedicated human-confirmation endpoint"
@@ -509,7 +509,8 @@ if (-not $SkipHttp) {
                 $status = [int]$response.StatusCode
                 $location = [string]$response.Headers["Location"]
                 $response.Close()
-                $isDeniedRedirect = $status -eq 302 -and $location -match '/page/end/index\.html\?error=need_admin'
+                # operations uses multi-flag guard -> error=forbidden; classic admin pages -> error=need_admin
+                $isDeniedRedirect = $status -eq 302 -and $location -match '/page/end/index\.html\?error=(need_admin|forbidden)'
                 Assert-True $isDeniedRedirect "$($page.Path): ordinary user is denied by the server"
             } catch {
                 $status = if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode } else { 0 }

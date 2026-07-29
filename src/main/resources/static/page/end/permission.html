@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>权限治理 · 归途计划管理</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-  <link rel="stylesheet" href="../../css/product-ui.css?v=20260729b">
-  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260729b">
+  <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c">
+  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260729c">
 </head>
 <body>
 <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
@@ -35,7 +35,7 @@
                   aria-haspopup="true"
                   @click.stop="toggleMore">
             更多
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down"></use></svg>
           </button>
           <div id="adminNavMoreMenu" class="admin-nav-more-menu" role="menu" :hidden="!moreOpen">
             <a v-for="item in desktopNav.more" :key="'more-'+item.flag" role="menuitem"
@@ -51,7 +51,7 @@
                 aria-controls="adminMobileNav"
                 :aria-label="mobileOpen ? '关闭管理导航' : '打开管理导航'"
                 @click.stop="toggleMobile">
-          <span aria-hidden="true">{{ mobileOpen ? '×' : '☰' }}</span>
+          <span aria-hidden="true"><svg class="ui-icon ui-icon-lg" aria-hidden="true" focusable="false" v-if="mobileOpen"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg><svg class="ui-icon ui-icon-lg" aria-hidden="true" focusable="false" v-else><use href="/icons/ui-icons.svg?v=20260729c#icon-menu" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-menu"></use></svg></span>
         </button>
         <div class="ui-account">
           <button class="ui-account-trigger admin-account-trigger" type="button"
@@ -60,7 +60,7 @@
                   @click.stop="toggleAccount">
             <img class="admin-account-photo" :src="avatarUrl(user.avatar)" alt="" @error="avatarFallback">
             <span class="ui-account-name">{{ user.username }}</span>
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down"></use></svg>
           </button>
           <div id="adminAccountMenu" class="ui-account-menu admin-account-menu" :hidden="!accountOpen" @click.stop>
             <a href="/page/end/person.html">个人资料</a>
@@ -109,8 +109,8 @@
           <p>修改已被角色引用的权限会被服务端拒绝，避免历史角色 JSON 失真。</p>
         </div>
         <div>
-          <button class="ui-button is-primary" type="button" @click="openCreate">新增权限</button>
-          <button class="ui-button is-ghost" type="button" @click="exportRows">导出</button>
+          <button class="ui-button is-primary" type="button" @click="openCreate"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-plus" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-plus"></use></svg>新增</button>
+          <button class="ui-button is-ghost" type="button" @click="exportRows"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-download" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-download"></use></svg>导出</button>
         </div>
       </div>
 
@@ -119,7 +119,7 @@
           <span>搜索</span>
           <input v-model.trim="search" maxlength="100" placeholder="按权限名称搜索">
         </label>
-        <button class="ui-button is-dark" type="submit">查询</button>
+        <button class="ui-button is-dark" type="submit"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-search" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-search"></use></svg>查询</button>
       </form>
 
       <div v-if="message" class="admin-inline-message" :class="{'is-error':messageType==='error','is-success':messageType==='success'}" :role="messageType==='error'?'alert':'status'">{{ message }}</div>
@@ -153,7 +153,7 @@
                 <td>{{ item.path || '无页面' }}</td>
                 <td>
                   <div class="admin-row-actions">
-                    <button type="button" @click="openEdit(item)">编辑</button>
+                    <button type="button" @click="openEdit(item)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-edit" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-edit"></use></svg>编辑</button>
                     <button class="is-danger" type="button" disabled title="权限定义禁止删除">禁止删除</button>
                   </div>
                 </td>
@@ -174,7 +174,7 @@
             </div>
             <p>{{ item.path || '无页面路径' }}</p>
             <div class="admin-card-actions">
-              <button class="ui-button is-dark" type="button" @click="openEdit(item)">编辑</button>
+              <button class="ui-button is-dark" type="button" @click="openEdit(item)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-edit" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-edit"></use></svg>编辑</button>
               <button class="ui-button is-danger" type="button" disabled title="权限定义禁止删除">禁止删除</button>
             </div>
           </article>
@@ -207,7 +207,7 @@
           title="关闭"
           @click="cancelEdit"
         >
-          <span class="admin-dialog-close-icon" aria-hidden="true">×</span>
+          <span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span>
           <span class="admin-dialog-close-text">关闭</span>
         </button>
       </div>
@@ -249,7 +249,7 @@
 
 <script src="../../js/jquery.min.js"></script>
 <script src="../../js/auth-session.js?v=20260728p"></script>
-<script src="../../js/admin-auth.js?v=20260729b"></script>
+<script src="../../js/admin-auth.js?v=20260729c"></script>
 <script src="../../js/vue.min.js"></script>
 <script>
 (function () {

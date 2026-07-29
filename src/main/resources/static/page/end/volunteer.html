@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>义工审核 · 归途计划管理</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-  <link rel="stylesheet" href="../../css/product-ui.css?v=20260729b">
-  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260729b">
+  <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c">
+  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260729c">
 </head>
 <body>
 <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
@@ -35,7 +35,7 @@
                   aria-haspopup="true"
                   @click.stop="toggleMore">
             更多
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down"></use></svg>
           </button>
           <div id="adminNavMoreMenu" class="admin-nav-more-menu" role="menu" :hidden="!moreOpen">
             <a v-for="item in desktopNav.more" :key="'more-'+item.flag" role="menuitem"
@@ -51,7 +51,7 @@
                 aria-controls="adminMobileNav"
                 :aria-label="mobileOpen ? '关闭管理导航' : '打开管理导航'"
                 @click.stop="toggleMobile">
-          <span aria-hidden="true">{{ mobileOpen ? '×' : '☰' }}</span>
+          <span aria-hidden="true"><svg class="ui-icon ui-icon-lg" aria-hidden="true" focusable="false" v-if="mobileOpen"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg><svg class="ui-icon ui-icon-lg" aria-hidden="true" focusable="false" v-else><use href="/icons/ui-icons.svg?v=20260729c#icon-menu" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-menu"></use></svg></span>
         </button>
         <div class="ui-account">
           <button class="ui-account-trigger admin-account-trigger" type="button"
@@ -60,7 +60,7 @@
                   @click.stop="toggleAccount">
             <img class="admin-account-photo" :src="avatarUrl(user.avatar)" alt="" @error="avatarFallback">
             <span class="ui-account-name">{{ user.username }}</span>
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down"></use></svg>
           </button>
           <div id="adminAccountMenu" class="ui-account-menu admin-account-menu" :hidden="!accountOpen" @click.stop>
             <a href="/page/end/person.html">个人资料</a>
@@ -97,7 +97,7 @@
 
     <section aria-labelledby="reviewListTitle">
       <div class="admin-section-head"><div><h2 id="reviewListTitle">申请记录</h2><p>搜索条件对应后端的所在地模糊查询；每页最多读取 {{ pageSize }} 条。</p></div></div>
-      <form class="ui-toolbar admin-review-toolbar" role="search" @submit.prevent="load(1)"><label class="ui-search"><span aria-hidden="true">⌕</span><span class="sr-only">按所在地搜索</span><input v-model.trim="search" type="search" maxlength="120" placeholder="按所在地搜索"></label><button class="ui-button is-dark" type="submit" :disabled="loading">查询</button><button v-if="search" class="ui-button is-ghost" type="button" @click="resetSearch">清除</button></form>
+      <form class="ui-toolbar admin-review-toolbar" role="search" @submit.prevent="load(1)"><label class="ui-search"><span aria-hidden="true">⌕</span><span class="sr-only">按所在地搜索</span><input v-model.trim="search" type="search" maxlength="120" placeholder="按所在地搜索"></label><button class="ui-button is-dark" type="submit" :disabled="loading"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-search" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-search"></use></svg>查询</button><button v-if="search" class="ui-button is-ghost" type="button" @click="resetSearch">清除</button></form>
       <div class="admin-status-key" aria-label="审核状态说明"><span><i class="is-pending"></i>待审核</span><span><i class="is-done"></i>已通过</span><span><i class="is-closed"></i>未通过</span></div>
 
       <div v-if="message" class="admin-inline-message" :class="{'is-error':messageType==='error','is-success':messageType==='success'}" :role="messageType==='error'?'alert':'status'" aria-live="polite">{{ message }}</div>
@@ -108,21 +108,21 @@
         <div class="admin-volunteer-table" aria-label="义工申请桌面列表">
           <table>
             <thead><tr><th scope="col">申请</th><th scope="col">联系方式</th><th scope="col">所在地</th><th scope="col">年龄</th><th scope="col">可参与时间</th><th scope="col">基地到访</th><th scope="col">审核状态</th><th scope="col">操作</th></tr></thead>
-            <tbody><tr v-for="item in records" :key="item.id"><td><strong>{{ item.name || '未填写姓名' }}</strong><small>#{{ item.id }} · {{ item.company || '未填写工作单位' }}</small></td><td><span>{{ item.tel || '-' }}</span><small>{{ item.email || '-' }}</small></td><td>{{ item.location || '-' }}</td><td>{{ item.age==null?'-':item.age }}</td><td>{{ spareTime(item.sparetime) }}</td><td>{{ visitText(item.isvisit) }}</td><td><span class="ui-badge" :class="badgeClass(item.vstate)">{{ stateText(item.vstate) }}</span></td><td><div class="admin-row-actions"><button type="button" @click="openDetail(item)">详情</button><button type="button" class="is-primary" @click="openAudit(item)">审核</button></div></td></tr></tbody>
+            <tbody><tr v-for="item in records" :key="item.id"><td><strong>{{ item.name || '未填写姓名' }}</strong><small>#{{ item.id }} · {{ item.company || '未填写工作单位' }}</small></td><td><span>{{ item.tel || '-' }}</span><small>{{ item.email || '-' }}</small></td><td>{{ item.location || '-' }}</td><td>{{ item.age==null?'-':item.age }}</td><td>{{ spareTime(item.sparetime) }}</td><td>{{ visitText(item.isvisit) }}</td><td><span class="ui-badge" :class="badgeClass(item.vstate)">{{ stateText(item.vstate) }}</span></td><td><div class="admin-row-actions"><button type="button" @click="openDetail(item)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-eye" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-eye"></use></svg>详情</button><button type="button" class="is-primary" @click="openAudit(item)">审核</button></div></td></tr></tbody>
           </table>
         </div>
         <div class="admin-volunteer-cards" aria-label="义工申请移动端列表">
-          <article v-for="item in records" :key="'card-'+item.id" class="admin-volunteer-card"><div><span>申请 #{{ item.id }}</span><h3>{{ item.name || '未填写姓名' }}</h3><p>{{ item.location || '未填写所在地' }}</p></div><span class="ui-badge" :class="badgeClass(item.vstate)">{{ stateText(item.vstate) }}</span><div class="admin-card-actions"><button class="ui-button is-ghost" type="button" @click="openDetail(item)">查看详情</button><button class="ui-button is-dark" type="button" @click="openAudit(item)">审核状态</button></div></article>
+          <article v-for="item in records" :key="'card-'+item.id" class="admin-volunteer-card"><div><span>申请 #{{ item.id }}</span><h3>{{ item.name || '未填写姓名' }}</h3><p>{{ item.location || '未填写所在地' }}</p></div><span class="ui-badge" :class="badgeClass(item.vstate)">{{ stateText(item.vstate) }}</span><div class="admin-card-actions"><button class="ui-button is-ghost" type="button" @click="openDetail(item)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-eye" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-eye"></use></svg>查看详情</button><button class="ui-button is-dark" type="button" @click="openAudit(item)">审核状态</button></div></article>
         </div>
       </template>
 
-      <div v-if="!loading&&!loadError&&totalPages>1" class="ui-pagination admin-pagination"><span>第 {{ pageNum }} 页，共 {{ total }} 条记录</span><div class="ui-page-buttons"><button type="button" :disabled="pageNum===1" aria-label="上一页" @click="load(pageNum-1)">‹</button><button v-for="page in pages" :key="page" type="button" :class="{'is-current':page===pageNum}" :aria-current="page===pageNum?'page':null" @click="load(page)">{{ page }}</button><button type="button" :disabled="pageNum===totalPages" aria-label="下一页" @click="load(pageNum+1)">›</button></div></div>
+      <div v-if="!loading&&!loadError&&totalPages>1" class="ui-pagination admin-pagination"><span>第 {{ pageNum }} 页，共 {{ total }} 条记录</span><div class="ui-page-buttons"><button type="button" :disabled="pageNum===1" aria-label="上一页" @click="load(pageNum-1)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-left" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-left"></use></svg><span class="sr-only">上一页</span></button><button v-for="page in pages" :key="page" type="button" :class="{'is-current':page===pageNum}" :aria-current="page===pageNum?'page':null" @click="load(page)">{{ page }}</button><button type="button" :disabled="pageNum===totalPages" aria-label="下一页" @click="load(pageNum+1)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-right" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-right"></use></svg><span class="sr-only">下一页</span></button></div></div>
     </section>
   </main>
 
   <div v-if="detailItem" class="admin-dialog-backdrop" @click.self="closeDetail">
     <section class="admin-dialog admin-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
-      <div class="admin-dialog-head"><div><span>申请 #{{ detailItem.id }}</span><h2 id="detailTitle">{{ detailItem.name || '未填写姓名' }}</h2></div><button class="admin-dialog-close" ref="detailClose" type="button" aria-label="关闭申请详情" @click="closeDetail" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true">×</span><span class="admin-dialog-close-text">关闭</span></button></div>
+      <div class="admin-dialog-head"><div><span>申请 #{{ detailItem.id }}</span><h2 id="detailTitle">{{ detailItem.name || '未填写姓名' }}</h2></div><button class="admin-dialog-close" ref="detailClose" type="button" aria-label="关闭申请详情" @click="closeDetail" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button></div>
       <dl class="admin-detail-grid"><div><dt>审核状态</dt><dd><span class="ui-badge" :class="badgeClass(detailItem.vstate)">{{ stateText(detailItem.vstate) }}</span></dd></div><div><dt>年龄</dt><dd>{{ detailItem.age==null?'-':detailItem.age }}</dd></div><div><dt>联系电话</dt><dd>{{ detailItem.tel || '-' }}</dd></div><div><dt>电子邮箱</dt><dd>{{ detailItem.email || '-' }}</dd></div><div><dt>微信号</dt><dd>{{ detailItem.wechat || '-' }}</dd></div><div><dt>工作单位</dt><dd>{{ detailItem.company || '-' }}</dd></div><div><dt>现居地</dt><dd>{{ detailItem.location || '-' }}</dd></div><div><dt>可参与时间</dt><dd>{{ spareTime(detailItem.sparetime) }}</dd></div><div><dt>是否到过基地</dt><dd>{{ visitText(detailItem.isvisit) }}</dd></div></dl>
       <div class="admin-detail-statement"><strong>能力与参与意向</strong><p>{{ detailItem.moreability || '未填写' }}</p></div>
       <div v-if="detailItem.apic" class="admin-private-photo"><strong>本人免冠照</strong><img :src="fileUrl(detailItem.apic)" alt="申请人提交的免冠照"></div>
@@ -132,7 +132,7 @@
 
   <div v-if="auditItem" class="admin-dialog-backdrop" @click.self="cancelAudit">
     <section class="admin-dialog" role="dialog" aria-modal="true" aria-labelledby="auditTitle" aria-describedby="roleImpact">
-      <div class="admin-dialog-head"><div><span>申请 #{{ auditItem.id }}</span><h2 id="auditTitle">审核 {{ auditItem.name || '该申请' }}</h2></div><button class="admin-dialog-close" type="button" aria-label="取消审核" @click="cancelAudit" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true">×</span><span class="admin-dialog-close-text">关闭</span></button></div>
+      <div class="admin-dialog-head"><div><span>申请 #{{ auditItem.id }}</span><h2 id="auditTitle">审核 {{ auditItem.name || '该申请' }}</h2></div><button class="admin-dialog-close" type="button" aria-label="取消审核" @click="cancelAudit" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button></div>
       <fieldset class="admin-audit-options"><legend>选择目标状态</legend><label v-for="option in statusOptions" :key="option.value" :class="{'is-selected':auditState===option.value}"><input v-model.number="auditState" type="radio" name="auditState" :value="option.value"><span><strong>{{ option.label }}</strong><small>{{ option.note }}</small></span></label></fieldset>
       <div id="roleImpact" class="admin-role-warning" role="note"><strong>角色影响提示</strong><p>{{ roleImpactText }}</p></div>
       <label class="ui-checkbox admin-audit-check"><input ref="auditConfirm" v-model="impactAcknowledged" type="checkbox"> 我已核对申请资料，并理解系统将按配置处理账号角色影响。</label>
@@ -143,7 +143,7 @@
 </div>
 <script src="../../js/jquery.min.js"></script>
 <script src="../../js/auth-session.js?v=20260728"></script>
-<script src="../../js/admin-auth.js?v=20260729b"></script>
+<script src="../../js/admin-auth.js?v=20260729c"></script>
 <script src="../../js/vue.min.js"></script>
 <script>
 (function () {

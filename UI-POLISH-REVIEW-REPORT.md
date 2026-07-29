@@ -10,10 +10,12 @@
 | 项 | 值 |
 |----|-----|
 | 基线提交 | `66943d1` — fix: complete operations closure before UI polish |
-| 当前分支 | `ui-polish/phase-1-admin-nav-20260729` |
-| 工作区 | 有未提交改动（按要求未 commit / 未合并 main） |
+| Phase 1B 提交 | `14c4bc5` — feat(ui): unify permission-aware admin navigation |
+| 当前分支 | `ui-polish/phase-1c-buttons-icons-20260729`（自 1B 提交创建） |
+| 工作区 | Phase 1C 改动**尚未提交**（按要求等待审核；未合并 main） |
 | 风格 | Editorial Rescue Journal（暖纸 / 墨黑 / 朱红 / 鼠尾草绿） |
 | 后端改动 | **无** |
+| 缓存版本 | `20260729c`（1B 为 `20260729b`） |
 
 ---
 
@@ -325,9 +327,78 @@
 | 阶段 | 状态 |
 |------|------|
 | Phase 1A 管理导航方向 | ✅ 通过 |
-| Phase 1B 全页推广 + 交互 | ✅ |
-| Phase 1B 验收收尾 | ✅ **待人工复核后提交** |
-| Phase 1C / 后续 | ⏸ 未开始 |
+| Phase 1B 全页推广 + 交互 | ✅ 已提交 `14c4bc5` |
+| Phase 1B 验收收尾 | ✅ 已完成 |
+| Phase 1C 按钮层级与本地图标 | ✅ **严格验收通过，待审核后提交** |
+| Phase 2 / 后续 | ⏸ 未开始（停止条件禁止进入） |
+
+---
+
+# Phase 1C：按钮层级与本地图标体系
+
+**日期**: 2026-07-29（含验收修复轮）
+**分支**: `ui-polish/phase-1c-buttons-icons-20260729`
+**1B 基线**: `14c4bc5`
+**HEAD**: `14c4bc5`（1C 改动全部在工作区，未 commit）
+**独立报告**: [`output/playwright/ui-polish-phase-1c/PHASE-1C-REPORT.md`](output/playwright/ui-polish-phase-1c/PHASE-1C-REPORT.md)
+**JSON**: `output/playwright/ui-polish-phase-1c/phase-1c-report.json`
+**截图索引**: `output/playwright/ui-polish-phase-1c/screenshots-index.json`
+
+### 执行结论（严格模式）
+
+| 项 | 结论 | 依据 |
+|----|------|------|
+| Phase 1C 完成 | **是** | 134/134；15×6=90 矩阵；危险确认/loading/200%/权限严格断言 |
+| P0 / P1 / P2 / P3 | **0 / 0 / 1 / 1** | 行内 class 未全量统一；次要图标非强制 |
+| 建议提交 1C | **是** | 假通过已消除 |
+| 建议进入 Phase 2 | **否** | 停止条件 |
+| 后端 / API / DB / 权限规则 | **均未改** | 仅静态资源与对抗缓存戳 |
+| 按钮事件 / 1B 导航结构 | **未改结构** | 保留 @click、AdminWorkspace、More/互斥/键盘 |
+
+### 验收修复（相对首轮）
+
+| 问题 | 修复 |
+|------|------|
+| 账户菜单 best-effort PASS | Enter/Escape + `aria-expanded` 严格 |
+| 无可删角色仍 PASS | 临时角色 `UI_AUDIT_1C_*` 创建→弹窗→取消→清理 |
+| disabled 宽松 | 必须找到 + `isDisabled` + 普通 click 计数 0 |
+| focus-visible 兜底 | outline/box-shadow 必须可见 |
+| `style.zoom=2` 假 200% | CSS viewport **720×450** 等效 1440×900@200% |
+| 5 页视口抽样 | **15×6=90** 全矩阵 |
+| 注入 class 冒充 loading | route 延迟真实查询 + `is-loading`/`aria-busy` |
+| 搜索标签换行 | `.ui-search > span { white-space: nowrap }` |
+| 重复 `.ui-icon-button` | 合并为单一 44×44 定义 |
+| 一次性 apply/fix 脚本 | **已删除**（仅保留 1c / inventory / verify） |
+
+### 自动化终态（端口 10097）
+
+| 命令 | 通过 | 失败 | 退出码 | 耗时 |
+|------|-----:|-----:|-------:|-----:|
+| `git diff --check` | — | 0 | 0 | 106ms |
+| `mvn test` | 全绿 | 0 | 0 | 13779ms |
+| `frontend-adversarial-check.ps1 -BaseUrl http://localhost:10097` | **851** | **0** | 0 | 3653ms |
+| `admin-nav-unit-check.cjs` | 16 | 0 | 0 | 51ms |
+| `ui-polish-phase-1.cjs` | 25 | 0 | 0 | 38035ms |
+| `ui-polish-phase-1b.cjs` | 75+交互/角色 | 0 | 0 | 178592ms |
+| `ui-polish-phase-1c.cjs`（严格） | **134** | **0** | 0 | 66993ms |
+
+矩阵 **90/90**。截图 **17**（真实危险弹窗 + 真实 loading + 等效 200%）。
+
+### 中途失败（已修复）
+
+- 临时角色 POST 缺 CSRF → 已加 `X-CSRF-Token`；终态 0 fail
+
+### 端口
+
+| 阶段 | 9999 | 10097 |
+|------|------|-------|
+| 测试前 | 未监听 | 未监听 |
+| 测试中 | **未触碰** | Listen |
+| 测试后 | 未监听 | **已停止** |
+
+### 停止
+
+- **不提交、不推送、不进入 Phase 2**，等待 GPT 复审。
 
 ---
 
