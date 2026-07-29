@@ -13,12 +13,14 @@
     account: Object.freeze({ label: '资金公示', href: '/page/end/account.html' }),
     notice: Object.freeze({ label: '公告管理', href: '/page/end/notice.html' }),
     help: Object.freeze({ label: '救助咨询', href: '/page/end/help.html' }),
-    rescue: Object.freeze({ label: '救助处理', href: '/page/end/help.html' })
+    rescue: Object.freeze({ label: '救助处理', href: '/page/end/help.html' }),
+    admin_agent: Object.freeze({ label: 'AI 管理助手', href: '/page/end/admin_agent.html' })
   });
   var ROUTE_ORDER = Object.freeze([
     'user', 'role', 'permission', 'animal', 'adopt', 'proof', 'visit',
-    'volunteer', 'account', 'notice', 'help', 'rescue'
+    'volunteer', 'account', 'notice', 'help', 'rescue', 'admin_agent'
   ]);
+  var AVATAR_PLACEHOLDER = '/prototype-assets/editorial-04.svg';
 
   function permissionFlags(permissions) {
     var flags = Object.create(null);
@@ -49,8 +51,15 @@
   }
 
   function avatarUrl(flag) {
-    if (!flag || typeof flag !== 'string') return '/api/files/';
+    if (!flag || typeof flag !== 'string') return AVATAR_PLACEHOLDER;
     return '/api/files/' + encodeURIComponent(flag);
+  }
+
+  function avatarFallback(event) {
+    var image = event && event.target;
+    if (!image) return;
+    image.onerror = null;
+    image.src = AVATAR_PLACEHOLDER;
   }
 
   if (!global.AuthSession) {
@@ -64,6 +73,7 @@
     routes: ROUTES,
     navigation: navigation,
     hasFlag: hasFlag,
-    avatarUrl: avatarUrl
+    avatarUrl: avatarUrl,
+    avatarFallback: avatarFallback
   });
 })(window);

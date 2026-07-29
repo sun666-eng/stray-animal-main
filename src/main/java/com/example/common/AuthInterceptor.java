@@ -33,6 +33,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             "/page/end/person.html",
             "/page/front/adopt_apply.html",
             "/page/front/my_adopt.html",
+            "/page/front/notifications.html",
             "/page/front/adopt_proof.html",
             "/page/front/volunteer_apply.html",
             "/page/front/my_volunteer.html",
@@ -54,6 +55,7 @@ public class AuthInterceptor implements HandlerInterceptor {
         API_FLAG_RULES.put("/api/account", Arrays.asList("account"));
         API_FLAG_RULES.put("/api/notice", Arrays.asList("notice"));
         API_FLAG_RULES.put("/api/help", Arrays.asList("help", "rescue"));
+        API_FLAG_RULES.put("/api/admin-agent", Arrays.asList("admin_agent"));
         API_FLAG_RULES.put("/api/files", Arrays.asList("animal", "adopt", "proof", "visit", "volunteer", "help", "rescue", "user", "my_proof", "apply", "im", "adopt_view"));
 
         PAGE_FLAG_RULES.put("/page/end/user.html", "user");
@@ -68,6 +70,7 @@ public class AuthInterceptor implements HandlerInterceptor {
         PAGE_FLAG_RULES.put("/page/end/notice.html", "notice");
         PAGE_FLAG_RULES.put("/page/end/help.html", "help");
         PAGE_FLAG_RULES.put("/page/end/rescue.html", "help");
+        PAGE_FLAG_RULES.put("/page/end/admin_agent.html", "admin_agent");
 
         LEGACY_PAGE_REDIRECTS.put("/page/end/im.html", "/page/front/rescue_apply.html");
         LEGACY_PAGE_REDIRECTS.put("/page/end/register.html", "/page/front/register.html");
@@ -170,7 +173,7 @@ public class AuthInterceptor implements HandlerInterceptor {
     private boolean hasAnyAdminPageAccess(User user) {
         return hasAnyPermissionFlag(user, Arrays.asList(
                 "user", "role", "permission", "animal", "adopt", "proof", "visit",
-                "volunteer", "account", "notice", "help", "rescue"
+                "volunteer", "account", "notice", "help", "rescue", "admin_agent"
         ));
     }
 
@@ -300,8 +303,9 @@ public class AuthInterceptor implements HandlerInterceptor {
         if (path.startsWith("/api/user/online")) {
             return true;
         }
-        // AI 照顾助手：登录用户即可用，与业务权限无关（限流在 Service）
-        if (path.startsWith("/api/petcare")) {
+        // AI 照顾助手与个人账号级 API 配置：登录用户即可用。
+        // 配置存入各自 HttpSession，不修改平台配置，也不会影响其他用户。
+        if ("/api/petcare".equals(path) || path.startsWith("/api/petcare/")) {
             return true;
         }
         // detail：须登录，细粒度归属在 UserController（本人或 user 管理）
@@ -347,6 +351,12 @@ public class AuthInterceptor implements HandlerInterceptor {
                 && ("GET".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method))) {
             // Controller and service enforce the composite-key owner check.
             return hasAnyPermissionFlag(user, Arrays.asList("my_adopt", "adopt_view", "adopt"));
+        }
+        if (path.matches("^/api/adopt/\\d+/\\d+/(transition|timeline)$")) {
+            return hasAnyPermissionFlag(user, Arrays.asList("my_adopt", "adopt_view", "adopt"));
+        }
+        if (path.equals("/api/notifications") || path.startsWith("/api/notifications/")) {
+            return true;
         }
         if (path.startsWith("/api/proof/page1")) {
             return hasAnyPermissionFlag(user, Arrays.asList("my_proof", "my_adopt", "adopt_view", "proof"));

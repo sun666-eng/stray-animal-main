@@ -12,7 +12,6 @@ import com.example.dto.ChatMessageRequest;
 import com.example.dto.HelpManageRequest;
 import com.example.entity.Help;
 import com.example.entity.User;
-import com.example.component.ChatMessagePublisher;
 import com.example.exception.CustomException;
 import com.example.service.HelpService;
 import org.springframework.web.bind.annotation.*;
@@ -32,9 +31,6 @@ public class HelpController {
 
     @Resource
     private HelpService helpService;
-
-    @Resource
-    private ChatMessagePublisher chatMessagePublisher;
 
     @AuditLog(module = "救助咨询", action = "提交救助请求")
     @PostMapping
@@ -66,11 +62,7 @@ public class HelpController {
         if (!PermissionUtil.hasFlag(user, "help") && !PermissionUtil.hasFlag(user, "rescue")) {
             throw new CustomException("403", "无权处理救助请求");
         }
-        Help patch = new Help();
-        patch.setId(id);
-        patch.setStatus(body.getStatus());
-        patch.setRemark(body.getRemark());
-        return Result.success(helpService.updateHelp(patch, user));
+        return Result.success(helpService.manageHelp(id, body, user));
     }
 
     @AuditLog(module = "救助咨询", action = "删除救助请求")
@@ -166,9 +158,7 @@ public class HelpController {
     public Result<ChatMessageDTO> saveChatMessage(@Valid @RequestBody ChatMessageRequest message,
                                                    HttpServletRequest request) {
         User user = (User) request.getSession().getAttribute("user");
-        ChatMessageDTO saved = helpService.submitChatMessage(message.getText(), user);
-        chatMessagePublisher.publish(saved);
-        return Result.success(saved);
+        return Result.success(helpService.submitChatMessage(message.getText(), user));
     }
 
     @GetMapping("/chat/history")

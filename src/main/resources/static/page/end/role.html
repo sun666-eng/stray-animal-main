@@ -1,2 +1,448 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>角色治理 · 归途计划管理</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>"><link rel="stylesheet" href="../../css/product-ui.css?v=20260728"><link rel="stylesheet" href="../../css/admin-workspace.css?v=20260728"></head><body><div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div><div id="workspace" class="admin-shell" v-cloak><header class="ui-header admin-header"><div class="ui-header-inner"><a class="ui-brand" href="/page/end/index.html"><span class="ui-brand-mark">爪</span><span class="ui-brand-copy"><strong>归途计划</strong><small>RESCUE WORKSPACE</small></span><span class="admin-brand-note">角色治理</span></a><nav class="ui-nav admin-desktop-nav"><a href="/page/end/index.html">概览</a><a v-for="item in menuItems" :key="item.flag" :class="{'is-active':item.flag==='role'}" :href="item.href">{{ item.label }}</a></nav><div class="ui-header-actions"><button class="ui-icon-button ui-mobile-toggle" type="button" @click="mobileOpen=!mobileOpen">菜单</button><div class="ui-account"><button class="ui-account-trigger admin-account-trigger" type="button" @click="accountOpen=!accountOpen"><img class="admin-account-photo" :src="avatarUrl(user.avatar)" alt="" @error="avatarFallback"><span>{{ user.username }}</span></button><div class="ui-account-menu admin-account-menu" :hidden="!accountOpen"><a href="/page/end/person.html">个人资料</a><button class="is-danger" type="button" @click="logout">退出登录</button></div></div></div><nav class="ui-mobile-nav admin-mobile-nav" :class="{'is-open':mobileOpen}"><a href="/page/end/index.html">工作台概览</a><a v-for="item in menuItems" :key="'m-'+item.flag" :href="item.href">{{ item.label }}</a></nav></div></header><main class="admin-main"><section class="admin-hero"><div><p class="admin-kicker">Role governance</p><h1>角色治理</h1><p>内置角色不可修改或删除。角色权限只接收数据库中已有权限 ID，不信任客户端 flag/path。</p></div><div class="admin-hero-meta"><span>写入权限</span><strong>超级管理员</strong></div></section><section><div class="admin-section-head"><div><h2>角色列表</h2><p>权限变更会影响后台导航与 API 访问，请保持最小授权。</p></div><div><button class="ui-button is-primary" type="button" @click="openCreate">新增角色</button><button class="ui-button is-ghost" type="button" @click="exportRows">导出</button></div></div><form class="ui-toolbar admin-review-toolbar" @submit.prevent="load(1)"><label class="ui-search"><span>搜索</span><input v-model.trim="search" maxlength="100" placeholder="按角色名称搜索"></label><button class="ui-button is-dark" type="submit">查询</button></form><div v-if="message" class="admin-inline-message" :class="{'is-error':messageType==='error','is-success':messageType==='success'}" :role="messageType==='error'?'alert':'status'">{{ message }}</div><div v-if="loading" class="admin-status" role="status">正在读取角色...</div><div v-else-if="loadError" class="admin-status is-error" role="alert">{{ loadError }} <button class="ui-button is-ghost" type="button" @click="load(pageNum)">重试</button></div><div v-else-if="!records.length" class="admin-status">暂无角色。</div><template v-else><div class="admin-record-table"><table><thead><tr><th>ID</th><th>角色</th><th>描述</th><th>权限数</th><th>操作</th></tr></thead><tbody><tr v-for="item in records" :key="item.id"><td>#{{ item.id }}</td><td><strong>{{ item.name }}</strong><small>{{ builtIn(item.id)?'内置角色':'自定义角色' }}</small></td><td>{{ item.description || '-' }}</td><td>{{ (item.permission||[]).length }}</td><td><div class="admin-row-actions"><button type="button" @click="openEdit(item)" :disabled="builtIn(item.id)">编辑</button><button class="is-danger" type="button" @click="askDelete(item)" :disabled="builtIn(item.id)">删除</button></div></td></tr></tbody></table></div><div class="admin-record-cards"><article v-for="item in records" :key="'c-'+item.id" class="admin-record-card"><div class="admin-record-card-head"><div><span>角色 #{{ item.id }}</span><h3>{{ item.name }}</h3><p>{{ item.description || '无描述' }}</p></div><span class="ui-badge" :class="builtIn(item.id)?'is-closed':'is-done'">{{ builtIn(item.id)?'内置':'自定义' }}</span></div><p>权限数 {{ (item.permission||[]).length }}</p><div class="admin-card-actions"><button class="ui-button is-dark" type="button" @click="openEdit(item)" :disabled="builtIn(item.id)">编辑</button><button class="ui-button is-danger" type="button" @click="askDelete(item)" :disabled="builtIn(item.id)">删除</button></div></article></div></template><div v-if="!loading&&!loadError&&totalPages>1" class="ui-pagination admin-pagination"><span>第 {{ pageNum }} 页，共 {{ total }} 条</span><div class="ui-page-buttons"><button :disabled="pageNum===1" @click="load(pageNum-1)">上一页</button><button v-for="p in pages" :key="p" :class="{'is-current':p===pageNum}" @click="load(p)">{{ p }}</button><button :disabled="pageNum===totalPages" @click="load(pageNum+1)">下一页</button></div></div></section></main><div v-if="editOpen" class="admin-dialog-backdrop" @click.self="cancelEdit"><section class="admin-dialog admin-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="roleEditTitle"><div class="admin-dialog-head"><div><span>只提交权限 ID</span><h2 id="roleEditTitle">{{ form.id?'编辑角色':'新增角色' }}</h2></div><button type="button" @click="cancelEdit">关闭</button></div><form class="admin-edit-form" @submit.prevent="save"><div class="admin-form-grid"><div class="ui-form-field"><label for="roleName">角色名称</label><input id="roleName" v-model.trim="form.name" class="ui-form-input" maxlength="255" required></div><div class="ui-form-field"><label for="roleDesc">描述</label><input id="roleDesc" v-model.trim="form.description" class="ui-form-input" maxlength="255"></div></div><div class="ui-form-field"><label>权限</label><div class="admin-checkbox-grid"><label v-for="perm in permissions" :key="perm.id"><input type="checkbox" :value="perm.id" v-model="form.permissionIds"> {{ perm.name }} <small>{{ perm.flag }}</small></label></div></div><div v-if="editError" class="admin-inline-message is-error" role="alert">{{ editError }}</div><div class="admin-dialog-actions"><button class="ui-button is-ghost" type="button" :disabled="saving" @click="cancelEdit">取消</button><button class="ui-button is-primary" type="submit" :disabled="saving||!form.name">{{ saving?'保存中...':'保存角色' }}</button></div></form></section></div><div v-if="deleteItem" class="admin-dialog-backdrop"><section class="admin-dialog" role="alertdialog" aria-modal="true"><div class="admin-dialog-head"><div><span>引用用户时不能删除</span><h2>删除角色 {{ deleteItem.name }}？</h2></div></div><div v-if="deleteError" class="admin-inline-message is-error" role="alert">{{ deleteError }}</div><div class="admin-dialog-actions"><button class="ui-button is-ghost" type="button" @click="deleteItem=null">取消</button><button class="ui-button is-danger" type="button" :disabled="deleting" @click="confirmDelete">确认删除</button></div></section></div></div><script src="../../js/jquery.min.js"></script><script src="../../js/auth-session.js?v=20260728"></script><script src="../../js/admin-auth.js?v=20260728"></script><script src="../../js/vue.min.js"></script><script>(function(){'use strict';AuthSession.bootstrap({requireAuth:true,allowCachedOnNetworkError:false,onDone:function(ok,user){if(!ok||!user)return;if(!AdminWorkspace.hasFlag(user,'role')){location.replace('/page/end/index.html?error=forbidden');return;}document.getElementById('authWait').hidden=true;new Vue({el:'#workspace',data:{user:user,menuItems:AdminWorkspace.navigation(user.permission),mobileOpen:false,accountOpen:false,records:[],permissions:[],search:'',loading:true,loadError:'',message:'',messageType:'',pageNum:1,pageSize:12,total:0,totalPages:1,editOpen:false,form:{permissionIds:[]},saving:false,editError:'',deleteItem:null,deleting:false,deleteError:''},computed:{pages:function(){var a=[];var s=Math.max(1,this.pageNum-2);var e=Math.min(this.totalPages,s+4);for(var p=s;p<=e;p+=1)a.push(p);return a;}},created:function(){this.load(1);this.loadPermissions();},methods:{avatarUrl:function(f){return AdminWorkspace.avatarUrl(f);},avatarFallback:function(e){e.target.src='/api/files/';},logout:function(){AuthSession.logout();},builtIn:function(id){return Number(id)>=1&&Number(id)<=4;},load:function(page){var vm=this;vm.loading=true;vm.loadError='';$.ajax({url:'/api/role/page',type:'GET',data:{name:vm.search,pageNum:page,pageSize:vm.pageSize}}).done(function(res){if(!res||res.code!=='0'||!res.data||!Array.isArray(res.data.records)){vm.loadError=(res&&res.msg)||'响应格式无效。';return;}vm.records=res.data.records;vm.pageNum=Number(res.data.current||page);vm.total=Number(res.data.total||0);vm.totalPages=Math.max(1,Number(res.data.pages||1));}).fail(function(xhr){vm.loadError=(xhr.responseJSON&&xhr.responseJSON.msg)||'网络异常。';}).always(function(){vm.loading=false;});},loadPermissions:function(){var vm=this;$.ajax({url:'/api/permission',type:'GET'}).done(function(res){vm.permissions=res&&res.code==='0'&&Array.isArray(res.data)?res.data:[];});},openCreate:function(){this.form={name:'',description:'',permissionIds:[]};this.editError='';this.editOpen=true;},openEdit:function(item){this.form={id:item.id,name:item.name||'',description:item.description||'',permissionIds:(item.permission||[]).map(function(p){return p.id;}).filter(Boolean)};this.editError='';this.editOpen=true;},cancelEdit:function(){if(!this.saving)this.editOpen=false;},save:function(){var vm=this;vm.saving=true;vm.editError='';var payload={id:vm.form.id,name:vm.form.name,description:vm.form.description,permission:(vm.form.permissionIds||[]).map(function(id){return {id:id};})};$.ajax({url:'/api/role',type:payload.id?'PUT':'POST',contentType:'application/json',data:JSON.stringify(payload)}).done(function(res){if(!res||res.code!=='0'||res.data!==true){vm.editError=(res&&res.msg)||'保存失败。';return;}vm.editOpen=false;vm.messageType='success';vm.message='角色已保存。';vm.load(vm.pageNum);}).fail(function(xhr){vm.editError=(xhr.responseJSON&&xhr.responseJSON.msg)||'网络异常。';}).always(function(){vm.saving=false;});},askDelete:function(item){this.deleteItem=item;this.deleteError='';},confirmDelete:function(){var vm=this;if(!vm.deleteItem)return;vm.deleting=true;$.ajax({url:'/api/role/'+encodeURIComponent(vm.deleteItem.id),type:'DELETE'}).done(function(res){if(!res||res.code!=='0'){vm.deleteError=(res&&res.msg)||'删除失败。';return;}vm.deleteItem=null;vm.messageType='success';vm.message='角色已删除。';vm.load(vm.pageNum);}).fail(function(xhr){vm.deleteError=(xhr.responseJSON&&xhr.responseJSON.msg)||'网络异常。';}).always(function(){vm.deleting=false;});},exportRows:function(){location.assign('/api/role/export');}}});}});})();</script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>角色治理 · 归途计划管理</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
+  <link rel="stylesheet" href="../../css/product-ui.css?v=20260728c">
+  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260728e">
+</head>
+<body>
+<div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
+<div id="workspace" class="admin-shell" v-cloak>
+  <header class="ui-header admin-header">
+    <div class="ui-header-inner">
+      <a class="ui-brand" href="/page/end/index.html">
+        <span class="ui-brand-mark">爪</span>
+        <span class="ui-brand-copy"><strong>归途计划</strong><small>RESCUE WORKSPACE</small></span>
+        <span class="admin-brand-note">角色治理</span>
+      </a>
+      <nav class="ui-nav admin-desktop-nav">
+        <a href="/page/end/index.html">概览</a>
+        <a v-for="item in menuItems" :key="item.flag" :class="{'is-active':item.flag==='role'}" :href="item.href">{{ item.label }}</a>
+      </nav>
+      <div class="ui-header-actions">
+        <button class="ui-icon-button ui-mobile-toggle" type="button" @click="mobileOpen=!mobileOpen">菜单</button>
+        <div class="ui-account">
+          <button class="ui-account-trigger admin-account-trigger" type="button" @click="accountOpen=!accountOpen">
+            <img class="admin-account-photo" :src="avatarUrl(user.avatar)" alt="" @error="avatarFallback">
+            <span>{{ user.username }}</span>
+          </button>
+          <div class="ui-account-menu admin-account-menu" :hidden="!accountOpen">
+            <a href="/page/end/person.html">个人资料</a>
+            <button class="is-danger" type="button" @click="logout">退出登录</button>
+          </div>
+        </div>
+      </div>
+      <nav class="ui-mobile-nav admin-mobile-nav" :class="{'is-open':mobileOpen}">
+        <a href="/page/end/index.html">工作台概览</a>
+        <a v-for="item in menuItems" :key="'m-'+item.flag" :href="item.href">{{ item.label }}</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <section class="admin-hero">
+      <div>
+        <p class="admin-kicker">Role governance</p>
+        <h1>角色治理</h1>
+        <p>
+          超级管理员角色（#1）不可修改或删除。志愿者 / 普通用户 / 认证义工（#2–#4）可在契约约束下调整权限。
+          自定义角色可自由编辑与删除。权限只接收数据库中已有权限 ID。
+        </p>
+      </div>
+      <div class="admin-hero-meta">
+        <span>写入权限</span>
+        <strong>超级管理员</strong>
+      </div>
+    </section>
+
+    <section>
+      <div class="admin-section-head">
+        <div>
+          <h2>角色列表</h2>
+          <p>权限变更会影响后台导航与 API 访问，请保持最小授权。普通用户角色必须保留用户闭环权限。</p>
+        </div>
+        <div>
+          <button class="ui-button is-primary" type="button" @click="openCreate">新增角色</button>
+          <button class="ui-button is-ghost" type="button" @click="exportRows">导出</button>
+        </div>
+      </div>
+
+      <form class="ui-toolbar admin-review-toolbar" @submit.prevent="load(1)">
+        <label class="ui-search">
+          <span>搜索</span>
+          <input v-model.trim="search" maxlength="100" placeholder="按角色名称搜索">
+        </label>
+        <button class="ui-button is-dark" type="submit">查询</button>
+      </form>
+
+      <div v-if="message" class="admin-inline-message" :class="{'is-error':messageType==='error','is-success':messageType==='success'}" :role="messageType==='error'?'alert':'status'">{{ message }}</div>
+      <div v-if="loading" class="admin-status" role="status">正在读取角色...</div>
+      <div v-else-if="loadError" class="admin-status is-error" role="alert">
+        {{ loadError }}
+        <button class="ui-button is-ghost" type="button" @click="load(pageNum)">重试</button>
+      </div>
+      <div v-else-if="!records.length" class="admin-status">暂无角色。</div>
+
+      <template v-else>
+        <div class="admin-record-table">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>角色</th>
+                <th>描述</th>
+                <th>权限数</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in records" :key="item.id">
+                <td>#{{ item.id }}</td>
+                <td>
+                  <strong>{{ item.name }}</strong>
+                  <small>{{ roleKindLabel(item.id) }}</small>
+                </td>
+                <td>{{ item.description || '-' }}</td>
+                <td>{{ (item.permission || []).length }}</td>
+                <td>
+                  <div class="admin-row-actions">
+                    <button type="button" @click="openEdit(item)">{{ canEdit(item) ? '编辑' : '查看' }}</button>
+                    <button
+                      class="is-danger"
+                      type="button"
+                      :disabled="!canDelete(item)"
+                      :title="canDelete(item) ? '删除角色' : '内置角色不可删除'"
+                      @click="askDelete(item)"
+                    >{{ canDelete(item) ? '删除' : '禁止删除' }}</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="admin-record-cards">
+          <article v-for="item in records" :key="'c-'+item.id" class="admin-record-card">
+            <div class="admin-record-card-head">
+              <div>
+                <span>角色 #{{ item.id }}</span>
+                <h3>{{ item.name }}</h3>
+                <p>{{ item.description || '无描述' }}</p>
+              </div>
+              <span class="ui-badge" :class="isBuiltIn(item.id) ? 'is-closed' : 'is-done'">{{ roleKindLabel(item.id) }}</span>
+            </div>
+            <p>权限数 {{ (item.permission || []).length }}</p>
+            <div class="admin-card-actions">
+              <button class="ui-button is-dark" type="button" @click="openEdit(item)">{{ canEdit(item) ? '编辑' : '查看' }}</button>
+              <button
+                class="ui-button is-danger"
+                type="button"
+                :disabled="!canDelete(item)"
+                :title="canDelete(item) ? '删除角色' : '内置角色不可删除'"
+                @click="askDelete(item)"
+              >{{ canDelete(item) ? '删除' : '禁止删除' }}</button>
+            </div>
+          </article>
+        </div>
+      </template>
+
+      <div v-if="!loading && !loadError && totalPages > 1" class="ui-pagination admin-pagination">
+        <span>第 {{ pageNum }} 页，共 {{ total }} 条</span>
+        <div class="ui-page-buttons">
+          <button :disabled="pageNum===1" @click="load(pageNum-1)">上一页</button>
+          <button v-for="p in pages" :key="p" :class="{'is-current':p===pageNum}" @click="load(p)">{{ p }}</button>
+          <button :disabled="pageNum===totalPages" @click="load(pageNum+1)">下一页</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div v-if="editOpen" class="admin-dialog-backdrop" @click.self="cancelEdit">
+    <section class="admin-dialog admin-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="roleEditTitle">
+      <div class="admin-dialog-head">
+        <div>
+          <span>{{ formReadOnly ? '只读查看' : '只提交权限 ID' }}</span>
+          <h2 id="roleEditTitle">{{ formReadOnly ? '查看角色' : (form.id ? '编辑角色' : '新增角色') }}</h2>
+        </div>
+        <button
+          type="button"
+          class="admin-dialog-close"
+          :disabled="saving"
+          :aria-label="formReadOnly ? '关闭角色详情' : '关闭角色编辑'"
+          title="关闭"
+          @click="cancelEdit"
+        >
+          <span class="admin-dialog-close-icon" aria-hidden="true">×</span>
+          <span class="admin-dialog-close-text">关闭</span>
+        </button>
+      </div>
+      <form class="admin-edit-form" @submit.prevent="save">
+        <div class="admin-dialog-body">
+          <div v-if="formHint" class="admin-inline-message" role="status">{{ formHint }}</div>
+          <div class="admin-form-grid">
+            <div class="ui-form-field">
+              <label for="roleName">角色名称</label>
+              <input id="roleName" v-model.trim="form.name" class="ui-form-input" maxlength="255" required :disabled="formReadOnly">
+            </div>
+            <div class="ui-form-field">
+              <label for="roleDesc">描述</label>
+              <input id="roleDesc" v-model.trim="form.description" class="ui-form-input" maxlength="255" :disabled="formReadOnly">
+            </div>
+          </div>
+          <div class="ui-form-field is-full">
+            <label>权限</label>
+            <div class="admin-checkbox-grid">
+              <label v-for="perm in permissions" :key="perm.id">
+                <input type="checkbox" :value="perm.id" v-model="form.permissionIds" :disabled="formReadOnly">
+                {{ perm.name }} <small>{{ perm.flag }}</small>
+              </label>
+            </div>
+            <small v-if="!permissions.length" class="admin-field-hint">未加载到权限定义，请确认账号具备 permission 权限或稍后重试。</small>
+          </div>
+          <div v-if="editError" class="admin-inline-message is-error" role="alert">{{ editError }}</div>
+        </div>
+        <div class="admin-dialog-actions">
+          <button class="ui-button is-ghost" type="button" :disabled="saving" @click="cancelEdit">{{ formReadOnly ? '关闭' : '取消' }}</button>
+          <button v-if="!formReadOnly" class="ui-button is-primary" type="submit" :disabled="saving || !form.name">{{ saving ? '保存中...' : '保存角色' }}</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div v-if="deleteItem" class="admin-dialog-backdrop">
+    <section class="admin-dialog" role="alertdialog" aria-modal="true">
+      <div class="admin-dialog-head">
+        <div>
+          <span>引用用户时不能删除</span>
+          <h2>删除角色 {{ deleteItem.name }}？</h2>
+        </div>
+      </div>
+      <div v-if="deleteError" class="admin-inline-message is-error" role="alert">{{ deleteError }}</div>
+      <div class="admin-dialog-actions">
+        <button class="ui-button is-ghost" type="button" @click="deleteItem=null">取消</button>
+        <button class="ui-button is-danger" type="button" :disabled="deleting" @click="confirmDelete">确认删除</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script src="../../js/jquery.min.js"></script>
+<script src="../../js/auth-session.js?v=20260728"></script>
+<script src="../../js/admin-auth.js?v=20260728a"></script>
+<script src="../../js/vue.min.js"></script>
+<script>
+(function () {
+  'use strict';
+  AuthSession.bootstrap({
+    requireAuth: true,
+    allowCachedOnNetworkError: false,
+    onDone: function (ok, user) {
+      if (!ok || !user) return;
+      if (!AdminWorkspace.hasFlag(user, 'role')) {
+        location.replace('/page/end/index.html?error=forbidden');
+        return;
+      }
+      document.getElementById('authWait').hidden = true;
+      new Vue({
+        el: '#workspace',
+        data: {
+          user: user,
+          menuItems: AdminWorkspace.navigation(user.permission),
+          mobileOpen: false,
+          accountOpen: false,
+          records: [],
+          permissions: [],
+          search: '',
+          loading: true,
+          loadError: '',
+          message: '',
+          messageType: '',
+          pageNum: 1,
+          pageSize: 12,
+          total: 0,
+          totalPages: 1,
+          editOpen: false,
+          form: { permissionIds: [] },
+          formReadOnly: false,
+          formHint: '',
+          saving: false,
+          editError: '',
+          deleteItem: null,
+          deleting: false,
+          deleteError: ''
+        },
+        computed: {
+          pages: function () {
+            var a = [];
+            var s = Math.max(1, this.pageNum - 2);
+            var e = Math.min(this.totalPages, s + 4);
+            for (var p = s; p <= e; p += 1) a.push(p);
+            return a;
+          }
+        },
+        created: function () {
+          this.load(1);
+          this.loadPermissions();
+        },
+        methods: {
+          avatarUrl: function (f) { return AdminWorkspace.avatarUrl(f); },
+          avatarFallback: function (e) { e.target.src = '/api/files/'; },
+          logout: function () { AuthSession.logout(); },
+          isBuiltIn: function (id) {
+            var n = Number(id);
+            return n >= 1 && n <= 4;
+          },
+          isSuperRole: function (id) { return Number(id) === 1; },
+          canEdit: function (item) {
+            // 超级管理员角色只读；其余内置与自定义均可编辑（服务端再做契约校验）
+            return item && !this.isSuperRole(item.id);
+          },
+          canDelete: function (item) {
+            return item && !this.isBuiltIn(item.id);
+          },
+          roleKindLabel: function (id) {
+            var n = Number(id);
+            if (n === 1) return '内置·不可改';
+            if (n >= 2 && n <= 4) return '内置·可编辑';
+            return '自定义角色';
+          },
+          load: function (page) {
+            var vm = this;
+            vm.loading = true;
+            vm.loadError = '';
+            $.ajax({
+              url: '/api/role/page',
+              type: 'GET',
+              data: { name: vm.search, pageNum: page, pageSize: vm.pageSize }
+            }).done(function (res) {
+              if (!res || res.code !== '0' || !res.data || !Array.isArray(res.data.records)) {
+                vm.loadError = (res && res.msg) || '响应格式无效。';
+                return;
+              }
+              vm.records = res.data.records;
+              vm.pageNum = Number(res.data.current || page);
+              vm.total = Number(res.data.total || 0);
+              vm.totalPages = Math.max(1, Number(res.data.pages || 1));
+            }).fail(function (xhr) {
+              vm.loadError = (xhr.responseJSON && xhr.responseJSON.msg) || '网络异常。';
+            }).always(function () {
+              vm.loading = false;
+            });
+          },
+          loadPermissions: function () {
+            var vm = this;
+            $.ajax({ url: '/api/permission', type: 'GET' }).done(function (res) {
+              vm.permissions = res && res.code === '0' && Array.isArray(res.data) ? res.data : [];
+            }).fail(function () {
+              vm.permissions = [];
+            });
+          },
+          openCreate: function () {
+            this.form = { name: '', description: '', permissionIds: [] };
+            this.formReadOnly = false;
+            this.formHint = '新增自定义角色后，可在用户管理中分配。';
+            this.editError = '';
+            this.editOpen = true;
+          },
+          openEdit: function (item) {
+            var readOnly = !this.canEdit(item);
+            this.form = {
+              id: item.id,
+              name: item.name || '',
+              description: item.description || '',
+              permissionIds: (item.permission || []).map(function (p) { return p.id; }).filter(function (id) {
+                return id != null && id !== '';
+              })
+            };
+            this.formReadOnly = readOnly;
+            this.formHint = readOnly
+              ? '超级管理员角色受保护，仅可查看。'
+              : (this.isBuiltIn(item.id)
+                ? (Number(item.id) === 3
+                  ? '普通用户角色必须保留用户闭环权限，且不能勾选后台管理权限。'
+                  : Number(item.id) === 4
+                    ? '认证义工是轻量徽章角色，不能勾选后台管理权限。'
+                    : '志愿者角色可配置后台管理权限。')
+                : '');
+            this.editError = '';
+            this.editOpen = true;
+          },
+          cancelEdit: function () {
+            if (!this.saving) this.editOpen = false;
+          },
+          save: function () {
+            var vm = this;
+            if (vm.formReadOnly) return;
+            vm.saving = true;
+            vm.editError = '';
+            var payload = {
+              id: vm.form.id,
+              name: vm.form.name,
+              description: vm.form.description,
+              permission: (vm.form.permissionIds || []).map(function (id) { return { id: id }; })
+            };
+            $.ajax({
+              url: '/api/role',
+              type: payload.id ? 'PUT' : 'POST',
+              contentType: 'application/json',
+              data: JSON.stringify(payload)
+            }).done(function (res) {
+              if (!res || res.code !== '0' || res.data !== true) {
+                vm.editError = (res && res.msg) || '保存失败。';
+                return;
+              }
+              vm.editOpen = false;
+              vm.messageType = 'success';
+              vm.message = '角色已保存。';
+              vm.load(vm.pageNum);
+            }).fail(function (xhr) {
+              vm.editError = (xhr.responseJSON && xhr.responseJSON.msg) || '网络异常。';
+            }).always(function () {
+              vm.saving = false;
+            });
+          },
+          askDelete: function (item) {
+            if (!this.canDelete(item)) {
+              this.messageType = 'error';
+              this.message = '内置角色（#1–#4）不可删除，请新增自定义角色后再删除。';
+              return;
+            }
+            this.deleteItem = item;
+            this.deleteError = '';
+          },
+          confirmDelete: function () {
+            var vm = this;
+            if (!vm.deleteItem) return;
+            vm.deleting = true;
+            $.ajax({
+              url: '/api/role/' + encodeURIComponent(vm.deleteItem.id),
+              type: 'DELETE'
+            }).done(function (res) {
+              if (!res || res.code !== '0') {
+                vm.deleteError = (res && res.msg) || '删除失败。';
+                return;
+              }
+              vm.deleteItem = null;
+              vm.messageType = 'success';
+              vm.message = '角色已删除。';
+              vm.load(vm.pageNum);
+            }).fail(function (xhr) {
+              vm.deleteError = (xhr.responseJSON && xhr.responseJSON.msg) || '网络异常。';
+            }).always(function () {
+              vm.deleting = false;
+            });
+          },
+          exportRows: function () {
+            location.assign('/api/role/export');
+          }
+        }
+      });
+    }
+  });
+})();
+</script>
+</body>
+</html>

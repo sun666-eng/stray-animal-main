@@ -3,6 +3,7 @@ package com.example.service;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.common.RoleAssignmentPolicy;
+import com.example.common.RoleContracts;
 import com.example.common.RolePermissionWriteLock;
 import com.example.entity.Permission;
 import com.example.entity.Role;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.annotation.Resource;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -69,8 +71,10 @@ public class RoleService extends ServiceImpl<RoleMapper, Role> {
         if (role == null || role.getId() == null) {
             throw new CustomException("400", "角色 ID 不能为空");
         }
-        if (isBuiltInRole(role.getId())) {
-            throw new CustomException("403", "内置角色不可修改");
+        // 仅超级管理员角色(id=1)完全锁定；角色 2/3/4 允许超管在契约约束下调整权限。
+        // 否则默认库只有 1–4 四个角色时，管理端「编辑」全部 disabled，功能形同失效。
+        if (isSuperAdminRole(role.getId())) {
+            throw new CustomException("403", "超级管理员角色不可修改");
         }
         Role existing = roleMapper.selectById(role.getId());
         if (existing == null) {
@@ -78,6 +82,7 @@ public class RoleService extends ServiceImpl<RoleMapper, Role> {
         }
         if (role.getPermission() != null) {
             role.setPermission(resolvePermissions(role.getPermission()));
+            validateBuiltInRolePermissions(role.getId(), role.getPermission());
         }
         if (roleMapper.updateById(role) != 1) {
             throw new CustomException("409", "角色更新失败，请刷新后重试");
@@ -162,8 +167,54 @@ public class RoleService extends ServiceImpl<RoleMapper, Role> {
         return updated;
     }
 
+    /** 系统种子角色：不可删除（删除会破坏用户闭环与启动守护）。 */
     private boolean isBuiltInRole(Long id) {
         return id != null && id >= 1L && id <= 4L;
+    }
+
+    /** 超级管理员角色：不可改权限/名称，防止锁死后台。 */
+    private boolean isSuperAdminRole(Long id) {
+        return id != null && id.equals(RoleAssignmentPolicy.SUPER_ADMIN_ROLE_ID);
+    }
+
+    /**
+     * 内置角色 3/4 受 RoleContracts 约束；角色 2（管理志愿者）可自由挂管理 flag。
+     * 自定义角色（id>4）不做契约强校验。
+     */
+    private void validateBuiltInRolePermissions(Long roleId, List<Permission> permissions) {
+        if (roleId == null || roleId > 4L) {
+            return;
+        }
+        Set<String> flags = new LinkedHashSet<>();
+        if (permissions != null) {
+            for (Permission p : permissions) {
+                if (p != null && p.getFlag() != null && !p.getFlag().trim().isEmpty()) {
+                    flags.add(p.getFlag().trim());
+                }
+            }
+        }
+        if (roleId == 3L) {
+            if (!flags.containsAll(RoleContracts.USER_LOOP_FLAGS)) {
+                Set<String> missing = new LinkedHashSet<>(RoleContracts.USER_LOOP_FLAGS);
+                missing.removeAll(flags);
+                throw new CustomException("400",
+                        "普通用户角色必须保留用户闭环权限: " + String.join(", ", missing));
+            }
+            for (String flag : flags) {
+                if (RoleContracts.ADMIN_FLAGS.contains(flag)) {
+                    throw new CustomException("400",
+                            "普通用户角色不能包含后台管理权限: " + flag);
+                }
+            }
+        }
+        if (roleId == 4L) {
+            for (String flag : flags) {
+                if (RoleContracts.ADMIN_FLAGS.contains(flag)) {
+                    throw new CustomException("400",
+                            "认证义工角色不能包含后台管理权限: " + flag);
+                }
+            }
+        }
     }
 
     private List<Permission> resolvePermissions(List<?> requested) {

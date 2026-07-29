@@ -222,13 +222,48 @@ Agent 最难的是"模型为什么没调工具/调错了工具",而这在生产�
 
 ## 七、配置与使用
 
+### 用户个人配置
+
+任意登录用户打开“照顾知识助手”，点击标题旁的“配置 API”：
+
+1. 填写服务商的公网 HTTPS API Base URL（不要包含 `/chat/completions`；个人配置禁止内网地址以防 SSRF）。
+2. 填写模型名称和 API Key，保持“启用真实 Agent”开启。
+3. 保存后点击“测试连接”；成功后页面状态显示“个人 Agent 已连接”。
+
+密钥按用户账号使用 AES-GCM 加密后保存在服务端数据库 `t_petcare_ai_config`，浏览器不保存、
+接口不回显原值。密文还绑定用户 ID，不能复制给另一账号解密。个人配置只影响当前用户，不能覆盖
+其他用户或平台配置；退出登录、再次登录、会话过期或服务重启后仍会恢复，只有用户主动点击
+“清除个人配置”才会删除。未配置个人连接时，助手使用下面的环境变量配置；平台也未配置时自动
+使用内置知识库。
+
+密文主密钥优先读取 `AI_CONFIG_ENCRYPTION_KEY`（至少 32 字符），未配置时使用
+`JWT_SECRET` 做域隔离派生；本地开发两者都未配置时生成并复用
+`~/.stray-animal/ai-config.key`。生产环境建议独立配置并长期稳定保存
+`AI_CONFIG_ENCRYPTION_KEY`，更换或丢失主密钥后旧配置将无法解密。
+
+### 聊天历史保存
+
+每次成功问答都会在服务端数据库表 `t_petcare_chat` 中保存一行，包含当前登录用户 ID、问题、
+回答、回答来源、主题、工具调用摘要以及提问/回答时间；会话标题、最近问题概括、轮数和更新时间
+保存在 `t_petcare_conversation`。页面进入时只加载左侧会话目录，不会自动展示旧消息；点击某个
+会话后才恢复对应记录。用户可以修改会话标题、删除单次会话或清空自己的全部记录。
+
+历史接口不接受客户端传入的用户 ID，而是始终从登录 Session 取身份，因此不同账号之间不能互相
+读取或删除记录。API Key 不会写入聊天表。开发环境由 `SchemaGuardRunner` 自动建表；生产环境
+请先执行 `docs/sql/2026-07-27-petcare-chat.sql` 和
+`docs/sql/2026-07-27-petcare-conversations.sql`。这里保存的是可跨设备恢复的聊天记录；每次发给
+模型的上下文仍会按 `max-history` 裁剪，避免请求无限增长。
+
+### 平台环境变量配置
+
 ```yaml
 app:
   ai:
     enabled: ${AI_ENABLED:false}          # false = 纯知识库(默认)
     base-url: ${AI_BASE_URL:}             # 如 https://api.deepseek.com
     api-key: ${AI_API_KEY:}
-    model: ${AI_MODEL:deepseek-chat}
+    model: ${AI_MODEL:deepseek-v4-flash}
+    config-encryption-key: ${AI_CONFIG_ENCRYPTION_KEY:}
     timeout-ms: ${AI_TIMEOUT_MS:8000}
     max-tool-rounds: ${AI_MAX_TOOL_ROUNDS:3}   # agent 循环上限
     max-history: ${AI_MAX_HISTORY:8}           # 携带的历史对话条数
@@ -239,7 +274,7 @@ app:
 $env:AI_ENABLED="true"
 $env:AI_BASE_URL="https://api.deepseek.com"
 $env:AI_API_KEY="sk-你的key"
-$env:AI_MODEL="deepseek-chat"
+$env:AI_MODEL="deepseek-v4-flash"
 ```
 任何 OpenAI 兼容的服务都可以(DeepSeek/Moonshot/通义/本地 Ollama 等),
 因为用的是标准 `/chat/completions` + `tools` 协议。
@@ -252,11 +287,47 @@ $env:AI_MODEL="deepseek-chat"
 
 1. **加只读工具**(低风险):比如「查我的救助记录」「查平台公告」。
    照现有模式加一个 case + 一条 toolSpec 即可,记得同步加测试。
-2. **对话历史持久化**(中):目前历史由前端携带、服务端无状态。
-   若要跨设备连续,需要建表存储,注意 PII 与保留期。
+2. **历史保留期与导出**(中):当前已按用户分组并支持标题，可继续增加归档、自动过期和导出。
 3. **流式输出**(中):`stream: true` + SSE,体验更好但要处理工具调用的流式解析,复杂度上升明显。
 4. **写工具**(高风险,建议先别做):如「帮我提交领养申请」。必须有人工确认步骤,
    且不能绕过既有状态机与权限校验。对本项目收益低于风险。
+
+---
+
+## 九、管理员 Agent 第三阶段 3A：领养审核草稿
+
+3A 仍然没有给模型任何写工具。管理员在领养管理页点击“AI 草稿”后，服务端用固定的
+`get_adoption_review_context` 读取待审核申请，移除电话、微信、精确住址、性别、婚姻、职业和收入，
+再要求模型返回固定 JSON 字段。模型输出只能保存到当前管理员个人草稿表
+`t_admin_agent_adopt_draft`，不会调用 `/api/adopt/audit/**`。
+
+草稿允许管理员编辑建议结论、风险、依据、缺失信息和审核备注；保存使用版本号 CAS 防止多标签页覆盖，
+申请一旦不再是待审核状态，草稿就不能继续修改。生成、修改和丢弃均写入管理员 Agent 审计表。
+进入下一阶段前仍不得把“保存草稿”与“执行审核”合并成一个按钮。
+
+## 十、管理员 Agent 第三阶段 3B：人工确认执行闭环
+
+3B 没有给模型增加写工具。管理员必须先保存 3A 草稿，再进入独立的“人工复核与最终确认”区域：
+查看完整申请资料、重新选择通过或驳回，并确认已经复核资料且理解状态影响。覆盖 AI 建议或在高风险下
+选择通过时，还必须填写至少 8 个字的人工决定理由。
+
+前端只调用 `/api/admin-agent/adoption-drafts/{id}/finalize`。服务端重新校验 `admin_agent + adopt`
+权限、草稿所有权、版本号和领养申请实时状态，然后在同一事务中调用既有
+`AdoptService.auditAdopt()` 状态机并把草稿标记为 `executed`。执行请求号在当前管理员范围内唯一，
+用于响应丢失后的幂等重试；执行决定、覆盖理由和时间保存在草稿表，成功事件同时写入管理员 Agent 审计表。
+
+“保存个人草稿”仍然不会改变任何申请状态；`manual_review` 和 `request_material` 也不会自动映射为审核结果。
+3B 只是建立有明确人工确认的执行闭环，不是无人值守自动审核。
+
+## 十一、管理员 Agent 第三阶段 3C：受控自动审核
+
+- 入口仅对真实超级管理员（角色 ID 1）显示，普通管理员不能读取配置、运行批次或判断证据。
+- 默认关闭并使用影子模式；没有后台定时任务，每次都需要超级管理员手动运行。
+- 单次最多处理 3 份待审申请。硬规则不满足时不调用模型，直接转人工复核。
+- 受控模式只允许“建议通过 + 低风险 + 无缺失信息 + 全部硬规则满足 + 该动物仅一份待审”的记录自动通过；有竞争申请时必须人工比较。
+- 自动驳回永久禁用。模型建议驳回、中高风险、资料缺失、状态冲突和服务异常全部转人工或记录失败。
+- 模型没有写工具。真正写入前，服务端在独立事务内再次检查紧急停用开关、最新去隐私上下文和既有审核状态机。
+- 配置、运行批次和逐条证据保存在 `t_admin_agent_automation_config`、`t_admin_agent_automation_run`、`t_admin_agent_automation_item`。
 
 ---
 
@@ -267,8 +338,19 @@ $env:AI_MODEL="deepseek-chat"
 | agent 循环 | `PetCareService.runAgentLoop()` |
 | 单次 LLM 调用 | `PetCareService.callLlm()` |
 | 历史裁剪 | `PetCareService.appendHistory()` |
+| 历史持久化与用户隔离 | `PetCareConversationService` / `PetCareHistoryService` |
+| 历史接口 | `PetCareController.conversations()` / `conversation()` |
+| 历史建表迁移 | `docs/sql/2026-07-27-petcare-conversations.sql` |
+| 个人 API 配置持久化 | `PetCareAiConfigService` / `t_petcare_ai_config` |
+| API Key 加解密 | `PetCareConfigCrypto` |
+| API 配置建表迁移 | `docs/sql/2026-07-27-petcare-ai-config.sql` |
 | 工具说明书 | `PetCareTools.toolSpecs()` |
 | 工具执行与鉴权 | `PetCareTools.execute()` / `animalProfile()` |
 | 身份注入 | `PetCareController.ask()` → `ask(user.getId(), ...)` |
 | 安全不变量测试 | `PetCareToolsTest`(11 项) |
 | 知识库与降级 | `PetCareService.bestMatch()` / `KNOWLEDGE` |
+| 3A 审核草稿服务 | `AdminAgentDraftService` / `AdminAgentDraftRepository` |
+| 3A 草稿表与迁移 | `t_admin_agent_adopt_draft` / `docs/sql/2026-07-28-admin-agent.sql` |
+| 3B 人工确认执行 | `AdminAgentDraftService.finalizeDraft()` / `AdoptService.auditAdopt()` |
+| 3C 受控自动审核 | `AdminAgentAutomationService` / `AdminAgentAutomationExecutor` |
+| 3C 硬规则与唯一待审保护 | `AdminAgentAutomationPolicy` / `AdoptService.auditSolePendingAdopt()` |

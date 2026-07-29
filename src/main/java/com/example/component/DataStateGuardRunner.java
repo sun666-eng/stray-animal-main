@@ -14,8 +14,8 @@ import org.springframework.stereotype.Component;
  * <p>
  * 不变量（与 {@link com.example.service.AdoptService} 对齐）：
  * <ul>
- *   <li>同一动物最多保留一条「已通过」领养；其余待审/多余通过 → 驳回</li>
- *   <li>动物 tstate：有通过=2，否则有待审=1，否则=0</li>
+ *   <li>同一动物最多保留一条「审核通过待交接」；竞争待审允许保留候补</li>
+ *   <li>动物 tstate：有完成交接=2，否则有活跃申请/预留=1，否则=0</li>
  * </ul>
  * 默认 auto-fix=true；生产可关自动修复仅告警，或 fail-fast。
  */
@@ -24,11 +24,13 @@ import org.springframework.stereotype.Component;
 @Order(30)
 public class DataStateGuardRunner implements ApplicationRunner {
 
-    public static final String STATE_VERSION = "2026.07.12-state-v1";
+    public static final String STATE_VERSION = "2026.07.29-state-v2";
 
     private static final int ADOPT_PENDING = 0;
     private static final int ADOPT_APPROVED = 1;
     private static final int ADOPT_REJECTED = 2;
+    private static final int ADOPT_MATERIAL_REQUIRED = 3;
+    private static final int ADOPT_COMPLETED = 4;
 
     private static final int ANIMAL_AVAILABLE = 0;
     private static final int ANIMAL_APPLYING = 1;
@@ -80,7 +82,7 @@ public class DataStateGuardRunner implements ApplicationRunner {
                 return;
             }
 
-            int rejectedPending = rejectPendingWhenApprovedExists();
+            int rejectedPending = 0; // P0 v2：保留竞争申请作为候补，完成交接时再关闭。
             int rejectedExtra = rejectExtraApprovedKeepsMinUid();
             int animalsSynced = resyncAllAnimalStates();
 
@@ -109,17 +111,6 @@ public class DataStateGuardRunner implements ApplicationRunner {
     }
 
     /**
-     * 已有通过记录的动物上，其它待审全部驳回。
-     */
-    int rejectPendingWhenApprovedExists() {
-        String sql = "UPDATE t_adopt d SET d.vstate = " + ADOPT_REJECTED
-                + " WHERE d.vstate = " + ADOPT_PENDING
-                + " AND EXISTS (SELECT 1 FROM (SELECT aid FROM t_adopt WHERE vstate = " + ADOPT_APPROVED + ") x "
-                + "WHERE x.aid = d.aid)";
-        return jdbcTemplate.update(sql);
-    }
-
-    /**
      * 同一动物多条已通过：保留 uid 最小的一条，其余驳回。
      */
     int rejectExtraApprovedKeepsMinUid() {
@@ -137,30 +128,30 @@ public class DataStateGuardRunner implements ApplicationRunner {
      */
     int resyncAllAnimalStates() {
         String sql = "UPDATE t_animal a SET a.tstate = CASE "
-                + "WHEN EXISTS (SELECT 1 FROM t_adopt d WHERE d.aid = a.id AND d.vstate = " + ADOPT_APPROVED + ") THEN " + ANIMAL_ADOPTED + " "
-                + "WHEN EXISTS (SELECT 1 FROM t_adopt d WHERE d.aid = a.id AND d.vstate = " + ADOPT_PENDING + ") THEN " + ANIMAL_APPLYING + " "
+                + "WHEN EXISTS (SELECT 1 FROM t_adopt d WHERE d.aid = a.id AND d.vstate = " + ADOPT_COMPLETED + ") THEN " + ANIMAL_ADOPTED + " "
+                + "WHEN EXISTS (SELECT 1 FROM t_adopt d WHERE d.aid = a.id AND d.vstate IN ("
+                + ADOPT_PENDING + "," + ADOPT_APPROVED + "," + ADOPT_MATERIAL_REQUIRED + ")) THEN " + ANIMAL_APPLYING + " "
                 + "ELSE " + ANIMAL_AVAILABLE + " END";
         return jdbcTemplate.update(sql);
     }
 
     DirtySnapshot snapshot() {
         DirtySnapshot s = new DirtySnapshot();
-        s.pendingWhenHasApproved = count(
-                "SELECT COUNT(*) FROM t_adopt d WHERE d.vstate = " + ADOPT_PENDING
-                        + " AND EXISTS (SELECT 1 FROM t_adopt x WHERE x.aid = d.aid AND x.vstate = " + ADOPT_APPROVED + ")");
+        s.pendingWhenHasApproved = 0; // v2 中这是合法候补关系，不再视为脏数据。
         s.multiApprovedAnimals = count(
                 "SELECT COUNT(*) FROM (SELECT aid FROM t_adopt WHERE vstate = " + ADOPT_APPROVED
                         + " GROUP BY aid HAVING COUNT(*) > 1) t");
         s.animalStateMismatch = count(
                 "SELECT COUNT(*) FROM t_animal a WHERE a.tstate <> ("
                         + "CASE "
-                        + "WHEN EXISTS (SELECT 1 FROM t_adopt d WHERE d.aid = a.id AND d.vstate = " + ADOPT_APPROVED + ") THEN " + ANIMAL_ADOPTED + " "
-                        + "WHEN EXISTS (SELECT 1 FROM t_adopt d WHERE d.aid = a.id AND d.vstate = " + ADOPT_PENDING + ") THEN " + ANIMAL_APPLYING + " "
+                        + "WHEN EXISTS (SELECT 1 FROM t_adopt d WHERE d.aid = a.id AND d.vstate = " + ADOPT_COMPLETED + ") THEN " + ANIMAL_ADOPTED + " "
+                        + "WHEN EXISTS (SELECT 1 FROM t_adopt d WHERE d.aid = a.id AND d.vstate IN ("
+                        + ADOPT_PENDING + "," + ADOPT_APPROVED + "," + ADOPT_MATERIAL_REQUIRED + ")) THEN " + ANIMAL_APPLYING + " "
                         + "ELSE " + ANIMAL_AVAILABLE + " END)");
         s.orphanApplying = count(
                 "SELECT COUNT(*) FROM t_animal a WHERE a.tstate = " + ANIMAL_APPLYING
                         + " AND NOT EXISTS (SELECT 1 FROM t_adopt d WHERE d.aid = a.id AND d.vstate IN ("
-                        + ADOPT_PENDING + "," + ADOPT_APPROVED + "))");
+                        + ADOPT_PENDING + "," + ADOPT_APPROVED + "," + ADOPT_MATERIAL_REQUIRED + "))");
         return s;
     }
 

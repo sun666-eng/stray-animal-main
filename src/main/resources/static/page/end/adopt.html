@@ -8,8 +8,8 @@
     />
     <title>领养管理 · 归途计划管理</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-    <link rel="stylesheet" href="../../css/product-ui.css?v=20260728" />
-    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260728" />
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260728c" />
+    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260728h" />
   </head>
   <body>
     <div id="authWait" class="admin-auth-wait" role="status">
@@ -174,32 +174,57 @@
                       <div class="admin-row-actions">
                         <button @click="openDetail(item)">详情</button
                         ><button
+                          v-if="canUseAgent"
+                          class="is-ai"
+                          :disabled="Number(item.vstate)!==0"
+                          :title="Number(item.vstate)===0?'生成或打开个人AI审核草稿':'仅待审核申请可以使用AI草稿'"
+                          @click="openAiDraft(item)"
+                        >AI 草稿</button
+                        ><button
                           v-if="Number(item.vstate)===0"
                           class="is-primary"
-                          @click="openEdit(item)"
+                          @click="openEdit(item, $event)"
                         >
                           编辑问卷</button
                         ><button
-                          v-if="Number(item.vstate)===0"
+                          v-if="[0,3].includes(Number(item.vstate))"
                           @click="askAction(item,'approve')"
                         >
-                          通过</button
+                          通过并预留</button
                         ><button
                           v-if="Number(item.vstate)===0"
+                          @click="askAction(item,'material')"
+                        >
+                          补充材料</button
+                        ><button
+                          v-if="[0,3].includes(Number(item.vstate))"
                           class="is-danger"
                           @click="askAction(item,'reject')"
                         >
                           驳回</button
                         ><button
-                          v-if="Number(item.vstate)===1&&canVisit"
+                          v-if="Number(item.vstate)===1"
+                          class="is-primary"
+                          @click="askAction(item,'handover')"
+                        >
+                          确认交接</button
+                        ><button
+                          v-if="Number(item.vstate)===4&&canVisit"
                           @click="openVisit(item)"
                         >
                           录入回访</button
                         ><button
+                          v-if="[0,1,3].includes(Number(item.vstate))"
                           class="is-danger"
-                          @click="askAction(item,'delete')"
+                          @click="askAction(item,'cancel')"
                         >
-                          删除
+                          取消
+                        </button
+                        ><button
+                          v-if="[2,5,6].includes(Number(item.vstate))"
+                          @click="askAction(item,'reopen')"
+                        >
+                          重新打开
                         </button>
                       </div>
                     </td>
@@ -229,34 +254,61 @@
                   <button class="ui-button is-ghost" @click="openDetail(item)">
                     详情</button
                   ><button
+                    v-if="canUseAgent"
+                    class="ui-button is-ai"
+                    :disabled="Number(item.vstate)!==0"
+                    :title="Number(item.vstate)===0?'生成或打开个人AI审核草稿':'仅待审核申请可以使用AI草稿'"
+                    @click="openAiDraft(item)"
+                  >AI 草稿</button
+                  ><button
                     v-if="Number(item.vstate)===0"
                     class="ui-button is-dark"
-                    @click="openEdit(item)"
+                    @click="openEdit(item, $event)"
                   >
                     编辑</button
                   ><button
-                    v-if="Number(item.vstate)===0"
+                    v-if="[0,3].includes(Number(item.vstate))"
                     class="ui-button is-primary"
                     @click="askAction(item,'approve')"
                   >
-                    通过</button
+                    通过并预留</button
                   ><button
                     v-if="Number(item.vstate)===0"
+                    class="ui-button is-ghost"
+                    @click="askAction(item,'material')"
+                  >
+                    补充材料</button
+                  ><button
+                    v-if="[0,3].includes(Number(item.vstate))"
                     class="ui-button is-danger"
                     @click="askAction(item,'reject')"
                   >
                     驳回</button
                   ><button
-                    v-if="Number(item.vstate)===1&&canVisit"
+                    v-if="Number(item.vstate)===1"
+                    class="ui-button is-primary"
+                    @click="askAction(item,'handover')"
+                  >
+                    确认交接</button
+                  ><button
+                    v-if="Number(item.vstate)===4&&canVisit"
                     class="ui-button is-ghost"
                     @click="openVisit(item)"
                   >
                     录入回访</button
                   ><button
+                    v-if="[0,1,3].includes(Number(item.vstate))"
                     class="ui-button is-danger"
-                    @click="askAction(item,'delete')"
+                    @click="askAction(item,'cancel')"
                   >
-                    删除
+                    取消
+                  </button
+                  ><button
+                    v-if="[2,5,6].includes(Number(item.vstate))"
+                    class="ui-button is-ghost"
+                    @click="askAction(item,'reopen')"
+                  >
+                    重新打开
                   </button>
                 </div>
               </article>
@@ -302,161 +354,383 @@
               <span>{{ stateText(detailItem.vstate) }}</span>
               <h2>{{ detailItem.aname }} · {{ detailItem.uname }}</h2>
             </div>
-            <button @click="detailItem=null">关闭</button>
+            <button class="admin-dialog-close" type="button" @click="detailItem=null" title="关闭" aria-label="关闭领养详情"><span class="admin-dialog-close-icon" aria-hidden="true">×</span><span class="admin-dialog-close-text">关闭</span></button>
           </div>
-          <dl class="admin-detail-grid">
-            <div>
-              <dt>年龄</dt>
-              <dd>{{ detailItem.age }}</dd>
+          <div class="admin-dialog-body">
+            <dl class="admin-detail-grid">
+              <div>
+                <dt>年龄</dt>
+                <dd>{{ detailItem.age }}</dd>
+              </div>
+              <div>
+                <dt>性别</dt>
+                <dd>{{ detailItem.gender }}</dd>
+              </div>
+              <div>
+                <dt>职业</dt>
+                <dd>{{ detailItem.occupation }}</dd>
+              </div>
+              <div>
+                <dt>婚姻状态</dt>
+                <dd>{{ detailItem.maritalstatus===1?'已婚':'未婚' }}</dd>
+              </div>
+              <div>
+                <dt>固定住所</dt>
+                <dd>{{ yesNo(detailItem.fixresident) }}</dd>
+              </div>
+              <div>
+                <dt>养宠经验</dt>
+                <dd>{{ yesNo(detailItem.experience) }}</dd>
+              </div>
+              <div>
+                <dt>现有宠物</dt>
+                <dd>{{ detailItem.petnum }}</dd>
+              </div>
+              <div>
+                <dt>家人同意</dt>
+                <dd>{{ yesNo(detailItem.familyagree) }}</dd>
+              </div>
+            </dl>
+            <div class="admin-detail-statement">
+              <strong>住址</strong>
+              <p>{{ detailItem.location }}</p>
             </div>
-            <div>
-              <dt>性别</dt>
-              <dd>{{ detailItem.gender }}</dd>
-            </div>
-            <div>
-              <dt>职业</dt>
-              <dd>{{ detailItem.occupation }}</dd>
-            </div>
-            <div>
-              <dt>婚姻状态</dt>
-              <dd>{{ detailItem.maritalstatus===1?'已婚':'未婚' }}</dd>
-            </div>
-            <div>
-              <dt>固定住所</dt>
-              <dd>{{ yesNo(detailItem.fixresident) }}</dd>
-            </div>
-            <div>
-              <dt>养宠经验</dt>
-              <dd>{{ yesNo(detailItem.experience) }}</dd>
-            </div>
-            <div>
-              <dt>现有宠物</dt>
-              <dd>{{ detailItem.petnum }}</dd>
-            </div>
-            <div>
-              <dt>家人同意</dt>
-              <dd>{{ yesNo(detailItem.familyagree) }}</dd>
-            </div>
-          </dl>
-          <div class="admin-detail-statement">
-            <strong>住址</strong>
-            <p>{{ detailItem.location }}</p>
           </div>
         </section>
       </div>
-      <div v-if="editOpen" class="admin-dialog-backdrop">
+      <div
+        v-if="aiDraftOpen"
+        class="admin-dialog-backdrop"
+        @click.self="closeAiDraft"
+      >
+        <section
+          class="admin-dialog admin-agent-draft-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="aiDraftTitle"
+          aria-describedby="aiDraftBoundary"
+        >
+          <div class="admin-dialog-head admin-agent-draft-head">
+            <div>
+              <span>HUMAN-IN-THE-LOOP · PHASE 3B</span>
+              <h2 id="aiDraftTitle">领养审核草稿</h2>
+              <p v-if="aiDraftTarget">动物 #{{ aiDraftTarget.aid }} · 申请人 #{{ aiDraftTarget.uid }}</p>
+            </div>
+            <button class="admin-dialog-close" type="button" :disabled="aiDraftBusy" @click="closeAiDraft" aria-label="关闭AI审核草稿"><span class="admin-dialog-close-icon" aria-hidden="true">×</span><span class="admin-dialog-close-text">关闭</span></button>
+          </div>
+          <form class="admin-edit-form" @submit.prevent="saveAiDraft">
+            <div class="admin-dialog-body">
+              <div id="aiDraftBoundary" class="admin-agent-draft-boundary">
+                <strong>AI 提建议，管理员执行</strong>
+                <p>保存仍只更新个人草稿。只有展开人工确认区、复核完整资料并二次确认，才会调用既有领养审核状态机。</p>
+              </div>
+              <div v-if="aiDraftLoading" class="admin-agent-draft-loading" role="status">
+                <span aria-hidden="true">A</span><div><strong>正在生成去隐私审核草稿</strong><p>核对固定住所、家庭意见、养宠经验与动物情况…</p></div>
+              </div>
+              <div v-else-if="aiDraftError" class="admin-inline-message is-error" role="alert">{{ aiDraftError }}</div>
+              <template v-if="!aiDraftLoading&&aiDraft&&aiDraftForm">
+                <div class="admin-agent-draft-meta">
+                  <span>个人草稿 #{{ aiDraft.id }}</span>
+                  <span>模型 {{ aiDraft.model||'未知' }}</span>
+                  <span>版本 {{ aiDraft.version }}</span>
+                </div>
+                <div class="admin-agent-draft-verdict">
+                  <div class="ui-form-field">
+                    <label for="aiDraftRecommendation">建议结论</label>
+                    <select id="aiDraftRecommendation" v-model="aiDraftForm.recommendation" :disabled="aiDraftBusy">
+                      <option value="approve">建议通过</option>
+                      <option value="request_material">建议补充材料</option>
+                      <option value="manual_review">建议人工复核</option>
+                      <option value="reject">建议驳回</option>
+                    </select>
+                  </div>
+                  <div class="ui-form-field">
+                    <label for="aiDraftRisk">风险等级</label>
+                    <select id="aiDraftRisk" v-model="aiDraftForm.riskLevel" :disabled="aiDraftBusy">
+                      <option value="low">低风险</option>
+                      <option value="medium">中风险</option>
+                      <option value="high">高风险</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="admin-agent-draft-fields">
+                  <div class="ui-form-field is-full">
+                    <label for="aiDraftRationale">判断依据 <span>{{ aiDraftForm.rationale.length }}/1200</span></label>
+                    <textarea id="aiDraftRationale" v-model.trim="aiDraftForm.rationale" maxlength="1200" rows="5" required :disabled="aiDraftBusy"></textarea>
+                  </div>
+                  <div class="ui-form-field is-full">
+                    <label for="aiDraftMissing">缺失信息 <span>{{ aiDraftForm.missingInfo.length }}/800</span></label>
+                    <textarea id="aiDraftMissing" v-model.trim="aiDraftForm.missingInfo" maxlength="800" rows="3" required :disabled="aiDraftBusy"></textarea>
+                  </div>
+                  <div class="ui-form-field is-full">
+                    <label for="aiDraftNote">管理员审核备注 <span>{{ aiDraftForm.reviewNote.length }}/1200</span></label>
+                    <textarea id="aiDraftNote" v-model.trim="aiDraftForm.reviewNote" maxlength="1200" rows="4" required :disabled="aiDraftBusy"></textarea>
+                  </div>
+                </div>
+                <p class="admin-agent-draft-privacy">模型未接收电话、微信、精确住址、性别、婚姻、职业或收入信息。</p>
+                <section v-if="aiFinalizeOpen" ref="aiFinalizePanel" class="admin-agent-finalize-panel" aria-labelledby="aiFinalizeTitle">
+                  <div class="admin-agent-finalize-title">
+                    <span>PHASE 3B · HUMAN DECISION</span>
+                    <h3 id="aiFinalizeTitle">人工复核与最终确认</h3>
+                    <p>这里的选择是管理员的最终决定，不会由 AI 自动代选或后台执行。</p>
+                  </div>
+                  <details class="admin-agent-human-evidence" open>
+                    <summary>完整申请资料（仅授权管理员可见）</summary>
+                    <dl class="admin-agent-finalize-grid">
+                      <div><dt>动物</dt><dd>{{ aiDraftTarget.aname||'动物 #'+aiDraftTarget.aid }} · #{{ aiDraftTarget.aid }}</dd></div>
+                      <div><dt>申请人</dt><dd>{{ aiDraftTarget.uname||'用户 #'+aiDraftTarget.uid }} · #{{ aiDraftTarget.uid }}</dd></div>
+                      <div><dt>年龄</dt><dd>{{ aiDraftTarget.age||'-' }}</dd></div>
+                      <div><dt>性别</dt><dd>{{ aiDraftTarget.gender||'-' }}</dd></div>
+                      <div><dt>职业</dt><dd>{{ aiDraftTarget.occupation||'-' }}</dd></div>
+                      <div><dt>收入</dt><dd>{{ aiDraftTarget.income||'-' }}</dd></div>
+                      <div><dt>婚姻状态</dt><dd>{{ Number(aiDraftTarget.maritalstatus)===1?'已婚':'未婚' }}</dd></div>
+                      <div><dt>固定住所</dt><dd>{{ yesNo(aiDraftTarget.fixresident) }}</dd></div>
+                      <div><dt>养宠经验</dt><dd>{{ yesNo(aiDraftTarget.experience) }}</dd></div>
+                      <div><dt>现有宠物</dt><dd>{{ aiDraftTarget.petnum||0 }} 只</dd></div>
+                      <div><dt>家人同意</dt><dd>{{ yesNo(aiDraftTarget.familyagree) }}</dd></div>
+                      <div><dt>联系电话</dt><dd>{{ aiDraftTarget.tel||'-' }}</dd></div>
+                      <div class="is-wide"><dt>家庭住址</dt><dd>{{ aiDraftTarget.location||'-' }}</dd></div>
+                    </dl>
+                  </details>
+                  <fieldset class="admin-agent-finalize-choice">
+                    <legend>你的最终决定</legend>
+                    <label :class="{'is-selected':aiFinalizeDecision==='approve'}">
+                      <input v-model="aiFinalizeDecision" type="radio" value="approve" :disabled="aiDraftBusy">
+                      <span><strong>通过申请</strong><small>该动物转为已领养，并驳回同一动物的其他待审申请。</small></span>
+                    </label>
+                    <label :class="{'is-selected':aiFinalizeDecision==='reject'}">
+                      <input v-model="aiFinalizeDecision" type="radio" value="reject" :disabled="aiDraftBusy">
+                      <span><strong>驳回申请</strong><small>该申请进入终态；若无其他待审或已通过申请，动物恢复可申请。</small></span>
+                    </label>
+                  </fieldset>
+                  <div v-if="aiFinalizeNeedsReason" class="ui-form-field admin-agent-override-reason">
+                    <label for="aiFinalizeReason">人工决定理由 <span>{{ aiFinalizeOverrideReason.length }}/500</span></label>
+                    <textarea id="aiFinalizeReason" v-model.trim="aiFinalizeOverrideReason" maxlength="500" rows="3" :disabled="aiDraftBusy" placeholder="请说明覆盖 AI 建议或高风险通过的人工判断依据（至少 8 个字）"></textarea>
+                  </div>
+                  <div class="admin-agent-finalize-ack">
+                    <label><input v-model="aiFinalizeReviewed" type="checkbox" :disabled="aiDraftBusy"><span>我已复核上方完整申请资料，而不是只阅读 AI 草稿。</span></label>
+                    <label><input v-model="aiFinalizeConsequences" type="checkbox" :disabled="aiDraftBusy"><span>我理解该操作会立即改变申请和动物状态，且不能在本页面撤销。</span></label>
+                  </div>
+                  <div v-if="aiFinalizeError" class="admin-inline-message is-error" role="alert">{{ aiFinalizeError }}</div>
+                  <div class="admin-agent-finalize-actions">
+                    <button class="ui-button is-ghost" type="button" :disabled="aiDraftBusy" @click="cancelAiFinalize">返回草稿</button>
+                    <button class="ui-button" :class="aiFinalizeDecision==='reject'?'is-danger':'is-primary'" type="button" :disabled="!canSubmitAiFinalize" @click="finalizeAiDraft">{{ aiFinalizeSaving?'执行中…':(aiFinalizeDecision==='approve'?'确认通过申请':aiFinalizeDecision==='reject'?'确认驳回申请':'请选择最终决定') }}</button>
+                  </div>
+                </section>
+              </template>
+            </div>
+            <div class="admin-dialog-actions admin-agent-draft-actions">
+              <button v-if="aiDraft" class="ui-button is-danger" type="button" :disabled="aiDraftBusy||aiFinalizeOpen" @click="discardAiDraft">丢弃草稿</button>
+              <button v-if="aiDraft" class="ui-button is-ghost" type="button" :disabled="aiDraftBusy||aiFinalizeOpen" @click="generateAiDraft(true)">{{ aiDraftGenerating?'重新生成中…':'重新生成' }}</button>
+              <button class="ui-button is-ghost" type="button" :disabled="aiDraftBusy" @click="closeAiDraft">关闭</button>
+              <button v-if="aiDraft&&!aiFinalizeOpen" class="ui-button is-ghost" type="submit" :disabled="aiDraftBusy">{{ aiDraftSaving?'保存中…':'保存个人草稿' }}</button>
+              <button v-if="aiDraft&&!aiFinalizeOpen" class="ui-button is-primary admin-agent-finalize-entry" type="button" :disabled="aiDraftBusy" @click="beginAiFinalize">进入人工确认</button>
+            </div>
+          </form>
+        </section>
+      </div>
+      <div
+        v-if="editOpen"
+        class="admin-dialog-backdrop"
+        @click.self="closeEdit"
+      >
         <section
           class="admin-dialog admin-detail-dialog"
           role="dialog"
           aria-modal="true"
+          aria-labelledby="adoptQuestionnaireTitle"
+          aria-describedby="adoptQuestionnaireNote"
         >
           <div class="admin-dialog-head">
             <div>
               <span>身份与状态只读</span>
-              <h2>编辑领养问卷</h2>
+              <h2 id="adoptQuestionnaireTitle">编辑领养问卷</h2>
             </div>
-            <button @click="editOpen=false">关闭</button>
+            <button class="admin-dialog-close" type="button" ref="editCloseBtn" :disabled="saving" aria-label="关闭编辑领养问卷" @click="closeEdit" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true">×</span><span class="admin-dialog-close-text">关闭</span></button>
           </div>
           <form class="admin-edit-form" @submit.prevent="saveEdit">
-            <div class="admin-form-grid">
-              <div class="ui-form-field">
-                <label>年龄</label
-                ><input
-                  v-model.number="form.age"
-                  type="number"
-                  min="18"
-                  max="100"
-                  required
-                />
+            <div class="admin-dialog-body">
+              <p id="adoptQuestionnaireNote" class="admin-dialog-note">
+                <strong>可编辑：</strong>申请人问卷字段。
+                <strong>不可编辑：</strong>用户身份、动物编号、审核状态等由服务端关系约束，不能通过本表单改写。
+              </p>
+              <div class="admin-form-grid">
+                <div class="ui-form-field">
+                  <label for="adoptEditAge">年龄</label>
+                  <input
+                    id="adoptEditAge"
+                    v-model.number="form.age"
+                    class="ui-form-input"
+                    type="number"
+                    min="18"
+                    max="100"
+                    inputmode="numeric"
+                    required
+                    :disabled="saving"
+                    aria-describedby="adoptEditAgeHint"
+                  />
+                  <span id="adoptEditAgeHint" class="admin-field-hint" style="display:block;margin-top:6px;color:var(--ui-muted);font-size:11px">18–100</span>
+                </div>
+                <div class="ui-form-field">
+                  <label for="adoptEditGender">性别</label>
+                  <input
+                    id="adoptEditGender"
+                    v-model.trim="form.gender"
+                    class="ui-form-input"
+                    type="text"
+                    maxlength="4"
+                    required
+                    :disabled="saving"
+                  />
+                </div>
+                <div class="ui-form-field">
+                  <label for="adoptEditOccupation">职业</label>
+                  <input
+                    id="adoptEditOccupation"
+                    v-model.trim="form.occupation"
+                    class="ui-form-input"
+                    type="text"
+                    maxlength="12"
+                    required
+                    :disabled="saving"
+                  />
+                </div>
+                <div class="ui-form-field">
+                  <label for="adoptEditTel">电话</label>
+                  <input
+                    id="adoptEditTel"
+                    v-model="form.tel"
+                    class="ui-form-input"
+                    type="tel"
+                    inputmode="numeric"
+                    maxlength="20"
+                    required
+                    :disabled="saving"
+                    autocomplete="tel"
+                  />
+                </div>
+                <div class="ui-form-field">
+                  <label for="adoptEditWechat">微信</label>
+                  <input
+                    id="adoptEditWechat"
+                    v-model.trim="form.wechat"
+                    class="ui-form-input"
+                    type="text"
+                    maxlength="20"
+                    required
+                    :disabled="saving"
+                  />
+                </div>
+                <div class="ui-form-field">
+                  <label for="adoptEditIncome">收入</label>
+                  <input
+                    id="adoptEditIncome"
+                    v-model.number="form.income"
+                    class="ui-form-input"
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputmode="numeric"
+                    required
+                    :disabled="saving"
+                  />
+                </div>
+                <div class="ui-form-field">
+                  <label for="adoptEditPetnum">现有宠物数量</label>
+                  <input
+                    id="adoptEditPetnum"
+                    v-model.number="form.petnum"
+                    class="ui-form-input"
+                    type="number"
+                    min="0"
+                    max="30"
+                    inputmode="numeric"
+                    required
+                    :disabled="saving"
+                  />
+                </div>
+                <div class="ui-form-field">
+                  <label for="adoptEditMarital">婚姻状态</label>
+                  <select
+                    id="adoptEditMarital"
+                    v-model.number="form.maritalstatus"
+                    :disabled="saving"
+                  >
+                    <option :value="1">已婚</option>
+                    <option :value="2">未婚</option>
+                  </select>
+                </div>
+                <div class="ui-form-field">
+                  <label for="adoptEditResident">固定住所</label>
+                  <select
+                    id="adoptEditResident"
+                    v-model.number="form.fixresident"
+                    :disabled="saving"
+                  >
+                    <option :value="1">是</option>
+                    <option :value="0">否</option>
+                  </select>
+                </div>
+                <div class="ui-form-field">
+                  <label for="adoptEditExperience">养宠经验</label>
+                  <select
+                    id="adoptEditExperience"
+                    v-model.number="form.experience"
+                    :disabled="saving"
+                  >
+                    <option :value="1">是</option>
+                    <option :value="0">否</option>
+                  </select>
+                </div>
+                <div class="ui-form-field">
+                  <label for="adoptEditFamily">家人同意</label>
+                  <select
+                    id="adoptEditFamily"
+                    v-model.number="form.familyagree"
+                    :disabled="saving"
+                  >
+                    <option :value="1">是</option>
+                    <option :value="0">否</option>
+                  </select>
+                </div>
+                <div class="ui-form-field is-full">
+                  <label for="adoptEditLocation">家庭住址</label>
+                  <input
+                    id="adoptEditLocation"
+                    v-model.trim="form.location"
+                    class="ui-form-input"
+                    type="text"
+                    maxlength="255"
+                    required
+                    :disabled="saving"
+                    autocomplete="street-address"
+                  />
+                </div>
               </div>
-              <div class="ui-form-field">
-                <label>性别</label
-                ><input v-model.trim="form.gender" maxlength="4" required />
+              <div
+                v-if="formError"
+                id="adoptEditFormError"
+                class="admin-inline-message is-error"
+                role="alert"
+              >
+                {{ formError }}
               </div>
-              <div class="ui-form-field">
-                <label>职业</label
-                ><input
-                  v-model.trim="form.occupation"
-                  maxlength="12"
-                  required
-                />
-              </div>
-              <div class="ui-form-field">
-                <label>电话</label
-                ><input v-model.number="form.tel" type="number" required />
-              </div>
-              <div class="ui-form-field">
-                <label>微信</label
-                ><input v-model.trim="form.wechat" maxlength="20" required />
-              </div>
-              <div class="ui-form-field">
-                <label>收入</label
-                ><input
-                  v-model.number="form.income"
-                  type="number"
-                  min="0"
-                  required
-                />
-              </div>
-              <div class="ui-form-field">
-                <label>现有宠物数量</label
-                ><input
-                  v-model.number="form.petnum"
-                  type="number"
-                  min="0"
-                  max="30"
-                  required
-                />
-              </div>
-              <div class="ui-form-field">
-                <label>婚姻状态</label
-                ><select v-model.number="form.maritalstatus">
-                  <option :value="1">已婚</option>
-                  <option :value="2">未婚</option>
-                </select>
-              </div>
-              <div class="ui-form-field">
-                <label>固定住所</label
-                ><select v-model.number="form.fixresident">
-                  <option :value="1">是</option>
-                  <option :value="0">否</option>
-                </select>
-              </div>
-              <div class="ui-form-field">
-                <label>养宠经验</label
-                ><select v-model.number="form.experience">
-                  <option :value="1">是</option>
-                  <option :value="0">否</option>
-                </select>
-              </div>
-              <div class="ui-form-field">
-                <label>家人同意</label
-                ><select v-model.number="form.familyagree">
-                  <option :value="1">是</option>
-                  <option :value="0">否</option>
-                </select>
-              </div>
-            </div>
-            <div class="ui-form-field">
-              <label>家庭住址</label
-              ><input v-model.trim="form.location" maxlength="255" required />
-            </div>
-            <div
-              v-if="formError"
-              class="admin-inline-message is-error"
-              role="alert"
-            >
-              {{ formError }}
             </div>
             <div class="admin-dialog-actions">
               <button
                 class="ui-button is-ghost"
                 type="button"
-                @click="editOpen=false"
+                :disabled="saving"
+                @click="closeEdit"
               >
-                取消</button
-              ><button class="ui-button is-primary" :disabled="saving">
-                {{ saving?'保存中...':'保存问卷' }}
+                取消
+              </button>
+              <button
+                class="ui-button is-primary"
+                type="submit"
+                :disabled="saving"
+              >
+                {{ saving ? '保存中…' : '保存问卷' }}
               </button>
             </div>
           </form>
@@ -469,50 +743,52 @@
               <span>已通过领养关系</span>
               <h2>录入 {{ visitForm.aname }} 的回访</h2>
             </div>
-            <button @click="cancelVisit">关闭</button>
+            <button class="admin-dialog-close" type="button" @click="cancelVisit" title="关闭" aria-label="关闭回访录入"><span class="admin-dialog-close-icon" aria-hidden="true">×</span><span class="admin-dialog-close-text">关闭</span></button>
           </div>
           <form class="admin-edit-form" @submit.prevent="saveVisit">
-            <div class="admin-form-grid">
-              <div class="ui-form-field">
-                <label>回访日期</label
-                ><input v-model="visitForm.vtime" type="date" required />
+            <div class="admin-dialog-body">
+              <div class="admin-form-grid">
+                <div class="ui-form-field">
+                  <label>回访日期</label>
+                  <input v-model="visitForm.vtime" type="date" required />
+                </div>
+                <div class="ui-form-field">
+                  <label>健康评分</label>
+                  <select v-model.number="visitForm.state">
+                    <option v-for="n in [1,2,3,4,5]" :value="n">{{ n }}/5</option>
+                  </select>
+                </div>
+                <div class="ui-form-field">
+                  <label>记录人姓名</label>
+                  <input
+                    v-model.trim="visitForm.vname"
+                    maxlength="12"
+                    required
+                  />
+                </div>
+                <div class="ui-form-field">
+                  <label>回访图片</label>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif"
+                    @change="uploadVisitImage"
+                  />
+                </div>
+                <div class="ui-form-field is-full">
+                  <label>备注</label>
+                  <textarea
+                    v-model.trim="visitForm.remark"
+                    maxlength="355"
+                  ></textarea>
+                </div>
               </div>
-              <div class="ui-form-field">
-                <label>健康评分</label
-                ><select v-model.number="visitForm.state">
-                  <option v-for="n in [1,2,3,4,5]" :value="n">{{ n }}/5</option>
-                </select>
+              <div
+                v-if="visitError"
+                class="admin-inline-message is-error"
+                role="alert"
+              >
+                {{ visitError }}
               </div>
-              <div class="ui-form-field">
-                <label>记录人姓名</label
-                ><input
-                  v-model.trim="visitForm.vname"
-                  maxlength="12"
-                  required
-                />
-              </div>
-              <div class="ui-form-field">
-                <label>回访图片</label
-                ><input
-                  type="file"
-                  accept="image/jpeg,image/png,image/gif"
-                  @change="uploadVisitImage"
-                />
-              </div>
-            </div>
-            <div class="ui-form-field">
-              <label>备注</label
-              ><textarea
-                v-model.trim="visitForm.remark"
-                maxlength="355"
-              ></textarea>
-            </div>
-            <div
-              v-if="visitError"
-              class="admin-inline-message is-error"
-              role="alert"
-            >
-              {{ visitError }}
             </div>
             <div class="admin-dialog-actions">
               <button
@@ -520,9 +796,11 @@
                 type="button"
                 @click="cancelVisit"
               >
-                取消</button
-              ><button
+                取消
+              </button>
+              <button
                 class="ui-button is-primary"
+                type="submit"
                 :disabled="saving||uploading"
               >
                 保存回访
@@ -538,22 +816,31 @@
               <span>状态与依赖约束由服务端确认</span>
               <h2>
                 {{
-                actionType==='delete'?'删除申请':actionType==='approve'?'通过申请':'驳回申请'
+                actionTitle(actionType)
                 }}？
               </h2>
             </div>
+            <button class="admin-dialog-close" type="button" @click="actionItem=null" title="关闭" aria-label="关闭操作确认"><span class="admin-dialog-close-icon" aria-hidden="true">×</span><span class="admin-dialog-close-text">关闭</span></button>
           </div>
-          <div
-            v-if="actionError"
-            class="admin-inline-message is-error"
-            role="alert"
-          >
-            {{ actionError }}
+          <div class="admin-dialog-body">
+            <div class="ui-form-field">
+              <label for="adoptActionReason">操作原因</label>
+              <textarea id="adoptActionReason" v-model.trim="actionReason" maxlength="1000" :placeholder="actionPlaceholder(actionType)"></textarea>
+              <span class="admin-field-hint">驳回、补充材料、取消和重新打开必须填写明确原因；用户会看到必要说明。</span>
+            </div>
+            <div
+              v-if="actionError"
+              class="admin-inline-message is-error"
+              role="alert"
+            >
+              {{ actionError }}
+            </div>
           </div>
           <div class="admin-dialog-actions">
-            <button class="ui-button is-ghost" @click="actionItem=null">
-              取消</button
-            ><button class="ui-button is-danger" @click="confirmAction">
+            <button class="ui-button is-ghost" type="button" @click="actionItem=null">
+              取消
+            </button>
+            <button class="ui-button is-danger" type="button" @click="confirmAction">
               确认
             </button>
           </div>
@@ -562,7 +849,7 @@
     </div>
     <script src="../../js/jquery.min.js"></script>
     <script src="../../js/auth-session.js?v=20260728"></script><script src="../../js/status-text.js?v=20260728"></script>
-    <script src="../../js/admin-auth.js?v=20260728"></script>
+    <script src="../../js/admin-auth.js?v=20260728a"></script>
     <script src="../../js/vue.min.js"></script>
     <script>
       (function () {
@@ -583,6 +870,7 @@
                 user: user,
                 menuItems: AdminWorkspace.navigation(user.permission),
                 canVisit: AdminWorkspace.hasFlag(user, "visit"),
+                canUseAgent: AdminWorkspace.hasFlag(user, "admin_agent"),
                 mobileOpen: false,
                 accountOpen: false,
                 search: "",
@@ -608,7 +896,24 @@
                 uploading: false,
                 actionItem: null,
                 actionType: "",
+                actionReason: "",
                 actionError: "",
+                aiDraftOpen: false,
+                aiDraftTarget: null,
+                aiDraft: null,
+                aiDraftForm: null,
+                aiDraftLoading: false,
+                aiDraftGenerating: false,
+                aiDraftSaving: false,
+                aiDraftError: "",
+                aiFinalizeOpen: false,
+                aiFinalizeDecision: "",
+                aiFinalizeOverrideReason: "",
+                aiFinalizeReviewed: false,
+                aiFinalizeConsequences: false,
+                aiFinalizeSaving: false,
+                aiFinalizeError: "",
+                aiFinalizeRequestId: "",
               },
               computed: {
                 pages: function () {
@@ -617,6 +922,25 @@
                   var e = Math.min(this.totalPages, s + 4);
                   for (var p = s; p <= e; p += 1) a.push(p);
                   return a;
+                },
+                aiDraftBusy: function () {
+                  return this.aiDraftLoading || this.aiDraftGenerating || this.aiDraftSaving || this.aiFinalizeSaving;
+                },
+                aiDraftDirty: function () {
+                  if (!this.aiDraft || !this.aiDraftForm) return false;
+                  return ["recommendation","riskLevel","rationale","missingInfo","reviewNote"].some(function (key) {
+                    return String(this.aiDraftForm[key] == null ? "" : this.aiDraftForm[key]).trim() !==
+                      String(this.aiDraft[key] == null ? "" : this.aiDraft[key]).trim();
+                  }, this);
+                },
+                aiFinalizeNeedsReason: function () {
+                  if (!this.aiDraft || !this.aiFinalizeDecision) return false;
+                  return this.aiFinalizeDecision !== this.aiDraft.recommendation ||
+                    (this.aiFinalizeDecision === "approve" && this.aiDraft.riskLevel === "high");
+                },
+                canSubmitAiFinalize: function () {
+                  return !!this.aiFinalizeDecision && this.aiFinalizeReviewed && this.aiFinalizeConsequences &&
+                    !this.aiDraftBusy && (!this.aiFinalizeNeedsReason || this.aiFinalizeOverrideReason.trim().length >= 8);
                 },
               },
               created: function () {
@@ -627,27 +951,48 @@
                   return AdminWorkspace.avatarUrl(f);
                 },
                 avatarFallback: function (e) {
-                  e.target.src = "/api/files/";
+                  AdminWorkspace.avatarFallback(e);
                 },
                 logout: function () {
                   AuthSession.logout();
                 },
                 closeTopLayer: function () {
+                  if (this.saving || this.uploading) return;
                   if (this.actionItem) this.actionItem = null;
+                  else if (this.aiFinalizeOpen) this.cancelAiFinalize();
+                  else if (this.aiDraftOpen) this.closeAiDraft();
                   else if (this.visitOpen) this.cancelVisit();
-                  else if (this.editOpen) this.editOpen = false;
+                  else if (this.editOpen) this.closeEdit();
                   else this.detailItem = null;
+                },
+                closeEdit: function () {
+                  if (this.saving) return;
+                  this.editOpen = false;
+                  this.formError = "";
+                  this.$nextTick(function () {
+                    var btn = document.getElementById("adopt-edit-trigger-focus");
+                    if (btn) {
+                      btn.focus();
+                      btn.removeAttribute("id");
+                    }
+                  });
                 },
                 stateText: function (v) {
                   // 状态词统一走 StatusText（此前用户端「未通过」/管理端「已驳回」两套并存）
                   return StatusText.adopt(v);
                 },
                 badgeClass: function (v) {
-                  return Number(v) === 1
+                  return Number(v) === 4
                     ? "is-done"
-                    : Number(v) === 0
+                    : [0,1,3].includes(Number(v))
                       ? "is-pending"
                       : "is-closed";
+                },
+                actionTitle: function (type) {
+                  return {approve:"通过并预留申请",material:"要求补充材料",reject:"驳回申请",handover:"确认完成线下交接",cancel:"取消申请",reopen:"重新打开申请"}[type] || "更新申请";
+                },
+                actionPlaceholder: function (type) {
+                  return type === "material" ? "请具体说明需要补充哪些材料" : type === "reject" ? "请填写驳回依据" : type === "handover" ? "可填写交接地点、双方确认情况" : "请填写本次操作说明";
                 },
                 yesNo: function (v) {
                   return Number(v) === 1 ? "是" : "否";
@@ -695,7 +1040,191 @@
                 openDetail: function (i) {
                   this.detailItem = i;
                 },
-                openEdit: function (i) {
+                requestId: function () {
+                  if (window.crypto && typeof window.crypto.randomUUID === "function") {
+                    return window.crypto.randomUUID().replace(/-/g, "");
+                  }
+                  return Date.now().toString(36) + "_" + Math.random().toString(36).slice(2);
+                },
+                openAiDraft: function (item) {
+                  if (!this.canUseAgent || Number(item.vstate) !== 0) return;
+                  this.aiDraftTarget = item;
+                  this.aiDraft = null;
+                  this.aiDraftForm = null;
+                  this.aiDraftError = "";
+                  this.resetAiFinalize();
+                  this.aiDraftOpen = true;
+                  this.generateAiDraft(false);
+                },
+                closeAiDraft: function () {
+                  if (this.aiDraftBusy) return;
+                  this.aiDraftOpen = false;
+                  this.aiDraftTarget = null;
+                  this.aiDraft = null;
+                  this.aiDraftForm = null;
+                  this.aiDraftError = "";
+                  this.resetAiFinalize();
+                },
+                applyAiDraft: function (draft) {
+                  this.aiDraft = draft;
+                  this.aiDraftForm = {
+                    recommendation: draft.recommendation || "manual_review",
+                    riskLevel: draft.riskLevel || "medium",
+                    rationale: draft.rationale || "",
+                    missingInfo: draft.missingInfo || "",
+                    reviewNote: draft.reviewNote || "",
+                  };
+                },
+                resetAiFinalize: function () {
+                  this.aiFinalizeOpen = false;
+                  this.aiFinalizeDecision = "";
+                  this.aiFinalizeOverrideReason = "";
+                  this.aiFinalizeReviewed = false;
+                  this.aiFinalizeConsequences = false;
+                  this.aiFinalizeSaving = false;
+                  this.aiFinalizeError = "";
+                  this.aiFinalizeRequestId = "";
+                },
+                beginAiFinalize: function () {
+                  if (!this.aiDraft || this.aiDraftBusy) return;
+                  if (this.aiDraftDirty) {
+                    this.aiDraftError = "草稿内容尚未保存。请先保存个人草稿，再进入人工确认。";
+                    return;
+                  }
+                  if (this.aiDraft.status !== "draft" || Number(this.aiDraftTarget.vstate) !== 0) {
+                    this.aiDraftError = "草稿或申请状态已变化，请刷新列表后重试。";
+                    return;
+                  }
+                  this.aiDraftError = "";
+                  this.aiFinalizeDecision = this.aiDraft.recommendation === "approve" || this.aiDraft.recommendation === "reject"
+                    ? this.aiDraft.recommendation : "";
+                  this.aiFinalizeOverrideReason = "";
+                  this.aiFinalizeReviewed = false;
+                  this.aiFinalizeConsequences = false;
+                  this.aiFinalizeError = "";
+                  this.aiFinalizeRequestId = this.requestId();
+                  this.aiFinalizeOpen = true;
+                  this.$nextTick(function () {
+                    if (this.$refs.aiFinalizePanel) this.$refs.aiFinalizePanel.scrollIntoView({ behavior: "smooth", block: "start" });
+                  });
+                },
+                cancelAiFinalize: function () {
+                  if (this.aiFinalizeSaving) return;
+                  this.resetAiFinalize();
+                },
+                finalizeAiDraft: function () {
+                  var vm = this;
+                  if (!vm.aiDraft || !vm.canSubmitAiFinalize) return;
+                  vm.aiFinalizeSaving = true;
+                  vm.aiFinalizeError = "";
+                  $.ajax({
+                    url: "/api/admin-agent/adoption-drafts/" + encodeURIComponent(vm.aiDraft.id) + "/finalize",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                      requestId: vm.aiFinalizeRequestId,
+                      expectedVersion: vm.aiDraft.version,
+                      decision: vm.aiFinalizeDecision,
+                      overrideReason: vm.aiFinalizeOverrideReason,
+                      reviewedApplication: vm.aiFinalizeReviewed,
+                      acknowledgeConsequences: vm.aiFinalizeConsequences,
+                    }),
+                  }).done(function (res) {
+                    if (!res || res.code !== "0" || !res.data || res.data.status !== "executed") {
+                      vm.aiFinalizeError = (res && res.msg) || "审核执行结果无法确认，请刷新列表核对状态。";
+                      return;
+                    }
+                    var decision = res.data.finalDecision === "approve" ? "通过" : "驳回";
+                    vm.aiFinalizeSaving = false;
+                    vm.closeAiDraft();
+                    vm.messageType = "success";
+                    vm.message = "人工确认已完成：领养申请已" + decision + "。";
+                    vm.load(vm.pageNum);
+                  }).fail(function (xhr) {
+                    vm.aiFinalizeError = (xhr.responseJSON && xhr.responseJSON.msg) ||
+                      (xhr.status === 409 ? "草稿或申请状态已变化，请刷新后重新复核。" : "审核执行失败，申请状态未确认改变。请刷新列表核对。" );
+                  }).always(function () { vm.aiFinalizeSaving = false; });
+                },
+                generateAiDraft: function (replaceExisting) {
+                  var vm = this;
+                  if (!vm.aiDraftTarget || vm.aiDraftBusy) return;
+                  vm.aiDraftError = "";
+                  if (replaceExisting) vm.aiDraftGenerating = true;
+                  else vm.aiDraftLoading = true;
+                  $.ajax({
+                    url: "/api/admin-agent/adoption-drafts/generate",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                      requestId: vm.requestId(),
+                      animalId: vm.aiDraftTarget.aid,
+                      applicantId: vm.aiDraftTarget.uid,
+                      replaceExisting: !!replaceExisting,
+                    }),
+                  }).done(function (res) {
+                    if (!res || res.code !== "0" || !res.data) {
+                      vm.aiDraftError = (res && res.msg) || "AI 草稿生成失败。";
+                      return;
+                    }
+                    vm.applyAiDraft(res.data);
+                  }).fail(function (xhr) {
+                    vm.aiDraftError = (xhr.responseJSON && xhr.responseJSON.msg) ||
+                      (xhr.status === 409 ? "申请状态已变化，请刷新列表。" : "AI 草稿生成失败，请稍后重试。");
+                  }).always(function () {
+                    vm.aiDraftLoading = false;
+                    vm.aiDraftGenerating = false;
+                  });
+                },
+                saveAiDraft: function () {
+                  var vm = this;
+                  if (!vm.aiDraft || !vm.aiDraftForm || vm.aiDraftBusy) return;
+                  vm.aiDraftError = "";
+                  vm.aiDraftSaving = true;
+                  $.ajax({
+                    url: "/api/admin-agent/adoption-drafts/" + encodeURIComponent(vm.aiDraft.id),
+                    type: "PUT",
+                    contentType: "application/json",
+                    data: JSON.stringify(Object.assign({ expectedVersion: vm.aiDraft.version }, vm.aiDraftForm)),
+                  }).done(function (res) {
+                    if (!res || res.code !== "0" || !res.data) {
+                      vm.aiDraftError = (res && res.msg) || "草稿保存失败。";
+                      return;
+                    }
+                    vm.applyAiDraft(res.data);
+                    vm.messageType = "success";
+                    vm.message = "AI 审核草稿已保存；申请状态没有改变。";
+                  }).fail(function (xhr) {
+                    vm.aiDraftError = (xhr.responseJSON && xhr.responseJSON.msg) ||
+                      (xhr.status === 409 ? "草稿或申请状态已变化，请重新打开。" : "草稿保存失败，请稍后重试。");
+                  }).always(function () { vm.aiDraftSaving = false; });
+                },
+                discardAiDraft: function () {
+                  var vm = this;
+                  if (!vm.aiDraft || vm.aiDraftBusy || !window.confirm("丢弃这份个人审核草稿？领养申请不会改变。")) return;
+                  vm.aiDraftSaving = true;
+                  $.ajax({
+                    url: "/api/admin-agent/adoption-drafts/" + encodeURIComponent(vm.aiDraft.id),
+                    type: "DELETE",
+                    data: { expectedVersion: vm.aiDraft.version },
+                  }).done(function (res) {
+                    if (!res || res.code !== "0" || res.data !== true) {
+                      vm.aiDraftError = (res && res.msg) || "草稿丢弃失败。";
+                      return;
+                    }
+                    vm.aiDraftSaving = false;
+                    vm.closeAiDraft();
+                    vm.messageType = "success";
+                    vm.message = "个人审核草稿已丢弃；申请状态没有改变。";
+                  }).fail(function (xhr) {
+                    vm.aiDraftError = (xhr.responseJSON && xhr.responseJSON.msg) || "草稿丢弃失败。";
+                  }).always(function () { vm.aiDraftSaving = false; });
+                },
+                openEdit: function (i, evt) {
+                  var prev = document.getElementById("adopt-edit-trigger-focus");
+                  if (prev) prev.removeAttribute("id");
+                  if (evt && evt.currentTarget) {
+                    evt.currentTarget.id = "adopt-edit-trigger-focus";
+                  }
                   this.form = {
                     aid: i.aid,
                     uid: i.uid,
@@ -714,9 +1243,14 @@
                   };
                   this.formError = "";
                   this.editOpen = true;
+                  this.$nextTick(function () {
+                    var first = document.getElementById("adoptEditAge");
+                    if (first) first.focus();
+                  });
                 },
                 saveEdit: function () {
                   var vm = this;
+                  if (vm.saving) return;
                   var payload = {
                     gender: vm.form.gender,
                     age: vm.form.age,
@@ -731,6 +1265,7 @@
                     familyagree: vm.form.familyagree,
                     wechat: vm.form.wechat,
                   };
+                  vm.formError = "";
                   vm.saving = true;
                   $.ajax({
                     url:
@@ -751,11 +1286,43 @@
                       vm.messageType = "success";
                       vm.message = "领养问卷已保存。";
                       vm.load(vm.pageNum);
+                      vm.$nextTick(function () {
+                        var btn = document.getElementById("adopt-edit-trigger-focus");
+                        if (btn) {
+                          btn.focus();
+                          btn.removeAttribute("id");
+                        }
+                      });
                     })
                     .fail(function (xhr) {
-                      vm.formError =
-                        (xhr.responseJSON && xhr.responseJSON.msg) ||
-                        "网络异常。";
+                      var status = xhr && xhr.status;
+                      var parsed = null;
+                      try {
+                        parsed =
+                          xhr.responseJSON ||
+                          (xhr.responseText ? JSON.parse(xhr.responseText) : null);
+                      } catch (e) {
+                        parsed = null;
+                      }
+                      var msg =
+                        (parsed && parsed.msg) ||
+                        (status === 401
+                          ? "登录已失效，请重新登录后重试。当前修改未保存。"
+                          : status === 403
+                            ? "没有权限修改该问卷。"
+                            : status === 409
+                              ? "记录已被其他人修改，请刷新后重试。"
+                              : status === 400
+                                ? "提交内容未通过校验。"
+                                : status === 0
+                                  ? "网络中断或超时，保存未完成。"
+                                  : status >= 500
+                                    ? "服务暂时不可用，请稍后重试。"
+                                    : "网络异常，保存未完成。");
+                      vm.formError = msg;
+                      // 绝不关闭弹窗、不展示成功横幅
+                      vm.message = "";
+                      vm.messageType = "";
                     })
                     .always(function () {
                       vm.saving = false;
@@ -764,30 +1331,23 @@
                 askAction: function (i, t) {
                   this.actionItem = i;
                   this.actionType = t;
+                  this.actionReason = t === "approve" ? "资料符合要求，审核通过并进入待交接阶段" : t === "handover" ? "已核对材料并确认完成线下交接" : "";
                   this.actionError = "";
                 },
                 confirmAction: function () {
                   var vm = this;
-                  var deleting = vm.actionType === "delete";
-                  var state = vm.actionType === "approve" ? 1 : 2;
-                  var url = deleting
-                    ? "/api/adopt/" +
-                      vm.actionItem.aid +
-                      "/" +
-                      vm.actionItem.uid
-                    : "/api/adopt/audit/" +
-                      vm.actionItem.aid +
-                      "/" +
-                      vm.actionItem.uid +
-                      "/" +
-                      state;
-                  $.ajax({ url: url, type: deleting ? "DELETE" : "PUT" })
+                  var action = {approve:"APPROVE",material:"REQUEST_MATERIAL",reject:"REJECT",handover:"COMPLETE_HANDOVER",cancel:"CANCEL",reopen:"REOPEN"}[vm.actionType];
+                  if (!action) { vm.actionError = "操作类型无效。"; return; }
+                  if (["material","reject","cancel","reopen"].includes(vm.actionType) && String(vm.actionReason||"").trim().length < 2) { vm.actionError = "请填写明确的操作原因。"; return; }
+                  var url = "/api/adopt/" + vm.actionItem.aid + "/" + vm.actionItem.uid + "/transition";
+                  $.ajax({ url: url, type: "POST", contentType:"application/json", data:JSON.stringify({action:action,reason:vm.actionReason,note:vm.actionType==="handover"?vm.actionReason:null,expectedVersion:Number(vm.actionItem.version||0)}) })
                     .done(function (res) {
                       if (!res || res.code !== "0" || res.data !== true) {
                         vm.actionError = (res && res.msg) || "操作失败。";
                         return;
                       }
                       vm.actionItem = null;
+                      vm.actionReason = "";
                       vm.messageType = "success";
                       vm.message = "领养申请已更新。";
                       vm.load(vm.pageNum);

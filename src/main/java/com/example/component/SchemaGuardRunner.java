@@ -31,7 +31,7 @@ import java.util.Map;
 public class SchemaGuardRunner implements ApplicationRunner {
 
     /** 结构契约版本：变更闭环必需列/角色时递增，并写入 app_schema_meta */
-    public static final String SCHEMA_VERSION = "2026.07.27-help-chat-index-v1";
+    public static final String SCHEMA_VERSION = "2026.07.29-workflow-closure-p0-v10";
 
     private static final String FILE_FLAG_COLLATION = "utf8mb4_unicode_ci";
 
@@ -77,6 +77,7 @@ public class SchemaGuardRunner implements ApplicationRunner {
             ensureColumn("t_volunteer", "apic",
                     "ALTER TABLE t_volunteer ADD COLUMN apic VARCHAR(255) NULL DEFAULT NULL COMMENT '本人免冠照文件flag' AFTER uid",
                     errors);
+            ensureWorkflowClosureSchema(errors);
             // 业务实体常用列（防止旧库缺列）
             ensureColumnsPresent("t_adopt", Arrays.asList("aid", "uid", "vstate", "uname", "aname"), errors);
             ensureColumnsPresent("t_animal", Arrays.asList("id", "tname", "tstate", "tpic"), errors);
@@ -108,6 +109,15 @@ public class SchemaGuardRunner implements ApplicationRunner {
             ensureTextColumn("t_user", "role", errors);
             ensureRolePermissionTable(errors);
             ensureHelpChatIndexes(errors);
+            ensurePetCareConversationTable(errors);
+            ensurePetCareHistoryTable(errors);
+            ensurePetCareAiConfigTable(errors);
+            ensurePetCareRequestTable(errors);
+            ensureAdminAgentTables(errors);
+            ensureVarcharCapacity("t_permission", "flag", 32,
+                    "ALTER TABLE t_permission MODIFY COLUMN flag VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '唯一标识'",
+                    errors);
+            ensureAdminAgentPermission(errors);
             ensureLightVolunteerRole(errors);
             ensureRole3HasMyProof(errors);
             ensurePermissionMyProof(errors);
@@ -139,6 +149,69 @@ public class SchemaGuardRunner implements ApplicationRunner {
         }
     }
 
+    /** P0 业务闭环：状态证据、站内通知以及领养/救助可恢复字段。 */
+    private void ensureWorkflowClosureSchema(List<String> errors) {
+        ensureColumn("t_adopt", "reviewer_id", "ALTER TABLE t_adopt ADD COLUMN reviewer_id BIGINT NULL DEFAULT NULL AFTER vstate", errors);
+        ensureColumn("t_adopt", "review_reason", "ALTER TABLE t_adopt ADD COLUMN review_reason VARCHAR(1000) NULL DEFAULT NULL AFTER reviewer_id", errors);
+        ensureColumn("t_adopt", "reviewed_at", "ALTER TABLE t_adopt ADD COLUMN reviewed_at DATETIME(3) NULL DEFAULT NULL AFTER review_reason", errors);
+        ensureColumn("t_adopt", "handover_at", "ALTER TABLE t_adopt ADD COLUMN handover_at DATETIME(3) NULL DEFAULT NULL AFTER reviewed_at", errors);
+        ensureColumn("t_adopt", "handover_note", "ALTER TABLE t_adopt ADD COLUMN handover_note VARCHAR(1000) NULL DEFAULT NULL AFTER handover_at", errors);
+        ensureColumn("t_adopt", "created_at", "ALTER TABLE t_adopt ADD COLUMN created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) AFTER handover_note", errors);
+        ensureColumn("t_adopt", "updated_at", "ALTER TABLE t_adopt ADD COLUMN updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) AFTER created_at", errors);
+        ensureColumn("t_adopt", "version", "ALTER TABLE t_adopt ADD COLUMN version INT NOT NULL DEFAULT 0 AFTER updated_at", errors);
+
+        ensureColumn("t_proof", "proof_stage", "ALTER TABLE t_proof ADD COLUMN proof_stage VARCHAR(24) NOT NULL DEFAULT 'handover' AFTER pstatus", errors);
+        ensureColumn("t_proof", "reviewer_id", "ALTER TABLE t_proof ADD COLUMN reviewer_id BIGINT NULL DEFAULT NULL AFTER proof_stage", errors);
+        ensureColumn("t_proof", "review_reason", "ALTER TABLE t_proof ADD COLUMN review_reason VARCHAR(1000) NULL DEFAULT NULL AFTER reviewer_id", errors);
+        ensureColumn("t_proof", "reviewed_at", "ALTER TABLE t_proof ADD COLUMN reviewed_at DATETIME(3) NULL DEFAULT NULL AFTER review_reason", errors);
+        ensureColumn("t_proof", "created_at", "ALTER TABLE t_proof ADD COLUMN created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) AFTER reviewed_at", errors);
+        ensureColumn("t_proof", "updated_at", "ALTER TABLE t_proof ADD COLUMN updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) AFTER created_at", errors);
+
+        ensureColumn("t_help", "priority", "ALTER TABLE t_help ADD COLUMN priority INT NOT NULL DEFAULT 0 AFTER status", errors);
+        ensureColumn("t_help", "assignee_id", "ALTER TABLE t_help ADD COLUMN assignee_id BIGINT NULL DEFAULT NULL AFTER priority", errors);
+        ensureColumn("t_help", "outcome", "ALTER TABLE t_help ADD COLUMN outcome VARCHAR(32) NULL DEFAULT NULL AFTER assignee_id", errors);
+        ensureColumn("t_help", "animal_id", "ALTER TABLE t_help ADD COLUMN animal_id BIGINT NULL DEFAULT NULL AFTER outcome", errors);
+        ensureColumn("t_help", "resolution_note", "ALTER TABLE t_help ADD COLUMN resolution_note VARCHAR(2000) NULL DEFAULT NULL AFTER animal_id", errors);
+        ensureColumn("t_help", "resolved_at", "ALTER TABLE t_help ADD COLUMN resolved_at DATETIME(3) NULL DEFAULT NULL AFTER resolution_note", errors);
+        ensureColumn("t_help", "version", "ALTER TABLE t_help ADD COLUMN version INT NOT NULL DEFAULT 0 AFTER resolved_at", errors);
+        ensureIndex("t_help", "uk_help_animal", "ALTER TABLE t_help ADD UNIQUE INDEX uk_help_animal (animal_id)", errors);
+
+        ensureWorkflowTable("t_workflow_event",
+                "CREATE TABLE IF NOT EXISTS t_workflow_event ("
+                        + "id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,"
+                        + "business_type VARCHAR(32) NOT NULL,business_id VARCHAR(96) NOT NULL,"
+                        + "from_state INT NULL,to_state INT NULL,action VARCHAR(32) NOT NULL,"
+                        + "actor_id BIGINT NULL,actor_type VARCHAR(16) NULL,reason VARCHAR(1000) NULL,"
+                        + "request_id VARCHAR(64) NULL,metadata_json TEXT NULL,"
+                        + "created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),"
+                        + "INDEX idx_workflow_business (business_type,business_id,created_at,id),"
+                        + "INDEX idx_workflow_actor (actor_id,created_at)"
+                        + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci", errors);
+        ensureWorkflowTable("t_notification",
+                "CREATE TABLE IF NOT EXISTS t_notification ("
+                        + "id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,user_id BIGINT NOT NULL,"
+                        + "type VARCHAR(32) NULL,title VARCHAR(120) NULL,summary VARCHAR(500) NULL,"
+                        + "business_type VARCHAR(32) NULL,business_id VARCHAR(96) NULL,target_url VARCHAR(255) NULL,"
+                        + "read_flag TINYINT NOT NULL DEFAULT 0,event_key VARCHAR(160) NOT NULL,"
+                        + "created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),read_at DATETIME(3) NULL,"
+                        + "UNIQUE KEY uk_notification_event (user_id,event_key),"
+                        + "INDEX idx_notification_inbox (user_id,read_flag,created_at,id)"
+                        + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci", errors);
+    }
+
+    private void ensureWorkflowTable(String table, String ddl, List<String> errors) {
+        if (tableExists(table)) return;
+        if (!autoMigrate) {
+            errors.add("缺少 " + table + "（请执行 P0 workflow closure 迁移）");
+            return;
+        }
+        try {
+            jdbcTemplate.execute(ddl);
+        } catch (Exception e) {
+            errors.add("创建 " + table + " 失败: " + e.getMessage());
+        }
+    }
+
     private void ensureMetaTable() {
         // pure-check（autoMigrate=false）禁止任何 DDL，包括元数据表创建
         if (!autoMigrate) {
@@ -160,6 +233,14 @@ public class SchemaGuardRunner implements ApplicationRunner {
      */
     private void ensureRolePermissionTable(List<String> errors) {
         if (tableExists("role_permission")) {
+            ensureColumn("role_permission", "role_id",
+                    "ALTER TABLE role_permission ADD COLUMN role_id BIGINT NOT NULL", errors);
+            ensureColumn("role_permission", "permission_id",
+                    "ALTER TABLE role_permission ADD COLUMN permission_id BIGINT NOT NULL", errors);
+            ensureIndex("role_permission", "PRIMARY",
+                    "ALTER TABLE role_permission ADD PRIMARY KEY (role_id, permission_id)", errors);
+            ensureIndex("role_permission", "idx_rp_permission",
+                    "ALTER TABLE role_permission ADD INDEX idx_rp_permission (permission_id)", errors);
             return;
         }
         if (!autoMigrate) {
@@ -478,7 +559,463 @@ public class SchemaGuardRunner implements ApplicationRunner {
                 "ALTER TABLE t_help ADD INDEX idx_help_uid (uid)", errors);
     }
 
+    private void ensurePetCareHistoryTable(List<String> errors) {
+        if (!tableExists("t_petcare_chat")) {
+            if (!autoMigrate) {
+                errors.add("缺少表 t_petcare_chat 且 auto-migrate=false"
+                        + "（见 docs/sql/2026-07-27-petcare-chat.sql）");
+                return;
+            }
+            log.warn("SchemaGuard 自动创建 t_petcare_chat");
+            try {
+                jdbcTemplate.execute(
+                        "CREATE TABLE IF NOT EXISTS t_petcare_chat ("
+                                + "id BIGINT NOT NULL AUTO_INCREMENT,"
+                                + "user_id BIGINT NOT NULL,"
+                                + "conversation_id BIGINT DEFAULT NULL,"
+                                + "question VARCHAR(500) NOT NULL,"
+                                + "answer MEDIUMTEXT NOT NULL,"
+                                 + "source VARCHAR(16) NOT NULL DEFAULT 'local',"
+                                + "degrade_reason VARCHAR(500) NOT NULL DEFAULT '',"
+                                + "topic VARCHAR(100) DEFAULT NULL,"
+                                + "tools_json TEXT DEFAULT NULL,"
+                                + "question_time DATETIME(3) NOT NULL,"
+                                + "answer_time DATETIME(3) NOT NULL,"
+                                + "PRIMARY KEY (id),"
+                                + "KEY idx_petcare_user_time (user_id, id),"
+                                + "KEY idx_petcare_conversation (user_id, conversation_id, id)"
+                                + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci "
+                                + "COMMENT='照顾知识助手个人聊天历史'");
+            } catch (RuntimeException ex) {
+                errors.add("创建 t_petcare_chat 失败: " + ex.getMessage());
+            }
+            return;
+        }
+
+        ensureColumn("t_petcare_chat", "conversation_id",
+                "ALTER TABLE t_petcare_chat ADD COLUMN conversation_id BIGINT NULL DEFAULT NULL AFTER user_id",
+                errors);
+        ensureColumn("t_petcare_chat", "degrade_reason",
+                "ALTER TABLE t_petcare_chat ADD COLUMN degrade_reason VARCHAR(500) "
+                        + "NOT NULL DEFAULT '' AFTER source", errors);
+        ensureColumnsPresent("t_petcare_chat", Arrays.asList(
+                "id", "user_id", "conversation_id", "question", "answer", "source", "topic",
+                "degrade_reason", "tools_json", "question_time", "answer_time"), errors);
+        if (!indexExists("t_petcare_chat", "idx_petcare_user_time")) {
+            if (!autoMigrate) {
+                errors.add("t_petcare_chat 缺少索引 idx_petcare_user_time 且 auto-migrate=false"
+                        + "（见 docs/sql/2026-07-27-petcare-chat.sql）");
+                return;
+            }
+            try {
+                jdbcTemplate.execute(
+                        "ALTER TABLE t_petcare_chat ADD INDEX idx_petcare_user_time (user_id, id)");
+            } catch (RuntimeException ex) {
+                errors.add("创建索引 t_petcare_chat.idx_petcare_user_time 失败: " + ex.getMessage());
+            }
+        }
+        ensureIndex("t_petcare_chat", "idx_petcare_conversation",
+                "ALTER TABLE t_petcare_chat ADD INDEX idx_petcare_conversation "
+                        + "(user_id, conversation_id, id)", errors);
+    }
+
+    private void ensurePetCareConversationTable(List<String> errors) {
+        if (!tableExists("t_petcare_conversation")) {
+            if (!autoMigrate) {
+                errors.add("缺少表 t_petcare_conversation 且 auto-migrate=false"
+                        + "（见 docs/sql/2026-07-27-petcare-conversations.sql）");
+                return;
+            }
+            log.warn("SchemaGuard 自动创建 t_petcare_conversation");
+            try {
+                jdbcTemplate.execute(
+                        "CREATE TABLE IF NOT EXISTS t_petcare_conversation ("
+                                + "id BIGINT NOT NULL AUTO_INCREMENT,"
+                                + "user_id BIGINT NOT NULL,"
+                                + "title VARCHAR(60) NOT NULL,"
+                                + "preview VARCHAR(100) NOT NULL DEFAULT '',"
+                                + "turn_count INT NOT NULL DEFAULT 0,"
+                                + "created_at DATETIME(3) NOT NULL,"
+                                + "updated_at DATETIME(3) NOT NULL,"
+                                + "PRIMARY KEY (id),"
+                                + "KEY idx_petcare_conversation_user (user_id, updated_at, id)"
+                                + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci "
+                                + "COMMENT='照顾知识助手会话目录'");
+            } catch (RuntimeException ex) {
+                errors.add("创建 t_petcare_conversation 失败: " + ex.getMessage());
+            }
+            return;
+        }
+        ensureColumnsPresent("t_petcare_conversation", Arrays.asList(
+                "id", "user_id", "title", "preview", "turn_count",
+                "created_at", "updated_at"), errors);
+        ensureIndex("t_petcare_conversation", "idx_petcare_conversation_user",
+                "ALTER TABLE t_petcare_conversation ADD INDEX "
+                        + "idx_petcare_conversation_user (user_id, updated_at, id)", errors);
+    }
+
+    private void ensurePetCareAiConfigTable(List<String> errors) {
+        if (!tableExists("t_petcare_ai_config")) {
+            if (!autoMigrate) {
+                errors.add("缺少表 t_petcare_ai_config 且 auto-migrate=false"
+                        + "（见 docs/sql/2026-07-27-petcare-ai-config.sql）");
+                return;
+            }
+            log.warn("SchemaGuard 自动创建 t_petcare_ai_config");
+            try {
+                jdbcTemplate.execute(
+                        "CREATE TABLE IF NOT EXISTS t_petcare_ai_config ("
+                                + "user_id BIGINT NOT NULL,"
+                                + "enabled TINYINT(1) NOT NULL DEFAULT 1,"
+                                + "base_url VARCHAR(500) NOT NULL,"
+                                + "model VARCHAR(120) NOT NULL,"
+                                + "api_key_ciphertext TEXT NOT NULL,"
+                                + "connection_status VARCHAR(16) NOT NULL DEFAULT 'untested',"
+                                + "last_test_message VARCHAR(500) NOT NULL DEFAULT '',"
+                                + "last_tested_at DATETIME(3) DEFAULT NULL,"
+                                + "version BIGINT NOT NULL DEFAULT 1,"
+                                + "created_at DATETIME(3) NOT NULL,"
+                                + "updated_at DATETIME(3) NOT NULL,"
+                                + "PRIMARY KEY (user_id)"
+                                + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci "
+                                + "COMMENT='照顾助手用户级加密API配置'");
+            } catch (RuntimeException ex) {
+                errors.add("创建 t_petcare_ai_config 失败: " + ex.getMessage());
+            }
+            return;
+        }
+
+        ensureColumn("t_petcare_ai_config", "connection_status",
+                "ALTER TABLE t_petcare_ai_config ADD COLUMN connection_status "
+                        + "VARCHAR(16) NOT NULL DEFAULT 'untested' AFTER api_key_ciphertext", errors);
+        ensureColumn("t_petcare_ai_config", "last_test_message",
+                "ALTER TABLE t_petcare_ai_config ADD COLUMN last_test_message "
+                        + "VARCHAR(500) NOT NULL DEFAULT '' AFTER connection_status", errors);
+        ensureColumn("t_petcare_ai_config", "last_tested_at",
+                "ALTER TABLE t_petcare_ai_config ADD COLUMN last_tested_at "
+                        + "DATETIME(3) NULL DEFAULT NULL AFTER last_test_message", errors);
+        ensureColumn("t_petcare_ai_config", "version",
+                "ALTER TABLE t_petcare_ai_config ADD COLUMN version BIGINT NOT NULL DEFAULT 1 "
+                        + "AFTER last_tested_at", errors);
+        ensureColumnsPresent("t_petcare_ai_config", Arrays.asList(
+                "user_id", "enabled", "base_url", "model", "api_key_ciphertext",
+                "connection_status", "last_test_message", "last_tested_at", "version",
+                "created_at", "updated_at"), errors);
+    }
+
+    private void ensurePetCareRequestTable(List<String> errors) {
+        if (!tableExists("t_petcare_request")) {
+            if (!autoMigrate) {
+                errors.add("缺少表 t_petcare_request 且 auto-migrate=false"
+                        + "（见 docs/sql/2026-07-27-petcare-request.sql）");
+                return;
+            }
+            try {
+                jdbcTemplate.execute(
+                        "CREATE TABLE IF NOT EXISTS t_petcare_request ("
+                                + "id BIGINT NOT NULL AUTO_INCREMENT,"
+                                + "user_id BIGINT NOT NULL,"
+                                + "request_id VARCHAR(64) NOT NULL,"
+                                + "conversation_id BIGINT DEFAULT NULL,"
+                                + "requested_conversation_id BIGINT DEFAULT NULL,"
+                                + "requested_conversation_known TINYINT(1) DEFAULT NULL COMMENT 'v5标记：true=新请求，NULL=旧未知来源',"
+                                + "question VARCHAR(500) NOT NULL,"
+                                + "status VARCHAR(16) NOT NULL,"
+                                + "answer MEDIUMTEXT DEFAULT NULL,"
+                                + "source VARCHAR(16) DEFAULT NULL,"
+                                + "degrade_reason VARCHAR(500) NOT NULL DEFAULT '',"
+                                + "topic VARCHAR(100) DEFAULT NULL,"
+                                + "tools_json TEXT DEFAULT NULL,"
+                                + "conversation_title VARCHAR(60) DEFAULT NULL,"
+                                + "error_code VARCHAR(16) DEFAULT NULL,"
+                                + "error_message VARCHAR(500) DEFAULT NULL,"
+                                + "attempt_count INT NOT NULL DEFAULT 1,"
+                                + "created_at DATETIME(3) NOT NULL,"
+                                + "updated_at DATETIME(3) NOT NULL,"
+                                + "completed_at DATETIME(3) DEFAULT NULL,"
+                                + "PRIMARY KEY (id),"
+                                + "UNIQUE KEY uk_petcare_request_user (user_id, request_id),"
+                                + "KEY idx_petcare_request_status (status, updated_at)"
+                                + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci "
+                                + "COMMENT='照顾助手幂等问答任务'");
+            } catch (RuntimeException ex) {
+                errors.add("创建 t_petcare_request 失败: " + ex.getMessage());
+            }
+            return;
+        }
+        boolean requestedConversationMissing = !columnExists(
+                "t_petcare_request", "requested_conversation_id");
+        ensureColumn("t_petcare_request", "requested_conversation_id",
+                "ALTER TABLE t_petcare_request ADD COLUMN requested_conversation_id BIGINT "
+                        + "DEFAULT NULL AFTER conversation_id", errors);
+        ensureColumn("t_petcare_request", "requested_conversation_known",
+                "ALTER TABLE t_petcare_request ADD COLUMN requested_conversation_known TINYINT(1) "
+                        + "DEFAULT NULL COMMENT 'v5标记：true=新请求，NULL=旧未知来源' "
+                        + "AFTER requested_conversation_id", errors);
+        if (autoMigrate && requestedConversationMissing
+                && columnExists("t_petcare_request", "requested_conversation_id")
+                && columnExists("t_petcare_request", "requested_conversation_known")) {
+            jdbcTemplate.update("UPDATE t_petcare_request SET requested_conversation_id = conversation_id "
+                    + "WHERE requested_conversation_id IS NULL AND conversation_id IS NOT NULL");
+        }
+        ensureColumnsPresent("t_petcare_request", Arrays.asList(
+                "id", "user_id", "request_id", "conversation_id", "requested_conversation_id",
+                "requested_conversation_known", "question", "status",
+                "answer", "source", "degrade_reason", "topic", "tools_json",
+                "conversation_title", "error_code", "error_message", "attempt_count",
+                "created_at", "updated_at", "completed_at"), errors);
+        validatePetCareRequestIndex("uk_petcare_request_user", errors);
+        ensureIndex("t_petcare_request", "idx_petcare_request_status",
+                "ALTER TABLE t_petcare_request ADD INDEX idx_petcare_request_status "
+                        + "(status, updated_at)", errors);
+    }
+
+    private void ensureAdminAgentTables(List<String> errors) {
+        ensureAdminAgentTable("t_admin_agent_config",
+                "CREATE TABLE IF NOT EXISTS t_admin_agent_config ("
+                        + "id TINYINT NOT NULL, enabled TINYINT(1) NOT NULL DEFAULT 0,"
+                        + "base_url VARCHAR(500) NOT NULL, model VARCHAR(120) NOT NULL,"
+                        + "api_key_ciphertext TEXT NOT NULL,"
+                        + "connection_status VARCHAR(16) NOT NULL DEFAULT 'untested',"
+                        + "last_test_message VARCHAR(500) NOT NULL DEFAULT '',"
+                        + "last_tested_at DATETIME(3) DEFAULT NULL, version BIGINT NOT NULL DEFAULT 1,"
+                        + "created_at DATETIME(3) NOT NULL, updated_at DATETIME(3) NOT NULL,"
+                        + "PRIMARY KEY (id)"
+                        + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci "
+                        + "COMMENT='管理员Agent平台级加密模型配置'", errors);
+        ensureAdminAgentTable("t_admin_agent_conversation",
+                "CREATE TABLE IF NOT EXISTS t_admin_agent_conversation ("
+                        + "id BIGINT NOT NULL AUTO_INCREMENT, user_id BIGINT NOT NULL,"
+                        + "title VARCHAR(60) NOT NULL, preview VARCHAR(100) NOT NULL DEFAULT '',"
+                        + "turn_count INT NOT NULL DEFAULT 0, created_at DATETIME(3) NOT NULL,"
+                        + "updated_at DATETIME(3) NOT NULL, PRIMARY KEY (id),"
+                        + "KEY idx_admin_agent_conversation_user (user_id, updated_at, id)"
+                        + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci "
+                        + "COMMENT='管理员Agent个人会话目录'", errors);
+        ensureAdminAgentTable("t_admin_agent_message",
+                "CREATE TABLE IF NOT EXISTS t_admin_agent_message ("
+                        + "id BIGINT NOT NULL AUTO_INCREMENT, user_id BIGINT NOT NULL,"
+                        + "conversation_id BIGINT NOT NULL, request_id VARCHAR(64) NOT NULL,"
+                        + "question VARCHAR(800) NOT NULL, answer MEDIUMTEXT NOT NULL,"
+                        + "tools_json TEXT DEFAULT NULL, created_at DATETIME(3) NOT NULL,"
+                        + "completed_at DATETIME(3) NOT NULL, PRIMARY KEY (id),"
+                        + "UNIQUE KEY uk_admin_agent_request (user_id, request_id),"
+                        + "KEY idx_admin_agent_message_conversation (user_id, conversation_id, id)"
+                        + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci "
+                        + "COMMENT='管理员Agent问答记录'", errors);
+        ensureAdminAgentTable("t_admin_agent_audit",
+                "CREATE TABLE IF NOT EXISTS t_admin_agent_audit ("
+                        + "id BIGINT NOT NULL AUTO_INCREMENT, actor_id BIGINT NOT NULL,"
+                        + "event_type VARCHAR(40) NOT NULL, conversation_id BIGINT DEFAULT NULL,"
+                        + "request_id VARCHAR(64) NOT NULL DEFAULT '', tools_json TEXT DEFAULT NULL,"
+                        + "outcome VARCHAR(16) NOT NULL, detail VARCHAR(1000) NOT NULL DEFAULT '',"
+                        + "created_at DATETIME(3) NOT NULL, PRIMARY KEY (id),"
+                        + "KEY idx_admin_agent_audit_actor (actor_id, created_at, id),"
+                        + "KEY idx_admin_agent_audit_request (request_id)"
+                        + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci "
+                        + "COMMENT='管理员Agent操作审计'", errors);
+        ensureAdminAgentTable("t_admin_agent_adopt_draft",
+                "CREATE TABLE IF NOT EXISTS t_admin_agent_adopt_draft ("
+                        + "id BIGINT NOT NULL AUTO_INCREMENT, actor_id BIGINT NOT NULL,"
+                        + "animal_id BIGINT NOT NULL, applicant_id BIGINT NOT NULL,"
+                        + "request_id VARCHAR(64) NOT NULL, source_state INT NOT NULL DEFAULT 0,"
+                        + "recommendation VARCHAR(24) NOT NULL, risk_level VARCHAR(12) NOT NULL,"
+                        + "rationale VARCHAR(1200) NOT NULL, missing_info VARCHAR(800) NOT NULL,"
+                        + "review_note VARCHAR(1200) NOT NULL, model VARCHAR(120) NOT NULL,"
+                        + "status VARCHAR(16) NOT NULL DEFAULT 'draft', version BIGINT NOT NULL DEFAULT 1,"
+                        + "final_request_id VARCHAR(64) DEFAULT NULL, final_decision VARCHAR(12) DEFAULT NULL,"
+                        + "override_reason VARCHAR(500) NOT NULL DEFAULT '', finalized_at DATETIME(3) DEFAULT NULL,"
+                        + "created_at DATETIME(3) NOT NULL, updated_at DATETIME(3) NOT NULL, PRIMARY KEY (id),"
+                        + "UNIQUE KEY uk_admin_agent_draft_application (actor_id, animal_id, applicant_id),"
+                        + "UNIQUE KEY uk_admin_agent_draft_request (actor_id, request_id),"
+                        + "UNIQUE KEY uk_admin_agent_draft_final_request (actor_id, final_request_id),"
+                        + "KEY idx_admin_agent_draft_actor (actor_id, status, updated_at, id)"
+                        + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci "
+                        + "COMMENT='3A草稿与3B人工确认执行凭据'", errors);
+        ensureAdminAgentTable("t_admin_agent_automation_config",
+                "CREATE TABLE IF NOT EXISTS t_admin_agent_automation_config ("
+                        + "id TINYINT NOT NULL,enabled TINYINT(1) NOT NULL DEFAULT 0,"
+                        + "mode VARCHAR(16) NOT NULL DEFAULT 'shadow',max_batch INT NOT NULL DEFAULT 3,"
+                        + "version BIGINT NOT NULL DEFAULT 1,updated_by BIGINT DEFAULT NULL,"
+                        + "created_at DATETIME(3) NOT NULL,updated_at DATETIME(3) NOT NULL,PRIMARY KEY(id)"
+                        + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci "
+                        + "COMMENT='3C受控自动审核开关'", errors);
+        ensureAdminAgentTable("t_admin_agent_automation_run",
+                "CREATE TABLE IF NOT EXISTS t_admin_agent_automation_run ("
+                        + "id BIGINT NOT NULL AUTO_INCREMENT,actor_id BIGINT NOT NULL,request_id VARCHAR(64) NOT NULL,"
+                        + "mode VARCHAR(16) NOT NULL,status VARCHAR(16) NOT NULL,candidate_count INT NOT NULL DEFAULT 0,"
+                        + "shadow_count INT NOT NULL DEFAULT 0,auto_approved_count INT NOT NULL DEFAULT 0,"
+                        + "manual_count INT NOT NULL DEFAULT 0,failed_count INT NOT NULL DEFAULT 0,"
+                        + "detail VARCHAR(1000) NOT NULL DEFAULT '',started_at DATETIME(3) NOT NULL,"
+                        + "completed_at DATETIME(3) DEFAULT NULL,PRIMARY KEY(id),"
+                        + "UNIQUE KEY uk_admin_agent_automation_request(actor_id,request_id),"
+                        + "KEY idx_admin_agent_automation_status(status,started_at,id)"
+                        + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci "
+                        + "COMMENT='3C自动审核运行批次'", errors);
+        ensureAdminAgentTable("t_admin_agent_automation_item",
+                "CREATE TABLE IF NOT EXISTS t_admin_agent_automation_item ("
+                        + "id BIGINT NOT NULL AUTO_INCREMENT,run_id BIGINT NOT NULL,animal_id BIGINT NOT NULL,"
+                        + "applicant_id BIGINT NOT NULL,recommendation VARCHAR(24) NOT NULL DEFAULT '',"
+                        + "risk_level VARCHAR(12) NOT NULL DEFAULT '',hard_gate_pass TINYINT(1) NOT NULL DEFAULT 0,"
+                        + "missing_info VARCHAR(800) NOT NULL DEFAULT '',rationale VARCHAR(1200) NOT NULL DEFAULT '',"
+                        + "outcome VARCHAR(24) NOT NULL,reason VARCHAR(500) NOT NULL DEFAULT '',"
+                        + "created_at DATETIME(3) NOT NULL,PRIMARY KEY(id),"
+                        + "UNIQUE KEY uk_admin_agent_automation_item(run_id,animal_id,applicant_id),"
+                        + "KEY idx_admin_agent_automation_item_run(run_id,id)"
+                        + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci "
+                        + "COMMENT='3C逐条去隐私决策证据'", errors);
+
+        if (tableExists("t_admin_agent_automation_config")) {
+            if (autoMigrate) {
+                jdbcTemplate.execute("INSERT IGNORE INTO t_admin_agent_automation_config "
+                        + "(id,enabled,mode,max_batch,version,updated_by,created_at,updated_at) "
+                        + "VALUES (1,0,'shadow',3,1,NULL,NOW(3),NOW(3))");
+            } else if (jdbcTemplate.query("SELECT 1 FROM t_admin_agent_automation_config WHERE id=1 LIMIT 1",
+                    (rs, i) -> 1).isEmpty()) {
+                errors.add("t_admin_agent_automation_config 缺少 id=1 默认安全配置");
+            }
+        }
+
+        ensureColumn("t_admin_agent_adopt_draft", "final_request_id",
+                "ALTER TABLE t_admin_agent_adopt_draft ADD COLUMN final_request_id VARCHAR(64) DEFAULT NULL AFTER version", errors);
+        ensureColumn("t_admin_agent_adopt_draft", "final_decision",
+                "ALTER TABLE t_admin_agent_adopt_draft ADD COLUMN final_decision VARCHAR(12) DEFAULT NULL AFTER final_request_id", errors);
+        ensureColumn("t_admin_agent_adopt_draft", "override_reason",
+                "ALTER TABLE t_admin_agent_adopt_draft ADD COLUMN override_reason VARCHAR(500) NOT NULL DEFAULT '' AFTER final_decision", errors);
+        ensureColumn("t_admin_agent_adopt_draft", "finalized_at",
+                "ALTER TABLE t_admin_agent_adopt_draft ADD COLUMN finalized_at DATETIME(3) DEFAULT NULL AFTER override_reason", errors);
+
+        ensureColumnsPresent("t_admin_agent_config", Arrays.asList(
+                "id", "enabled", "base_url", "model", "api_key_ciphertext", "connection_status",
+                "last_test_message", "last_tested_at", "version", "created_at", "updated_at"), errors);
+        ensureColumnsPresent("t_admin_agent_conversation", Arrays.asList(
+                "id", "user_id", "title", "preview", "turn_count", "created_at", "updated_at"), errors);
+        ensureColumnsPresent("t_admin_agent_message", Arrays.asList(
+                "id", "user_id", "conversation_id", "request_id", "question", "answer",
+                "tools_json", "created_at", "completed_at"), errors);
+        ensureColumnsPresent("t_admin_agent_audit", Arrays.asList(
+                "id", "actor_id", "event_type", "conversation_id", "request_id", "tools_json",
+                "outcome", "detail", "created_at"), errors);
+        ensureColumnsPresent("t_admin_agent_adopt_draft", Arrays.asList(
+                "id", "actor_id", "animal_id", "applicant_id", "request_id", "source_state",
+                "recommendation", "risk_level", "rationale", "missing_info", "review_note",
+                "model", "status", "version", "final_request_id", "final_decision", "override_reason",
+                "finalized_at", "created_at", "updated_at"), errors);
+        ensureColumnsPresent("t_admin_agent_automation_config", Arrays.asList(
+                "id", "enabled", "mode", "max_batch", "version", "updated_by", "created_at", "updated_at"), errors);
+        ensureColumnsPresent("t_admin_agent_automation_run", Arrays.asList(
+                "id", "actor_id", "request_id", "mode", "status", "candidate_count", "shadow_count",
+                "auto_approved_count", "manual_count", "failed_count", "detail", "started_at", "completed_at"), errors);
+        ensureColumnsPresent("t_admin_agent_automation_item", Arrays.asList(
+                "id", "run_id", "animal_id", "applicant_id", "recommendation", "risk_level", "hard_gate_pass",
+                "missing_info", "rationale", "outcome", "reason", "created_at"), errors);
+        ensureIndex("t_admin_agent_conversation", "idx_admin_agent_conversation_user",
+                "ALTER TABLE t_admin_agent_conversation ADD INDEX "
+                        + "idx_admin_agent_conversation_user (user_id, updated_at, id)", errors);
+        ensureIndex("t_admin_agent_message", "uk_admin_agent_request",
+                "ALTER TABLE t_admin_agent_message ADD UNIQUE INDEX uk_admin_agent_request (user_id, request_id)", errors);
+        ensureIndex("t_admin_agent_message", "idx_admin_agent_message_conversation",
+                "ALTER TABLE t_admin_agent_message ADD INDEX "
+                        + "idx_admin_agent_message_conversation (user_id, conversation_id, id)", errors);
+        ensureIndex("t_admin_agent_audit", "idx_admin_agent_audit_actor",
+                "ALTER TABLE t_admin_agent_audit ADD INDEX idx_admin_agent_audit_actor (actor_id, created_at, id)", errors);
+        ensureIndex("t_admin_agent_adopt_draft", "uk_admin_agent_draft_application",
+                "ALTER TABLE t_admin_agent_adopt_draft ADD UNIQUE INDEX uk_admin_agent_draft_application "
+                        + "(actor_id, animal_id, applicant_id)", errors);
+        ensureIndex("t_admin_agent_adopt_draft", "uk_admin_agent_draft_request",
+                "ALTER TABLE t_admin_agent_adopt_draft ADD UNIQUE INDEX uk_admin_agent_draft_request "
+                        + "(actor_id, request_id)", errors);
+        ensureIndex("t_admin_agent_adopt_draft", "uk_admin_agent_draft_final_request",
+                "ALTER TABLE t_admin_agent_adopt_draft ADD UNIQUE INDEX uk_admin_agent_draft_final_request "
+                        + "(actor_id, final_request_id)", errors);
+        ensureIndex("t_admin_agent_adopt_draft", "idx_admin_agent_draft_actor",
+                "ALTER TABLE t_admin_agent_adopt_draft ADD INDEX idx_admin_agent_draft_actor "
+                        + "(actor_id, status, updated_at, id)", errors);
+        ensureIndex("t_admin_agent_automation_run", "uk_admin_agent_automation_request",
+                "ALTER TABLE t_admin_agent_automation_run ADD UNIQUE INDEX uk_admin_agent_automation_request "
+                        + "(actor_id,request_id)", errors);
+        ensureIndex("t_admin_agent_automation_run", "idx_admin_agent_automation_status",
+                "ALTER TABLE t_admin_agent_automation_run ADD INDEX idx_admin_agent_automation_status "
+                        + "(status,started_at,id)", errors);
+        ensureIndex("t_admin_agent_automation_item", "uk_admin_agent_automation_item",
+                "ALTER TABLE t_admin_agent_automation_item ADD UNIQUE INDEX uk_admin_agent_automation_item "
+                        + "(run_id,animal_id,applicant_id)", errors);
+        ensureIndex("t_admin_agent_automation_item", "idx_admin_agent_automation_item_run",
+                "ALTER TABLE t_admin_agent_automation_item ADD INDEX idx_admin_agent_automation_item_run "
+                        + "(run_id,id)", errors);
+    }
+
+    private void ensureAdminAgentTable(String table, String createSql, List<String> errors) {
+        if (tableExists(table)) return;
+        if (!autoMigrate) {
+            errors.add("缺少表 " + table + " 且 auto-migrate=false（见 docs/sql/2026-07-28-admin-agent.sql）");
+            return;
+        }
+        log.warn("SchemaGuard 自动创建 {}", table);
+        try {
+            jdbcTemplate.execute(createSql);
+        } catch (RuntimeException ex) {
+            errors.add("创建 " + table + " 失败: " + ex.getMessage());
+        }
+    }
+
+    private void ensureAdminAgentPermission(List<String> errors) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM t_permission WHERE flag='admin_agent'", Integer.class);
+        if (count != null && count > 0) return;
+        if (!autoMigrate) {
+            errors.add("t_permission 缺少 flag=admin_agent");
+            return;
+        }
+        try {
+            jdbcTemplate.update("INSERT INTO t_permission (name, description, path, flag) VALUES (?,?,?,?)",
+                    "AI管理助手", "使用管理员只读AI助手", "/page/end/admin_agent.html", "admin_agent");
+        } catch (RuntimeException ex) {
+            errors.add("插入 admin_agent 权限失败: " + ex.getMessage());
+        }
+    }
+
+    private void validatePetCareRequestIndex(String indexName, List<String> errors) {
+        if (!indexExists("t_petcare_request", indexName)) {
+            if (!autoMigrate) {
+                errors.add("t_petcare_request 缺少索引 " + indexName + " 且 auto-migrate=false");
+                return;
+            }
+            log.warn("SchemaGuard 自动创建索引 t_petcare_request.{}", indexName);
+            try {
+                jdbcTemplate.execute("ALTER TABLE t_petcare_request ADD UNIQUE INDEX "
+                        + indexName + " (user_id, request_id)");
+            } catch (Exception e) {
+                errors.add("创建索引 t_petcare_request." + indexName + " 失败: " + e.getMessage());
+            }
+            return;
+        }
+        Integer uniqueCheck = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() "
+                        + "AND TABLE_NAME = 't_petcare_request' AND INDEX_NAME = ? "
+                        + "AND NON_UNIQUE = 0 AND SEQ_IN_INDEX = 1 AND COLUMN_NAME = 'user_id'",
+                Integer.class, indexName);
+        Integer secondColumn = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() "
+                        + "AND TABLE_NAME = 't_petcare_request' AND INDEX_NAME = ? "
+                        + "AND SEQ_IN_INDEX = 2 AND COLUMN_NAME = 'request_id'",
+                Integer.class, indexName);
+        Integer totalColumns = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() "
+                        + "AND TABLE_NAME = 't_petcare_request' AND INDEX_NAME = ?",
+                Integer.class, indexName);
+        if (!Integer.valueOf(1).equals(uniqueCheck)
+                || !Integer.valueOf(1).equals(secondColumn)
+                || !Integer.valueOf(2).equals(totalColumns)) {
+            errors.add("t_petcare_request." + indexName + " 必须是唯一索引 (user_id, request_id)，"
+                    + "当前列定义不正确；请手工 DROP INDEX " + indexName + " 后重启自动修复");
+        }
+    }
+
     private void ensureIndex(String table, String index, String alterSql, List<String> errors) {
+        if (!tableExists(table)) {
+            return;
+        }
         if (indexExists(table, index)) {
             return;
         }
@@ -696,6 +1233,9 @@ public class SchemaGuardRunner implements ApplicationRunner {
         required.put("t_proof.pstatus", "t_proof");
         required.put("t_volunteer.uid", "t_volunteer");
         required.put("t_volunteer.apic", "t_volunteer");
+        required.put("t_adopt.version", "t_adopt");
+        required.put("t_proof.proof_stage", "t_proof");
+        required.put("t_help.outcome", "t_help");
         for (Map.Entry<String, String> e : required.entrySet()) {
             String[] parts = e.getKey().split("\\.");
             if (tableExists(parts[0]) && !columnExists(parts[0], parts[1])) {

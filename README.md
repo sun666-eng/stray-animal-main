@@ -8,7 +8,7 @@
 
 客户端：Vue.js、Ajax、jQuery、Element UI。
 
-服务端：Spring Boot 3.4.x（Java 17+）、MyBatis Plus、JWT、BCrypt、WebSocket、Redis 可选。
+服务端：Spring Boot 3.4.x（Java 17+）、MyBatis Plus、JWT、BCrypt；保留可选的通用 Redis 客户端配置。
 
 数据库：MySQL。
 
@@ -19,7 +19,7 @@
 - JDK：17 或 21（Spring Boot 3.x 最低要求 17；按 Java 17 字节码编译）。
 - Maven：3.6+
 - MySQL：5.7+ 或 8.x
-- Redis：可选，仅在启用多实例 WebSocket 广播时需要。
+- Redis：可选预留；救助聊天不依赖 Redis。
 
 ## 环境变量
 
@@ -32,8 +32,8 @@ DB_NAME=test
 DB_USERNAME=root
 DB_PASSWORD=your_password
 JWT_SECRET=your-32-char-minimum-secret-value
+AI_CONFIG_ENCRYPTION_KEY=your-stable-32-char-minimum-secret
 FILE_UPLOAD_DIR=D:/animal-home/upload
-REDIS_ENABLED=false
 REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_PASSWORD=your_redis_password
@@ -44,8 +44,10 @@ DATA_FIX_ENABLED=false
 说明：
 
 - `JWT_SECRET` 生产环境必须配置，长度至少 32 个字符。
+- `AI_CONFIG_ENCRYPTION_KEY` 用于加密用户个人 AI API Key，生产建议独立配置且保持稳定；
+  未配置时会从 `JWT_SECRET` 派生。更换后旧的个人 AI 配置无法解密。
 - `FILE_UPLOAD_DIR` 建议使用固定绝对路径，避免部署后文件写入不可预期目录。
-- `REDIS_ENABLED=false` 时 WebSocket 使用本机广播；多实例部署时可启用 Redis 广播。
+- 救助聊天仅使用 HTTP 持久化与历史轮询，不启动 WebSocket 或 Redis Pub/Sub。
 - 生产环境应将 `CORS_ALLOWED_ORIGIN_PATTERNS` 收紧为实际前端域名。
 
 ## 配置说明
@@ -73,8 +75,8 @@ spring:
       max-request-size: 20MB
 
 app:
-  redis:
-    enabled: ${REDIS_ENABLED:false}
+  ai:
+    config-encryption-key: ${AI_CONFIG_ENCRYPTION_KEY:}
   jwt:
     secret: ${JWT_SECRET:}
 ```
@@ -138,7 +140,7 @@ http://localhost:9999/page/end
 - 状态变更 API 须带 `X-CSRF-Token`（登录响应或 `GET /api/user/csrf`）。
 - 文件上传建议带 `purpose`：`animal`/`avatar`（绑定业务后公开），`proof`/`visit`/`volunteer`/`help`（私有）。
 - 上传走 `/api/files/{flag}`，**不要**再依赖 `/file/**` 直链上传目录。
-- WebSocket 聊天连接使用登录后 `/api/user/ws-ticket` 一次性票据。
+- 救助聊天通过 `POST /api/help/chat` 发送，并通过 `GET /api/help/chat/history` 定时更新；`POST /api/user/ws-ticket` 固定返回 410。
 
 ## 发布前检查
 

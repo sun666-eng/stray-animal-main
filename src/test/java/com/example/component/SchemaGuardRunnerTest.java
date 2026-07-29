@@ -15,6 +15,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
@@ -40,7 +41,121 @@ public class SchemaGuardRunnerTest {
 
     @Test
     public void schemaVersionConstant_isStable() {
-        assertEquals("2026.07.27-help-chat-index-v1", SchemaGuardRunner.SCHEMA_VERSION);
+        assertEquals("2026.07.29-workflow-closure-p0-v10", SchemaGuardRunner.SCHEMA_VERSION);
+    }
+
+    @Test
+    public void missingPetCareHistoryTable_isCreatedInAutoMigrateMode() {
+        ReflectionTestUtils.setField(guard, "autoMigrate", true);
+        when(jdbcTemplate.queryForObject(
+                contains("information_schema.TABLES"), eq(Integer.class), eq("t_petcare_chat")))
+                .thenReturn(0);
+
+        java.util.List<String> errors = new java.util.ArrayList<>();
+        ReflectionTestUtils.invokeMethod(guard, "ensurePetCareHistoryTable", errors);
+
+        verify(jdbcTemplate).execute(contains("CREATE TABLE IF NOT EXISTS t_petcare_chat"));
+        verify(jdbcTemplate).execute(contains("conversation_id BIGINT"));
+        assertTrue(errors.isEmpty());
+    }
+
+    @Test
+    public void missingPetCareAiConfigTable_isCreatedInAutoMigrateMode() {
+        ReflectionTestUtils.setField(guard, "autoMigrate", true);
+        when(jdbcTemplate.queryForObject(
+                contains("information_schema.TABLES"), eq(Integer.class), eq("t_petcare_ai_config")))
+                .thenReturn(0);
+
+        java.util.List<String> errors = new java.util.ArrayList<>();
+        ReflectionTestUtils.invokeMethod(guard, "ensurePetCareAiConfigTable", errors);
+
+        verify(jdbcTemplate).execute(contains("CREATE TABLE IF NOT EXISTS t_petcare_ai_config"));
+        verify(jdbcTemplate).execute(contains("connection_status VARCHAR"));
+        assertTrue(errors.isEmpty());
+    }
+
+    @Test
+    public void missingPetCareConversationTable_isCreatedInAutoMigrateMode() {
+        ReflectionTestUtils.setField(guard, "autoMigrate", true);
+        when(jdbcTemplate.queryForObject(
+                contains("information_schema.TABLES"), eq(Integer.class),
+                eq("t_petcare_conversation"))).thenReturn(0);
+
+        java.util.List<String> errors = new java.util.ArrayList<>();
+        ReflectionTestUtils.invokeMethod(guard, "ensurePetCareConversationTable", errors);
+
+        verify(jdbcTemplate).execute(
+                contains("CREATE TABLE IF NOT EXISTS t_petcare_conversation"));
+        assertTrue(errors.isEmpty());
+    }
+
+    @Test
+    public void missingPetCareRequestTable_isCreatedWithIdempotencyKey() {
+        ReflectionTestUtils.setField(guard, "autoMigrate", true);
+        when(jdbcTemplate.queryForObject(
+                contains("information_schema.TABLES"), eq(Integer.class),
+                eq("t_petcare_request"))).thenReturn(0);
+        java.util.List<String> errors = new java.util.ArrayList<>();
+
+        ReflectionTestUtils.invokeMethod(guard, "ensurePetCareRequestTable", errors);
+
+        verify(jdbcTemplate).execute(contains("UNIQUE KEY uk_petcare_request_user"));
+        verify(jdbcTemplate).execute(contains("requested_conversation_id BIGINT"));
+        assertTrue(errors.isEmpty());
+    }
+
+    @Test
+    public void missingAdminAgentTables_areCreatedWithAuditAndIdempotency() {
+        ReflectionTestUtils.setField(guard, "autoMigrate", true);
+        when(jdbcTemplate.queryForObject(contains("information_schema.TABLES"), eq(Integer.class),
+                anyString())).thenReturn(0);
+        java.util.List<String> errors = new java.util.ArrayList<>();
+
+        ReflectionTestUtils.invokeMethod(guard, "ensureAdminAgentTables", errors);
+
+        verify(jdbcTemplate).execute(contains("CREATE TABLE IF NOT EXISTS t_admin_agent_config"));
+        verify(jdbcTemplate).execute(contains("UNIQUE KEY uk_admin_agent_request"));
+        verify(jdbcTemplate).execute(contains("CREATE TABLE IF NOT EXISTS t_admin_agent_audit"));
+        verify(jdbcTemplate).execute(contains("CREATE TABLE IF NOT EXISTS t_admin_agent_adopt_draft"));
+        verify(jdbcTemplate).execute(contains("CREATE TABLE IF NOT EXISTS t_admin_agent_automation_config"));
+        verify(jdbcTemplate).execute(contains("CREATE TABLE IF NOT EXISTS t_admin_agent_automation_run"));
+        verify(jdbcTemplate).execute(contains("CREATE TABLE IF NOT EXISTS t_admin_agent_automation_item"));
+        assertTrue(errors.isEmpty());
+    }
+
+    @Test
+    public void petCareRequestPureCheck_neverBackfillsRequestedConversationId() {
+        ReflectionTestUtils.setField(guard, "autoMigrate", false);
+        when(jdbcTemplate.queryForObject(
+                contains("information_schema.TABLES"), eq(Integer.class),
+                eq("t_petcare_request"))).thenReturn(1);
+        when(jdbcTemplate.queryForObject(
+                contains("information_schema.COLUMNS"), eq(Integer.class),
+                eq("t_petcare_request"), anyString())).thenAnswer(inv -> {
+            return 1;
+        });
+        when(jdbcTemplate.queryForObject(
+                contains("information_schema.STATISTICS"), eq(Integer.class),
+                eq("t_petcare_request"), eq("uk_petcare_request_user"))).thenReturn(1);
+        // 先定义总列数，再定义更精确的列位置；Mockito 后定义的精确规则优先。
+        when(jdbcTemplate.queryForObject(
+                contains("TABLE_NAME = 't_petcare_request' AND INDEX_NAME = ?"),
+                eq(Integer.class), eq("uk_petcare_request_user"))).thenReturn(2);
+        when(jdbcTemplate.queryForObject(
+                contains("NON_UNIQUE = 0 AND SEQ_IN_INDEX = 1 AND COLUMN_NAME = 'user_id'"),
+                eq(Integer.class), eq("uk_petcare_request_user"))).thenReturn(1);
+        when(jdbcTemplate.queryForObject(
+                contains("SEQ_IN_INDEX = 2 AND COLUMN_NAME = 'request_id'"),
+                eq(Integer.class), eq("uk_petcare_request_user"))).thenReturn(1);
+        when(jdbcTemplate.queryForObject(
+                contains("information_schema.STATISTICS"), eq(Integer.class),
+                eq("t_petcare_request"), eq("idx_petcare_request_status"))).thenReturn(1);
+
+        java.util.List<String> errors = new java.util.ArrayList<>();
+        ReflectionTestUtils.invokeMethod(guard, "ensurePetCareRequestTable", errors);
+
+        verify(jdbcTemplate, never()).update(contains("UPDATE t_petcare_request"));
+        assertTrue(errors.isEmpty());
     }
 
     @Test
@@ -61,6 +176,9 @@ public class SchemaGuardRunnerTest {
                     String col = inv.getArgument(3);
                     if ("pstatus".equals(col) || "apic".equals(col)) {
                         return repaired.contains(col) ? 1 : 0;
+                    }
+                    if ("requested_conversation_known".equals(col)) {
+                        return 1;
                     }
                     return 1;
                 });
@@ -106,7 +224,15 @@ public class SchemaGuardRunnerTest {
                 .thenReturn("utf8mb4");
         when(jdbcTemplate.query(contains("COLLATION_NAME"), any(ResultSetExtractor.class), any(), any()))
                 .thenReturn(new String[]{"utf8mb4", "utf8mb4_unicode_ci"});
+        when(jdbcTemplate.queryForObject(contains("TABLE_NAME = 't_petcare_request' AND INDEX_NAME = ?"),
+                eq(Integer.class), anyString())).thenReturn(2);
+        when(jdbcTemplate.queryForObject(contains("NON_UNIQUE = 0 AND SEQ_IN_INDEX = 1 AND COLUMN_NAME = 'user_id'"),
+                eq(Integer.class), anyString())).thenReturn(1);
+        when(jdbcTemplate.queryForObject(contains("SEQ_IN_INDEX = 2 AND COLUMN_NAME = 'request_id'"),
+                eq(Integer.class), anyString())).thenReturn(1);
         when(jdbcTemplate.queryForObject(contains("FROM t_role WHERE id = 4"), eq(Integer.class)))
+                .thenReturn(1);
+        when(jdbcTemplate.queryForObject(contains("flag='admin_agent'"), eq(Integer.class)))
                 .thenReturn(1);
         when(jdbcTemplate.query(contains("FROM t_role WHERE id = 3"), any(ResultSetExtractor.class)))
                 .thenReturn("[{\"flag\":\"my_proof\"}]");
@@ -131,7 +257,10 @@ public class SchemaGuardRunnerTest {
         when(jdbcTemplate.queryForObject(contains("information_schema.TABLES"), eq(Integer.class), anyString()))
                 .thenReturn(1);
         when(jdbcTemplate.queryForObject(contains("information_schema.COLUMNS"), eq(Integer.class), anyString(), anyString()))
-                .thenReturn(1);
+                .thenAnswer(inv -> {
+                    String col = inv.getArgument(3);
+                    return ("requested_conversation_known".equals(col)) ? 1 : 1;
+                });
         when(jdbcTemplate.query(contains("DATA_TYPE"), any(ResultSetExtractor.class), any(), any()))
                 .thenAnswer(inv -> "t_account".equals(inv.getArgument(2)) ? "decimal" : "text");
         when(jdbcTemplate.query(contains("NUMERIC_PRECISION"), any(ResultSetExtractor.class))).thenReturn(19);
@@ -143,6 +272,12 @@ public class SchemaGuardRunnerTest {
                 .thenReturn("utf8mb4");
         when(jdbcTemplate.query(contains("COLLATION_NAME"), any(ResultSetExtractor.class), any(), any()))
                 .thenReturn(new String[]{"utf8mb4", "utf8mb4_0900_ai_ci"});
+        when(jdbcTemplate.queryForObject(contains("TABLE_NAME = 't_petcare_request' AND INDEX_NAME = ?"),
+                eq(Integer.class), anyString())).thenReturn(2);
+        when(jdbcTemplate.queryForObject(contains("NON_UNIQUE = 0 AND SEQ_IN_INDEX = 1 AND COLUMN_NAME = 'user_id'"),
+                eq(Integer.class), anyString())).thenReturn(1);
+        when(jdbcTemplate.queryForObject(contains("SEQ_IN_INDEX = 2 AND COLUMN_NAME = 'request_id'"),
+                eq(Integer.class), anyString())).thenReturn(1);
         when(jdbcTemplate.queryForObject(contains("information_schema.STATISTICS"), eq(Integer.class), anyString(), anyString()))
                 .thenReturn(1);
         when(jdbcTemplate.queryForObject(contains("INDEX_NAME = 'uk_file_flag'"), eq(Integer.class))).thenReturn(1);
@@ -152,6 +287,7 @@ public class SchemaGuardRunnerTest {
         when(jdbcTemplate.queryForObject(contains("FROM t_"), eq(Long.class))).thenReturn(0L);
         when(jdbcTemplate.queryForObject(contains("TRIM(avatar) = '1'"), eq(Long.class))).thenReturn(9L);
         when(jdbcTemplate.queryForObject(contains("FROM t_role WHERE id = 4"), eq(Integer.class))).thenReturn(1);
+        when(jdbcTemplate.queryForObject(contains("flag='admin_agent'"), eq(Integer.class))).thenReturn(1);
         when(jdbcTemplate.query(contains("FROM t_role WHERE id = 3"), any(ResultSetExtractor.class)))
                 .thenReturn("[{\"flag\":\"my_proof\"}]");
         when(jdbcTemplate.queryForObject(contains("flag = 'my_proof'"), eq(Integer.class))).thenReturn(1);
@@ -188,5 +324,42 @@ public class SchemaGuardRunnerTest {
         }
         verify(jdbcTemplate, never()).execute(contains("app_schema_meta"));
         verify(jdbcTemplate, never()).update(contains("app_schema_meta"), anyString());
+    }
+
+    @Test
+    public void missingTable_neverAttemptsToCreateIndexesWithAlter() {
+        ReflectionTestUtils.setField(guard, "autoMigrate", true);
+        when(jdbcTemplate.queryForObject(
+                contains("information_schema.TABLES"), eq(Integer.class), eq("t_help")))
+                .thenReturn(0);
+
+        java.util.List<String> errors = new java.util.ArrayList<>();
+        ReflectionTestUtils.invokeMethod(guard, "ensureHelpChatIndexes", errors);
+
+        verify(jdbcTemplate, never()).execute(contains("ALTER TABLE t_help"));
+        assertTrue(errors.isEmpty());
+    }
+
+    @Test
+    public void legacyRolePermissionTable_getsRequiredColumnsAndIndexes() {
+        ReflectionTestUtils.setField(guard, "autoMigrate", true);
+        when(jdbcTemplate.queryForObject(
+                contains("information_schema.TABLES"), eq(Integer.class), eq("role_permission")))
+                .thenReturn(1);
+        when(jdbcTemplate.queryForObject(
+                contains("information_schema.COLUMNS"), eq(Integer.class), eq("role_permission"), anyString()))
+                .thenReturn(0);
+        when(jdbcTemplate.queryForObject(
+                contains("information_schema.STATISTICS"), eq(Integer.class), eq("role_permission"), anyString()))
+                .thenReturn(0);
+
+        java.util.List<String> errors = new java.util.ArrayList<>();
+        ReflectionTestUtils.invokeMethod(guard, "ensureRolePermissionTable", errors);
+
+        verify(jdbcTemplate).execute(contains("ADD COLUMN role_id"));
+        verify(jdbcTemplate).execute(contains("ADD COLUMN permission_id"));
+        verify(jdbcTemplate).execute(contains("ADD PRIMARY KEY (role_id, permission_id)"));
+        verify(jdbcTemplate).execute(contains("ADD INDEX idx_rp_permission"));
+        assertTrue(errors.isEmpty());
     }
 }

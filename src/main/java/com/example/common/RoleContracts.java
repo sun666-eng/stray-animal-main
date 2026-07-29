@@ -28,7 +28,7 @@ public final class RoleContracts {
     /** 后台管理 flags：普通用户与认证义工（角色4）不得拥有 */
     public static final Set<String> ADMIN_FLAGS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             "user", "role", "permission", "animal", "adopt", "proof", "visit",
-            "volunteer", "account", "notice", "help", "rescue"
+            "volunteer", "account", "notice", "help", "rescue", "admin_agent"
     )));
 
     /** 角色3 标准权限 JSON（路径统一为 front） */

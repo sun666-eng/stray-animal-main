@@ -36,6 +36,17 @@ public class Help extends Model<Help> {
 
     private Integer status;
 
+    /** 0普通 1较急 2紧急 */
+    private Integer priority;
+    private Long assigneeId;
+    /** intake/transfer/owner_found/not_found/duplicate/invalid */
+    private String outcome;
+    private Long animalId;
+    private String resolutionNote;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date resolvedAt;
+    private Integer version;
+
     /**
      * 审计修复 M4：管理端清空回复时 normalizeOptional 归一为 null，默认更新策略会
      * 静默跳过 null 字段导致"提示成功但回复没清掉"。ALWAYS 使 null 真正落库。

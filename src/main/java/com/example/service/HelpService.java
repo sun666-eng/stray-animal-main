@@ -1,9 +1,12 @@
 package com.example.service;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.common.PermissionUtil;
 import com.example.dto.ChatMessageDTO;
+import com.example.dto.HelpManageRequest;
+import com.example.entity.Animal;
 import com.example.entity.Help;
 import com.example.entity.User;
 import com.example.exception.CustomException;
@@ -20,6 +23,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
+import java.util.Set;
+import java.util.Locale;
 
 @Service
 public class HelpService extends ServiceImpl<HelpMapper, Help> {
@@ -33,6 +38,15 @@ public class HelpService extends ServiceImpl<HelpMapper, Help> {
 
     @Resource
     private FileAssetService fileAssetService;
+
+    @Resource
+    private AnimalService animalService;
+
+    @Resource
+    private WorkflowEventService workflowEventService;
+
+    @Resource
+    private NotificationService notificationService;
 
     private final ConcurrentHashMap<Long, RateWindow> chatRateLimits = new ConcurrentHashMap<>();
     private final AtomicInteger rateLimitChecks = new AtomicInteger();
@@ -59,6 +73,8 @@ public class HelpService extends ServiceImpl<HelpMapper, Help> {
         help.setUid(user.getId());
         help.setUname(user.getUsername());
         help.setStatus(0);
+        help.setPriority(0);
+        help.setVersion(0);
         help.setRemark(null);
         help.setCreateTime(new Date());
         help.setUpdateTime(new Date());
@@ -70,6 +86,103 @@ public class HelpService extends ServiceImpl<HelpMapper, Help> {
                     "help", help.getId(), false);
         }
         return true;
+    }
+
+    /** 管理端救助状态机；“接收入站”必须原子地创建或关联动物档案。 */
+    @Transactional
+    public boolean manageHelp(Long id, HelpManageRequest body, User actor) {
+        if (actor == null || actor.getId() == null) throw new CustomException("401", "未登录或登录已过期");
+        if (id == null || body == null || body.getStatus() == null) throw new CustomException("400", "处理参数无效");
+        validateStatus(body.getStatus());
+        Help existing = getOne(Wrappers.<Help>lambdaQuery().eq(Help::getId, id).last("FOR UPDATE"), false);
+        if (existing == null || CHAT_TITLE.equals(existing.getTitle())) throw new CustomException("404", "救助记录不存在");
+        int version = existing.getVersion() == null ? 0 : existing.getVersion();
+        if (body.getExpectedVersion() != null && body.getExpectedVersion() != version) {
+            throw new CustomException("409", "救助记录已被其他管理员更新，请刷新后重试");
+        }
+        int priority = body.getPriority() == null ? (existing.getPriority() == null ? 0 : existing.getPriority()) : body.getPriority();
+        if (priority < 0 || priority > 2) throw new CustomException("400", "优先级仅允许普通、较急或紧急");
+        String remark = normalizeOptional(body.getRemark(), 2000, "回复");
+        String outcome = normalizeOutcome(body.getOutcome());
+        String resolutionNote = normalizeOptional(body.getResolutionNote(), 2000, "处理结论");
+        Long animalId = existing.getAnimalId();
+        Date now = new Date();
+
+        if (body.getStatus() == 2) {
+            if (outcome == null) throw new CustomException("400", "完成救助时必须选择处理结果");
+            if (resolutionNote == null) throw new CustomException("400", "完成救助时必须填写处理结论");
+            if ("intake".equals(outcome)) {
+                animalId = resolveIntakeAnimal(existing, body, actor);
+            } else if (body.getExistingAnimalId() != null || body.getAnimal() != null) {
+                throw new CustomException("400", "只有接收入站结果可以关联动物档案");
+            }
+        } else if (body.getStatus() == 3) {
+            if (resolutionNote == null && remark == null) throw new CustomException("400", "关闭救助时必须填写原因");
+            if (outcome == null) outcome = "invalid";
+        } else {
+            outcome = null;
+            resolutionNote = null;
+            animalId = null;
+        }
+
+        if (Integer.valueOf(2).equals(existing.getStatus())
+                && body.getStatus() == 2
+                && java.util.Objects.equals(existing.getOutcome(), outcome)
+                && java.util.Objects.equals(existing.getAnimalId(), animalId)) return true;
+
+        UpdateWrapper<Help> update = new UpdateWrapper<>();
+        update.eq("id", id).eq("version", version)
+                .set("status", body.getStatus()).set("priority", priority)
+                .set("assignee_id", body.getAssigneeId() == null ? actor.getId() : body.getAssigneeId())
+                .set("remark", remark).set("outcome", outcome).set("animal_id", animalId)
+                .set("resolution_note", resolutionNote)
+                .set("resolved_at", body.getStatus() >= 2 ? now : null)
+                .set("update_time", now).set("version", version + 1);
+        if (!update(new Help(), update)) throw new CustomException("409", "救助记录已变化，请刷新后重试");
+        if (workflowEventService != null) {
+            workflowEventService.record("help", String.valueOf(id), existing.getStatus(), body.getStatus(),
+                    body.getStatus() == 2 ? "RESOLVE" : body.getStatus() == 3 ? "CLOSE" : "MANAGE",
+                    actor.getId(), "ADMIN", resolutionNote == null ? remark : resolutionNote,
+                    null, animalId == null ? null : "{\"animalId\":" + animalId + "}");
+        }
+        if (notificationService != null) {
+            notificationService.notifyOnce(existing.getUid(), "help", "救助进度更新",
+                    existing.getTitle() + "：" + helpStatusLabel(body.getStatus())
+                            + (resolutionNote == null ? "" : "。" + resolutionNote),
+                    "help", String.valueOf(id), "/page/front/my_rescue.html",
+                    "help:" + id + ":v" + (version + 1));
+        }
+        return true;
+    }
+
+    private Long resolveIntakeAnimal(Help existing, HelpManageRequest body, User actor) {
+        if (existing.getAnimalId() != null) return existing.getAnimalId();
+        if (body.getExistingAnimalId() != null) {
+            Animal animal = animalService.getById(body.getExistingAnimalId());
+            if (animal == null) throw new CustomException("404", "要关联的动物档案不存在");
+            long used = count(Wrappers.<Help>lambdaQuery().eq(Help::getAnimalId, animal.getId()).ne(Help::getId, existing.getId()));
+            if (used > 0) throw new CustomException("409", "该动物档案已关联其他救助事件");
+            return animal.getId();
+        }
+        Animal draft = body.getAnimal();
+        if (draft == null) throw new CustomException("400", "接收入站时必须创建或选择动物档案");
+        animalService.saveAnimal(draft, actor);
+        if (draft.getId() == null) throw new CustomException("500", "动物档案创建失败");
+        return draft.getId();
+    }
+
+    private String normalizeOutcome(String value) {
+        if (value == null || value.trim().isEmpty()) return null;
+        String clean = value.trim().toLowerCase(Locale.ROOT);
+        if (!Set.of("intake", "transfer", "owner_found", "not_found", "duplicate", "invalid").contains(clean)) {
+            throw new CustomException("400", "救助处理结果无效");
+        }
+        return clean;
+    }
+
+    private String helpStatusLabel(Integer state) {
+        if (state == null) return "状态更新";
+        return switch (state) { case 0 -> "待处理"; case 1 -> "处理中"; case 2 -> "已完成"; case 3 -> "已关闭"; default -> "状态更新"; };
     }
 
     @Transactional
@@ -232,17 +345,6 @@ public class HelpService extends ServiceImpl<HelpMapper, Help> {
     /** 新消息落库后失效历史缓存，发送者及他人下次轮询即可见。 */
     private void invalidateChatHistoryCache() {
         chatHistoryCache = null;
-    }
-
-    public ChatMessageDTO getPersistedChatMessage(Long id) {
-        if (id == null || id <= 0) {
-            return null;
-        }
-        Help message = getById(id);
-        if (message == null || !CHAT_TITLE.equals(message.getTitle()) || message.getDescription() == null) {
-            return null;
-        }
-        return toChatDTO(message);
     }
 
     private ChatMessageDTO toChatDTO(Help message) {

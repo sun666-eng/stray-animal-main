@@ -13,6 +13,9 @@ app:
   jwt:
     # 仅开发允许固定开发密钥（A0.1）
     allow-dev-secret: true
+  ai:
+    # 本地联调假 LLM（http://127.0.0.1:18080/v1）；生产禁止
+    allow-loopback-personal-config: true
   password:
     # 开发允许明文登录并自动升级 BCrypt（A2）
     allow-plaintext-login: true

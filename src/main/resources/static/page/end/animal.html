@@ -8,8 +8,8 @@
     />
     <title>动物档案 · 归途计划管理</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-    <link rel="stylesheet" href="../../css/product-ui.css?v=20260728" />
-    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260728" />
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260728c" />
+    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260728e" />
   </head>
   <body>
     <div id="authWait" class="admin-auth-wait" role="status">
@@ -224,6 +224,7 @@
                           v-if="fileUrl(item.tpic)"
                           :src="fileUrl(item.tpic)"
                           :alt="(item.tname||'动物')+'的档案图片'"
+                          @error="animalImageFallback"
                         /><span v-else aria-hidden="true">无图</span
                         ><strong
                           >{{ item.tname || '未命名' }}<small
@@ -360,14 +361,7 @@
               <span>动物 #{{ detailItem.id }}</span>
               <h2 id="animalDetailTitle">{{ detailItem.tname || '未命名' }}</h2>
             </div>
-            <button
-              ref="detailClose"
-              type="button"
-              aria-label="关闭动物详情"
-              @click="closeDetail"
-            >
-              关闭
-            </button>
+            <button class="admin-dialog-close" ref="detailClose" type="button" aria-label="关闭动物详情" @click="closeDetail" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true">×</span><span class="admin-dialog-close-text">关闭</span></button>
           </div>
           <dl class="admin-detail-grid">
             <div>
@@ -396,6 +390,7 @@
             ><img
               :src="fileUrl(detailItem.tpic)"
               :alt="(detailItem.tname||'动物')+'的档案图片'"
+              @error="animalImageFallback"
             />
           </div>
           <div class="admin-dialog-actions">
@@ -433,9 +428,7 @@
                 {{ form.id ? '编辑动物档案' : '新增动物档案' }}
               </h2>
             </div>
-            <button type="button" aria-label="取消编辑" @click="cancelEdit">
-              关闭
-            </button>
+            <button class="admin-dialog-close" type="button" aria-label="取消编辑" @click="cancelEdit" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true">×</span><span class="admin-dialog-close-text">关闭</span></button>
           </div>
           <form class="admin-edit-form" @submit.prevent="save">
             <div class="admin-form-grid">
@@ -508,7 +501,7 @@
               </div>
             </div>
             <div v-if="fileUrl(form.tpic)" class="admin-upload-preview">
-              <img :src="fileUrl(form.tpic)" alt="当前动物图片" /><button
+              <img :src="fileUrl(form.tpic)" alt="当前动物图片" @error="animalImageFallback" /><button
                 class="ui-button is-ghost"
                 type="button"
                 @click="form.tpic=''"
@@ -618,9 +611,7 @@
               <span>最多 500 行 / 10MB</span>
               <h2 id="animalImportTitle">批量导入动物</h2>
             </div>
-            <button type="button" aria-label="关闭导入" @click="closeImport">
-              关闭
-            </button>
+            <button class="admin-dialog-close" type="button" aria-label="关闭导入" @click="closeImport" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true">×</span><span class="admin-dialog-close-text">关闭</span></button>
           </div>
           <div class="admin-import-body">
             <p>
@@ -691,7 +682,7 @@
     </div>
     <script src="../../js/jquery.min.js"></script>
     <script src="../../js/auth-session.js?v=20260728"></script>
-    <script src="../../js/admin-auth.js?v=20260728"></script>
+    <script src="../../js/admin-auth.js?v=20260728a"></script>
     <script src="../../js/vue.min.js"></script>
     <script>
       (function () {
@@ -759,7 +750,7 @@
                   return this.fileUrl(flag) || "/api/files/";
                 },
                 avatarFallback: function (event) {
-                  event.target.src = "/api/files/";
+                  AdminWorkspace.avatarFallback(event);
                 },
                 logout: function () {
                   AuthSession.logout();
@@ -779,6 +770,12 @@
                   return /^[a-zA-Z0-9-]{1,64}$/.test(value)
                     ? "/api/files/" + encodeURIComponent(value)
                     : "";
+                },
+                animalImageFallback: function (event) {
+                  var image = event && event.target;
+                  if (!image) return;
+                  image.onerror = null;
+                  image.src = "/prototype-assets/editorial-04.svg";
                 },
                 stateText: function (value) {
                   return (

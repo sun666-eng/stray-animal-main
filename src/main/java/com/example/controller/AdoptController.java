@@ -10,6 +10,7 @@ import com.example.common.PermissionUtil;
 import com.example.common.Result;
 import com.example.entity.Adopt;
 import com.example.entity.User;
+import com.example.dto.AdoptTransitionRequest;
 import com.example.exception.CustomException;
 import com.example.service.AdoptService;
 import org.springframework.web.bind.annotation.*;
@@ -64,8 +65,33 @@ public class AdoptController {
 
     @AuditLog(module = "领养管理", action = "审核领养申请")
     @PutMapping("/audit/{aid}/{uid}/{state}")
-    public Result<?> audit(@PathVariable Long aid, @PathVariable Long uid, @PathVariable Integer state) {
-        return Result.success(adoptService.auditAdopt(aid, uid, state));
+    public Result<?> audit(@PathVariable Long aid, @PathVariable Long uid, @PathVariable Integer state,
+                           HttpServletRequest request) {
+        User user = (User) request.getSession().getAttribute("user");
+        if (!PermissionUtil.hasFlag(user, "adopt")) return Result.error("403", "无权审核领养申请");
+        String action = Integer.valueOf(1).equals(state) ? "APPROVE" : "REJECT";
+        return Result.success(adoptService.transition(aid, uid, action,
+                Integer.valueOf(1).equals(state) ? "管理员审核通过" : "管理员审核驳回",
+                null, null, user, true, "ADMIN"));
+    }
+
+    @AuditLog(module = "领养管理", action = "转换领养状态")
+    @PostMapping("/{aid}/{uid}/transition")
+    public Result<?> transition(@PathVariable Long aid, @PathVariable Long uid,
+                                @RequestBody AdoptTransitionRequest body,
+                                HttpServletRequest request) {
+        User user = (User) request.getSession().getAttribute("user");
+        boolean manager = PermissionUtil.hasFlag(user, "adopt");
+        return Result.success(adoptService.transition(aid, uid,
+                body == null ? null : body.getAction(), body == null ? null : body.getReason(),
+                body == null ? null : body.getNote(), body == null ? null : body.getExpectedVersion(),
+                user, manager, manager ? "ADMIN" : "USER"));
+    }
+
+    @GetMapping("/{aid}/{uid}/timeline")
+    public Result<?> timeline(@PathVariable Long aid, @PathVariable Long uid, HttpServletRequest request) {
+        User user = (User) request.getSession().getAttribute("user");
+        return Result.success(adoptService.timeline(aid, uid, user, PermissionUtil.hasFlag(user, "adopt")));
     }
     @GetMapping("/{aid}/{uid}")
     public Result<?> findByBoth(@PathVariable Long aid, @PathVariable Long uid, HttpServletRequest request) {

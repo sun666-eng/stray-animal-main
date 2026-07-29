@@ -6,9 +6,9 @@
     <meta name="description" content="浏览正在等待领养的流浪动物">
     <title>等待一个家 · 归途计划</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-    <link rel="stylesheet" href="../../css/product-ui.css?v=20260728">
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260804">
 </head>
-<body>
+<body class="ui-animal-catalog-page">
 <div id="app" v-cloak>
     <header class="ui-header">
         <div class="ui-header-inner">
@@ -54,13 +54,13 @@
         </nav>
     </header>
 
-    <main>
+    <main class="ui-animal-catalog-main">
         <section class="ui-page-head">
             <div class="ui-container">
                 <div class="ui-breadcrumb"><span>首页</span><span>/</span><strong>等待一个家</strong></div>
                 <div class="ui-page-head-row">
                     <div>
-                        <h1>和未来的家人，先见一面</h1>
+                        <h1>和未来的家人，<span class="ui-catalog-title-tail">先见一面</span></h1>
                         <p>认真了解它们的健康、性格和照护需要。领养不是一次选择，而是一段长期关系的开始。</p>
                     </div>
                     <span v-if="!loading && !error" class="ui-badge is-waiting">{{ total }} 只正在等待</span>
@@ -68,12 +68,12 @@
             </div>
         </section>
 
-        <section class="ui-container">
+        <section class="ui-container ui-animal-catalog">
             <form class="ui-toolbar" role="search" @submit.prevent="loadAnimals(1)">
                 <label class="ui-search">
                     <span aria-hidden="true">⌕</span>
                     <span class="sr-only">搜索动物</span>
-                    <input v-model.trim="query" type="search" placeholder="搜索名字、品种或性格" autocomplete="off">
+                    <input v-model.trim="query" type="search" maxlength="100" placeholder="搜索名字、品种或性格" autocomplete="off">
                 </label>
                 <label class="sr-only" for="animalType">动物类型</label>
                 <select id="animalType" v-model="typeFilter" class="ui-select" @change="loadAnimals(1)">
@@ -107,11 +107,11 @@
                 <div><span class="ui-state-mark" aria-hidden="true">⌕</span><h2>没有找到匹配的动物</h2><p>换一个关键词或清除筛选后再看看。</p><button class="ui-button is-ghost" type="button" @click="resetFilters">清除筛选</button></div>
             </div>
 
-            <div v-else class="ui-card-grid">
+            <div v-else class="ui-card-grid" aria-live="polite">
                 <article v-for="item in animals" :key="item.id" class="ui-animal-card">
                     <a class="ui-card-media" :href="detailUrl(item.id)" :aria-label="`查看${displayName(item)}的详情`">
                         <img :src="resolveImage(item.tpic)" :alt="`${displayName(item)}的照片`" loading="lazy" decoding="async" @error="handleImageError">
-                        <span class="ui-badge is-waiting">等待领养</span>
+                        <span class="ui-badge" :class="animalBadgeClass(item.tstate)">{{ animalStateText(item.tstate) }}</span>
                     </a>
                     <div class="ui-card-body">
                         <div class="ui-card-title-row"><h2>{{ displayName(item) }}</h2><span>#{{ item.id }}</span></div>
@@ -142,6 +142,7 @@
 <script src="../../js/jquery.min.js"></script>
 <script src="../../js/vue.min.js"></script>
 <script src="../../js/auth-session.js?v=20260728"></script>
+<script src="../../js/status-text.js?v=20260727"></script>
 <script>
 new Vue({
   el: '#app',
@@ -171,6 +172,10 @@ new Vue({
       return pages;
     }
   },
+  created() {
+    this._animalsGeneration = 0;
+    this._animalsRequest = null;
+  },
   mounted() {
     document.addEventListener('click', this.closeMenus);
     const start = () => {
@@ -183,18 +188,25 @@ new Vue({
     };
     if (window.AuthSession) AuthSession.bootstrap({ requireAuth: false, onDone: start }); else start();
   },
-  beforeDestroy() { document.removeEventListener('click', this.closeMenus); },
+  beforeDestroy() {
+    document.removeEventListener('click', this.closeMenus);
+    if (this._animalsRequest && this._animalsRequest.readyState !== 4) this._animalsRequest.abort();
+    clearTimeout(this.toastTimer);
+  },
   methods: {
     readStoredUser() {
       try { return JSON.parse(sessionStorage.getItem('user') || 'null'); } catch (e) { return null; }
     },
     closeMenus() { this.accountOpen = false; },
     loadAnimals(page) {
+      const generation = ++this._animalsGeneration;
+      if (this._animalsRequest && this._animalsRequest.readyState !== 4) this._animalsRequest.abort();
       this.loading = true;
       this.error = '';
       this.pageNum = page;
-      $.ajax({ url: '/api/animal/page1', type: 'GET', data: { name: this.query, type: this.typeFilter, pageNum: page, pageSize: this.pageSize } })
+      this._animalsRequest = $.ajax({ url: '/api/animal/page1', type: 'GET', data: { name: this.query, type: this.typeFilter, pageNum: page, pageSize: this.pageSize } })
         .done(res => {
+          if (generation !== this._animalsGeneration) return;
           if (res && res.code === '0' && res.data) {
             this.animals = res.data.records || [];
             this.total = Number(res.data.total || 0);
@@ -203,12 +215,21 @@ new Vue({
             this.error = (res && res.msg) || '服务返回了无法识别的数据';
           }
         })
-        .fail(() => { this.error = '请检查网络连接后重试。'; })
-        .always(() => { this.loading = false; });
+        .fail((xhr, status) => {
+          if (generation !== this._animalsGeneration || status === 'abort') return;
+          this.error = (xhr.responseJSON && xhr.responseJSON.msg) || '请检查网络连接后重试。';
+        })
+        .always(() => {
+          if (generation !== this._animalsGeneration) return;
+          this.loading = false;
+          this._animalsRequest = null;
+        });
     },
     setType(type) { this.typeFilter = type; this.loadAnimals(1); },
     resetFilters() { this.query = ''; this.typeFilter = ''; this.loadAnimals(1); },
     displayName(item) { return item && item.tname ? item.tname : '未命名动物'; },
+    animalStateText(value) { return StatusText.animal(value); },
+    animalBadgeClass(value) { return Number(value) === 0 ? 'is-waiting' : Number(value) === 1 ? 'is-pending' : 'is-closed'; },
     detailUrl(id) { return `./animal_detail.html?id=${encodeURIComponent(id)}`; },
     adoptUrl(id) { return `./adopt_apply.html?animalId=${encodeURIComponent(id)}`; },
     formatAge(value) {

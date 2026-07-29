@@ -33,4 +33,15 @@ class AuditLogAspectTest {
         assertFalse(AuditLogAspect.isTrustedProxyHop("8.8.8.8"));
         assertFalse(AuditLogAspect.isTrustedProxyHop("1.2.3.4"));
     }
+
+    @Test
+    void apiKeysAreRedactedFromAuditParameters() {
+        String sanitized = AuditLogAspect.sanitizeParams(
+                "[{\"apiKey\":\"sk-live-secret\",\"model\":\"chat\"},{\"api_key\":\"another-secret\"}]");
+
+        assertFalse(sanitized.contains("sk-live-secret"));
+        assertFalse(sanitized.contains("another-secret"));
+        assertTrue(sanitized.contains("\"apiKey\":\"****\""));
+        assertTrue(sanitized.contains("\"api_key\":\"****\""));
+    }
 }

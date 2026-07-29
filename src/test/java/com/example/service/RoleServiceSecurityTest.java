@@ -139,17 +139,87 @@ class RoleServiceSecurityTest {
     }
 
     @Test
-    void updateDefinition_rejectsAllImmutableBuiltInRoles() {
+    void updateDefinition_rejectsSuperAdminRoleOnly() {
         User actor = user(1L, 1L);
         when(userMapper.selectById(1L)).thenReturn(actor);
 
-        for (long id = 1L; id <= 4L; id++) {
-            Role role = new Role();
-            role.setId(id);
-            CustomException error = assertThrows(CustomException.class,
-                    () -> roleService.updateDefinition(role, actor));
-            assertEquals("403", error.getCode());
-        }
+        Role superRole = new Role();
+        superRole.setId(1L);
+        CustomException error = assertThrows(CustomException.class,
+                () -> roleService.updateDefinition(superRole, actor));
+        assertEquals("403", error.getCode());
+        verify(roleMapper, never()).updateById(any(Role.class));
+    }
+
+    @Test
+    void updateDefinition_allowsStaffBuiltInRole() {
+        User actor = user(1L, 1L);
+        when(userMapper.selectById(1L)).thenReturn(actor);
+        Role existing = new Role();
+        existing.setId(2L);
+        when(roleMapper.selectById(2L)).thenReturn(existing);
+        when(roleMapper.updateById(any(Role.class))).thenReturn(1);
+
+        Role update = new Role();
+        update.setId(2L);
+        update.setName("志愿者-调整");
+        update.setDescription("可挂管理权限");
+
+        roleService.updateDefinition(update, actor);
+
+        verify(roleMapper).updateById(any(Role.class));
+        verify(authUserCache).invalidateAll();
+    }
+
+    @Test
+    void updateDefinition_rejectsOrdinaryUserRoleMissingLoopFlags() {
+        User actor = user(1L, 1L);
+        when(userMapper.selectById(1L)).thenReturn(actor);
+        Role existing = new Role();
+        existing.setId(3L);
+        when(roleMapper.selectById(3L)).thenReturn(existing);
+        Permission onlyIm = permission(5L, "im", "/page/front/rescue_apply.html");
+        when(permissionMapper.selectById(5L)).thenReturn(onlyIm);
+
+        Role update = new Role();
+        update.setId(3L);
+        update.setName("普通用户");
+        update.setPermission(Collections.singletonList(onlyIm));
+
+        CustomException error = assertThrows(CustomException.class,
+                () -> roleService.updateDefinition(update, actor));
+        assertEquals("400", error.getCode());
+        verify(roleMapper, never()).updateById(any(Role.class));
+    }
+
+    @Test
+    void updateDefinition_rejectsOrdinaryUserRoleWithAdminFlag() {
+        User actor = user(1L, 1L);
+        when(userMapper.selectById(1L)).thenReturn(actor);
+        Role existing = new Role();
+        existing.setId(3L);
+        when(roleMapper.selectById(3L)).thenReturn(existing);
+        // 闭环 flags + 一个后台 flag
+        Permission im = permission(5L, "im", "/page/front/rescue_apply.html");
+        Permission adoptView = permission(43L, "adopt_view", "/page/front/animal_browse.html");
+        Permission myAdopt = permission(11L, "my_adopt", "/page/front/my_adopt.html");
+        Permission myProof = permission(12L, "my_proof", "/page/front/adopt_proof.html");
+        Permission apply = permission(15L, "apply", "/page/front/volunteer_apply.html");
+        Permission animal = permission(6L, "animal", "/page/end/animal.html");
+        when(permissionMapper.selectById(5L)).thenReturn(im);
+        when(permissionMapper.selectById(43L)).thenReturn(adoptView);
+        when(permissionMapper.selectById(11L)).thenReturn(myAdopt);
+        when(permissionMapper.selectById(12L)).thenReturn(myProof);
+        when(permissionMapper.selectById(15L)).thenReturn(apply);
+        when(permissionMapper.selectById(6L)).thenReturn(animal);
+
+        Role update = new Role();
+        update.setId(3L);
+        update.setPermission(java.util.Arrays.asList(im, adoptView, myAdopt, myProof, apply, animal));
+
+        CustomException error = assertThrows(CustomException.class,
+                () -> roleService.updateDefinition(update, actor));
+        assertEquals("400", error.getCode());
         verify(roleMapper, never()).updateById(any(Role.class));
     }
 

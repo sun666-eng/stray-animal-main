@@ -44,7 +44,7 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 20MB
-  # Spring Boot 3：redis 配置命名空间迁移至 spring.data.redis
+  # 预留的通用 Redis 客户端配置；救助聊天不注册订阅器，也不使用 Redis 广播。
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -69,12 +69,40 @@ app:
     enabled: ${AI_ENABLED:false}
     base-url: ${AI_BASE_URL:}
     api-key: ${AI_API_KEY:}
-    model: ${AI_MODEL:deepseek-chat}
+    model: ${AI_MODEL:deepseek-v4-flash}
+    # 用户个人 API Key 的数据库密文主密钥；生产建议独立配置。
+    # dev/test 未配置时使用 JWT_SECRET 做域隔离派生，再回退到 ~/.stray-animal/ai-config.key；prod 禁止回退。
+    config-encryption-key: ${AI_CONFIG_ENCRYPTION_KEY:}
     timeout-ms: ${AI_TIMEOUT_MS:8000}
+    total-deadline-ms: ${AI_TOTAL_DEADLINE_MS:15000}
+    max-response-bytes: ${AI_MAX_RESPONSE_BYTES:1048576}
+    max-answer-chars: ${AI_MAX_ANSWER_CHARS:4000}
+    ask-max-concurrent: ${AI_ASK_MAX_CONCURRENT:8}
+    test-max-concurrent: ${AI_TEST_MAX_CONCURRENT:2}
+    semaphore-wait-ms: ${AI_SEMAPHORE_WAIT_MS:100}
+    auto-test-recent-ms: ${AI_AUTO_TEST_RECENT_MS:3600000}
     # agent 循环上限：一次问答最多几轮工具调用（防模型死循环，每轮都是真实 API 成本）
     max-tool-rounds: ${AI_MAX_TOOL_ROUNDS:3}
+    max-tool-calls-per-round: ${AI_MAX_TOOL_CALLS_PER_ROUND:4}
+    max-tool-calls-total: ${AI_MAX_TOOL_CALLS_TOTAL:8}
     # 携带的历史对话条数（多轮追问的上下文，越多成本越高）
     max-history: ${AI_MAX_HISTORY:8}
+    # running 任务租约阈值（毫秒）：updated_at 早于此视为陈旧，GET 会先转 failed 再返回
+    task-stale-ms: ${AI_TASK_STALE_MS:60000}
+  admin-agent:
+    # 管理员 Agent 复用 app.ai.config-encryption-key，但使用独立 AAD，密文不能跨域解密。
+    timeout-ms: ${ADMIN_AGENT_TIMEOUT_MS:12000}
+    total-deadline-ms: ${ADMIN_AGENT_TOTAL_DEADLINE_MS:25000}
+    max-response-bytes: ${ADMIN_AGENT_MAX_RESPONSE_BYTES:1048576}
+    # 管理回答默认要求简洁；更小的输出与历史窗口可降低模型首字和生成耗时。
+    max-tokens: ${ADMIN_AGENT_MAX_TOKENS:900}
+    max-history-messages: ${ADMIN_AGENT_MAX_HISTORY_MESSAGES:6}
+    max-history-chars: ${ADMIN_AGENT_MAX_HISTORY_CHARS:4800}
+    max-tool-rounds: ${ADMIN_AGENT_MAX_TOOL_ROUNDS:3}
+    # 管理概览可能需要一次并行读取 5-7 个只读模块；仍受总调用数与总超时双重约束。
+    max-tool-calls-per-round: ${ADMIN_AGENT_MAX_TOOL_CALLS_PER_ROUND:8}
+    max-tool-calls-total: ${ADMIN_AGENT_MAX_TOOL_CALLS_TOTAL:8}
+    max-concurrent: ${ADMIN_AGENT_MAX_CONCURRENT:4}
   auth:
     # 鉴权用户快照缓存 TTL（毫秒）：消除每请求 getById+fillPermissions 的 N+1。
     # 写路径均有主动失效（AuthUserCache）；设为 0 可完全停用缓存回退每请求查库。
@@ -85,11 +113,6 @@ app:
     staged-cleanup-interval-ms: ${FILE_STAGED_CLEANUP_INTERVAL_MS:3600000}
     max-staged-files-per-user: ${FILE_MAX_STAGED_FILES_PER_USER:20}
     max-staged-bytes-per-user: ${FILE_MAX_STAGED_BYTES_PER_USER:104857600}
-  redis:
-    enabled: ${REDIS_ENABLED:false}
-  # WebSocket ticket/onlineCount 为进程内状态；生产禁止水平扩容多实例
-  websocket:
-    single-instance-only: ${WEBSOCKET_SINGLE_INSTANCE_ONLY:true}
   jwt:
     secret: ${JWT_SECRET:}
     # 仅 active 仅为 dev/test 且本开关为 true 时可用开发密钥

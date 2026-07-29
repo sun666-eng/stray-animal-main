@@ -189,18 +189,6 @@ public class HelpServiceTest {
     }
 
     @Test
-    public void persistedChatLookupRejectsMissingAndNonReservedRows() {
-        Help nonChat = new Help();
-        nonChat.setId(9L);
-        nonChat.setTitle("救助请求");
-        when(helpMapper.selectById(9L)).thenReturn(nonChat);
-        when(helpMapper.selectById(10L)).thenReturn(null);
-
-        assertNull(helpService.getPersistedChatMessage(9L));
-        assertNull(helpService.getPersistedChatMessage(10L));
-    }
-
-    @Test
     public void managerUpdate_rejectsReservedChatRecord() {
         User manager = user(1L, "manager");
         Permission permission = new Permission();

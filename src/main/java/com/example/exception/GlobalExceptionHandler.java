@@ -8,6 +8,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -50,5 +51,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Result<?>> unreadableJson(HttpServletRequest request, HttpMessageNotReadableException e) {
         return ResponseEntity.status(400).body(Result.error("400", "请求 JSON 格式或日期格式无效"));
+    }
+
+    /**
+     * 路径/查询参数类型错误（例如 /api/help/my 把 "my" 当成 Long id）应返回 400，
+     * 不能落入通用 500，避免客户端和审计把坏请求误判为服务故障。
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Result<?>> typeMismatch(HttpServletRequest request, MethodArgumentTypeMismatchException e) {
+        String name = e.getName() == null ? "参数" : e.getName();
+        return ResponseEntity.status(400).body(Result.error("400", "请求参数格式无效: " + name));
     }
 }

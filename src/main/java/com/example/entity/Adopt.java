@@ -4,6 +4,9 @@ import lombok.Data;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.activerecord.Model;
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+import java.util.Date;
 
 /**
  * 复合主键 (aid, uid)：MyBatis-Plus 不支持复合 @TableId，
@@ -45,6 +48,19 @@ public class Adopt extends Model<Adopt> {
     private String wechat;
 
     private Integer vstate;
+
+    private Long reviewerId;
+    private String reviewReason;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date reviewedAt;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date handoverAt;
+    private String handoverNote;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date createdAt;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date updatedAt;
+    private Integer version;
 
     private String uname;
     private String apic;

@@ -18,7 +18,8 @@ import jakarta.annotation.Resource;
 @Service
 public class VisitService extends ServiceImpl<VisitMapper, Visit> {
 
-    private static final int ADOPT_APPROVED = 1;
+    /** 只有完成线下交接的正式领养才能产生回访记录。 */
+    private static final int ADOPT_APPROVED = 4;
 
     @Resource
     private VisitMapper visitMapper;

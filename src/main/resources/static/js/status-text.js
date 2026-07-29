@@ -8,11 +8,11 @@
 (function (global) {
   'use strict';
 
-  var ADOPT_STATE = Object.freeze({ 0: '待审核', 1: '已通过', 2: '未通过', 3: '其他状态' });
-  var ANIMAL_STATE = Object.freeze({ 0: '等待领养', 1: '申请审核中', 2: '已找到新家' });
+  var ADOPT_STATE = Object.freeze({ 0: '待审核', 1: '审核通过 · 待交接', 2: '未通过', 3: '待补充材料', 4: '已完成领养', 5: '已撤回', 6: '已取消' });
+  var ANIMAL_STATE = Object.freeze({ 0: '等待领养', 1: '申请审核或预留中', 2: '已找到新家', 3: '暂停领养' });
   var PROOF_STATE = Object.freeze({ 0: '待审核', 1: '已通过', 2: '未通过' });
   var VOLUNTEER_STATE = Object.freeze({ 0: '待审核', 1: '已通过', 2: '未通过' });
-  var HELP_STATE = Object.freeze({ 0: '待处理', 1: '处理中', 2: '已完成' });
+  var HELP_STATE = Object.freeze({ 0: '待处理', 1: '处理中', 2: '已完成', 3: '已关闭' });
 
   function textOf(map, value) {
     var text = map[Number(value)];

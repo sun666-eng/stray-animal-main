@@ -32,7 +32,7 @@ public class DataStateGuardRunnerTest {
 
     @Test
     public void version_constant() {
-        assertEquals("2026.07.12-state-v1", DataStateGuardRunner.STATE_VERSION);
+        assertEquals("2026.07.29-state-v2", DataStateGuardRunner.STATE_VERSION);
     }
 
     @Test
@@ -44,13 +44,12 @@ public class DataStateGuardRunnerTest {
 
         // snapshot: first dirty, then clean after fixes
         when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class)))
-                .thenReturn(1, 1, 1, 1)  // before dirty
-                .thenReturn(0, 0, 0, 0); // after clean
+                .thenReturn(1, 1, 1)  // before dirty
+                .thenReturn(0, 0, 0); // after clean
         when(jdbcTemplate.update(anyString())).thenReturn(1);
         when(jdbcTemplate.update(contains("data_state_version"), anyString())).thenReturn(1);
 
         assertDoesNotThrow(() -> guard.run(null));
-        verify(jdbcTemplate, atLeastOnce()).update(contains("vstate = 0"));
         verify(jdbcTemplate, atLeastOnce()).update(contains("MIN(uid)"));
         verify(jdbcTemplate, atLeastOnce()).update(contains("UPDATE t_animal"));
     }

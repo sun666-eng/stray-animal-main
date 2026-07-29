@@ -2,7 +2,6 @@ package com.example.controller;
 
 import com.example.common.Result;
 import com.example.common.RoleAssignmentPolicy;
-import com.example.component.WebSocketTicketService;
 import com.example.dto.ProfileUpdateRequest;
 import com.example.entity.Permission;
 import com.example.entity.Role;
@@ -34,17 +33,13 @@ class UserControllerSecurityTest {
     private UserController controller;
     private UserService userService;
     private RoleAssignmentPolicy roleAssignmentPolicy;
-    private WebSocketTicketService webSocketTicketService;
-
     @BeforeEach
     void setUp() {
         controller = new UserController();
         userService = mock(UserService.class);
         roleAssignmentPolicy = mock(RoleAssignmentPolicy.class);
-        webSocketTicketService = mock(WebSocketTicketService.class);
         ReflectionTestUtils.setField(controller, "userService", userService);
         ReflectionTestUtils.setField(controller, "roleAssignmentPolicy", roleAssignmentPolicy);
-        ReflectionTestUtils.setField(controller, "webSocketTicketService", webSocketTicketService);
         ReflectionTestUtils.setField(controller, "authUserCache", new com.example.common.AuthUserCache());
     }
 
@@ -182,7 +177,7 @@ class UserControllerSecurityTest {
     }
 
     @Test
-    void logoutCapturesUidAndRevokesTicketsWithoutSocketLifecycleDependency() {
+    void logoutInvalidatesSessionWithoutSocketLifecycleDependency() {
         User user = user(12L, 3L);
         user.setUsername("member");
         MockHttpServletRequest request = requestWith(user);
@@ -190,7 +185,6 @@ class UserControllerSecurityTest {
         Result<?> result = controller.logout(request, new MockHttpServletResponse());
 
         assertEquals("0", result.getCode());
-        verify(webSocketTicketService).revokeUser(12L);
         assertEquals(null, request.getSession(false));
     }
 
@@ -200,7 +194,6 @@ class UserControllerSecurityTest {
 
         assertEquals(410, response.getStatusCodeValue());
         assertEquals("410", response.getBody().getCode());
-        verify(webSocketTicketService, never()).issue(any(User.class));
     }
 
     private static User manager() {

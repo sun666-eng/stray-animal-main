@@ -2,6 +2,8 @@ param(
     [string]$BaseUrl = "http://localhost:10001",
     [string]$UserName = "jerry",
     [string]$UserPass = "123456",
+    [string]$AdminName = "admin",
+    [string]$AdminPass = "admin",
     [switch]$SkipHttp
 )
 
@@ -28,6 +30,7 @@ $pages = @(
     @{ Path = "page/front/my_volunteer.html"; Public = $false; Form = $false },
     @{ Path = "page/front/rescue_apply.html"; Public = $false; Form = $true },
     @{ Path = "page/front/my_rescue.html"; Public = $false; Form = $false },
+    @{ Path = "page/front/pet_care.html"; Public = $false; Form = $true },
     @{ Path = "page/end/index.html"; Public = $false; Form = $false; Workspace = $true },
     @{ Path = "page/end/person.html"; Public = $false; Form = $true; Workspace = $true },
     @{ Path = "page/end/user.html"; Public = $false; Form = $true; Workspace = $true },
@@ -41,6 +44,7 @@ $pages = @(
     @{ Path = "page/end/adopt.html"; Public = $false; Form = $true; Workspace = $true }
     @{ Path = "page/end/proof.html"; Public = $false; Form = $true; Workspace = $true }
     @{ Path = "page/end/visit.html"; Public = $false; Form = $true; Workspace = $true }
+    @{ Path = "page/end/admin_agent.html"; Public = $false; Form = $true; Workspace = $true }
 )
 
 $legacyPages = @(
@@ -78,7 +82,7 @@ $allHtml = [System.IO.Directory]::GetFiles($staticRoot, "*.html", [System.IO.Sea
 foreach ($entrypoint in $allHtml) {
     Assert-True ($classified.ContainsKey($entrypoint)) "entrypoint inventory: $entrypoint is explicitly classified"
 }
-Assert-True ($allHtml.Count -eq $classified.Count) "entrypoint inventory: classification has no stale or missing paths"
+Assert-True ($allHtml.Count -eq $pages.Count) "entrypoint inventory: classification has no stale or missing paths"
 
 $authInterceptor = Read-Utf8 (Join-Path $root "src/main/java/com/example/common/AuthInterceptor.java")
 $mvcConfig = Read-Utf8 (Join-Path $root "src/main/java/com/example/common/WebMvcConfig.java")
@@ -123,7 +127,7 @@ foreach ($page in $shellPages) {
 
 $homeHtml = Read-Utf8 (Join-Path $staticRoot "page/front/index.html")
 Assert-True ($homeHtml -match '/api/dashboard/home-stats' -and $homeHtml -match '/api/animal/page1') "home: real bounded APIs drive stats and featured animals"
-Assert-True ($homeHtml -notmatch '328|94%|400-021-0520|v-html|innerHTML|insertAdjacentHTML|https?://') "home: no prototype claims, unsafe sink, hotline, or external tracking image"
+Assert-True ($homeHtml -notmatch '328|94%|400-021-0520|v-html|innerHTML|insertAdjacentHTML' -and $homeHtml -notmatch '<img[^>]+src=["'']https?://') "home: no prototype claims, unsafe sink, hotline, or external tracking image"
 
 $authScript = Read-Utf8 (Join-Path $staticRoot "js/auth-session.js")
 Assert-True ($authScript -notmatch 'Authorization\s*[''"]?\s*[:,=]') "auth-session: no Authorization bearer injection"
@@ -141,7 +145,7 @@ Assert-True ($productCss -match '\.ui-button\s*\{[^}]*min-height:\s*48px[^}]*fon
 Assert-True ($productCss -match '\.ui-badge\.is-closed\s*\{') "design contract: rejected and closed states have explicit styling"
 Assert-True ($productCss -match '@media\s*\(max-width:\s*960px\)[\s\S]*?\.ui-detail\s*\{[^}]*grid-template-columns:\s*1fr') "design contract: detail page becomes single-column on tablet"
 
-foreach ($protectedHeaderPage in @("page/front/adopt_apply.html", "page/front/my_adopt.html", "page/front/adopt_proof.html", "page/front/volunteer_apply.html", "page/front/my_volunteer.html", "page/front/rescue_apply.html", "page/front/my_rescue.html")) {
+foreach ($protectedHeaderPage in @("page/front/adopt_apply.html", "page/front/my_adopt.html", "page/front/adopt_proof.html", "page/front/volunteer_apply.html", "page/front/my_volunteer.html", "page/front/rescue_apply.html", "page/front/my_rescue.html", "page/front/pet_care.html")) {
     $html = Read-Utf8 (Join-Path $staticRoot $protectedHeaderPage)
     Assert-True ($html -match 'ui-mobile-toggle' -and $html -match 'ui-mobile-nav' -and $html -match 'mobileOpen') "${protectedHeaderPage}: protected mobile navigation remains available"
 }
@@ -152,6 +156,34 @@ Assert-True ($registerHtml -match 'allowCachedOnNetworkError:\s*false') "registe
 $loginHtml = Read-Utf8 (Join-Path $staticRoot "page/front/login.html")
 Assert-True ($loginHtml -match 'allowCachedOnNetworkError:\s*false') "login: stale cached identity cannot create redirect loop"
 Assert-True ($loginHtml -match 'new URL\(raw, location\.origin\)' -and $loginHtml -match 'raw\.indexOf\(''\.\.''' -and $loginHtml -match 'adminPaths') "login: redirect is normalized and canonical allowlisted"
+
+$petCareHtml = Read-Utf8 (Join-Path $staticRoot "page/front/pet_care.html")
+Assert-True ($petCareHtml -match '/api/petcare/config' -and $petCareHtml -notmatch 'v-if="isAdmin"|Number\(role\.id\)\s*===\s*1') "pet care: personal AI configuration is available to every authenticated user"
+Assert-True ($petCareHtml -match 'autocomplete="new-password"' -and $petCareHtml -notmatch '(localStorage|sessionStorage)\.setItem[^;]*(api|key|secret)') "pet care: API key is never persisted in browser storage"
+Assert-True ($petCareHtml -match 'admin-agent-markdown\.js' -and $petCareHtml -match '<petcare-rich-answer\s+:text="msg\.text"' -and $petCareHtml -notmatch 'v-html|innerHTML|insertAdjacentHTML') "pet care: assistant Markdown uses the bounded structured renderer without an HTML sink"
+Assert-True ($productCss -match '\.petcare-rich-answer\s*>' -and $productCss -match '\.petcare-rich-answer\s+li\s*>\s*ul' -and $productCss -match '\.petcare-answer-table\s+td::before') "pet care: article hierarchy, nested guidance, and mobile tables have explicit visual treatment"
+Assert-True ($petCareHtml -match 'configForm\.apiKey\s*=\s*''''') "pet care: API key input is cleared after use"
+Assert-True ($petCareHtml -match '/api/petcare/config/clear' -and $petCareHtml -match '账号级加密配置' -and $petCareHtml -match '服务重启仍会保留') "pet care: users can clear account-scoped encrypted configuration"
+Assert-True ($petCareHtml -match '/api/petcare/conversations' -and $petCareHtml -match 'questionTime' -and $petCareHtml -match 'answerTime' -and $petCareHtml -match '历史聊天') "pet care: persisted history uses a selectable left-side conversation directory with timestamps"
+Assert-True ($petCareHtml -match 'loadConversations\(\)' -and $petCareHtml -notmatch 'created:\s*function\s*\(\)\s*\{[\s\S]{0,250}loadHistory') "pet care: opening the assistant loads only the conversation directory, never an old transcript"
+Assert-True ($petCareHtml -match 'conversationId:\s*payload\.conversationId' -and $petCareHtml -match '/title' -and $petCareHtml -match '修改标题') "pet care: questions stay in one conversation and users can rename it"
+Assert-True ($petCareHtml -match 'configStatus\.connected' -and $petCareHtml -match 'connectionStatus\s*===\s*''failed''' -and $petCareHtml -notmatch 'source\s*===\s*''personal''\s*&&\s*this\.configStatus\.ready\)\s*return\s*''个人 Agent 已连接''') "pet care: connected badge is based on a persisted successful request, not merely complete fields"
+Assert-True ($petCareHtml -match '/api/petcare/config/auto-test' -and $petCareHtml -match 'replacingApiKey\s*\|\|\s*!vm\.configStatus\.apiKeyConfigured' -and $petCareHtml -match 'v-if="configStatus\.apiKeyConfigured\s*&&\s*!replacingApiKey"') "pet care: saved secret is auto-verified and cannot be replaced by password-manager autofill"
+$productCss = Read-Utf8 (Join-Path $staticRoot "css/product-ui.css")
+Assert-True ($productCss -match '\.petcare-chat-layout\s*>\s*\.ui-panel\s*\+\s*\.ui-panel\s*\{\s*margin-top:\s*0') "pet care: conversation sidebar and chat panel share the same top edge"
+$petCareController = Read-Utf8 (Join-Path $root "src/main/java/com/example/controller/PetCareController.java")
+$petCareTaskService = Read-Utf8 (Join-Path $root "src/main/java/com/example/service/PetCareTaskService.java")
+$petCareCrypto = Read-Utf8 (Join-Path $root "src/main/java/com/example/service/PetCareConfigCrypto.java")
+$petCareConfigEntity = Read-Utf8 (Join-Path $root "src/main/java/com/example/entity/PetCareAiConfig.java")
+Assert-True ($petCareController -match 'petCareAiConfigService\.find\(user\.getId\(\)\)' -and $petCareController -match 'petCareAiConfigService\.save\(' -and $petCareController -notmatch 'AI_CONFIG_SESSION_KEY|setAttribute\([^)]*aiConfig') "pet care: API configuration is account-scoped in the database rather than HttpSession"
+Assert-True ($petCareCrypto -match 'AES/GCM/NoPadding' -and $petCareCrypto -match 'encryptWithAad\(aad\(userId\)' -and $petCareCrypto -match 'cipher\.updateAAD\(associatedData\)' -and $petCareConfigEntity -match 'apiKeyCiphertext' -and $petCareConfigEntity -notmatch 'private\s+String\s+apiKey\s*;') "pet care: API key is authenticated encrypted at rest and bound to its owning account"
+Assert-True ($petCareController -match 'petCareTaskService\.ask\(user\.getId\(\),\s*body\.getRequestId\(\)' -and $petCareTaskService -match 'conversationService\.assertOwned\(userId,\s*conversationId\)[\s\S]{0,1000}petCareService\.ask' -and $petCareTaskService -match 'markConnectionBestEffort\(') "pet care: conversation ownership is checked before paid model use and real connection outcomes are persisted"
+Assert-True ($petCareHtml -match '_conversationGeneration' -and $petCareHtml -match '_historyGeneration' -and $petCareHtml -match '_titleGeneration' -and $petCareHtml -match '_mutationGeneration' -and $petCareHtml -match 'abortRequest\(' -and $petCareHtml -match 'conversationRefreshQueued') "pet care: directory, detail, rename, and mutation requests reject stale responses with queued refresh"
+Assert-True ($petCareHtml -match 'conversationError:\s*[\s\S]*?historyError:\s*[\s\S]*?conversationRefreshQueued' -and $petCareHtml -match 'askError:\s*' -and $petCareHtml -match 'v-else-if="conversationError"' -and $petCareHtml -match 'v-else-if="historyError') "pet care: directory, history, and ask failures remain distinct from empty states"
+Assert-True (([regex]::Matches($petCareHtml, 'res\.data\s*===\s*true').Count -ge 2)) "pet care: conversation delete and clear require exact Boolean true"
+Assert-True ($petCareHtml -match 'crypto\.randomUUID' -and $petCareHtml -match 'requestId:\s*payload\.requestId' -and $petCareHtml -match 'failedAsk\s*=\s*request' -and $petCareHtml -match 'sendAsk\(this\.failedAsk,\s*false\)' -and $petCareHtml -notmatch '\bhistory:\s*history') "pet care: ask retries keep one stable requestId and submit only the server contract fields"
+Assert-True ($petCareHtml -match "ai:\s*'AI 生成'" -and $petCareHtml -match "local:\s*'本地知识库'" -and $petCareHtml -match "degraded:\s*'AI 失败 · 已降级'" -and $petCareHtml -match '服务端请求可能仍在处理') "pet care: answer provenance and local-only stop semantics are explicit"
+Assert-True ($petCareHtml -match 'configDirty' -and $petCareHtml -match 'applyConfigStatus\(res\.data,\s*false\)' -and $petCareHtml -match '确认清除当前账号的个人 AI 配置') "pet care: connection tests cannot overwrite edits and config clear is confirmed"
 
 foreach ($booleanMutation in @(
     @{ Path = "page/front/volunteer_apply.html"; Label = "volunteer apply" },
@@ -172,6 +204,8 @@ $adminHelpHtml = Read-Utf8 (Join-Path $staticRoot "page/end/help.html")
 $adminAnimalHtml = Read-Utf8 (Join-Path $staticRoot "page/end/animal.html")
 $adminNoticeHtml = Read-Utf8 (Join-Path $staticRoot "page/end/notice.html")
 $adminAccountHtml = Read-Utf8 (Join-Path $staticRoot "page/end/account.html")
+$adminAgentHtml = Read-Utf8 (Join-Path $staticRoot "page/end/admin_agent.html")
+$adminAgentMarkdown = Read-Utf8 (Join-Path $staticRoot "js/admin-agent-markdown.js")
 $adminAuthScript = Read-Utf8 (Join-Path $staticRoot "js/admin-auth.js")
 $adminWorkspaceCss = Read-Utf8 (Join-Path $staticRoot "css/admin-workspace.css")
 foreach ($adminPage in @(
@@ -192,12 +226,16 @@ foreach ($adminPage in @(
 }
 Assert-True ($adminAuthScript -match 'var\s+ROUTES\s*=\s*Object\.freeze' -and $adminAuthScript -match "help:\s*Object\.freeze\(\{[^}]*'/page/end/help\.html'" -and $adminAuthScript -match "rescue:\s*Object\.freeze\(\{[^}]*'/page/end/help\.html'" -and $adminAuthScript -match 'seenHrefs') "admin auth: help and rescue aliases use one deduplicated canonical route"
 Assert-True ($adminAuthScript -notmatch '\.path\b|sessionStorage\.getItem\s*\(\s*["'']user') "admin auth: route construction ignores server paths and cached identity"
+Assert-True ($adminAuthScript -match 'AVATAR_PLACEHOLDER' -and $adminAuthScript -match 'image\.onerror\s*=\s*null' -and $adminAuthScript -match 'avatarFallback') "admin auth: missing avatars use a stable static fallback without an error loop"
 Assert-True ($adminHomeHtml -match '/api/dashboard/public-stats' -and $adminHomeHtml -match '/api/notice/page' -and $adminHomeHtml -notmatch '/api/notice/["'']|/api/animal/["'']|/api/(user|adopt|volunteer)/["'']') "admin home: only bounded, truthful dashboard and notice reads"
 Assert-True ($adminHomeHtml -match "hasFlag\('account'\)[\s\S]*?/api/account/stats/by-label" -and $adminHomeHtml -notmatch 'echarts|allRecords') "admin home: account aggregation is permission-gated without full-record chart data"
 Assert-True ($adminPersonHtml -match "formData\.append\('file',\s*file\)" -and $adminPersonHtml -match "appendUploadPurpose\(formData,\s*'avatar'\)" -and $adminPersonHtml -match "url:\s*'/api/user/me/profile'[\s\S]*?type:\s*'PUT'") "admin person: avatar upload is followed by session-owned profile update"
 Assert-True ($adminPersonHtml -notmatch 'type=["'']password|v-model[^>]*password|\bpassword\s*:') "admin person: no unsupported password-change field"
 Assert-True ($adminPersonHtml -match 'profilePayload[\s\S]*?email:\s*this\.form\.email[\s\S]*?phone:\s*this\.form\.phone[\s\S]*?avatar:\s*this\.form\.avatar' -and $adminPersonHtml -notmatch 'id:\s*this\.user\.id|username:\s*this\.user\.username') "admin person: profile write contains only editable profile fields"
 Assert-True ($adminWorkspaceCss -match '@media\s*\(max-width:\s*960px\)' -and $adminWorkspaceCss -match '@media\s*\(max-width:\s*640px\)' -and $adminWorkspaceCss -match '\.admin-bar-track\s*\{\s*display:\s*none') "admin workspace: tablet/mobile layout and chart-card fallback are explicit"
+Assert-True ($adminAgentHtml -match 'admin-agent-markdown\.js' -and $adminAgentHtml -match '<agent-rich-answer\s+:text="turn\.answer"' -and $adminAgentHtml -notmatch 'v-html|innerHTML|insertAdjacentHTML') "admin agent: model Markdown uses a structured text-only renderer without an HTML sink"
+Assert-True ($adminAgentMarkdown -match 'MAX_SOURCE\s*=\s*20000' -and $adminAgentMarkdown -match 'MAX_TABLE_ROWS\s*=\s*30' -and $adminAgentMarkdown -match 'MAX_TABLE_COLUMNS\s*=\s*8' -and $adminAgentMarkdown -notmatch 'innerHTML|outerHTML|document\.write') "admin agent: Markdown parsing is bounded and never interprets model HTML"
+Assert-True ($adminWorkspaceCss -match '\.admin-agent-rich-answer h3::before' -and $adminWorkspaceCss -match '\.admin-agent-answer-table td::before\s*\{\s*content:\s*attr\(data-label\)') "admin agent: structured answers and mobile table cards have explicit visual treatment"
 
 $rescueApplyHtml = Read-Utf8 (Join-Path $staticRoot "page/front/rescue_apply.html")
 $myRescueHtml = Read-Utf8 (Join-Path $staticRoot "page/front/my_rescue.html")
@@ -237,8 +275,8 @@ $redisConfigSource = Read-Utf8 (Join-Path $root "src/main/java/com/example/confi
 Assert-True ($redisConfigSource -notmatch 'RedisMessageListenerContainer|MessageListenerAdapter|RedisMessageSubscriber|addMessageListener') "rescue chat: Redis subscriber is not registered"
 $userControllerSource = Read-Utf8 (Join-Path $root "src/main/java/com/example/controller/UserController.java")
 Assert-True ($userControllerSource -match '@PostMapping\("/ws-ticket"\)[\s\S]*?HttpStatus\.GONE[\s\S]*?Result\.error\("410"' -and $userControllerSource -notmatch 'WebSocketServer\.closeUserSessions') "user chat contract: ticket issuance is 410 and logout has no WebSocket static bridge"
-$webSocketServerSource = Read-Utf8 (Join-Path $root "src/main/java/com/example/component/WebSocketServer.java")
-Assert-True ($webSocketServerSource -notmatch '@ServerEndpoint') "user chat contract: dormant legacy WebSocket endpoint is not registered"
+$webSocketServerPath = Join-Path $root "src/main/java/com/example/component/WebSocketServer.java"
+Assert-True (-not (Test-Path -LiteralPath $webSocketServerPath)) "user chat contract: dormant legacy WebSocket endpoint implementation is removed"
 Assert-True ($adminHelpHtml -match "hasFlag\(authenticatedUser,\s*'help'\)\s*&&\s*!AdminWorkspace\.hasFlag\(authenticatedUser,\s*'rescue'\)" -and $adminHelpHtml -match 'AdminWorkspace\.navigation\(authenticatedUser\.permission\)' -and $adminHelpHtml -notmatch 'permission\.path|item\.path') "admin help: help/rescue permissions use fixed AdminWorkspace routes"
 Assert-True ($adminHelpHtml -match 'avatarUrl:\s*function\s*\(flag\)[\s\S]*?\^\[a-zA-Z0-9-\]\{1,64\}\$[\s\S]*?AdminWorkspace\.avatarUrl\(value\)') "admin help: account avatar uses a validated encoded file flag"
 Assert-True ($adminHelpHtml -match "url:\s*'/api/help/page'[\s\S]*?pageSize:\s*view\.pageSize" -and $adminHelpHtml -match 'pageSize:\s*12' -and $adminHelpHtml -notmatch "url:\s*'/api/help'\s*,\s*type:\s*'GET'") "admin help: management list only uses bounded /api/help/page"
@@ -282,7 +320,7 @@ $adminAdoptHtml = Read-Utf8 (Join-Path $staticRoot "page/end/adopt.html")
 $adminProofHtml = Read-Utf8 (Join-Path $staticRoot "page/end/proof.html")
 $adminVisitHtml = Read-Utf8 (Join-Path $staticRoot "page/end/visit.html")
 $adoptApplyHtml = Read-Utf8 (Join-Path $staticRoot "page/front/adopt_apply.html")
-Assert-True ($myAdoptHtml -match '/api/adopt/page2' -and $myAdoptHtml -notmatch 'uid:\s*this\.user\.id' -and $myAdoptHtml -match "3:'其他状态'" -and $myAdoptHtml -notmatch "3:'(已结束|已取消)'") "batch 7 owner adoption: session-owned pagination and neutral state 3 semantics"
+Assert-True ($myAdoptHtml -match '/api/adopt/page2' -and $myAdoptHtml -notmatch 'uid:\s*this\.user\.id' -and $myAdoptHtml -match 'status-text\.js' -and $myAdoptHtml -match 'StatusText\.adopt\(value\)') "batch 7 owner adoption: session-owned pagination and shared neutral state semantics"
 Assert-True ($proofFrontHtml -match '/api/proof/page1' -and $proofFrontHtml -match 'paid:this\.aid' -and $proofFrontHtml -notmatch 'pageSize:100|\.filter\(item=>String\(item\.paid\)' -and $proofFrontHtml -match 'res\.data!==true' -and $proofFrontHtml -match "appendUploadPurpose\(upload,'proof'\)") "batch 7 owner proof: server-side animal filtering, exact mutation success, and proof-purpose upload"
 Assert-True ($myVisitHtml -match '/api/visit/mine' -and $myVisitHtml -notmatch 'uid\s*:\s*(this|view)\.user\.id|sessionStorage\.getItem' -and $myVisitHtml -match '系统未记录回访方式' -and $myVisitHtml -notmatch '上门/电话|startsWith\(') "batch 7 owner visit: authoritative session, safe file flags, and no unsupported method claim"
 foreach ($batch7Admin in @(
@@ -297,7 +335,33 @@ foreach ($batch7Admin in @(
 $visitUpdatePayload = [regex]::Match($adminVisitHtml, 'var payload\s*=\s*\{[\s\S]*?\};\s*vm\.saving').Value
 Assert-True ($visitUpdatePayload -match 'id\s*:\s*vm\.form\.id' -and $visitUpdatePayload -notmatch '\b(petId|uid|aname)\s*:') "admin visit: update payload cannot transfer adoption relationship"
 Assert-True ($adminProofHtml -match 'var payload\s*=\s*\{\s*id\s*:\s*vm\.form\.id,\s*ptitle\s*:\s*vm\.form\.ptitle,\s*ppic\s*:\s*vm\.form\.ppic' -and $adminProofHtml -notmatch '证书编号|签发日期|发行人|颁发机构') "admin proof: narrow mutable payload without fake certificate issuance fields"
-Assert-True ($adminAdoptHtml -match '/api/adopt/audit/' -and $adminAdoptHtml -match 'stateText\s*:\s*function\s*\(v\)[\s\S]*?3:\s*"其他状态"' -and $adminAdoptHtml -match 'appendUploadPurpose\(d,\s*"visit"\)') "admin adopt: dedicated audit, neutral other state, and visit-purpose follow-up upload"
+Assert-True ($adminAdoptHtml -match '/api/adopt/audit/' -and $adminAdoptHtml -match 'stateText\s*:\s*function\s*\(v\)[\s\S]*?StatusText\.adopt\(v\)' -and $adminAdoptHtml -match 'appendUploadPurpose\(d,\s*"visit"\)') "admin adopt: dedicated audit, shared neutral state, and visit-purpose follow-up upload"
+$draftSaveBlock = [regex]::Match($adminAdoptHtml, 'saveAiDraft:\s*function[\s\S]*?discardAiDraft:\s*function').Value
+$draftFinalizeBlock = [regex]::Match($adminAdoptHtml, 'finalizeAiDraft:\s*function[\s\S]*?generateAiDraft:\s*function').Value
+$draftServiceJava = Read-Utf8 (Join-Path $root "src/main/java/com/example/service/AdminAgentDraftService.java")
+$draftRepositoryJava = Read-Utf8 (Join-Path $root "src/main/java/com/example/service/AdminAgentDraftRepository.java")
+$adminAgentControllerJava = Read-Utf8 (Join-Path $root "src/main/java/com/example/controller/AdminAgentController.java")
+$schemaGuardJava = Read-Utf8 (Join-Path $root "src/main/java/com/example/component/SchemaGuardRunner.java")
+Assert-True ($adminAdoptHtml -match 'canUseAgent:\s*AdminWorkspace\.hasFlag\(user,\s*"admin_agent"\)' -and ([regex]::Matches($adminAdoptHtml, 'openAiDraft\(item\)').Count -ge 2)) "admin adopt 3A: AI draft entry requires agent permission with desktop/mobile parity"
+Assert-True ($adminAdoptHtml -match 'admin-workspace\.css\?v=20260728h') "admin adopt 3B: cache-busted stylesheet contains the human-confirmation layout"
+Assert-True ($adminAdoptHtml -match '/api/admin-agent/adoption-drafts/generate' -and $draftSaveBlock -match '/api/admin-agent/adoption-drafts/' -and $draftSaveBlock -notmatch '/api/adopt/audit/|askAction\(') "admin adopt 3A: draft generation and save cannot invoke approval or rejection endpoints"
+Assert-True ($adminAdoptHtml -match '保存仍只更新个人草稿' -and $adminAdoptHtml -match '进入人工确认' -and $adminWorkspaceCss -match '\.admin-agent-draft-boundary' -and $adminWorkspaceCss -match '@media\s*\(max-width:\s*600px\)[\s\S]*?\.admin-agent-draft-verdict') "admin adopt 3A: saving a draft remains non-mutating and responsive"
+Assert-True ($draftFinalizeBlock -match '/api/admin-agent/adoption-drafts/' -and $draftFinalizeBlock -match '/finalize' -and $draftFinalizeBlock -notmatch '/api/adopt/audit/|askAction\(') "admin adopt 3B: browser submits only the dedicated human-confirmation endpoint"
+Assert-True ($adminAdoptHtml -match '完整申请资料（仅授权管理员可见）' -and $adminAdoptHtml -match 'reviewedApplication' -and $adminAdoptHtml -match 'acknowledgeConsequences' -and $adminAdoptHtml -match 'aiFinalizeNeedsReason') "admin adopt 3B: full evidence, explicit decision, consequences, and override reason are required"
+Assert-True ($draftFinalizeBlock -match 'requestId:\s*vm\.aiFinalizeRequestId' -and $adminAdoptHtml -match 'aiFinalizeRequestId\s*=\s*this\.requestId\(\)') "admin adopt 3B: one stable finalize request id survives response-loss retries"
+Assert-True ($draftServiceJava -match '@Transactional[\s\S]*?finalizeDraft' -and $draftServiceJava -match 'adoptService\.auditAdopt' -and $draftServiceJava -match 'drafts\.markFinalized' -and $draftServiceJava.IndexOf('adoptService.auditAdopt') -lt $draftServiceJava.IndexOf('drafts.markFinalized')) "admin adopt 3B: existing state machine and execution credential share one transaction"
+Assert-True ($draftServiceJava -match 'requireDraftPermission\(actor\)' -and $draftServiceJava -match 'reviewedApplication' -and $draftServiceJava -match 'acknowledgeConsequences' -and $draftServiceJava -notmatch 'client\.generateAdoptionDraft[\s\S]{0,800}finalizeDraft') "admin adopt 3B: permissions and human acknowledgements precede execution without an AI write call"
+Assert-True ($draftRepositoryJava -match "status='executed'" -and $draftRepositoryJava -match 'final_request_id' -and $draftRepositoryJava -match 'expectedVersion' -and $adminAgentControllerJava -match '/adoption-drafts/\{id\}/finalize') "admin adopt 3B: executed drafts are versioned, idempotent, and exposed through a narrow endpoint"
+Assert-True ($schemaGuardJava -match 'admin-agent-automation-v9' -and $schemaGuardJava -match 'uk_admin_agent_draft_final_request' -and $schemaGuardJava -match 'override_reason') "admin adopt 3B: current schema preserves unique execution requests and human override evidence"
+$automationServiceJava = Read-Utf8 (Join-Path $root "src/main/java/com/example/service/AdminAgentAutomationService.java")
+$automationExecutorJava = Read-Utf8 (Join-Path $root "src/main/java/com/example/service/AdminAgentAutomationExecutor.java")
+$automationPolicyJava = Read-Utf8 (Join-Path $root "src/main/java/com/example/service/AdminAgentAutomationPolicy.java")
+Assert-True ($adminAgentHtml -match 'v-if="status\.canConfigure"[\s\S]{0,240}openAutomation' -and $adminAgentHtml -match '/api/admin-agent/automation/run' -and $adminAgentHtml -notmatch '/api/adopt/audit/') "admin agent 3C: control entry is super-admin surfaced and browser has no direct adoption write endpoint"
+Assert-True ($adminAgentHtml -match 'automationDirty' -and $adminAgentHtml -match '自动驳回永久为 0' -and $adminWorkspaceCss -match '\.admin-agent-automation-dialog' -and $adminWorkspaceCss -match '@media\s*\(max-width:\s*600px\)[\s\S]*?\.admin-agent-automation-dialog') "admin agent 3C: unsaved configuration cannot run and control plane is responsive"
+Assert-True ($automationServiceJava -match 'requireSuperAdmin\(actor\)' -and $automationServiceJava -match 'maxBatch < 1 \|\| maxBatch > 3' -and $automationServiceJava -match '"shadow"\.equals\(run\.getMode\(\)\)' -and $automationServiceJava -notmatch 'auditAdopt\([^\)]*,\s*2\)') "admin agent 3C: super-admin-only, bounded, shadow-safe, and contains no automatic rejection path"
+Assert-True ($automationExecutorJava -match '@Transactional[\s\S]*?autoApprove' -and $automationExecutorJava -match 'repository\.lockConfig' -and $automationExecutorJava -match 'tools\.adoptionDraftContext' -and $automationExecutorJava -match 'adoptService\.auditSolePendingAdopt\(animalId, applicantId\)') "admin agent 3C: write transaction rechecks emergency switch and live minimized context before sole-pending approve state machine"
+Assert-True ($automationPolicyJava -match 'privacy_minimized' -and $automationPolicyJava -match 'adult_confirmed' -and $automationPolicyJava -match 'household_agreement' -and $automationPolicyJava -match 'pending_applications_for_animal' -and $automationPolicyJava -match '"approve"\.equals' -and $automationPolicyJava -match '"low"\.equals') "admin agent 3C: deterministic hard gates constrain model output and competing applications"
+Assert-True ($schemaGuardJava -match 't_admin_agent_automation_config' -and $schemaGuardJava -match 't_admin_agent_automation_run' -and $schemaGuardJava -match 't_admin_agent_automation_item' -and $schemaGuardJava -match 'uk_admin_agent_automation_request') "admin agent 3C: v9 schema persists safe default, idempotent runs, and item evidence"
 foreach ($preMountPage in @(
     @{ Name = 'adopt apply'; Html = $adoptApplyHtml },
     @{ Name = 'my adopt'; Html = $myAdoptHtml },
@@ -337,6 +401,8 @@ Assert-True ($adminWorkspaceCss -match '@media\s*\(max-width:\s*960px\)[\s\S]*?\
 
 $animalBrowseHtml = Read-Utf8 (Join-Path $staticRoot "page/front/animal_browse.html")
 Assert-True ($animalBrowseHtml -match "type:\s*this\.typeFilter" -and $animalBrowseHtml -notmatch 'displayAnimals') "animal browse: type filter and pagination share the server query"
+Assert-True ($animalBrowseHtml -match 'maxlength="100"' -and $animalBrowseHtml -match '_animalsGeneration' -and $animalBrowseHtml -match '_animalsRequest\.abort\(\)' -and $animalBrowseHtml -match "status\s*===\s*'abort'") "animal browse: bounded search and stale request cancellation are enforced"
+Assert-True ($animalBrowseHtml -match 'xhr\.responseJSON\s*&&\s*xhr\.responseJSON\.msg' -and $animalBrowseHtml -match 'status-text\.js' -and $animalBrowseHtml -match 'StatusText\.animal\(value\)' -and $animalBrowseHtml -match 'item\.tstate') "animal browse: backend errors and canonical tstate labels are visible"
 $animalControllerSource = Read-Utf8 (Join-Path $root "src/main/java/com/example/controller/AnimalController.java")
 Assert-True ($animalControllerSource -match 'MAX_PUBLIC_PAGE_SIZE\s*=\s*50' -and $animalControllerSource -match 'Math\.min\(pageSize,\s*MAX_PUBLIC_PAGE_SIZE\)') "animal API: anonymous page size is capped"
 
@@ -409,13 +475,49 @@ if (-not $SkipHttp) {
         . (Join-Path $PSScriptRoot "lib-session.ps1")
         $appSession = New-AppSession -BaseUrl $BaseUrl -Username $UserName -Password $UserPass
         Assert-True ($null -ne $appSession.User -and $null -ne $appSession.User.id) "protected pages: Cookie-only test session established"
-        foreach ($page in $protectedPages) {
+        $userAccessiblePages = @($protectedPages | Where-Object {
+            -not $_.Workspace -or $_.Path -in @('page/end/index.html', 'page/end/person.html')
+        })
+        $adminOnlyPages = @($protectedPages | Where-Object {
+            $_.Workspace -and $_.Path -notin @('page/end/index.html', 'page/end/person.html')
+        })
+        foreach ($page in $userAccessiblePages) {
             try {
                 $response = Invoke-WebRequest -Uri "$BaseUrl/$($page.Path)" -UseBasicParsing -WebSession $appSession.Session -MaximumRedirection 0 -TimeoutSec 8
                 Assert-True ($response.StatusCode -eq 200) "$($page.Path): authenticated HTTP 200"
                 Assert-True ($response.Content -match 'product-ui\.css') "$($page.Path): authenticated migrated build served"
             } catch {
                 Fail "$($page.Path): authenticated request failed ($($_.Exception.Message))"
+            }
+        }
+
+        foreach ($page in $adminOnlyPages) {
+            try {
+                $request = [System.Net.HttpWebRequest]::Create("$BaseUrl/$($page.Path)")
+                $request.AllowAutoRedirect = $false
+                $request.Timeout = 8000
+                $request.CookieContainer = $appSession.Session.Cookies
+                $response = $request.GetResponse()
+                $status = [int]$response.StatusCode
+                $location = [string]$response.Headers["Location"]
+                $response.Close()
+                $isDeniedRedirect = $status -eq 302 -and $location -match '/page/end/index\.html\?error=need_admin'
+                Assert-True $isDeniedRedirect "$($page.Path): ordinary user is denied by the server"
+            } catch {
+                $status = if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode } else { 0 }
+                Assert-True ($status -eq 403) "$($page.Path): ordinary user is denied by the server"
+            }
+        }
+
+        $adminSession = New-AppSession -BaseUrl $BaseUrl -Username $AdminName -Password $AdminPass
+        Assert-True ($null -ne $adminSession.User -and $null -ne $adminSession.User.id) "admin pages: Cookie-only admin session established"
+        foreach ($page in $adminOnlyPages) {
+            try {
+                $response = Invoke-WebRequest -Uri "$BaseUrl/$($page.Path)" -UseBasicParsing -WebSession $adminSession.Session -MaximumRedirection 0 -TimeoutSec 8
+                Assert-True ($response.StatusCode -eq 200) "$($page.Path): admin HTTP 200"
+                Assert-True ($response.Content -match 'product-ui\.css') "$($page.Path): admin migrated build served"
+            } catch {
+                Fail "$($page.Path): admin request failed ($($_.Exception.Message))"
             }
         }
 

@@ -19,7 +19,6 @@ import com.example.entity.Role;
 import com.example.entity.User;
 import com.example.exception.CustomException;
 import com.example.service.UserService;
-import com.example.component.WebSocketTicketService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -48,9 +47,6 @@ public class UserController {
 
     @Resource
     private UserService userService;
-
-    @Resource
-    private WebSocketTicketService webSocketTicketService;
 
     @Resource
     private CsrfTokenService csrfTokenService;
@@ -178,9 +174,6 @@ public class UserController {
                 username = ((User) sessionUser).getUsername();
                 userId = ((User) sessionUser).getId();
             }
-            webSocketTicketService.revokeUser(userId);
-            // 登出即时断开该用户全部 WebSocket 连接（此前 closeUserSessions 无调用方）
-            com.example.component.WebSocketServer.closeUserSessions(userId);
             authUserCache.invalidate(userId);
             if (request.getSession(false) != null) {
                 request.getSession(false).invalidate();

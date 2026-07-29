@@ -30,14 +30,15 @@ public class PermissionService extends ServiceImpl<PermissionMapper, Permission>
     private static final Set<String> KNOWN_FLAGS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             "user", "role", "permission", "animal", "adopt", "proof", "visit",
             "volunteer", "account", "notice", "help", "rescue", "im", "adopt_view",
-            "my_adopt", "my_proof", "apply"
+            "my_adopt", "my_proof", "apply", "admin_agent"
     )));
 
     private static final Set<String> ALLOWED_PATHS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             "/page/end/user.html", "/page/end/role.html", "/page/end/permission.html",
             "/page/end/animal.html", "/page/end/adopt.html", "/page/end/proof.html",
             "/page/end/visit.html", "/page/end/volunteer.html", "/page/end/account.html",
-            "/page/end/notice.html", "/page/end/help.html", "/page/end/rescue.html"
+            "/page/end/notice.html", "/page/end/help.html", "/page/end/rescue.html",
+            "/page/end/admin_agent.html"
     )));
 
     @Resource

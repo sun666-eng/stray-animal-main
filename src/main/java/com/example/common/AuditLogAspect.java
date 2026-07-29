@@ -27,7 +27,7 @@ public class AuditLogAspect {
     private static final Logger auditLogger = LoggerFactory.getLogger("AUDIT");
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final Pattern SENSITIVE_JSON_FIELD = Pattern.compile(
-            "(?i)(\\\"(?:password|token|authorization|phone|tel|email|wechat|location|address)\\\"\\s*:\\s*\\\")(.*?)(\\\")");
+            "(?i)(\\\"(?:password|token|authorization|api[_-]?key|secret|phone|tel|email|wechat|location|address)\\\"\\s*:\\s*\\\")(.*?)(\\\")");
 
     @Pointcut("@annotation(com.example.common.AuditLog)")
     public void auditPointcut() {
@@ -147,7 +147,7 @@ public class AuditLogAspect {
         return str.length() > maxLength ? str.substring(0, maxLength) + "..." : str;
     }
 
-    private String sanitizeParams(String params) {
+    static String sanitizeParams(String params) {
         if (params == null) {
             return null;
         }

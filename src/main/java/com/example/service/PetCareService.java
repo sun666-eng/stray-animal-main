@@ -8,10 +8,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.net.InetAddress;
+import java.net.ConnectException;
 import java.net.URI;
+import java.net.UnknownHostException;
+import java.io.InputStream;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayDeque;
@@ -20,20 +25,24 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
+import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 /**
  * AI 动物照顾助手（设计与原理详见根目录 AI-AGENT-GUIDE.md）。
  *
  * <p>三种运行模式，按可用资源自动降级：
  * <ol>
- *   <li><b>agent 模式</b>（app.ai.enabled=true + 已配 base-url/api-key）：
+ *   <li><b>agent 模式</b>（用户账号已配置个人连接，或平台 app.ai 已配置）：
  *       真正的 agent 循环——模型可自主决定调用 {@link PetCareTools} 里的只读工具
  *       查询当前用户的领养/回访/义工数据与动物档案，拿到结果后继续推理，
  *       直到给出最终回答。支持多轮对话历史。</li>
  *   <li><b>知识库模式</b>（未配 AI 或调用失败）：14 主题关键词加权匹配，
  *       零外部依赖、离线可演示、内容完全可控。</li>
- *   <li>两者之间自动衔接：agent 任一环节异常都静默降级到知识库，用户无感。</li>
+ *   <li>优先使用当前用户的账号级配置；没有个人配置时才使用平台环境变量配置。
+ *       agent 任一环节异常都静默降级到知识库，用户无感。</li>
  * </ol>
  *
  * <p>安全边界：工具全部只读且身份由服务端注入（模型无法指定查谁的数据，
@@ -48,32 +57,66 @@ public class PetCareService {
     private static final int RATE_MAP_MAX_USERS = 5000;
 
     @Value("${app.ai.enabled:false}")
-    private boolean aiEnabled;
+    private volatile boolean aiEnabled;
 
     @Value("${app.ai.base-url:}")
-    private String aiBaseUrl;
+    private volatile String aiBaseUrl;
 
     @Value("${app.ai.api-key:}")
-    private String aiApiKey;
+    private volatile String aiApiKey;
 
-    @Value("${app.ai.model:deepseek-chat}")
-    private String aiModel;
+    @Value("${app.ai.model:deepseek-v4-flash}")
+    private volatile String aiModel;
 
     @Value("${app.ai.timeout-ms:8000}")
-    private long aiTimeoutMs;
+    private long aiTimeoutMs = 8000;
+
+    @Value("${app.ai.total-deadline-ms:15000}")
+    private long totalDeadlineMs = 15000;
+
+    @Value("${app.ai.max-response-bytes:1048576}")
+    private int maxResponseBytes = 1048576;
+
+    @Value("${app.ai.max-answer-chars:4000}")
+    private int maxAnswerChars = 4000;
 
     /** agent 循环的最大工具调用轮次——防止模型陷入"反复查同一个工具"的死循环。 */
     @Value("${app.ai.max-tool-rounds:3}")
-    private int maxToolRounds;
+    private int maxToolRounds = 3;
+
+    @Value("${app.ai.max-tool-calls-per-round:4}")
+    private int maxToolCallsPerRound = 4;
+
+    @Value("${app.ai.max-tool-calls-total:8}")
+    private int maxToolCallsTotal = 8;
 
     /** 携带的历史对话条数上限（user+assistant 合计），控制上下文体积与成本。 */
     @Value("${app.ai.max-history:8}")
-    private int maxHistory;
+    private int maxHistory = 8;
+
+    @Value("${app.ai.ask-max-concurrent:8}")
+    private int askMaxConcurrent = 8;
+
+    @Value("${app.ai.test-max-concurrent:2}")
+    private int testMaxConcurrent = 2;
+
+    @Value("${app.ai.semaphore-wait-ms:100}")
+    private long semaphoreWaitMs = 100;
+
+    /**
+     * 仅本地联调：允许个人配置指向 loopback HTTP(S) 假 LLM。
+     * 生产必须保持 false；application-dev.yml 可按需打开。
+     */
+    @Value("${app.ai.allow-loopback-personal-config:false}")
+    private boolean allowLoopbackPersonalConfig;
 
     @jakarta.annotation.Resource
     private PetCareTools petCareTools;
 
     private final ConcurrentHashMap<Long, Deque<Long>> askTimestamps = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, Deque<Long>> testTimestamps = new ConcurrentHashMap<>();
+    private volatile Semaphore askSemaphore;
+    private volatile Semaphore testSemaphore;
 
     /** 供前端快捷按钮使用的引导问题。 */
     public List<String> quickQuestions() {
@@ -88,7 +131,7 @@ public class PetCareService {
     }
 
     public PetCareAnswer ask(Long userId, String rawQuestion) {
-        return ask(userId, rawQuestion, java.util.Collections.emptyList());
+        return ask(userId, rawQuestion, java.util.Collections.emptyList(), null);
     }
 
     /**
@@ -98,6 +141,14 @@ public class PetCareService {
      *                用于让追问（"那它多大能打疫苗"）能解析指代。仅在 agent 模式生效。
      */
     public PetCareAnswer ask(Long userId, String rawQuestion, List<ChatTurn> history) {
+        return ask(userId, rawQuestion, history, null);
+    }
+
+    /**
+     * 使用当前用户自己的连接配置回答问题；personalConfig 为 null 时才使用平台环境变量配置。
+     */
+    public PetCareAnswer ask(Long userId, String rawQuestion, List<ChatTurn> history,
+                             AiConnectionConfig personalConfig) {
         if (userId == null) {
             throw new CustomException("401", "未登录或登录已过期");
         }
@@ -111,13 +162,29 @@ public class PetCareService {
         checkRateLimit(userId);
 
         KnowledgeEntry local = bestMatch(question);
-        if (agentAvailable()) {
-            AgentResult agent = runAgentLoop(userId, question, history);
+        AiConnectionConfig effectiveConfig = personalConfig == null ? platformConfig() : personalConfig;
+        if (agentAvailable(effectiveConfig)) {
+            Semaphore permitPool = askSemaphore();
+            if (!tryAcquire(permitPool)) {
+                throw new CustomException("503", "AI 问答并发已满，请稍后使用同一 requestId 重试");
+            }
+            AgentResult agent;
+            try {
+                agent = runAgentLoop(userId, question, history, effectiveConfig);
+            } finally {
+                permitPool.release();
+            }
             if (agent != null && agent.answer != null && !agent.answer.trim().isEmpty()) {
                 return new PetCareAnswer(agent.answer.trim(), "ai",
                         local == null ? "综合" : local.topic, agent.toolsUsed);
             }
-            // agent 任一环节失败 → 静默降级到知识库
+            String reason = agent == null ? "AI 调用失败" : agent.failureReason;
+            if (local != null) {
+                return new PetCareAnswer(local.answer, "degraded", local.topic,
+                        Collections.emptyList(), reason);
+            }
+            return new PetCareAnswer(fallbackAnswer(), "degraded", "综合",
+                    Collections.emptyList(), reason);
         }
         if (local != null) {
             return new PetCareAnswer(local.answer, "local", local.topic);
@@ -125,9 +192,264 @@ public class PetCareService {
         return new PetCareAnswer(fallbackAnswer(), "local", "综合");
     }
 
-    private boolean agentAvailable() {
-        return aiEnabled && aiBaseUrl != null && !aiBaseUrl.trim().isEmpty()
-                && aiApiKey != null && !aiApiKey.trim().isEmpty();
+    private boolean agentAvailable(AiConnectionConfig config) {
+        return config != null && config.isEnabled()
+                && !trim(config.getBaseUrl()).isEmpty()
+                && !trim(config.getApiKey()).isEmpty()
+                && !trim(config.getModel()).isEmpty();
+    }
+
+    /**
+     * 返回当前用户可安全读取的状态。个人 API Key 永远不回传，只给出是否存在和末四位提示。
+     * 未配置个人连接时只说明平台 Agent 是否可用，不暴露平台地址或密钥信息。
+     */
+    public AiConfigStatus aiConfigStatus(AiConnectionConfig personalConfig) {
+        if (personalConfig == null) {
+            boolean platformReady = agentAvailable(platformConfig());
+            return new AiConfigStatus(
+                    false,
+                    platformReady,
+                    "",
+                    trim(aiModel).isEmpty() ? "deepseek-v4-flash" : trim(aiModel),
+                    false,
+                    "",
+                    false,
+                    platformReady ? "platform" : "local",
+                    platformReady,
+                    platformReady ? "connected" : "untested",
+                    "",
+                    null
+            );
+        }
+        String key = trim(personalConfig.getApiKey());
+        return new AiConfigStatus(
+                personalConfig.isEnabled(),
+                agentAvailable(personalConfig),
+                trim(personalConfig.getBaseUrl()),
+                trim(personalConfig.getModel()),
+                !key.isEmpty(),
+                maskApiKey(key),
+                true,
+                agentAvailable(personalConfig) ? "personal" : "local",
+                agentAvailable(personalConfig)
+                        && "connected".equals(personalConfig.getConnectionStatus()),
+                personalConfig.getConnectionStatus(),
+                personalConfig.getConnectionMessage(),
+                personalConfig.getLastTestedAt()
+        );
+    }
+
+    /**
+     * 构造当前用户的账号级 AI 配置，不修改平台默认配置，也不会影响其他用户。
+     *
+     * <p>空 apiKey 表示保留该用户现有密钥，避免前端为了编辑其他字段而取回密钥。
+     */
+    public AiConnectionConfig createAiConfig(boolean enabled, String baseUrl,
+                                             String model, String apiKey,
+                                             AiConnectionConfig existingConfig) {
+        String cleanBaseUrl = validateBaseUrl(baseUrl);
+        String cleanModel = trim(model);
+        if (cleanModel.isEmpty() || cleanModel.length() > 120) {
+            throw new CustomException("400", "模型名称不能为空且不能超过 120 个字符");
+        }
+
+        String cleanKey = trim(apiKey);
+        if (cleanKey.length() > 1024) {
+            throw new CustomException("400", "API Key 不能超过 1024 个字符");
+        }
+        if (!cleanKey.isEmpty() && cleanKey.matches("[*•●·]+")) {
+            throw new CustomException("400", "检测到的是密钥掩码，不是真实 API Key；如不更换请保持为空");
+        }
+
+        String existingKey = existingConfig == null ? "" : trim(existingConfig.getApiKey());
+        String nextKey = cleanKey.isEmpty() ? existingKey : cleanKey;
+        if (enabled && nextKey.isEmpty()) {
+            throw new CustomException("400", "启用 Agent 前请填写 API Key");
+        }
+        return new AiConnectionConfig(enabled, cleanBaseUrl, nextKey, cleanModel, true);
+    }
+
+    /** 使用当前用户已保存的个人配置发起一次最小真实请求。 */
+    public void testAiConnection(AiConnectionConfig personalConfig) {
+        testAiConnection(null, personalConfig);
+    }
+
+    public void testAiConnection(Long userId, AiConnectionConfig personalConfig) {
+        if (!agentAvailable(personalConfig)) {
+            throw new CustomException("400", "请先保存并启用你的个人 API 配置");
+        }
+        if (userId != null) {
+            checkTestRateLimit(userId);
+        }
+        Semaphore permitPool = testSemaphore();
+        if (!tryAcquire(permitPool)) {
+            throw new CustomException("503", "AI 连接测试并发已满，请稍后重试");
+        }
+        try {
+            JSONArray messages = new JSONArray();
+            messages.add(msg("system", "你是连接测试助手。"));
+            messages.add(msg("user", "请只回复：连接成功"));
+            long deadlineNanos = deadlineNanos();
+            JSONObject choice = executeLlm(messages, null, personalConfig, deadlineNanos);
+            if (choice.getJSONObject("message") == null) {
+                throw new AiConnectionException("服务商响应缺少 message 字段，请确认接口兼容 OpenAI Chat Completions");
+            }
+        } catch (AiConnectionException e) {
+            throw new CustomException("502", e.getMessage());
+        } catch (HttpTimeoutException e) {
+            throw new CustomException("504", "AI 服务连接超时，请稍后重试或检查服务商网络");
+        } catch (UnknownHostException e) {
+            throw new CustomException("502", "无法解析 API Base URL 的域名，请检查地址");
+        } catch (ConnectException e) {
+            throw new CustomException("502", "无法连接 AI 服务，请检查 Base URL 和网络");
+        } catch (IllegalArgumentException e) {
+            throw new CustomException("400", "API Base URL 不可用：" + safeDetail(e.getMessage(), personalConfig));
+        } catch (Exception e) {
+            log.warn("个人 AI 连接测试失败: {}", e.getClass().getSimpleName());
+            throw new CustomException("502", "AI 服务连接失败：" + safeDetail(e.getMessage(), personalConfig));
+        } finally {
+            permitPool.release();
+        }
+    }
+
+    private AiConnectionConfig platformConfig() {
+        return new AiConnectionConfig(aiEnabled, trim(aiBaseUrl), trim(aiApiKey), trim(aiModel), false);
+    }
+
+    private String validateBaseUrl(String rawBaseUrl) {
+        String value = trim(rawBaseUrl).replaceAll("/+$", "");
+        if (value.isEmpty() || value.length() > 500) {
+            throw new CustomException("400", "Base URL 不能为空且不能超过 500 个字符");
+        }
+        try {
+            URI uri = URI.create(value);
+            String scheme = uri.getScheme();
+            String host = uri.getHost();
+            if (host == null
+                    || uri.getUserInfo() != null
+                    || uri.getQuery() != null
+                    || uri.getFragment() != null) {
+                throw new IllegalArgumentException("invalid endpoint");
+            }
+            if (allowLoopbackPersonalConfig && isLoopbackPersonalHost(host)
+                    && ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))) {
+                // 本地假 LLM / WireMock 联调路径；不放行任意内网网段
+                return value;
+            }
+            if (!"https".equalsIgnoreCase(scheme)
+                    || isForbiddenHostName(host)
+                    || isForbiddenIpLiteral(host)) {
+                throw new IllegalArgumentException("invalid endpoint");
+            }
+            return value;
+        } catch (IllegalArgumentException e) {
+            throw new CustomException("400", "个人 Base URL 必须是有效的公网 HTTPS 地址，例如 https://api.example.com/v1");
+        }
+    }
+
+    private static boolean isLoopbackPersonalHost(String host) {
+        String value = trim(host).toLowerCase();
+        return "localhost".equals(value)
+                || "127.0.0.1".equals(value)
+                || "::1".equals(value)
+                || "[::1]".equals(value);
+    }
+
+    private static boolean isForbiddenHostName(String host) {
+        String value = trim(host).toLowerCase();
+        return value.isEmpty()
+                || "localhost".equals(value)
+                || value.endsWith(".localhost")
+                || value.endsWith(".local")
+                || value.endsWith(".internal");
+    }
+
+    private static boolean isForbiddenIpLiteral(String host) {
+        String value = trim(host);
+        if (!value.matches("^[0-9.]+$") && !value.contains(":")) {
+            return false;
+        }
+        try {
+            return isForbiddenAddress(InetAddress.getByName(value));
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    static boolean isForbiddenAddress(InetAddress address) {
+        if (address == null
+                || address.isAnyLocalAddress()
+                || address.isLoopbackAddress()
+                || address.isLinkLocalAddress()
+                || address.isSiteLocalAddress()
+                || address.isMulticastAddress()) {
+            return true;
+        }
+        byte[] bytes = address.getAddress();
+        if (bytes.length == 4) {
+            int first = bytes[0] & 0xff;
+            int second = bytes[1] & 0xff;
+            return first == 0
+                    || (first == 100 && second >= 64 && second <= 127)
+                    || (first == 192 && second == 0 && (bytes[2] & 0xff) == 0)
+                    || (first == 198 && (second == 18 || second == 19))
+                    || first >= 224;
+        }
+        // IPv6 unique-local fc00::/7。
+        return bytes.length == 16 && ((bytes[0] & 0xfe) == 0xfc);
+    }
+
+    /**
+     * Clash 等透明代理会把公网域名映射到 RFC 2544 的 198.18.0.0/15 Fake-IP 段。
+     * 该地址段仍禁止作为用户直接填写的 IP literal，但允许作为公网域名的 DNS
+     * 解析结果，由 HTTPS 的原始域名/SNI 继续约束实际目标。
+     */
+    static boolean isProxySyntheticAddress(InetAddress address) {
+        if (address == null) {
+            return false;
+        }
+        byte[] bytes = address.getAddress();
+        if (bytes.length != 4) {
+            return false;
+        }
+        int first = bytes[0] & 0xff;
+        int second = bytes[1] & 0xff;
+        return first == 198 && (second == 18 || second == 19);
+    }
+
+    static boolean isUnsafeResolvedAddress(InetAddress address) {
+        return isForbiddenAddress(address) && !isProxySyntheticAddress(address);
+    }
+
+    void assertPublicEndpoint(AiConnectionConfig connectionConfig) throws Exception {
+        if (connectionConfig == null || !connectionConfig.isUserProvided()) {
+            return;
+        }
+        URI uri = URI.create(connectionConfig.getBaseUrl());
+        if (allowLoopbackPersonalConfig && uri.getHost() != null && isLoopbackPersonalHost(uri.getHost())) {
+            return;
+        }
+        InetAddress[] addresses = InetAddress.getAllByName(uri.getHost());
+        if (addresses.length == 0) {
+            throw new IllegalArgumentException("AI endpoint DNS returned no address");
+        }
+        for (InetAddress address : addresses) {
+            if (isUnsafeResolvedAddress(address)) {
+                throw new IllegalArgumentException("AI endpoint resolves to a non-public address");
+            }
+        }
+    }
+
+    private static String trim(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private static String maskApiKey(String key) {
+        if (key == null || key.isEmpty()) {
+            return "";
+        }
+        int visible = Math.min(4, key.length());
+        return "•••• " + key.substring(key.length() - visible);
     }
 
     // ==================== 内置知识库 ====================
@@ -269,8 +591,10 @@ public class PetCareService {
      * 它每轮看到的是我们累积起来的完整对话（含它自己上一轮的工具调用和结果），
      * "连续推理"的错觉就来自这个不断增长的数组。
      */
-    private AgentResult runAgentLoop(Long userId, String question, List<ChatTurn> history) {
+    private AgentResult runAgentLoop(Long userId, String question, List<ChatTurn> history,
+                                     AiConnectionConfig connectionConfig) {
         try {
+            long deadlineNanos = deadlineNanos();
             JSONArray messages = new JSONArray();
             messages.add(msg("system", SYSTEM_PROMPT));
             appendHistory(messages, history);
@@ -278,25 +602,39 @@ public class PetCareService {
 
             JSONArray toolSpecs = petCareTools.toolSpecs();
             List<String> toolsUsed = new ArrayList<>();
+            int totalToolCalls = 0;
 
             for (int round = 0; round <= maxToolRounds; round++) {
                 // 最后一轮不再给工具，强制模型用已有信息作答（避免"想查但没机会"而空转）
                 boolean allowTools = round < maxToolRounds;
-                JSONObject choice = callLlm(messages, allowTools ? toolSpecs : null);
-                if (choice == null) {
-                    return null;
-                }
+                JSONObject choice = executeLlm(messages, allowTools ? toolSpecs : null,
+                        connectionConfig, deadlineNanos);
                 JSONObject message = choice.getJSONObject("message");
                 if (message == null) {
-                    return null;
+                    return AgentResult.failed("AI 协议错误：响应缺少 message");
                 }
                 JSONArray toolCalls = message.getJSONArray("tool_calls");
 
                 if (toolCalls == null || toolCalls.isEmpty()) {
                     // 分支 b：模型给出最终回答
                     String content = message.getStr("content");
-                    return content == null ? null : new AgentResult(content, toolsUsed);
+                    if (content == null || content.trim().isEmpty()) {
+                        return AgentResult.failed("AI 协议错误：最终回答为空");
+                    }
+                    if (content.length() > maxAnswerChars) {
+                        return AgentResult.failed("AI 响应超过最终回答长度限制");
+                    }
+                    return AgentResult.success(content, toolsUsed);
                 }
+
+                if (!allowTools) {
+                    return AgentResult.failed("AI 协议错误：禁用工具的最终轮仍返回 tool_calls");
+                }
+                if (toolCalls.size() > maxToolCallsPerRound
+                        || totalToolCalls + toolCalls.size() > maxToolCallsTotal) {
+                    return AgentResult.failed("AI 工具调用次数超过资源限制");
+                }
+                totalToolCalls += toolCalls.size();
 
                 // 分支 a：模型要调工具。先把它的决策原样放回 messages（协议要求）
                 messages.add(message);
@@ -320,46 +658,126 @@ public class PetCareService {
                 }
                 // 继续下一轮：模型这次能看到工具返回的真实数据
             }
-            return null;
+            return AgentResult.failed("AI 工具调用轮次超过资源限制");
+        } catch (AiConnectionException e) {
+            log.warn("照顾助手 agent 调用失败，降级到知识库: {}", e.getMessage());
+            return AgentResult.failed(safeDetail(e.getMessage(), connectionConfig));
         } catch (Exception e) {
-            log.warn("照顾助手 agent 循环失败，降级到知识库: {}", e.getMessage());
-            return null;
+            log.warn("照顾助手 agent 循环失败，降级到知识库: {}: {}",
+                    e.getClass().getSimpleName(), e.getMessage());
+            return AgentResult.failed("AI 调用失败：" + e.getClass().getSimpleName());
         }
     }
 
-    /** 单次 LLM 调用，返回 choices[0]；任何非 200/异常都返回 null 交由上层降级。 */
-    private JSONObject callLlm(JSONArray messages, JSONArray toolSpecs) {
+    private JSONObject executeLlm(JSONArray messages, JSONArray toolSpecs,
+                                  AiConnectionConfig connectionConfig,
+                                  long deadlineNanos) throws Exception {
+        assertPublicEndpoint(connectionConfig);
+        long remainingMs = remainingMillis(deadlineNanos);
+        JSONObject payload = new JSONObject();
+        payload.set("model", connectionConfig.getModel());
+        payload.set("messages", messages);
+        payload.set("max_tokens", 700);
+        if (toolSpecs != null && !toolSpecs.isEmpty()) {
+            payload.set("tools", toolSpecs);
+            payload.set("tool_choice", "auto");
+        }
+        String endpoint = connectionConfig.getBaseUrl().trim().replaceAll("/+$", "") + "/chat/completions";
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(endpoint))
+                .timeout(Duration.ofMillis(Math.min(aiTimeoutMs, remainingMs)))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + connectionConfig.getApiKey().trim())
+                .POST(HttpRequest.BodyPublishers.ofString(JSONUtil.toJsonStr(payload), StandardCharsets.UTF_8))
+                .build();
+        HttpClient client = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofMillis(Math.min(Math.min(aiTimeoutMs, remainingMs), 5000)))
+                .build();
+        HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+        long declaredLength = response.headers().firstValueAsLong("Content-Length").orElse(-1L);
+        if (declaredLength > maxResponseBytes) {
+            response.body().close();
+            throw new AiConnectionException("AI 响应体超过大小限制");
+        }
+        byte[] responseBytes;
+        try (InputStream body = response.body()) {
+            responseBytes = body.readNBytes(maxResponseBytes + 1);
+        }
+        if (responseBytes.length > maxResponseBytes) {
+            throw new AiConnectionException("AI 响应体超过大小限制");
+        }
+        String responseBody = new String(responseBytes, StandardCharsets.UTF_8);
+        if (response.statusCode() != 200) {
+            throw new AiConnectionException(providerError(response.statusCode(), responseBody, connectionConfig));
+        }
+        JSONArray choices;
         try {
-            JSONObject payload = new JSONObject();
-            payload.set("model", aiModel);
-            payload.set("messages", messages);
-            payload.set("max_tokens", 700);
-            if (toolSpecs != null && !toolSpecs.isEmpty()) {
-                payload.set("tools", toolSpecs);
-                payload.set("tool_choice", "auto");
-            }
-            String endpoint = aiBaseUrl.trim().replaceAll("/+$", "") + "/chat/completions";
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(endpoint))
-                    .timeout(Duration.ofMillis(aiTimeoutMs))
-                    .header("Content-Type", "application/json")
-                    .header("Authorization", "Bearer " + aiApiKey.trim())
-                    .POST(HttpRequest.BodyPublishers.ofString(JSONUtil.toJsonStr(payload), StandardCharsets.UTF_8))
-                    .build();
-            HttpClient client = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofMillis(Math.min(aiTimeoutMs, 5000)))
-                    .build();
-            HttpResponse<String> response = client.send(request,
-                    HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-            if (response.statusCode() != 200) {
-                log.warn("AI 服务返回非 200：{}", response.statusCode());
-                return null;
-            }
-            JSONArray choices = JSONUtil.parseObj(response.body()).getJSONArray("choices");
-            return choices == null || choices.isEmpty() ? null : choices.getJSONObject(0);
+            choices = JSONUtil.parseObj(responseBody).getJSONArray("choices");
         } catch (Exception e) {
-            log.warn("AI 服务调用失败: {}", e.getMessage());
-            return null;
+            throw new AiConnectionException("服务商返回的不是有效 JSON，请确认 Base URL 指向 OpenAI 兼容接口");
+        }
+        if (choices == null || choices.isEmpty()) {
+            throw new AiConnectionException("服务商响应中没有 choices，请确认模型名称和接口兼容性");
+        }
+        return choices.getJSONObject(0);
+    }
+
+    private String providerError(int status, String responseBody,
+                                 AiConnectionConfig connectionConfig) {
+        String detail = "";
+        try {
+            JSONObject body = JSONUtil.parseObj(responseBody);
+            JSONObject error = body.getJSONObject("error");
+            if (error != null) {
+                detail = trim(error.getStr("message"));
+                String code = trim(error.getStr("code"));
+                if (!code.isEmpty() && !detail.contains(code)) {
+                    detail = detail.isEmpty() ? code : detail + "（" + code + "）";
+                }
+            }
+        } catch (Exception ignored) {
+            // 非 JSON 错误页不返回给浏览器，避免泄露代理或上游内部信息。
+        }
+        detail = safeDetail(detail, connectionConfig);
+        String prefix;
+        switch (status) {
+            case 400:
+                prefix = "服务商拒绝请求（HTTP 400），请检查模型名称和 Base URL";
+                break;
+            case 401:
+            case 403:
+                prefix = "服务商拒绝 API Key（HTTP " + status + "），请确认 Key 有效且有权限";
+                break;
+            case 402:
+                prefix = "AI 账户余额不足或未开通计费（HTTP 402）";
+                break;
+            case 404:
+                prefix = "未找到模型或接口（HTTP 404），请检查 Base URL 和模型名称";
+                break;
+            case 429:
+                prefix = "服务商限流或额度已用尽（HTTP 429）";
+                break;
+            default:
+                prefix = "AI 服务返回 HTTP " + status;
+        }
+        return detail.isEmpty() ? prefix : prefix + "：" + detail;
+    }
+
+    private String safeDetail(String value, AiConnectionConfig connectionConfig) {
+        String detail = trim(value).replaceAll("[\\r\\n\\t]+", " ");
+        String apiKey = connectionConfig == null ? "" : trim(connectionConfig.getApiKey());
+        if (!apiKey.isEmpty()) {
+            detail = detail.replace(apiKey, "[已隐藏]");
+        }
+        if (detail.length() > 200) {
+            detail = detail.substring(0, 200) + "…";
+        }
+        return detail;
+    }
+
+    private static final class AiConnectionException extends Exception {
+        AiConnectionException(String message) {
+            super(message);
         }
     }
 
@@ -400,10 +818,20 @@ public class PetCareService {
     private static final class AgentResult {
         final String answer;
         final List<String> toolsUsed;
+        final String failureReason;
 
-        AgentResult(String answer, List<String> toolsUsed) {
+        AgentResult(String answer, List<String> toolsUsed, String failureReason) {
             this.answer = answer;
             this.toolsUsed = toolsUsed;
+            this.failureReason = failureReason == null ? "" : failureReason;
+        }
+
+        static AgentResult success(String answer, List<String> toolsUsed) {
+            return new AgentResult(answer, toolsUsed, "");
+        }
+
+        static AgentResult failed(String reason) {
+            return new AgentResult(null, Collections.emptyList(), reason);
         }
     }
 
@@ -412,10 +840,127 @@ public class PetCareService {
         private String role;
         private String text;
 
+        public ChatTurn() {
+        }
+
+        public ChatTurn(String role, String text) {
+            this.role = role;
+            this.text = text;
+        }
+
         public String getRole() { return role; }
         public void setRole(String role) { this.role = role; }
         public String getText() { return text; }
         public void setText(String text) { this.text = text; }
+    }
+
+    /**
+     * 当前用户解密后的连接配置。仅在一次服务端调用期间存在，永远不作为接口响应返回。
+     */
+    public static final class AiConnectionConfig implements java.io.Serializable {
+        private static final long serialVersionUID = 1L;
+
+        private final boolean enabled;
+        private final String baseUrl;
+        private final String apiKey;
+        private final String model;
+        private final boolean userProvided;
+        private final String connectionStatus;
+        private final String connectionMessage;
+        private final Date lastTestedAt;
+        private final long version;
+
+        AiConnectionConfig(boolean enabled, String baseUrl, String apiKey, String model,
+                           boolean userProvided) {
+            this(enabled, baseUrl, apiKey, model, userProvided,
+                    userProvided ? "untested" : "connected", "", null, 0L);
+        }
+
+        public AiConnectionConfig(boolean enabled, String baseUrl, String apiKey, String model,
+                                  boolean userProvided, String connectionStatus,
+                                  String connectionMessage, Date lastTestedAt) {
+            this(enabled, baseUrl, apiKey, model, userProvided, connectionStatus,
+                    connectionMessage, lastTestedAt, 0L);
+        }
+
+        public AiConnectionConfig(boolean enabled, String baseUrl, String apiKey, String model,
+                                  boolean userProvided, String connectionStatus,
+                                  String connectionMessage, Date lastTestedAt, long version) {
+            this.enabled = enabled;
+            this.baseUrl = baseUrl;
+            this.apiKey = apiKey;
+            this.model = model;
+            this.userProvided = userProvided;
+            this.connectionStatus = connectionStatus == null ? "untested" : connectionStatus;
+            this.connectionMessage = connectionMessage == null ? "" : connectionMessage;
+            this.lastTestedAt = lastTestedAt == null ? null : new Date(lastTestedAt.getTime());
+            this.version = version;
+        }
+
+        public boolean isEnabled() { return enabled; }
+        public String getBaseUrl() { return baseUrl; }
+        @com.fasterxml.jackson.annotation.JsonIgnore
+        public String getApiKey() { return apiKey; }
+        public String getModel() { return model; }
+        boolean isUserProvided() { return userProvided; }
+        public String getConnectionStatus() { return connectionStatus; }
+        public String getConnectionMessage() { return connectionMessage; }
+        public Date getLastTestedAt() {
+            return lastTestedAt == null ? null : new Date(lastTestedAt.getTime());
+        }
+        @com.fasterxml.jackson.annotation.JsonIgnore
+        public long getVersion() { return version; }
+    }
+
+    /** 只包含可公开状态，不含个人或平台 API Key 原值。 */
+    public static final class AiConfigStatus {
+        private final boolean enabled;
+        private final boolean ready;
+        private final String baseUrl;
+        private final String model;
+        private final boolean apiKeyConfigured;
+        private final String apiKeyHint;
+        private final boolean personalConfigured;
+        private final String source;
+        private final boolean connected;
+        private final String connectionStatus;
+        private final String connectionMessage;
+        @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+        private final Date lastTestedAt;
+
+        AiConfigStatus(boolean enabled, boolean ready, String baseUrl, String model,
+                       boolean apiKeyConfigured, String apiKeyHint,
+                       boolean personalConfigured, String source,
+                       boolean connected, String connectionStatus,
+                       String connectionMessage, Date lastTestedAt) {
+            this.enabled = enabled;
+            this.ready = ready;
+            this.baseUrl = baseUrl;
+            this.model = model;
+            this.apiKeyConfigured = apiKeyConfigured;
+            this.apiKeyHint = apiKeyHint;
+            this.personalConfigured = personalConfigured;
+            this.source = source;
+            this.connected = connected;
+            this.connectionStatus = connectionStatus;
+            this.connectionMessage = connectionMessage;
+            this.lastTestedAt = lastTestedAt == null ? null : new Date(lastTestedAt.getTime());
+        }
+
+        public boolean isEnabled() { return enabled; }
+        public boolean isReady() { return ready; }
+        public String getBaseUrl() { return baseUrl; }
+        public String getModel() { return model; }
+        public boolean isApiKeyConfigured() { return apiKeyConfigured; }
+        public String getApiKeyHint() { return apiKeyHint; }
+        public boolean isPersonalConfigured() { return personalConfigured; }
+        public String getSource() { return source; }
+        public boolean isConnected() { return connected; }
+        public String getConnectionStatus() { return connectionStatus; }
+        public String getConnectionMessage() { return connectionMessage; }
+        public Date getLastTestedAt() {
+            return lastTestedAt == null ? null : new Date(lastTestedAt.getTime());
+        }
     }
 
     // ==================== 限流 ====================
@@ -437,6 +982,72 @@ public class PetCareService {
         }
     }
 
+    private void checkTestRateLimit(Long userId) {
+        checkWindowLimit(testTimestamps, userId, 3,
+                "连接测试太频繁，请稍等一分钟再试");
+    }
+
+    private void checkWindowLimit(ConcurrentHashMap<Long, Deque<Long>> timestamps,
+                                  Long userId, int limit, String message) {
+        if (timestamps.size() >= RATE_MAP_MAX_USERS) {
+            timestamps.clear();
+        }
+        Deque<Long> window = timestamps.computeIfAbsent(userId, key -> new ArrayDeque<>());
+        long now = System.currentTimeMillis();
+        synchronized (window) {
+            while (!window.isEmpty() && now - window.peekFirst() > 60_000) {
+                window.pollFirst();
+            }
+            if (window.size() >= limit) {
+                throw new CustomException("429", message);
+            }
+            window.addLast(now);
+        }
+    }
+
+    private Semaphore askSemaphore() {
+        Semaphore value = askSemaphore;
+        if (value == null) {
+            synchronized (this) {
+                if (askSemaphore == null) askSemaphore = new Semaphore(Math.max(1, askMaxConcurrent));
+                value = askSemaphore;
+            }
+        }
+        return value;
+    }
+
+    private Semaphore testSemaphore() {
+        Semaphore value = testSemaphore;
+        if (value == null) {
+            synchronized (this) {
+                if (testSemaphore == null) testSemaphore = new Semaphore(Math.max(1, testMaxConcurrent));
+                value = testSemaphore;
+            }
+        }
+        return value;
+    }
+
+    private boolean tryAcquire(Semaphore semaphore) {
+        try {
+            return semaphore.tryAcquire(Math.max(0, semaphoreWaitMs), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new CustomException("503", "AI 请求等待被中断，请稍后重试");
+        }
+    }
+
+    private long deadlineNanos() {
+        return System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(Math.max(1, totalDeadlineMs));
+    }
+
+    private long remainingMillis(long deadlineNanos) throws HttpTimeoutException {
+        long remaining = TimeUnit.NANOSECONDS.toMillis(deadlineNanos - System.nanoTime());
+        if (remaining <= 0) {
+            throw new HttpTimeoutException("AI 问答超过总时限");
+        }
+        return remaining;
+    }
+
     // 测试用注入口
     void setAiEnabled(boolean aiEnabled) { this.aiEnabled = aiEnabled; }
     void setAiBaseUrl(String aiBaseUrl) { this.aiBaseUrl = aiBaseUrl; }
@@ -448,16 +1059,23 @@ public class PetCareService {
         private final String source;
         private final String topic;
         private final List<String> toolsUsed;
+        private final String degradeReason;
 
         public PetCareAnswer(String answer, String source, String topic) {
-            this(answer, source, topic, java.util.Collections.emptyList());
+            this(answer, source, topic, java.util.Collections.emptyList(), "");
         }
 
         public PetCareAnswer(String answer, String source, String topic, List<String> toolsUsed) {
+            this(answer, source, topic, toolsUsed, "");
+        }
+
+        public PetCareAnswer(String answer, String source, String topic, List<String> toolsUsed,
+                             String degradeReason) {
             this.answer = answer;
             this.source = source;
             this.topic = topic;
             this.toolsUsed = toolsUsed == null ? java.util.Collections.emptyList() : toolsUsed;
+            this.degradeReason = degradeReason == null ? "" : degradeReason;
         }
 
         public String getAnswer() { return answer; }
@@ -465,5 +1083,6 @@ public class PetCareService {
         public String getTopic() { return topic; }
         /** 本次回答实际查询过的工具名，前端可展示「已查询你的领养记录」增强可信度。 */
         public List<String> getToolsUsed() { return toolsUsed; }
+        public String getDegradeReason() { return degradeReason; }
     }
 }

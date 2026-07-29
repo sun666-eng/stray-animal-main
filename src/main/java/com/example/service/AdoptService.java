@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.entity.Adopt;
 import com.example.entity.Animal;
 import com.example.entity.User;
+import com.example.entity.WorkflowEvent;
+import com.example.common.AdoptWorkflow;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.example.exception.CustomException;
@@ -14,18 +16,25 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 @Service
 public class AdoptService extends ServiceImpl<AdoptMapper, Adopt> {
 
-    private static final int ANIMAL_AVAILABLE = 0;
-    private static final int ANIMAL_APPLYING = 1;
-    private static final int ANIMAL_ADOPTED = 2;
+    private static final int ANIMAL_AVAILABLE = AdoptWorkflow.ANIMAL_AVAILABLE;
+    private static final int ANIMAL_APPLYING = AdoptWorkflow.ANIMAL_RESERVED;
+    private static final int ANIMAL_ADOPTED = AdoptWorkflow.ANIMAL_ADOPTED;
 
-    private static final int ADOPT_PENDING = 0;
-    private static final int ADOPT_APPROVED = 1;
-    private static final int ADOPT_REJECTED = 2;
-    private static final int ADOPT_OTHER = 3;
+    private static final int ADOPT_PENDING = AdoptWorkflow.PENDING_REVIEW;
+    private static final int ADOPT_APPROVED = AdoptWorkflow.APPROVED_PENDING_HANDOVER;
+    private static final int ADOPT_REJECTED = AdoptWorkflow.REJECTED;
+    private static final int ADOPT_MATERIAL_REQUIRED = AdoptWorkflow.MATERIAL_REQUIRED;
+    private static final int ADOPT_COMPLETED = AdoptWorkflow.COMPLETED;
+    private static final int ADOPT_WITHDRAWN = AdoptWorkflow.WITHDRAWN;
+    private static final int ADOPT_CANCELLED = AdoptWorkflow.CANCELLED;
 
     @Resource
     private AdoptMapper adoptMapper;
@@ -38,6 +47,12 @@ public class AdoptService extends ServiceImpl<AdoptMapper, Adopt> {
 
     @Resource
     private VisitMapper visitMapper;
+
+    @Resource
+    private WorkflowEventService workflowEventService;
+
+    @Resource
+    private NotificationService notificationService;
 
     @Transactional
     public boolean submitAdopt(Adopt adopt, User user, boolean canManageAdopt) {
@@ -62,16 +77,16 @@ public class AdoptService extends ServiceImpl<AdoptMapper, Adopt> {
         Adopt previous = getOne(new QueryWrapper<Adopt>()
                 .eq("aid", adopt.getAid()).eq("uid", user.getId()).last("FOR UPDATE"), false);
         if (previous != null
-                && (Integer.valueOf(ADOPT_PENDING).equals(previous.getVstate())
-                    || Integer.valueOf(ADOPT_APPROVED).equals(previous.getVstate()))) {
+                && AdoptWorkflow.ACTIVE.contains(previous.getVstate())) {
             throw new CustomException("409", "你已提交过该动物的领养申请");
         }
 
         // Every submission belongs to the authenticated actor. Management permission never
         // authorizes forging another user's identity or server-derived animal snapshots.
-        long approved = count(new QueryWrapper<Adopt>().eq("aid", adopt.getAid()).eq("vstate", ADOPT_APPROVED));
-        if (approved > 0) {
-            throw new CustomException("400", "该动物已被领养");
+        long reservedOrCompleted = count(new QueryWrapper<Adopt>().eq("aid", adopt.getAid())
+                .in("vstate", ADOPT_APPROVED, ADOPT_COMPLETED));
+        if (reservedOrCompleted > 0) {
+            throw new CustomException("409", "该动物已被预留或完成领养");
         }
         if (animalState != ANIMAL_AVAILABLE && animalState != ANIMAL_APPLYING) {
             throw new CustomException("400", "该动物当前不可领养");
@@ -85,6 +100,10 @@ public class AdoptService extends ServiceImpl<AdoptMapper, Adopt> {
         adopt.setAname(animal.getTname());
         adopt.setApic(animal.getTpic());
         adopt.setVstate(ADOPT_PENDING);
+        Date now = new Date();
+        adopt.setCreatedAt(now);
+        adopt.setUpdatedAt(now);
+        adopt.setVersion(0);
 
         boolean saved;
         if (previous == null) {
@@ -97,15 +116,27 @@ public class AdoptService extends ServiceImpl<AdoptMapper, Adopt> {
             revived.setAname(animal.getTname());
             revived.setApic(animal.getTpic());
             revived.setVstate(ADOPT_PENDING);
+            revived.setReviewerId(null);
+            revived.setReviewReason(null);
+            revived.setReviewedAt(null);
+            revived.setHandoverAt(null);
+            revived.setHandoverNote(null);
+            revived.setCreatedAt(previous.getCreatedAt() == null ? now : previous.getCreatedAt());
+            revived.setUpdatedAt(now);
+            revived.setVersion(nextVersion(previous));
             UpdateWrapper<Adopt> revive = new UpdateWrapper<>();
             revive.eq("aid", adopt.getAid()).eq("uid", user.getId())
-                    .eq("vstate", previous.getVstate());
+                    .eq("vstate", previous.getVstate())
+                    .set("reviewer_id", null).set("review_reason", null)
+                    .set("reviewed_at", null).set("handover_at", null).set("handover_note", null);
             saved = update(revived, revive);
         }
         if (!saved) {
             throw new CustomException("500", "领养申请保存失败");
         }
         syncAnimalState(adopt.getAid());
+        recordEvent(adopt.getAid(), user.getId(), previous == null ? null : previous.getVstate(), ADOPT_PENDING,
+                "SUBMIT", user, "提交领养申请", null);
         return saved;
     }
 
@@ -123,14 +154,16 @@ public class AdoptService extends ServiceImpl<AdoptMapper, Adopt> {
         if (existing == null) {
             throw new CustomException("404", "领养申请不存在");
         }
-        if (!Integer.valueOf(ADOPT_PENDING).equals(existing.getVstate())) {
-            throw new CustomException("409", "仅待审核申请可以修改");
+        if (!AdoptWorkflow.EDITABLE.contains(existing.getVstate())) {
+            throw new CustomException("409", "仅待审核或待补充材料的申请可以修改");
         }
 
         Adopt mutable = mutableApplication(aid, uid, submitted);
         validateApplication(mutable);
         UpdateWrapper<Adopt> update = new UpdateWrapper<>();
-        update.eq("aid", aid).eq("uid", uid).eq("vstate", ADOPT_PENDING);
+        update.eq("aid", aid).eq("uid", uid).eq("vstate", existing.getVstate());
+        mutable.setUpdatedAt(new Date());
+        mutable.setVersion(nextVersion(existing));
         if (!update(mutable, update)) {
             throw new CustomException("409", "申请已变化，请刷新后重试");
         }
@@ -200,87 +233,138 @@ public class AdoptService extends ServiceImpl<AdoptMapper, Adopt> {
         return value == null || value.trim().isEmpty();
     }
 
-    /**
-     * B6：审核状态机。
-     * <ul>
-     *   <li>仅允许从待审迁移到通过/驳回/其他</li>
-     *   <li>通过使用 CAS：仅 vstate=PENDING 可更新为 APPROVED，避免并发双通过</li>
-     *   <li>通过后驳回同动物其他待审</li>
-     *   <li>若已有他人通过，禁止再次通过</li>
-     * </ul>
-     */
+    /** 兼容旧管理接口：通过现在仅表示“审核通过、待交接”，不再直接完成领养。 */
     @Transactional
     public boolean auditAdopt(Long aid, Long uid, Integer state) {
         validateAdoptState(state);
-        if (aid == null || uid == null) {
-            throw new CustomException("400", "参数无效");
+        String action = Integer.valueOf(ADOPT_APPROVED).equals(state) ? "APPROVE" : "REJECT";
+        String reason = Integer.valueOf(ADOPT_APPROVED).equals(state) ? "管理员审核通过" : "管理员审核驳回";
+        return transition(aid, uid, action, reason, null, null, null, true, "ADMIN");
+    }
+
+    /**
+     * P0 统一状态机。所有转换在动物行和申请行加锁后执行，expectedVersion 防止陈旧页面覆盖新决定。
+     */
+    @Transactional
+    public boolean transition(Long aid, Long uid, String rawAction, String reason, String note,
+                              Integer expectedVersion, User actor, boolean manager, String actorType) {
+        if (aid == null || uid == null) throw new CustomException("400", "参数无效");
+        String action = normalizeAction(rawAction);
+        if (animalService.lockState(aid) == null) throw new CustomException("404", "动物信息不存在");
+        Adopt existing = getOne(new QueryWrapper<Adopt>()
+                .eq("aid", aid).eq("uid", uid).last("FOR UPDATE"), false);
+        if (existing == null) throw new CustomException("404", "领养申请不存在");
+        int current = existing.getVstate() == null ? ADOPT_PENDING : existing.getVstate();
+        int version = existing.getVersion() == null ? 0 : existing.getVersion();
+        if (expectedVersion != null && expectedVersion != version) {
+            throw new CustomException("409", "申请已在其他页面更新，请刷新后重试");
         }
 
-        Integer lockedAnimalState = animalService.lockState(aid);
-        if (lockedAnimalState == null) {
-            throw new CustomException("404", "动物信息不存在");
-        }
-        QueryWrapper<Adopt> existingQ = new QueryWrapper<>();
-        existingQ.eq("aid", aid).eq("uid", uid).last("FOR UPDATE");
-        Adopt existing = getOne(existingQ, false);
-        if (existing == null) {
-            throw new CustomException("404", "领养申请不存在");
-        }
-
-        Integer current = existing.getVstate();
-        if (current == null) {
-            current = ADOPT_PENDING;
-        }
-
-        // 已是目标状态：幂等成功
-        if (current.equals(state)) {
-            syncAnimalState(aid);
-            return true;
-        }
-
-        // 非法迁移：已通过/已驳回不可再改成其他审核结果（管理可走删除重建）
-        if (current == ADOPT_APPROVED || current == ADOPT_REJECTED) {
-            throw new CustomException("400", "该申请已终态，不可再次审核");
-        }
-        if (current != ADOPT_PENDING) {
-            throw new CustomException("400", "当前状态不允许审核");
-        }
-
-        if (Integer.valueOf(ADOPT_APPROVED).equals(state)) {
-            long otherApproved = count(new QueryWrapper<Adopt>()
-                    .eq("aid", aid)
-                    .eq("vstate", ADOPT_APPROVED)
-                    .ne("uid", uid));
-            if (otherApproved > 0) {
-                throw new CustomException("400", "该动物已有通过的领养申请");
+        boolean owner = actor != null && actor.getId() != null && actor.getId().equals(uid);
+        int target;
+        switch (action) {
+            case "REQUEST_MATERIAL" -> {
+                requireManager(manager);
+                requireState(current, Set.of(ADOPT_PENDING), "仅待审核申请可以要求补充材料");
+                target = ADOPT_MATERIAL_REQUIRED;
             }
-            // CAS：仅待审可改为通过
-            UpdateWrapper<Adopt> cas = new UpdateWrapper<>();
-            cas.eq("aid", aid).eq("uid", uid).eq("vstate", ADOPT_PENDING);
-            Adopt patch = new Adopt();
-            patch.setVstate(ADOPT_APPROVED);
-            boolean updated = update(patch, cas);
-            if (!updated) {
-                throw new CustomException("409", "审核冲突，请刷新后重试");
+            case "APPROVE" -> {
+                requireManager(manager);
+                requireState(current, Set.of(ADOPT_PENDING, ADOPT_MATERIAL_REQUIRED), "当前状态不能审核通过");
+                if (current == ADOPT_MATERIAL_REQUIRED) assertMaterialsReady(aid, uid, false);
+                long otherReserved = count(new QueryWrapper<Adopt>().eq("aid", aid)
+                        .in("vstate", ADOPT_APPROVED, ADOPT_COMPLETED).ne("uid", uid));
+                if (otherReserved > 0) throw new CustomException("409", "该动物已有其他有效预留或已完成领养");
+                target = ADOPT_APPROVED;
             }
-            rejectCompetingPending(aid, uid);
-            // 若竞争后仍出现多通过（极端并发），再清多余
-            enforceSingleApproved(aid, uid);
-            syncAnimalState(aid);
-            return true;
+            case "REJECT" -> {
+                requireManager(manager);
+                requireState(current, Set.of(ADOPT_PENDING, ADOPT_MATERIAL_REQUIRED), "当前状态不能驳回");
+                target = ADOPT_REJECTED;
+            }
+            case "COMPLETE_HANDOVER" -> {
+                requireManager(manager);
+                requireState(current, Set.of(ADOPT_APPROVED), "仅待交接申请可以完成领养");
+                assertMaterialsReady(aid, uid, true);
+                target = ADOPT_COMPLETED;
+            }
+            case "WITHDRAW" -> {
+                if (!owner) throw new CustomException("403", "只能撤回自己的领养申请");
+                requireState(current, AdoptWorkflow.USER_WITHDRAWABLE, "当前状态不能撤回");
+                target = ADOPT_WITHDRAWN;
+            }
+            case "CANCEL" -> {
+                requireManager(manager);
+                requireState(current, AdoptWorkflow.ACTIVE, "当前状态不能取消");
+                target = ADOPT_CANCELLED;
+            }
+            case "REOPEN" -> {
+                requireManager(manager);
+                requireState(current, Set.of(ADOPT_REJECTED, ADOPT_WITHDRAWN, ADOPT_CANCELLED), "当前状态不能重新打开");
+                long blocking = count(new QueryWrapper<Adopt>().eq("aid", aid)
+                        .in("vstate", ADOPT_APPROVED, ADOPT_COMPLETED).ne("uid", uid));
+                if (blocking > 0) throw new CustomException("409", "动物已有有效预留或已完成领养，不能重新打开");
+                target = ADOPT_PENDING;
+            }
+            default -> throw new CustomException("400", "不支持的状态操作");
         }
 
-        // 驳回或其他：CAS 从 PENDING
+        String cleanReason = requireReason(action, reason);
+        if (current == target) return true;
+        Date now = new Date();
         UpdateWrapper<Adopt> cas = new UpdateWrapper<>();
-        cas.eq("aid", aid).eq("uid", uid).eq("vstate", ADOPT_PENDING);
-        Adopt patch = new Adopt();
-        patch.setVstate(state);
-        boolean updated = update(patch, cas);
-        if (!updated) {
-            throw new CustomException("409", "审核冲突，请刷新后重试");
+        cas.eq("aid", aid).eq("uid", uid).eq("vstate", current)
+                .eq(existing.getVersion() != null, "version", version)
+                .set("vstate", target).set("updated_at", now).set("version", version + 1);
+        if (manager && Set.of("REQUEST_MATERIAL", "APPROVE", "REJECT", "CANCEL", "REOPEN").contains(action)) {
+            cas.set("reviewer_id", actor == null ? null : actor.getId())
+                    .set("review_reason", cleanReason).set("reviewed_at", now);
         }
+        if (target == ADOPT_COMPLETED) {
+            cas.set("handover_at", now).set("handover_note", normalizeText(note, 1000, "交接备注"));
+        }
+        if (target == ADOPT_PENDING) {
+            cas.set("reviewer_id", null).set("review_reason", null).set("reviewed_at", null)
+                    .set("handover_at", null).set("handover_note", null);
+        }
+        if (!update(new Adopt(), cas)) throw new CustomException("409", "状态已变化，请刷新后重试");
+
+        if (target == ADOPT_COMPLETED) closeCompetingApplications(aid, uid, actor, now);
         syncAnimalState(aid);
+        recordEvent(aid, uid, current, target, action, actor, cleanReason, null, actorType);
+        notifyApplicant(aid, uid, target, cleanReason, version + 1);
         return true;
+    }
+
+    /**
+     * 3C 专用窄入口：锁住动物后确认只有一份待审申请，避免“通过一人”间接自动驳回其他竞争者。
+     * 普通人工审核仍使用 auditAdopt，可由管理员比较多份申请后作出决定。
+     */
+    @Transactional
+    public boolean auditSolePendingAdopt(Long aid, Long uid) {
+        return auditSolePendingAdopt(aid, uid, null);
+    }
+
+    @Transactional
+    public boolean auditSolePendingAdopt(Long aid, Long uid, User actor) {
+        if (aid == null || uid == null) throw new CustomException("400", "参数无效");
+        if (animalService.lockState(aid) == null) throw new CustomException("404", "动物信息不存在");
+        long pending = count(new QueryWrapper<Adopt>().eq("aid", aid).eq("vstate", ADOPT_PENDING));
+        if (pending != 1L) {
+            throw new CustomException("409", "该动物存在多份竞争申请，受控自动审核已转人工复核");
+        }
+        return transition(aid, uid, "APPROVE", "受控 AI 自动审核通过，等待线下交接",
+                null, null, actor, true, "AI");
+    }
+
+    public List<WorkflowEvent> timeline(Long aid, Long uid, User actor, boolean manager) {
+        if (!manager && (actor == null || actor.getId() == null || !actor.getId().equals(uid))) {
+            throw new CustomException("403", "只能查看自己的申请进度");
+        }
+        Adopt existing = getOne(new QueryWrapper<Adopt>().eq("aid", aid).eq("uid", uid), false);
+        if (existing == null) throw new CustomException("404", "领养申请不存在");
+        if (workflowEventService == null) return List.of();
+        return workflowEventService.timeline("adopt", businessId(aid, uid));
     }
 
     /**
@@ -351,6 +435,111 @@ public class AdoptService extends ServiceImpl<AdoptMapper, Adopt> {
         }
     }
 
+    private void assertMaterialsReady(Long aid, Long uid, boolean handover) {
+        long approved = proofMapper.selectCount(new QueryWrapper<com.example.entity.Proof>()
+                .eq("paid", aid).eq("puid", uid).eq("pstatus", ProofService.STATUS_APPROVED));
+        long unresolved = proofMapper.selectCount(new QueryWrapper<com.example.entity.Proof>()
+                .eq("paid", aid).eq("puid", uid)
+                .in("pstatus", ProofService.STATUS_PENDING, ProofService.STATUS_REJECTED));
+        if (approved < 1 || unresolved > 0) {
+            throw new CustomException("409", handover
+                    ? "至少需要一份已通过材料，且不能存在待审核或被驳回材料，才能完成交接"
+                    : "补充材料尚未全部审核通过");
+        }
+    }
+
+    private void closeCompetingApplications(Long aid, Long approvedUid, User actor, Date now) {
+        List<Adopt> competitors = list(new QueryWrapper<Adopt>().eq("aid", aid)
+                .ne("uid", approvedUid).in("vstate", ADOPT_PENDING, ADOPT_MATERIAL_REQUIRED));
+        if (competitors.isEmpty()) return;
+        UpdateWrapper<Adopt> close = new UpdateWrapper<>();
+        close.eq("aid", aid).ne("uid", approvedUid)
+                .in("vstate", ADOPT_PENDING, ADOPT_MATERIAL_REQUIRED)
+                .set("vstate", ADOPT_CANCELLED)
+                .set("reviewer_id", actor == null ? null : actor.getId())
+                .set("review_reason", "其他申请已完成线下交接")
+                .set("reviewed_at", now).set("updated_at", now)
+                .setSql("version = COALESCE(version, 0) + 1");
+        update(new Adopt(), close);
+        for (Adopt item : competitors) {
+            recordEvent(aid, item.getUid(), item.getVstate(), ADOPT_CANCELLED,
+                    "CANCEL_COMPETING", actor, "其他申请已完成线下交接", null);
+            notifyApplicant(aid, item.getUid(), ADOPT_CANCELLED,
+                    "其他申请已完成线下交接", nextVersion(item));
+        }
+    }
+
+    private void requireManager(boolean manager) {
+        if (!manager) throw new CustomException("403", "无权执行该领养状态操作");
+    }
+
+    private void requireState(int current, Set<Integer> allowed, String message) {
+        if (!allowed.contains(current)) throw new CustomException("409", message);
+    }
+
+    private String normalizeAction(String action) {
+        if (action == null || action.trim().isEmpty()) throw new CustomException("400", "缺少状态操作");
+        String clean = action.trim().toUpperCase(Locale.ROOT);
+        if (!Set.of("REQUEST_MATERIAL", "APPROVE", "REJECT", "COMPLETE_HANDOVER",
+                "WITHDRAW", "CANCEL", "REOPEN").contains(clean)) {
+            throw new CustomException("400", "不支持的状态操作");
+        }
+        return clean;
+    }
+
+    private String requireReason(String action, String reason) {
+        String clean = normalizeText(reason, 1000, "操作原因");
+        if (Set.of("REQUEST_MATERIAL", "REJECT", "CANCEL", "REOPEN").contains(action)
+                && (clean == null || clean.length() < 2)) {
+            throw new CustomException("400", "请填写明确的操作原因");
+        }
+        if (clean != null) return clean;
+        return switch (action) {
+            case "APPROVE" -> "审核通过，等待线下交接";
+            case "COMPLETE_HANDOVER" -> "已确认完成线下交接";
+            case "WITHDRAW" -> "申请人主动撤回";
+            default -> "状态已更新";
+        };
+    }
+
+    private String normalizeText(String value, int max, String field) {
+        if (value == null || value.trim().isEmpty()) return null;
+        String clean = value.trim();
+        if (clean.length() > max) throw new CustomException("400", field + "不能超过" + max + "个字符");
+        return clean;
+    }
+
+    private int nextVersion(Adopt adopt) {
+        return (adopt == null || adopt.getVersion() == null ? 0 : adopt.getVersion()) + 1;
+    }
+
+    private void recordEvent(Long aid, Long uid, Integer from, Integer to, String action,
+                             User actor, String reason, String requestId) {
+        recordEvent(aid, uid, from, to, action, actor, reason, requestId,
+                actor == null ? "SYSTEM" : "USER");
+    }
+
+    private void recordEvent(Long aid, Long uid, Integer from, Integer to, String action,
+                             User actor, String reason, String requestId, String actorType) {
+        if (workflowEventService == null) return; // 单元测试中的轻量构造兼容
+        workflowEventService.record("adopt", businessId(aid, uid), from, to, action,
+                actor == null ? null : actor.getId(), actorType == null ? (actor == null ? "SYSTEM" : "USER") : actorType,
+                reason, requestId, null);
+    }
+
+    private void notifyApplicant(Long aid, Long uid, int state, String reason, int version) {
+        if (notificationService == null || uid == null) return;
+        String title = "领养申请状态更新";
+        String summary = "动物 #" + aid + "：" + AdoptWorkflow.label(state)
+                + (reason == null ? "" : "。" + reason);
+        notificationService.notifyOnce(uid, "adopt", title, summary, "adopt", businessId(aid, uid),
+                "/page/front/my_adopt.html", "adopt:" + aid + ":" + uid + ":v" + version);
+    }
+
+    private String businessId(Long aid, Long uid) {
+        return aid + ":" + uid;
+    }
+
     private void syncAnimalState(Long aid) {
         if (aid == null) {
             return;
@@ -359,11 +548,12 @@ public class AdoptService extends ServiceImpl<AdoptMapper, Adopt> {
         if (currentState == null) {
             return;
         }
-        long approvedCount = count(new QueryWrapper<Adopt>().eq("aid", aid).eq("vstate", ADOPT_APPROVED));
-        long pendingCount = count(new QueryWrapper<Adopt>().eq("aid", aid).eq("vstate", ADOPT_PENDING));
-        if (approvedCount > 0) {
+        long completedCount = count(new QueryWrapper<Adopt>().eq("aid", aid).eq("vstate", ADOPT_COMPLETED));
+        long activeCount = count(new QueryWrapper<Adopt>().eq("aid", aid)
+                .in("vstate", ADOPT_PENDING, ADOPT_MATERIAL_REQUIRED, ADOPT_APPROVED));
+        if (completedCount > 0) {
             updateAnimalState(aid, currentState, ANIMAL_ADOPTED);
-        } else if (pendingCount > 0) {
+        } else if (activeCount > 0) {
             updateAnimalState(aid, currentState, ANIMAL_APPLYING);
         } else {
             updateAnimalState(aid, currentState, ANIMAL_AVAILABLE);

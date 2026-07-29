@@ -1,6 +1,7 @@
 package com.example.component;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.example.common.StartupMutationPolicy;
 import com.example.entity.Permission;
 import com.example.entity.Role;
 import com.example.entity.RolePermission;
@@ -8,6 +9,7 @@ import com.example.mapper.PermissionMapper;
 import com.example.mapper.RolePermissionMapper;
 import com.example.service.RoleService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.annotation.Order;
@@ -44,15 +46,21 @@ public class RolePermissionSyncRunner implements ApplicationRunner {
     private final RolePermissionMapper rolePermissionMapper;
     private final PermissionMapper permissionMapper;
     private final JdbcTemplate jdbcTemplate;
+    private final StartupMutationPolicy mutationPolicy;
+
+    @Value("${app.role-guard.fail-fast:false}")
+    private boolean failFast;
 
     public RolePermissionSyncRunner(RoleService roleService,
                                     RolePermissionMapper rolePermissionMapper,
                                     PermissionMapper permissionMapper,
-                                    JdbcTemplate jdbcTemplate) {
+                                    JdbcTemplate jdbcTemplate,
+                                    StartupMutationPolicy mutationPolicy) {
         this.roleService = roleService;
         this.rolePermissionMapper = rolePermissionMapper;
         this.permissionMapper = permissionMapper;
         this.jdbcTemplate = jdbcTemplate;
+        this.mutationPolicy = mutationPolicy;
     }
 
     @Override
@@ -75,8 +83,8 @@ public class RolePermissionSyncRunner implements ApplicationRunner {
             }
         }
 
-        int inserted = 0;
-        int deleted = 0;
+        List<RolePermission> missing = new java.util.ArrayList<>();
+        List<RolePermission> stale = new java.util.ArrayList<>();
         for (Role role : roleService.list()) {
             if (role == null || role.getId() == null) {
                 continue;
@@ -92,23 +100,43 @@ public class RolePermissionSyncRunner implements ApplicationRunner {
                     RolePermission rp = new RolePermission();
                     rp.setRoleId(role.getId());
                     rp.setPermissionId(pid);
-                    rolePermissionMapper.insert(rp);
-                    inserted++;
+                    missing.add(rp);
                 }
             }
             for (Long pid : current) {
                 if (!desired.contains(pid)) {
-                    rolePermissionMapper.delete(Wrappers.<RolePermission>query()
-                            .eq("role_id", role.getId()).eq("permission_id", pid));
-                    deleted++;
+                    RolePermission rp = new RolePermission();
+                    rp.setRoleId(role.getId());
+                    rp.setPermissionId(pid);
+                    stale.add(rp);
                 }
             }
         }
-        if (inserted > 0 || deleted > 0) {
-            log.info("RolePermissionSync 完成：补 {} 行，删 {} 行", inserted, deleted);
-        } else {
+        if (missing.isEmpty() && stale.isEmpty()) {
             log.info("RolePermissionSync 完成：关联表与角色 JSON 一致，无变更");
+            return;
         }
+
+        String difference = "role_permission 与角色 JSON 不一致：缺少 " + missing.size()
+                + " 行，多余 " + stale.size() + " 行";
+        if (!mutationPolicy.isMutationsAllowed()) {
+            if (failFast) {
+                log.error("RolePermissionSync pure-check 未通过：{}", difference);
+                throw new IllegalStateException("[RolePermissionSync] " + difference
+                        + "；pure-check 模式禁止自动修复，请先执行权限关联数据迁移");
+            }
+            log.warn("RolePermissionSync pure-check 发现差异但 fail-fast=false：{}；未写库", difference);
+            return;
+        }
+
+        for (RolePermission rp : missing) {
+            rolePermissionMapper.insert(rp);
+        }
+        for (RolePermission rp : stale) {
+            rolePermissionMapper.delete(Wrappers.<RolePermission>query()
+                    .eq("role_id", rp.getRoleId()).eq("permission_id", rp.getPermissionId()));
+        }
+        log.info("RolePermissionSync 完成：补 {} 行，删 {} 行", missing.size(), stale.size());
     }
 
     /**

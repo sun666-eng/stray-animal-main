@@ -6,6 +6,7 @@ import com.example.entity.Proof;
 import com.example.entity.User;
 import com.example.exception.CustomException;
 import com.example.service.ProofService;
+import com.example.dto.ProofAuditRequest;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -57,10 +58,20 @@ public class ProofController {
             return Result.error("403", "无权审核凭证");
         }
         try {
-            return Result.success(proofService.auditProof(id, state));
+            return Result.success(proofService.auditProof(id, state,
+                    Integer.valueOf(1).equals(state) ? "材料审核通过" : "管理员审核驳回", user));
         } catch (CustomException e) {
             return Result.error(e.getCode(), e.getMsg());
         }
+    }
+
+    @PutMapping("/{id}/audit")
+    public Result<?> auditWithReason(@PathVariable Long id, @RequestBody ProofAuditRequest body,
+                                     HttpServletRequest request) {
+        User user = (User) request.getSession().getAttribute("user");
+        if (!PermissionUtil.hasFlag(user, "proof")) return Result.error("403", "无权审核凭证");
+        if (body == null) return Result.error("400", "审核参数不能为空");
+        return Result.success(proofService.auditProof(id, body.getState(), body.getReason(), user));
     }
 
     @DeleteMapping("/{id}")

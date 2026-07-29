@@ -19,7 +19,7 @@
   </div></header>
 
   <main class="ui-container ui-workspace"><div class="ui-workspace-grid">
-    <nav class="ui-side-nav" aria-label="个人业务导航"><strong>我的行动</strong><a href="./my_adopt.html">领养申请</a><a href="./my_visit.html">回访记录</a><a href="./my_volunteer.html">义工申请</a><a class="is-active" href="./my_rescue.html" aria-current="page">救助记录</a></nav>
+    <nav class="ui-side-nav" aria-label="个人业务导航"><strong>我的行动</strong><a href="./my_adopt.html">领养申请</a><a href="./notifications.html">消息通知</a><a href="./my_visit.html">回访记录</a><a href="./my_volunteer.html">义工申请</a><a class="is-active" href="./my_rescue.html" aria-current="page">救助记录</a></nav>
     <section aria-labelledby="mineTitle">
       <div class="ui-panel-head"><div><p class="ui-eyebrow">MY RESCUE REQUESTS</p><h1 id="mineTitle" class="ui-workspace-title">我的救助</h1><p>记录归属由服务端当前会话确定。状态和回复均来自真实救助工单。</p></div><a class="ui-button is-primary" href="./rescue_apply.html">发起新救助</a></div>
       <div class="ui-status-key" aria-label="救助状态说明"><span><i class="is-pending"></i>待处理</span><span><i></i>处理中</span><span><i class="is-done"></i>已完成</span><span><i class="is-closed"></i>已关闭</span></div>
@@ -31,7 +31,7 @@
           <div class="ui-rescue-record-head"><div><span class="ui-record-id">救助 #{{ item.id }}</span><h2>{{ item.title || '未命名救助请求' }}</h2></div><span class="ui-badge" :class="badgeClass(item.status)">{{ statusText(item.status) }}</span></div>
           <div class="ui-rescue-record-summary"><div><span>发现地点</span><strong>{{ item.location || '-' }}</strong></div><div><span>联系电话</span><strong>{{ item.phone || '-' }}</strong></div><div><span>提交时间</span><strong>{{ formatTime(item.createTime) || '-' }}</strong></div></div>
           <div class="ui-rescue-reply"><strong>管理员回复</strong><br>{{ item.remark || '暂无回复，状态变化后请继续关注。' }}</div>
-          <div class="ui-rescue-record-actions"><button class="ui-button is-ghost" type="button" @click="openDetail(item)">查看完整详情</button></div>
+          <div v-if="item.resolutionNote" class="ui-rescue-reply"><strong>最终处理结论</strong><br>{{ item.resolutionNote }}</div><div class="ui-rescue-record-actions"><button class="ui-button is-ghost" type="button" @click="openDetail(item)">查看完整详情</button><a v-if="item.animalId" class="ui-button is-primary" :href="animalUrl(item.animalId)">查看获救动物</a></div>
         </article>
       </div>
       <div v-if="!loading&&!error&&totalPages>1" class="ui-pagination"><span>第 {{ pageNum }} 页，共 {{ total }} 条记录</span><div class="ui-page-buttons"><button type="button" :disabled="pageNum===1" aria-label="上一页" @click="load(pageNum-1)">上一页</button><button v-for="page in pages" :key="page" type="button" :class="{'is-current':page===pageNum}" :aria-current="page===pageNum?'page':null" @click="load(page)">{{ page }}</button><button type="button" :disabled="pageNum===totalPages" aria-label="下一页" @click="load(pageNum+1)">下一页</button></div></div>
@@ -44,6 +44,7 @@
       <dl class="ui-detail-grid"><div><dt>状态</dt><dd><span class="ui-badge" :class="badgeClass(detailItem.status)">{{ statusText(detailItem.status) }}</span></dd></div><div><dt>发现地点</dt><dd>{{ detailItem.location || '-' }}</dd></div><div><dt>联系电话</dt><dd>{{ detailItem.phone || '-' }}</dd></div><div><dt>提交时间</dt><dd>{{ formatTime(detailItem.createTime) || '-' }}</dd></div><div><dt>更新时间</dt><dd>{{ formatTime(detailItem.updateTime) || '-' }}</dd></div></dl>
       <div class="ui-detail-statement"><strong>动物与现场情况</strong><p>{{ detailItem.description || '未填写' }}</p></div>
       <div class="ui-detail-statement"><strong>管理员回复</strong><p>{{ detailItem.remark || '暂无回复' }}</p></div>
+      <div v-if="detailItem.resolutionNote" class="ui-detail-statement"><strong>最终处理结论</strong><p>{{ detailItem.resolutionNote }}</p></div>
       <div v-if="safeFileUrl(detailItem.pic)" class="ui-detail-statement"><strong>现场照片</strong><img class="ui-rescue-detail-photo" :src="safeFileUrl(detailItem.pic)" alt="救助请求现场照片"></div>
       <div class="ui-dialog-actions"><button class="ui-button is-dark" type="button" @click="closeDetail">关闭详情</button></div>
     </section>
@@ -91,6 +92,7 @@
           badgeClass: function (value) { return Number(value) === 0 ? 'is-pending' : Number(value) === 1 ? 'is-waiting' : Number(value) === 2 ? 'is-done' : 'is-closed'; },
           formatTime: function (value) { if (!value) return ''; var date = new Date(typeof value === 'string' ? value.replace(' ', 'T') : value); return isNaN(date.getTime()) ? String(value) : date.toLocaleString('zh-CN'); },
           safeFileUrl: function (flag) { var value = flag == null ? '' : String(flag); return /^[a-zA-Z0-9-]{1,64}$/.test(value) ? '/api/files/' + encodeURIComponent(value) : ''; },
+          animalUrl: function (id) { return './animal_detail.html?id=' + encodeURIComponent(id); },
           openDetail: function (item) { this.detailItem = item; this.$nextTick(function () { if (this.$refs.detailClose) this.$refs.detailClose.focus(); }); },
           closeDetail: function () { this.detailItem = null; }
         }

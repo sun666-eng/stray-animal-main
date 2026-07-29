@@ -158,7 +158,7 @@ public class AdoptServiceTest {
     }
 
     @Test
-    public void auditApproved_setsAnimalAdopted() {
+    public void auditApproved_reservesAnimalUntilHandover() {
         Animal animal = new Animal();
         animal.setId(1L);
         animal.setTstate(1);
@@ -168,18 +168,17 @@ public class AdoptServiceTest {
         existing.setUid(2L);
         existing.setVstate(0);
         when(adoptMapper.selectOne(any(), any(boolean.class))).thenReturn(existing);
-        when(adoptMapper.selectCount(any())).thenReturn(0L, 1L, 0L);
+        when(adoptMapper.selectCount(any())).thenReturn(0L, 0L, 1L);
         when(adoptMapper.update(any(Adopt.class), any())).thenReturn(1);
         when(animalService.lockState(1L)).thenReturn(1);
-        when(animalService.compareAndSetState(1L, 1, 2)).thenReturn(true);
+        when(animalService.compareAndSetState(1L, 1, 1)).thenReturn(true);
 
         boolean updated = adoptService.auditAdopt(1L, 2L, 1);
 
         assertTrue(updated);
         assertEquals(Integer.valueOf(1), animal.getTstate());
-        verify(animalService).compareAndSetState(1L, 1, 2);
-        // CAS 通过 + 驳回竞争 + enforceSingleApproved
-        verify(adoptMapper, org.mockito.Mockito.atLeast(2)).update(any(Adopt.class), any());
+        verify(animalService).compareAndSetState(1L, 1, 1);
+        verify(adoptMapper, org.mockito.Mockito.times(1)).update(any(Adopt.class), any());
     }
 
     @Test
@@ -227,7 +226,20 @@ public class AdoptServiceTest {
         when(adoptMapper.selectCount(any())).thenReturn(1L);
 
         CustomException ex = assertThrows(CustomException.class, () -> adoptService.auditAdopt(1L, 2L, 1));
-        assertEquals("400", ex.getCode());
+        assertEquals("409", ex.getCode());
+    }
+
+    @Test
+    public void controlledApprovalRejectsCompetingPendingApplicationsBeforeAnyStateChange() {
+        when(animalService.lockState(1L)).thenReturn(1);
+        when(adoptMapper.selectCount(any())).thenReturn(2L);
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> adoptService.auditSolePendingAdopt(1L, 2L));
+
+        assertEquals("409", ex.getCode());
+        verify(adoptMapper, never()).update(any(Adopt.class), any());
+        verify(adoptMapper, never()).selectOne(any(), any(boolean.class));
     }
 
     @Test

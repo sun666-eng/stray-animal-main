@@ -149,6 +149,214 @@ CREATE TABLE `t_help` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='救助咨询表';
 
 -- ----------------------------
+-- Table structure for `t_petcare_conversation`
+-- ----------------------------
+DROP TABLE IF EXISTS `t_petcare_conversation`;
+CREATE TABLE `t_petcare_conversation` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) NOT NULL COMMENT '登录用户ID',
+  `title` varchar(60) NOT NULL COMMENT '用户可修改的会话标题',
+  `preview` varchar(100) NOT NULL DEFAULT '' COMMENT '最近问题概括',
+  `turn_count` int NOT NULL DEFAULT 0 COMMENT '问答轮数',
+  `created_at` datetime(3) NOT NULL,
+  `updated_at` datetime(3) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_petcare_conversation_user` (`user_id`,`updated_at`,`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='照顾知识助手会话目录';
+
+-- ----------------------------
+-- Table structure for `t_petcare_chat`
+-- ----------------------------
+DROP TABLE IF EXISTS `t_petcare_chat`;
+CREATE TABLE `t_petcare_chat` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) NOT NULL COMMENT '登录用户ID',
+  `conversation_id` bigint(20) DEFAULT NULL COMMENT '所属会话ID',
+  `question` varchar(500) NOT NULL COMMENT '用户问题',
+  `answer` mediumtext NOT NULL COMMENT '助手最终回答',
+  `source` varchar(16) NOT NULL DEFAULT 'local' COMMENT 'ai或local',
+  `degrade_reason` varchar(500) NOT NULL DEFAULT '' COMMENT 'AI降级原因',
+  `topic` varchar(100) DEFAULT NULL COMMENT '知识主题',
+  `tools_json` text COMMENT '本轮调用工具名JSON',
+  `question_time` datetime(3) NOT NULL COMMENT '提问时间',
+  `answer_time` datetime(3) NOT NULL COMMENT '回答完成时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_petcare_user_time` (`user_id`,`id`),
+  KEY `idx_petcare_conversation` (`user_id`,`conversation_id`,`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='照顾知识助手个人聊天历史';
+
+-- ----------------------------
+-- Table structure for `t_petcare_ai_config`
+-- ----------------------------
+DROP TABLE IF EXISTS `t_petcare_ai_config`;
+CREATE TABLE `t_petcare_ai_config` (
+  `user_id` bigint(20) NOT NULL COMMENT '登录用户ID，一名用户一条配置',
+  `enabled` tinyint(1) NOT NULL DEFAULT 1 COMMENT '是否启用个人Agent',
+  `base_url` varchar(500) NOT NULL COMMENT 'OpenAI兼容API Base URL',
+  `model` varchar(120) NOT NULL COMMENT '模型名称',
+  `api_key_ciphertext` text NOT NULL COMMENT 'AES-GCM密文，禁止保存明文',
+  `connection_status` varchar(16) NOT NULL DEFAULT 'untested' COMMENT 'untested/connected/failed',
+  `last_test_message` varchar(500) NOT NULL DEFAULT '' COMMENT '最近连接摘要',
+  `last_tested_at` datetime(3) DEFAULT NULL COMMENT '最近真实连接时间',
+  `version` bigint(20) NOT NULL DEFAULT 1 COMMENT '配置乐观版本',
+  `created_at` datetime(3) NOT NULL,
+  `updated_at` datetime(3) NOT NULL,
+  PRIMARY KEY (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='照顾助手用户级加密API配置';
+
+DROP TABLE IF EXISTS `t_petcare_request`;
+CREATE TABLE `t_petcare_request` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) NOT NULL,
+  `request_id` varchar(64) NOT NULL,
+  `conversation_id` bigint(20) DEFAULT NULL,
+  `requested_conversation_id` bigint(20) DEFAULT NULL COMMENT '首次请求指定的会话ID，用于幂等载荷校验',
+  `requested_conversation_known` tinyint(1) DEFAULT NULL COMMENT 'v5标记：true=新请求，NULL=旧未知来源',
+  `question` varchar(500) NOT NULL,
+  `status` varchar(16) NOT NULL,
+  `answer` mediumtext DEFAULT NULL,
+  `source` varchar(16) DEFAULT NULL,
+  `degrade_reason` varchar(500) NOT NULL DEFAULT '',
+  `topic` varchar(100) DEFAULT NULL,
+  `tools_json` text,
+  `conversation_title` varchar(60) DEFAULT NULL,
+  `error_code` varchar(16) DEFAULT NULL,
+  `error_message` varchar(500) DEFAULT NULL,
+  `attempt_count` int NOT NULL DEFAULT 1,
+  `created_at` datetime(3) NOT NULL,
+  `updated_at` datetime(3) NOT NULL,
+  `completed_at` datetime(3) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_petcare_request_user` (`user_id`,`request_id`),
+  KEY `idx_petcare_request_status` (`status`,`updated_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='照顾助手幂等问答任务';
+
+-- ----------------------------
+-- Administrator AI Agent: platform configuration, conversations and audit
+-- ----------------------------
+DROP TABLE IF EXISTS `t_admin_agent_config`;
+CREATE TABLE `t_admin_agent_config` (
+  `id` tinyint NOT NULL,
+  `enabled` tinyint(1) NOT NULL DEFAULT 0,
+  `base_url` varchar(500) NOT NULL,
+  `model` varchar(120) NOT NULL,
+  `api_key_ciphertext` text NOT NULL,
+  `connection_status` varchar(16) NOT NULL DEFAULT 'untested',
+  `last_test_message` varchar(500) NOT NULL DEFAULT '',
+  `last_tested_at` datetime(3) DEFAULT NULL,
+  `version` bigint NOT NULL DEFAULT 1,
+  `created_at` datetime(3) NOT NULL,
+  `updated_at` datetime(3) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理员Agent平台级加密配置';
+
+DROP TABLE IF EXISTS `t_admin_agent_conversation`;
+CREATE TABLE `t_admin_agent_conversation` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `title` varchar(60) NOT NULL,
+  `preview` varchar(100) NOT NULL DEFAULT '',
+  `turn_count` int NOT NULL DEFAULT 0,
+  `created_at` datetime(3) NOT NULL,
+  `updated_at` datetime(3) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_admin_agent_conversation_user` (`user_id`,`updated_at`,`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理员Agent个人会话目录';
+
+DROP TABLE IF EXISTS `t_admin_agent_message`;
+CREATE TABLE `t_admin_agent_message` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `conversation_id` bigint NOT NULL,
+  `request_id` varchar(64) NOT NULL,
+  `question` varchar(800) NOT NULL,
+  `answer` mediumtext NOT NULL,
+  `tools_json` text DEFAULT NULL,
+  `created_at` datetime(3) NOT NULL,
+  `completed_at` datetime(3) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_admin_agent_request` (`user_id`,`request_id`),
+  KEY `idx_admin_agent_message_conversation` (`user_id`,`conversation_id`,`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理员Agent问答历史';
+
+DROP TABLE IF EXISTS `t_admin_agent_audit`;
+CREATE TABLE `t_admin_agent_audit` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `actor_id` bigint NOT NULL,
+  `event_type` varchar(40) NOT NULL,
+  `conversation_id` bigint DEFAULT NULL,
+  `request_id` varchar(64) NOT NULL DEFAULT '',
+  `tools_json` text DEFAULT NULL,
+  `outcome` varchar(16) NOT NULL,
+  `detail` varchar(1000) NOT NULL DEFAULT '',
+  `created_at` datetime(3) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_admin_agent_audit_actor` (`actor_id`,`created_at`,`id`),
+  KEY `idx_admin_agent_audit_request` (`request_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理员Agent安全审计';
+
+DROP TABLE IF EXISTS `t_admin_agent_adopt_draft`;
+CREATE TABLE `t_admin_agent_adopt_draft` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `actor_id` bigint NOT NULL,
+  `animal_id` bigint NOT NULL,
+  `applicant_id` bigint NOT NULL,
+  `request_id` varchar(64) NOT NULL,
+  `source_state` int NOT NULL DEFAULT 0,
+  `recommendation` varchar(24) NOT NULL,
+  `risk_level` varchar(12) NOT NULL,
+  `rationale` varchar(1200) NOT NULL,
+  `missing_info` varchar(800) NOT NULL,
+  `review_note` varchar(1200) NOT NULL,
+  `model` varchar(120) NOT NULL,
+  `status` varchar(16) NOT NULL DEFAULT 'draft',
+  `version` bigint NOT NULL DEFAULT 1,
+  `final_request_id` varchar(64) DEFAULT NULL,
+  `final_decision` varchar(12) DEFAULT NULL,
+  `override_reason` varchar(500) NOT NULL DEFAULT '',
+  `finalized_at` datetime(3) DEFAULT NULL,
+  `created_at` datetime(3) NOT NULL,
+  `updated_at` datetime(3) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_admin_agent_draft_application` (`actor_id`,`animal_id`,`applicant_id`),
+  UNIQUE KEY `uk_admin_agent_draft_request` (`actor_id`,`request_id`),
+  UNIQUE KEY `uk_admin_agent_draft_final_request` (`actor_id`,`final_request_id`),
+  KEY `idx_admin_agent_draft_actor` (`actor_id`,`status`,`updated_at`,`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='3A草稿与3B人工确认执行凭据';
+
+DROP TABLE IF EXISTS `t_admin_agent_automation_config`;
+CREATE TABLE `t_admin_agent_automation_config` (
+  `id` tinyint NOT NULL, `enabled` tinyint(1) NOT NULL DEFAULT 0,
+  `mode` varchar(16) NOT NULL DEFAULT 'shadow', `max_batch` int NOT NULL DEFAULT 3,
+  `version` bigint NOT NULL DEFAULT 1, `updated_by` bigint DEFAULT NULL,
+  `created_at` datetime(3) NOT NULL, `updated_at` datetime(3) NOT NULL, PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='3C受控自动审核开关';
+INSERT INTO `t_admin_agent_automation_config` VALUES (1,0,'shadow',3,1,NULL,NOW(3),NOW(3));
+
+DROP TABLE IF EXISTS `t_admin_agent_automation_run`;
+CREATE TABLE `t_admin_agent_automation_run` (
+  `id` bigint NOT NULL AUTO_INCREMENT, `actor_id` bigint NOT NULL, `request_id` varchar(64) NOT NULL,
+  `mode` varchar(16) NOT NULL, `status` varchar(16) NOT NULL, `candidate_count` int NOT NULL DEFAULT 0,
+  `shadow_count` int NOT NULL DEFAULT 0, `auto_approved_count` int NOT NULL DEFAULT 0,
+  `manual_count` int NOT NULL DEFAULT 0, `failed_count` int NOT NULL DEFAULT 0,
+  `detail` varchar(1000) NOT NULL DEFAULT '', `started_at` datetime(3) NOT NULL,
+  `completed_at` datetime(3) DEFAULT NULL, PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_admin_agent_automation_request` (`actor_id`,`request_id`),
+  KEY `idx_admin_agent_automation_status` (`status`,`started_at`,`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='3C自动审核运行批次';
+
+DROP TABLE IF EXISTS `t_admin_agent_automation_item`;
+CREATE TABLE `t_admin_agent_automation_item` (
+  `id` bigint NOT NULL AUTO_INCREMENT, `run_id` bigint NOT NULL, `animal_id` bigint NOT NULL,
+  `applicant_id` bigint NOT NULL, `recommendation` varchar(24) NOT NULL DEFAULT '',
+  `risk_level` varchar(12) NOT NULL DEFAULT '', `hard_gate_pass` tinyint(1) NOT NULL DEFAULT 0,
+  `missing_info` varchar(800) NOT NULL DEFAULT '', `rationale` varchar(1200) NOT NULL DEFAULT '',
+  `outcome` varchar(24) NOT NULL, `reason` varchar(500) NOT NULL DEFAULT '', `created_at` datetime(3) NOT NULL,
+  PRIMARY KEY (`id`), UNIQUE KEY `uk_admin_agent_automation_item` (`run_id`,`animal_id`,`applicant_id`),
+  KEY `idx_admin_agent_automation_item_run` (`run_id`,`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='3C逐条去隐私决策证据';
+
+-- ----------------------------
 -- Table structure for `t_permission`
 -- ----------------------------
 DROP TABLE IF EXISTS `t_permission`;
@@ -157,7 +365,7 @@ CREATE TABLE `t_permission` (
   `name` varchar(255) DEFAULT NULL COMMENT '名称',
   `description` varchar(255) DEFAULT NULL COMMENT '描述',
   `path` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '菜单路径',
-  `flag` varchar(10) DEFAULT NULL COMMENT '唯一标识',
+  `flag` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '唯一标识',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC COMMENT='权限菜单表';
 
@@ -181,6 +389,7 @@ INSERT INTO `t_permission` VALUES ('17', '资金公示管理', '管理资金收�
 INSERT INTO `t_permission` VALUES ('43', '动物浏览', '用户端浏览可领养动物', '/page/front/animal_browse.html', 'adopt_view');
 INSERT INTO `t_permission` VALUES ('44', '公告管理', '管理系统公告和活动通知', '/page/end/notice.html', 'notice');
 INSERT INTO `t_permission` VALUES ('46', '救助管理', '管理救助请求及回复', '/page/end/help.html', 'help');
+INSERT INTO `t_permission` VALUES ('47', 'AI管理助手', '使用管理员只读AI助手', '/page/end/admin_agent.html', 'admin_agent');
 
 -- ----------------------------
 -- Table structure for `t_proof`

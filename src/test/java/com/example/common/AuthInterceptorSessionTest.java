@@ -138,6 +138,53 @@ public class AuthInterceptorSessionTest {
     }
 
     @Test
+    public void personalPetCareConfig_isReachableForOrdinaryAuthenticatedUser() throws Exception {
+        User ordinary = userWithFlag("im");
+        when(userService.getById(9L)).thenReturn(ordinary);
+        when(userService.fillPermissions(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/petcare/config");
+        request.getSession(true).setAttribute("user", ordinary);
+
+        assertTrue(interceptor.preHandle(request, new MockHttpServletResponse(), new Object()));
+    }
+
+    @Test
+    public void adminAgentRequiresDedicatedPermissionForPageAndApi() throws Exception {
+        User deniedUser = userWithFlag("animal");
+        when(userService.getById(9L)).thenReturn(deniedUser);
+        when(userService.fillPermissions(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        MockHttpServletRequest denied = new MockHttpServletRequest("GET", "/api/admin-agent/status");
+        denied.getSession(true).setAttribute("user", deniedUser);
+        MockHttpServletResponse deniedResponse = new MockHttpServletResponse();
+        assertFalse(interceptor.preHandle(denied, deniedResponse, new Object()));
+        assertEquals(403, deniedResponse.getStatus());
+
+        User allowedUser = userWithFlag("admin_agent");
+        when(userService.getById(9L)).thenReturn(allowedUser);
+        authUserCache.invalidate(9L);
+        MockHttpServletRequest api = new MockHttpServletRequest("GET", "/api/admin-agent/status");
+        api.getSession(true).setAttribute("user", allowedUser);
+        assertTrue(interceptor.preHandle(api, new MockHttpServletResponse(), new Object()));
+
+        MockHttpServletRequest page = new MockHttpServletRequest("GET", "/page/end/admin_agent.html");
+        page.getSession(true).setAttribute("user", allowedUser);
+        assertTrue(interceptor.preHandle(page, new MockHttpServletResponse(), new Object()));
+    }
+
+    @Test
+    public void petCarePermissionPrefixUsesExactBoundary() throws Exception {
+        User ordinary = userWithFlag("im");
+        when(userService.getById(9L)).thenReturn(ordinary);
+        when(userService.fillPermissions(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/petcare-admin");
+        request.getSession(true).setAttribute("user", ordinary);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        assertFalse(interceptor.preHandle(request, response, new Object()));
+        assertEquals(403, response.getStatus());
+    }
+
+    @Test
     public void rescueAlias_grantsManagementButImDoesNot() throws Exception {
         User manager = userWithFlag("rescue");
         when(userService.getById(9L)).thenReturn(manager);

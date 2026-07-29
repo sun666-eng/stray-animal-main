@@ -1,6 +1,6 @@
 # 生产 profile：禁止默认开发行为；须配合环境变量启动
 # 启动：--spring.profiles.active=prod
-# 必填：JWT_SECRET（≥32 且非开发密钥）、DB_* 、建议 FILE_UPLOAD_DIR
+# 必填：JWT_SECRET、AI_CONFIG_ENCRYPTION_KEY（均至少32字节且相互独立）、DB_*、FILE_UPLOAD_DIR
 app:
   jwt:
     # 生产绝不允许开发密钥
@@ -8,6 +8,9 @@ app:
     secret: ${JWT_SECRET:}
   cors:
     allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:}
+  ai:
+    allow-loopback-personal-config: false
+    config-encryption-key: ${AI_CONFIG_ENCRYPTION_KEY:}
   data-fix:
     enabled: false
   schema-guard:
@@ -48,4 +51,8 @@ server:
 spring:
   datasource:
     # 生产建议开启 SSL（按云厂商调整）
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:test}?useUnicode=true&characterEncoding=utf-8&useSSL=${DB_USE_SSL:true}&serverTimezone=GMT%2b8
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:}?useUnicode=true&characterEncoding=utf-8&useSSL=${DB_USE_SSL:true}&serverTimezone=GMT%2b8&connectTimeout=5000&socketTimeout=60000
+
+# 覆盖 application.yml 的 user.home 开发回退；缺失时由 DeploymentProfileGuard 拒绝启动
+file:
+  upload-dir: ${FILE_UPLOAD_DIR:}

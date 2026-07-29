@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>义工审核 · 归途计划管理</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-  <link rel="stylesheet" href="../../css/product-ui.css?v=20260728">
-  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260728">
+  <link rel="stylesheet" href="../../css/product-ui.css?v=20260728c">
+  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260728e">
 </head>
 <body>
 <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
@@ -56,7 +56,7 @@
 
   <div v-if="detailItem" class="admin-dialog-backdrop" @click.self="closeDetail">
     <section class="admin-dialog admin-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
-      <div class="admin-dialog-head"><div><span>申请 #{{ detailItem.id }}</span><h2 id="detailTitle">{{ detailItem.name || '未填写姓名' }}</h2></div><button ref="detailClose" type="button" aria-label="关闭申请详情" @click="closeDetail">×</button></div>
+      <div class="admin-dialog-head"><div><span>申请 #{{ detailItem.id }}</span><h2 id="detailTitle">{{ detailItem.name || '未填写姓名' }}</h2></div><button class="admin-dialog-close" ref="detailClose" type="button" aria-label="关闭申请详情" @click="closeDetail" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true">×</span><span class="admin-dialog-close-text">关闭</span></button></div>
       <dl class="admin-detail-grid"><div><dt>审核状态</dt><dd><span class="ui-badge" :class="badgeClass(detailItem.vstate)">{{ stateText(detailItem.vstate) }}</span></dd></div><div><dt>年龄</dt><dd>{{ detailItem.age==null?'-':detailItem.age }}</dd></div><div><dt>联系电话</dt><dd>{{ detailItem.tel || '-' }}</dd></div><div><dt>电子邮箱</dt><dd>{{ detailItem.email || '-' }}</dd></div><div><dt>微信号</dt><dd>{{ detailItem.wechat || '-' }}</dd></div><div><dt>工作单位</dt><dd>{{ detailItem.company || '-' }}</dd></div><div><dt>现居地</dt><dd>{{ detailItem.location || '-' }}</dd></div><div><dt>可参与时间</dt><dd>{{ spareTime(detailItem.sparetime) }}</dd></div><div><dt>是否到过基地</dt><dd>{{ visitText(detailItem.isvisit) }}</dd></div></dl>
       <div class="admin-detail-statement"><strong>能力与参与意向</strong><p>{{ detailItem.moreability || '未填写' }}</p></div>
       <div v-if="detailItem.apic" class="admin-private-photo"><strong>本人免冠照</strong><img :src="fileUrl(detailItem.apic)" alt="申请人提交的免冠照"></div>
@@ -66,7 +66,7 @@
 
   <div v-if="auditItem" class="admin-dialog-backdrop" @click.self="cancelAudit">
     <section class="admin-dialog" role="dialog" aria-modal="true" aria-labelledby="auditTitle" aria-describedby="roleImpact">
-      <div class="admin-dialog-head"><div><span>申请 #{{ auditItem.id }}</span><h2 id="auditTitle">审核 {{ auditItem.name || '该申请' }}</h2></div><button type="button" aria-label="取消审核" @click="cancelAudit">×</button></div>
+      <div class="admin-dialog-head"><div><span>申请 #{{ auditItem.id }}</span><h2 id="auditTitle">审核 {{ auditItem.name || '该申请' }}</h2></div><button class="admin-dialog-close" type="button" aria-label="取消审核" @click="cancelAudit" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true">×</span><span class="admin-dialog-close-text">关闭</span></button></div>
       <fieldset class="admin-audit-options"><legend>选择目标状态</legend><label v-for="option in statusOptions" :key="option.value" :class="{'is-selected':auditState===option.value}"><input v-model.number="auditState" type="radio" name="auditState" :value="option.value"><span><strong>{{ option.label }}</strong><small>{{ option.note }}</small></span></label></fieldset>
       <div id="roleImpact" class="admin-role-warning" role="note"><strong>角色影响提示</strong><p>{{ roleImpactText }}</p></div>
       <label class="ui-checkbox admin-audit-check"><input ref="auditConfirm" v-model="impactAcknowledged" type="checkbox"> 我已核对申请资料，并理解系统将按配置处理账号角色影响。</label>
@@ -77,7 +77,7 @@
 </div>
 <script src="../../js/jquery.min.js"></script>
 <script src="../../js/auth-session.js?v=20260728"></script>
-<script src="../../js/admin-auth.js?v=20260728"></script>
+<script src="../../js/admin-auth.js?v=20260728a"></script>
 <script src="../../js/vue.min.js"></script>
 <script>
 (function () {
@@ -129,7 +129,7 @@
         created: function () { this.load(1); },
         methods: {
           avatarUrl: function (flag) { return AdminWorkspace.avatarUrl(flag); },
-          avatarFallback: function (event) { event.target.src = '/api/files/'; },
+          avatarFallback: function (event) { AdminWorkspace.avatarFallback(event); },
           logout: function () { AuthSession.logout(); },
           closeTopLayer: function () { if (this.auditItem) this.cancelAudit(); else if (this.detailItem) this.closeDetail(); else { this.mobileOpen = false; this.accountOpen = false; } },
           load: function (page) {

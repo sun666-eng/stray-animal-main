@@ -1,0 +1,27 @@
+{
+  "name": "stray-animal-main",
+  "version": "1.0.0",
+  "description": "本项目是一个基于 Web 的流浪动物救助与领养管理系统。救助组织可以通过系统管理用户、动物信息、领养申请、义工申请、救助请求、回访记录、公告公示和收支记录；普通用户可以浏览待领养动物、提交领养申请、提交义工申请、提交救助请求并查看相关公示信息。",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "playwright": "1.49.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sun666-eng/stray-animal-main.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/sun666-eng/stray-animal-main/issues"
+  },
+  "homepage": "https://github.com/sun666-eng/stray-animal-main#readme"
+}

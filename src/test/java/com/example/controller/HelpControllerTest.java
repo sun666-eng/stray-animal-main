@@ -2,7 +2,6 @@ package com.example.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.example.common.Result;
-import com.example.component.ChatMessagePublisher;
 import com.example.dto.ChatMessageDTO;
 import com.example.dto.ChatMessageRequest;
 import com.example.entity.Help;
@@ -27,15 +26,11 @@ class HelpControllerTest {
 
     private HelpController controller;
     private HelpService service;
-    private ChatMessagePublisher chatMessagePublisher;
-
     @BeforeEach
     void setUp() {
         controller = new HelpController();
         service = mock(HelpService.class);
-        chatMessagePublisher = mock(ChatMessagePublisher.class);
         ReflectionTestUtils.setField(controller, "helpService", service);
-        ReflectionTestUtils.setField(controller, "chatMessagePublisher", chatMessagePublisher);
         when(service.page(any(IPage.class), any())).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
@@ -52,7 +47,19 @@ class HelpControllerTest {
 
         assertEquals(Long.valueOf(8L), result.getData().getId());
         verify(service).submitChatMessage("hello", user);
-        verify(chatMessagePublisher).publish(canonical);
+    }
+
+    @Test
+    void chatHistoryContinuesToUseHttpServiceContract() {
+        ChatMessageDTO message = new ChatMessageDTO();
+        message.setId(9L);
+        when(service.getChatHistory()).thenReturn(Collections.singletonList(message));
+
+        Result<java.util.List<ChatMessageDTO>> result = controller.getChatHistory();
+
+        assertEquals("0", result.getCode());
+        assertEquals(Long.valueOf(9L), result.getData().get(0).getId());
+        verify(service).getChatHistory();
     }
 
     @Test

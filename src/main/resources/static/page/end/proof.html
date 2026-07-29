@@ -8,8 +8,8 @@
     />
     <title>领养材料审核 · 归途计划管理</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-    <link rel="stylesheet" href="../../css/product-ui.css?v=20260728" />
-    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260728" />
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260728c" />
+    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260728e" />
   </head>
   <body>
     <div id="authWait" class="admin-auth-wait" role="status">
@@ -305,7 +305,7 @@
               <span>材料 #{{ detailItem.id }}</span>
               <h2 id="proofDetail">{{ detailItem.ptitle }}</h2>
             </div>
-            <button type="button" @click="detailItem=null">关闭</button>
+            <button class="admin-dialog-close" type="button" @click="detailItem=null" title="关闭" aria-label="关闭凭证详情"><span class="admin-dialog-close-icon" aria-hidden="true">×</span><span class="admin-dialog-close-text">关闭</span></button>
           </div>
           <dl class="admin-detail-grid">
             <div>
@@ -323,7 +323,7 @@
           </dl>
           <div v-if="imageUrl(detailItem.ppic)" class="admin-private-photo">
             <strong>私有材料图片</strong
-            ><img :src="imageUrl(detailItem.ppic)" alt="领养材料" />
+            ><img :src="imageUrl(detailItem.ppic)" alt="领养材料" @error="contentImageFallback" />
           </div>
         </section>
       </div>
@@ -343,7 +343,7 @@
               <span>关系与审核状态只读</span>
               <h2 id="proofEdit">编辑材料 #{{ form.id }}</h2>
             </div>
-            <button type="button" @click="cancelEdit">关闭</button>
+            <button class="admin-dialog-close" type="button" @click="cancelEdit" title="关闭" aria-label="关闭凭证编辑"><span class="admin-dialog-close-icon" aria-hidden="true">×</span><span class="admin-dialog-close-text">关闭</span></button>
           </div>
           <form class="admin-edit-form" @submit.prevent="save">
             <div class="ui-form-field">
@@ -368,7 +368,7 @@
               /><small>替换或删除记录后，旧 flag 立即失效。</small>
             </div>
             <div v-if="imageUrl(form.ppic)" class="admin-upload-preview">
-              <img :src="imageUrl(form.ppic)" alt="材料图片" />
+              <img :src="imageUrl(form.ppic)" alt="材料图片" @error="contentImageFallback" />
             </div>
             <div
               v-if="editError"
@@ -417,6 +417,10 @@
             decisionKind==='delete'?'删除后关联图片立即失效。':'该操作将材料从待审核改为终态。'
             }}
           </p>
+          <div v-if="decisionKind==='audit'" class="ui-form-field" style="margin:0 24px 18px">
+            <label for="proofDecisionReason">审核说明</label>
+            <textarea id="proofDecisionReason" v-model.trim="decisionReason" maxlength="1000" :placeholder="decisionState===2?'请填写材料不通过的具体原因':'可填写核验说明'"></textarea>
+          </div>
           <div
             v-if="decisionError"
             class="admin-inline-message is-error"
@@ -446,7 +450,7 @@
     </div>
     <script src="../../js/jquery.min.js"></script>
     <script src="../../js/auth-session.js?v=20260728"></script>
-    <script src="../../js/admin-auth.js?v=20260728"></script>
+    <script src="../../js/admin-auth.js?v=20260728a"></script>
     <script src="../../js/vue.min.js"></script>
     <script>
       (function () {
@@ -488,6 +492,7 @@
                 decisionItem: null,
                 decisionKind: "",
                 decisionState: null,
+                decisionReason: "",
                 deciding: false,
                 decisionError: "",
               },
@@ -508,7 +513,11 @@
                   return AdminWorkspace.avatarUrl(f);
                 },
                 avatarFallback: function (e) {
-                  e.target.src = "/api/files/";
+                  AdminWorkspace.avatarFallback(e);
+                },
+                contentImageFallback: function (e) {
+                  e.target.onerror = null;
+                  e.target.src = "/prototype-assets/editorial-04.svg";
                 },
                 logout: function () {
                   AuthSession.logout();
@@ -688,32 +697,33 @@
                   this.decisionItem = i;
                   this.decisionKind = "audit";
                   this.decisionState = s;
+                  this.decisionReason = s === 1 ? "材料内容清晰且符合要求" : "";
                   this.decisionError = "";
                 },
                 askDelete: function (i) {
                   this.decisionItem = i;
                   this.decisionKind = "delete";
+                  this.decisionReason = "";
                   this.decisionError = "";
                 },
                 confirmDecision: function () {
                   var vm = this;
                   if (!vm.decisionItem || vm.deciding) return;
                   vm.deciding = true;
+                  if (vm.decisionKind === "audit" && Number(vm.decisionState) === 2 && String(vm.decisionReason||"").trim().length < 2) { vm.decisionError = "驳回材料时必须填写明确原因。"; vm.deciding = false; return; }
                   var url =
                     vm.decisionKind === "delete"
                       ? "/api/proof/" + encodeURIComponent(vm.decisionItem.id)
-                      : "/api/proof/audit/" +
-                        encodeURIComponent(vm.decisionItem.id) +
-                        "/" +
-                        vm.decisionState;
+                      : "/api/proof/" + encodeURIComponent(vm.decisionItem.id) + "/audit";
                   var type = vm.decisionKind === "delete" ? "DELETE" : "PUT";
-                  $.ajax({ url: url, type: type })
+                  $.ajax({ url: url, type: type, contentType:vm.decisionKind === "audit"?"application/json":undefined, data:vm.decisionKind === "audit"?JSON.stringify({state:vm.decisionState,reason:vm.decisionReason}):undefined })
                     .done(function (res) {
                       if (!res || res.code !== "0" || res.data !== true) {
                         vm.decisionError = (res && res.msg) || "操作失败。";
                         return;
                       }
                       vm.decisionItem = null;
+                      vm.decisionReason = "";
                       vm.messageType = "success";
                       vm.message = "材料记录已更新。";
                       vm.load(vm.pageNum);
