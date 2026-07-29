@@ -1,0 +1,861 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <title>运营中心 · 归途计划管理</title>
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260728c" />
+    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260728e" />
+    <style>
+      [v-cloak] {
+        display: none;
+      }
+      .ops-tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 0 0 28px;
+      }
+      .ops-tabs button {
+        border: 1px solid #ddd8d1;
+        background: #fff;
+        border-radius: 999px;
+        padding: 12px 20px;
+        font-weight: 700;
+      }
+      .ops-tabs button.is-active {
+        background: #111;
+        color: #fff;
+        border-color: #111;
+      }
+      .ops-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+      }
+      .ops-card {
+        border: 1px solid #e5e1db;
+        border-radius: 22px;
+        padding: 22px;
+        background: #fff;
+      }
+      .ops-card h3 {
+        margin: 8px 0;
+      }
+      .ops-card p {
+        color: #73736e;
+        line-height: 1.65;
+      }
+      .ops-meta {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        font-size: 13px;
+        color: #777;
+      }
+      .ops-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 18px;
+      }
+      .ops-form {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        padding: 22px;
+        border: 1px solid #e5e1db;
+        border-radius: 22px;
+        margin-bottom: 24px;
+      }
+      .ops-form .wide {
+        grid-column: 1/-1;
+      }
+      .ops-form label {
+        display: grid;
+        gap: 8px;
+        font-weight: 700;
+      }
+      .ops-form input,
+      .ops-form select,
+      .ops-form textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #d9d5cf;
+        border-radius: 12px;
+        font: inherit;
+      }
+      .ops-empty {
+        padding: 56px;
+        text-align: center;
+        border: 1px dashed #d8d3cc;
+        border-radius: 22px;
+        color: #777;
+      }
+      .ops-table {
+        overflow: auto;
+        border: 1px solid #e5e1db;
+        border-radius: 18px;
+      }
+      .ops-table table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 840px;
+      }
+      .ops-table th,
+      .ops-table td {
+        text-align: left;
+        padding: 14px;
+        border-bottom: 1px solid #eeeae5;
+      }
+      .ops-table th {
+        font-size: 12px;
+        text-transform: uppercase;
+        color: #777;
+      }
+      .ops-badge {
+        display: inline-flex;
+        border-radius: 99px;
+        padding: 5px 9px;
+        background: #f0efec;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .ops-badge.urgent {
+        background: #fff0ed;
+        color: #c7301a;
+      }
+      .ops-feedback {
+        padding: 12px 16px;
+        border-radius: 12px;
+        background: #eef8f2;
+        color: #23714a;
+        margin-bottom: 16px;
+      }
+      .ops-feedback.error {
+        background: #fff0ed;
+        color: #b52c1c;
+      }
+      @media (max-width: 900px) {
+        .ops-grid,
+        .ops-form {
+          grid-template-columns: 1fr;
+        }
+        .ops-form .wide {
+          grid-column: auto;
+        }
+        .admin-main {
+          padding-left: 18px;
+          padding-right: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="authWait" class="admin-auth-wait">正在验证登录状态...</div>
+    <div id="workspace" class="admin-shell" v-cloak>
+      <header class="ui-header admin-header">
+        <div class="ui-header-inner">
+          <a class="ui-brand" href="./index.html"
+            ><span class="ui-brand-mark">爪</span
+            ><span class="ui-brand-copy"
+              ><strong>归途计划</strong><small>RESCUE WORKSPACE</small></span
+            ></a
+          >
+          <nav class="ui-nav admin-desktop-nav">
+            <a href="./index.html">概览</a
+            ><a
+              v-for="item in menuItems"
+              :key="item.flag"
+              :class="{'is-active':item.flag==='operations'}"
+              :href="item.href"
+              >{{item.label}}</a
+            >
+          </nav>
+          <div class="ui-header-actions">
+            <div class="ui-account">
+              <button class="ui-account-trigger">{{user.username}}</button>
+            </div>
+          </div>
+        </div>
+      </header>
+      <main class="admin-main">
+        <section class="admin-hero">
+          <div>
+            <p class="admin-kicker">Operations loop</p>
+            <h1>统一运营中心</h1>
+            <p>
+              把分散的审核、救助、回访、义工服务和医疗档案汇成可分派、可追踪、可复核的工作流。
+            </p>
+          </div>
+          <div class="admin-hero-meta">
+            <span>开放待办</span><strong>{{summary.open||0}}</strong>
+          </div>
+        </section>
+        <div class="ops-tabs" role="tablist">
+          <button
+            v-for="item in tabs"
+            :key="item.key"
+            :class="{'is-active':tab===item.key}"
+            @click="tab=item.key;activate()"
+          >
+            {{item.label}}
+          </button>
+        </div>
+        <div
+          v-if="message"
+          class="ops-feedback"
+          :class="{error:messageError}"
+          :role="messageError?'alert':'status'"
+          aria-live="polite"
+        >
+          {{message}}
+        </div>
+
+        <section v-if="tab==='work'">
+          <div class="admin-section-head">
+            <div>
+              <h2>统一待办</h2>
+              <p>
+                系统从待审核领养、凭证、未结救助和逾期回访自动生成；关闭原业务后待办自动收口。
+              </p>
+            </div>
+            <button class="ui-button is-ghost" @click="loadWork">刷新</button>
+          </div>
+          <div v-if="loading" class="ops-empty">正在汇聚待办...</div>
+          <div v-else-if="!workItems.length" class="ops-empty">
+            当前没有开放待办。
+          </div>
+          <div v-else class="ops-grid">
+            <article v-for="item in workItems" :key="item.id" class="ops-card">
+              <div class="ops-meta">
+                <span class="ops-badge" :class="{urgent:item.priority>=2}"
+                  >{{typeText(item.business_type)}}</span
+                ><span>#{{item.business_id}}</span>
+              </div>
+              <h3>{{item.title}}</h3>
+              <p>
+                {{item.assignee_name ? '负责人：'+item.assignee_name :
+                '尚未分派负责人'}}<br />{{item.due_at ?
+                '截止：'+formatTime(item.due_at) : '无固定截止时间'}}
+              </p>
+              <div class="ops-actions">
+                <button
+                  class="ui-button is-ghost"
+                  @click="updateWork(item,1,item.priority)"
+                >
+                  标记处理中</button
+                ><button
+                  class="ui-button is-dark"
+                  @click="updateWork(item,2,item.priority)"
+                >
+                  完成待办</button
+                ><button
+                  v-if="item.priority<3"
+                  class="ui-button is-ghost"
+                  @click="updateWork(item,item.status,item.priority+1)"
+                >
+                  提高优先级
+                </button>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section v-if="tab==='tasks'">
+          <div class="admin-section-head">
+            <div>
+              <h2>义工任务</h2>
+              <p>
+                先发布，再由审核通过的义工报名；管理员确认指派后才能登记服务时长。
+              </p>
+            </div>
+          </div>
+          <form class="ops-form" @submit.prevent="createTask">
+            <label
+              >任务标题<input
+                v-model.trim="taskForm.title"
+                maxlength="120"
+                required /></label
+            ><label
+              >地点<input
+                v-model.trim="taskForm.location"
+                maxlength="255" /></label
+            ><label
+              >开始时间<input
+                v-model="taskForm.startAt"
+                type="datetime-local"
+                required /></label
+            ><label
+              >结束时间<input
+                v-model="taskForm.endAt"
+                type="datetime-local"
+                required /></label
+            ><label
+              >招募人数<input
+                v-model.number="taskForm.capacity"
+                type="number"
+                min="1"
+                max="500"
+                required /></label
+            ><label
+              >创建状态<select v-model.number="taskForm.status">
+                <option :value="1">直接发布</option>
+                <option :value="0">保存草稿</option>
+              </select></label
+            ><label class="wide"
+              >任务说明<textarea
+                v-model.trim="taskForm.description"
+                maxlength="2000"
+                rows="3"
+              ></textarea>
+            </label>
+            <div class="wide">
+              <button class="ui-button is-primary" :disabled="saving">
+                {{saving?'正在创建...':'创建任务'}}
+              </button>
+            </div>
+          </form>
+          <div v-if="loading" class="ops-empty">正在读取任务...</div>
+          <div v-else-if="!tasks.length" class="ops-empty">
+            还没有义工任务。
+          </div>
+          <div v-else class="ops-grid">
+            <article v-for="item in tasks" :key="item.id" class="ops-card">
+              <div class="ops-meta">
+                <span class="ops-badge">{{taskState(item.status)}}</span
+                ><span>{{item.signup_count}} / {{item.capacity}} 人</span>
+              </div>
+              <h3>{{item.title}}</h3>
+              <p>
+                {{item.location||'地点待定'}}<br />{{formatTime(item.start_at)}}
+                — {{formatTime(item.end_at)}}
+              </p>
+              <div class="ops-actions">
+                <button class="ui-button is-ghost" @click="openSignups(item)">
+                  报名管理</button
+                ><button
+                  v-if="item.status===0"
+                  class="ui-button is-dark"
+                  @click="setTaskState(item,1)"
+                >
+                  发布</button
+                ><button
+                  v-if="item.status===1"
+                  class="ui-button is-ghost"
+                  @click="setTaskState(item,2)"
+                >
+                  关闭招募
+                </button>
+              </div>
+            </article>
+          </div>
+          <div v-if="activeTask" class="ops-table" style="margin-top: 24px">
+            <table>
+              <thead>
+                <tr>
+                  <th>报名人</th>
+                  <th>状态</th>
+                  <th>申请说明</th>
+                  <th>服务记录</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="row in signups" :key="row.id">
+                  <td>{{row.username}}<br /><small>#{{row.user_id}}</small></td>
+                  <td>{{signupState(row.status)}}</td>
+                  <td>{{row.note||'-'}}</td>
+                  <td>
+                    {{row.service_minutes ? row.service_minutes+' 分钟' : '-'}}
+                  </td>
+                  <td>
+                    <div class="ops-actions">
+                      <button v-if="row.status===0" @click="assign(row,true)">
+                        确认</button
+                      ><button v-if="row.status===0" @click="assign(row,false)">
+                        驳回</button
+                      ><button v-if="row.status===1" @click="complete(row)">
+                        登记完成
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section v-if="tab==='medical'">
+          <div class="admin-section-head">
+            <div>
+              <h2>动物医疗档案</h2>
+              <p>
+                记录体检、疫苗、驱虫、治疗与手术；可见范围决定普通访客、正式领养人或仅管理员可查看。
+              </p>
+            </div>
+          </div>
+          <form class="ops-form" @submit.prevent="createMedical">
+            <label
+              >动物编号<input
+                v-model.number="medicalForm.animalId"
+                type="number"
+                min="1"
+                required /></label
+            ><label
+              >记录类型<select v-model="medicalForm.recordType">
+                <option value="exam">体检</option>
+                <option value="vaccine">疫苗</option>
+                <option value="deworm">驱虫</option>
+                <option value="treatment">治疗</option>
+                <option value="surgery">手术</option>
+                <option value="other">其他</option>
+              </select></label
+            ><label
+              >记录标题<input
+                v-model.trim="medicalForm.title"
+                maxlength="120"
+                required /></label
+            ><label
+              >发生时间<input
+                v-model="medicalForm.occurredAt"
+                type="datetime-local"
+                required /></label
+            ><label
+              >可见范围<select v-model="medicalForm.visibility">
+                <option value="public">公开</option>
+                <option value="owner">仅正式领养人和管理员</option>
+                <option value="admin">仅管理员</option>
+              </select></label
+            ><label class="wide"
+              >详情<textarea
+                v-model.trim="medicalForm.content"
+                maxlength="2000"
+                rows="4"
+              ></textarea>
+            </label>
+            <div class="wide">
+              <button class="ui-button is-primary" :disabled="saving">
+                保存医疗记录
+              </button>
+            </div>
+          </form>
+          <form class="ui-toolbar" @submit.prevent="loadMedical">
+            <label class="ui-search"
+              >查询动物编号<input
+                v-model.number="medicalAnimalId"
+                type="number"
+                min="1" /></label
+            ><button class="ui-button is-dark">查看档案</button>
+          </form>
+          <div
+            v-if="medicalRecords.length"
+            class="ops-grid"
+            style="margin-top: 24px"
+          >
+            <article
+              v-for="item in medicalRecords"
+              :key="item.id"
+              class="ops-card"
+            >
+              <div class="ops-meta">
+                <span class="ops-badge">{{medicalType(item.record_type)}}</span
+                ><span>{{item.visibility}}</span>
+              </div>
+              <h3>{{item.title}}</h3>
+              <p>{{item.content||'无补充说明'}}</p>
+              <small>{{formatTime(item.occurred_at)}}</small>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="../../js/jquery.min.js"></script>
+    <script src="../../js/auth-session.js?v=20260728"></script>
+    <script src="../../js/admin-auth.js?v=20260729"></script>
+    <script src="../../js/vue.min.js"></script>
+    <script>
+      (function () {
+        AuthSession.bootstrap({
+          requireAuth: true,
+          allowCachedOnNetworkError: false,
+          onDone: function (ok, user) {
+            if (!ok || !user) return;
+            var flags = [
+              "adopt",
+              "proof",
+              "visit",
+              "volunteer",
+              "animal",
+              "account",
+              "help",
+              "rescue",
+            ];
+            if (
+              !flags.some(function (f) {
+                return AdminWorkspace.hasFlag(user, f);
+              })
+            ) {
+              location.replace("./index.html?error=forbidden");
+              return;
+            }
+            document.getElementById("authWait").hidden = true;
+            new Vue({
+              el: "#workspace",
+              data: {
+                user: user,
+                menuItems: AdminWorkspace.navigation(user.permission),
+                tab: "work",
+                tabs: [
+                  { key: "work", label: "统一待办" },
+                  { key: "tasks", label: "义工任务" },
+                  { key: "medical", label: "医疗档案" },
+                ],
+                loading: false,
+                saving: false,
+                message: "",
+                messageError: false,
+                summary: {},
+                workItems: [],
+                tasks: [],
+                activeTask: null,
+                signups: [],
+                medicalAnimalId: null,
+                medicalRecords: [],
+                taskForm: {
+                  title: "",
+                  location: "",
+                  startAt: "",
+                  endAt: "",
+                  capacity: 5,
+                  status: 1,
+                  description: "",
+                },
+                medicalForm: {
+                  animalId: null,
+                  recordType: "exam",
+                  title: "",
+                  occurredAt: "",
+                  visibility: "public",
+                  content: "",
+                },
+              },
+              created: function () {
+                this.loadWork();
+              },
+              methods: {
+                request: function (options) {
+                  return $.ajax(options);
+                },
+                notify: function (text, error) {
+                  this.message = text;
+                  this.messageError = !!error;
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                },
+                activate: function () {
+                  if (this.tab === "work") this.loadWork();
+                  if (this.tab === "tasks") this.loadTasks();
+                },
+                loadWork: function () {
+                  var vm = this;
+                  vm.loading = true;
+                  $.when(
+                    this.request({ url: "/api/operations/admin/work-items" }),
+                    this.request({
+                      url: "/api/operations/admin/work-items/summary",
+                    }),
+                  )
+                    .done(function (a, b) {
+                      vm.workItems = a[0].data || [];
+                      vm.summary = b[0].data || {};
+                    })
+                    .fail(function (x) {
+                      vm.notify(
+                        (x.responseJSON && x.responseJSON.msg) ||
+                          "待办加载失败",
+                        true,
+                      );
+                    })
+                    .always(function () {
+                      vm.loading = false;
+                    });
+                },
+                updateWork: function (item, status, priority) {
+                  var vm = this;
+                  this.request({
+                    url: "/api/operations/admin/work-items/" + item.id,
+                    type: "PUT",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                      status: status,
+                      priority: priority,
+                      assigneeId: item.assignee_id,
+                      expectedVersion: item.version,
+                    }),
+                  })
+                    .done(function (r) {
+                      if (r.code === "0") vm.loadWork();
+                      else vm.notify(r.msg, true);
+                    })
+                    .fail(function (x) {
+                      vm.notify(
+                        (x.responseJSON && x.responseJSON.msg) || "更新失败",
+                        true,
+                      );
+                    });
+                },
+                loadTasks: function () {
+                  var vm = this;
+                  vm.loading = true;
+                  this.request({
+                    url: "/api/operations/admin/volunteer-tasks",
+                  })
+                    .done(function (r) {
+                      vm.tasks = r.data || [];
+                    })
+                    .fail(function (x) {
+                      vm.notify(
+                        (x.responseJSON && x.responseJSON.msg) ||
+                          "任务加载失败",
+                        true,
+                      );
+                    })
+                    .always(function () {
+                      vm.loading = false;
+                    });
+                },
+                createTask: function () {
+                  var vm = this;
+                  vm.saving = true;
+                  this.request({
+                    url: "/api/operations/admin/volunteer-tasks",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(this.taskForm),
+                  })
+                    .done(function (r) {
+                      if (r.code === "0") {
+                        vm.notify("任务已创建");
+                        vm.taskForm = {
+                          title: "",
+                          location: "",
+                          startAt: "",
+                          endAt: "",
+                          capacity: 5,
+                          status: 1,
+                          description: "",
+                        };
+                        vm.loadTasks();
+                      } else vm.notify(r.msg, true);
+                    })
+                    .fail(function (x) {
+                      vm.notify(
+                        (x.responseJSON && x.responseJSON.msg) || "创建失败",
+                        true,
+                      );
+                    })
+                    .always(function () {
+                      vm.saving = false;
+                    });
+                },
+                setTaskState: function (item, status) {
+                  var vm = this;
+                  this.request({
+                    url:
+                      "/api/operations/admin/volunteer-tasks/" +
+                      item.id +
+                      "/status",
+                    type: "PUT",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                      status: status,
+                      expectedVersion: item.version,
+                    }),
+                  })
+                    .done(function (r) {
+                      if (r.code === "0") vm.loadTasks();
+                      else vm.notify(r.msg, true);
+                    })
+                    .fail(function (x) {
+                      vm.notify(
+                        (x.responseJSON && x.responseJSON.msg) ||
+                          "状态更新失败",
+                        true,
+                      );
+                    });
+                },
+                openSignups: function (item) {
+                  var vm = this;
+                  this.activeTask = item;
+                  this.request({
+                    url:
+                      "/api/operations/admin/volunteer-tasks/" +
+                      item.id +
+                      "/signups",
+                  })
+                    .done(function (r) {
+                      vm.signups = r.data || [];
+                    })
+                    .fail(function (x) {
+                      vm.notify(
+                        (x.responseJSON && x.responseJSON.msg) ||
+                          "报名加载失败",
+                        true,
+                      );
+                    });
+                },
+                assign: function (row, accepted) {
+                  var vm = this;
+                  this.request({
+                    url:
+                      "/api/operations/admin/volunteer-signups/" +
+                      row.id +
+                      "/assign",
+                    type: "PUT",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                      accepted: accepted,
+                      expectedVersion: row.version,
+                    }),
+                  })
+                    .done(function (r) {
+                      if (r.code === "0") vm.openSignups(vm.activeTask);
+                      else vm.notify(r.msg, true);
+                    })
+                    .fail(function (x) {
+                      vm.notify(
+                        (x.responseJSON && x.responseJSON.msg) ||
+                          "报名审核失败",
+                        true,
+                      );
+                    });
+                },
+                complete: function (row) {
+                  var minutes = prompt("请输入实际服务分钟数", "120");
+                  if (!minutes) return;
+                  var summary =
+                    prompt("请输入服务内容摘要", "已完成现场服务") || "";
+                  var vm = this;
+                  this.request({
+                    url:
+                      "/api/operations/admin/volunteer-signups/" +
+                      row.id +
+                      "/complete",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                      expectedVersion: row.version,
+                      serviceMinutes: Number(minutes),
+                      summary: summary,
+                    }),
+                  })
+                    .done(function (r) {
+                      if (r.code === "0") vm.openSignups(vm.activeTask);
+                      else vm.notify(r.msg, true);
+                    })
+                    .fail(function (x) {
+                      vm.notify(
+                        (x.responseJSON && x.responseJSON.msg) ||
+                          "服务登记失败",
+                        true,
+                      );
+                    });
+                },
+                createMedical: function () {
+                  var vm = this;
+                  vm.saving = true;
+                  this.request({
+                    url:
+                      "/api/operations/admin/animals/" +
+                      this.medicalForm.animalId +
+                      "/medical",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(this.medicalForm),
+                  })
+                    .done(function (r) {
+                      if (r.code === "0") {
+                        vm.notify("医疗记录已保存");
+                        vm.medicalAnimalId = vm.medicalForm.animalId;
+                        vm.loadMedical();
+                      } else vm.notify(r.msg, true);
+                    })
+                    .fail(function (x) {
+                      vm.notify(
+                        (x.responseJSON && x.responseJSON.msg) || "保存失败",
+                        true,
+                      );
+                    })
+                    .always(function () {
+                      vm.saving = false;
+                    });
+                },
+                loadMedical: function () {
+                  var vm = this;
+                  if (!this.medicalAnimalId) return;
+                  this.request({
+                    url:
+                      "/api/operations/animals/" +
+                      this.medicalAnimalId +
+                      "/medical",
+                  })
+                    .done(function (r) {
+                      vm.medicalRecords = r.data || [];
+                    })
+                    .fail(function (x) {
+                      vm.notify(
+                        (x.responseJSON && x.responseJSON.msg) ||
+                          "档案加载失败",
+                        true,
+                      );
+                    });
+                },
+                taskState: function (v) {
+                  return (
+                    ["草稿", "招募中", "已关闭", "已取消"][Number(v)] || "未知"
+                  );
+                },
+                signupState: function (v) {
+                  return (
+                    ["待确认", "已指派", "已完成", "已撤回", "未通过"][
+                      Number(v)
+                    ] || "未知"
+                  );
+                },
+                typeText: function (v) {
+                  return (
+                    {
+                      adopt: "领养",
+                      proof: "凭证",
+                      rescue: "救助",
+                      visit_plan: "回访",
+                    }[v] || v
+                  );
+                },
+                medicalType: function (v) {
+                  return (
+                    {
+                      exam: "体检",
+                      vaccine: "疫苗",
+                      deworm: "驱虫",
+                      treatment: "治疗",
+                      surgery: "手术",
+                      other: "其他",
+                    }[v] || v
+                  );
+                },
+                formatTime: function (v) {
+                  if (!v) return "-";
+                  return String(v).replace("T", " ").slice(0, 16);
+                },
+              },
+            });
+          },
+        });
+      })();
+    </script>
+  </body>
+</html>

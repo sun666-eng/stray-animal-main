@@ -1,4 +1,4 @@
--- Schema contract: 2026.07.29-workflow-operations-v11.
+-- Schema contract: 2026.07.29-operations-p2-v12.
 -- P0 业务闭环迁移：执行前必须选择业务库并完成备份。脚本不删除业务行。
 
 SET @current_db := DATABASE();
@@ -110,5 +110,5 @@ UPDATE t_animal a SET a.tstate=CASE
   ELSE 0 END;
 
 INSERT INTO app_schema_meta(meta_key,meta_value)
-VALUES('schema_version','2026.07.29-workflow-operations-v11')
+VALUES('schema_version','2026.07.29-operations-p2-v12')
 ON DUPLICATE KEY UPDATE meta_value=VALUES(meta_value);

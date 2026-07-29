@@ -156,3 +156,8 @@ app:
   volunteer:
     # 义工审核的派生角色同步：4=认证义工（默认），0=仅审状态且不写角色；其他正数拒绝审核。
     auto-grant-role-id: ${VOLUNTEER_ROLE_ID:4}
+  notification:
+    external:
+      # P2 默认关闭；开启后只写可靠 outbox，供应商消费者确认送达后才可更新为已发送。
+      email-enabled: ${NOTIFICATION_EMAIL_ENABLED:false}
+      sms-enabled: ${NOTIFICATION_SMS_ENABLED:false}

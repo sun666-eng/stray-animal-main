@@ -14,11 +14,12 @@
     notice: Object.freeze({ label: '公告管理', href: '/page/end/notice.html' }),
     help: Object.freeze({ label: '救助咨询', href: '/page/end/help.html' }),
     rescue: Object.freeze({ label: '救助处理', href: '/page/end/help.html' }),
-    admin_agent: Object.freeze({ label: 'AI 管理助手', href: '/page/end/admin_agent.html' })
+    admin_agent: Object.freeze({ label: 'AI 管理助手', href: '/page/end/admin_agent.html' }),
+    operations: Object.freeze({ label: '运营中心', href: '/page/end/operations.html' })
   });
   var ROUTE_ORDER = Object.freeze([
     'user', 'role', 'permission', 'animal', 'adopt', 'proof', 'visit',
-    'volunteer', 'account', 'notice', 'help', 'rescue', 'admin_agent'
+    'operations', 'volunteer', 'account', 'notice', 'help', 'rescue', 'admin_agent'
   ]);
   var AVATAR_PLACEHOLDER = '/prototype-assets/editorial-04.svg';
 
@@ -34,6 +35,7 @@
 
   function navigation(permissions) {
     var flags = permissionFlags(permissions);
+    flags.operations = ['adopt','proof','visit','volunteer','animal','account','help','rescue'].some(function (flag) { return !!flags[flag]; });
     var seenHrefs = Object.create(null);
     return ROUTE_ORDER.filter(function (flag) {
       return flags[flag];

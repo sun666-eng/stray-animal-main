@@ -29,6 +29,8 @@ $pages = @(
     @{ Path = "page/front/my_visit.html"; Public = $false; Form = $false },
     @{ Path = "page/front/volunteer_apply.html"; Public = $false; Form = $true },
     @{ Path = "page/front/my_volunteer.html"; Public = $false; Form = $false },
+    @{ Path = "page/front/volunteer_tasks.html"; Public = $false; Form = $false },
+    @{ Path = "page/front/favorites.html"; Public = $false; Form = $false },
     @{ Path = "page/front/rescue_apply.html"; Public = $false; Form = $true },
     @{ Path = "page/front/my_rescue.html"; Public = $false; Form = $false },
     @{ Path = "page/front/pet_care.html"; Public = $false; Form = $true },
@@ -46,6 +48,7 @@ $pages = @(
     @{ Path = "page/end/proof.html"; Public = $false; Form = $true; Workspace = $true }
     @{ Path = "page/end/visit.html"; Public = $false; Form = $true; Workspace = $true }
     @{ Path = "page/end/admin_agent.html"; Public = $false; Form = $true; Workspace = $true }
+    @{ Path = "page/end/operations.html"; Public = $false; Form = $true; Workspace = $true }
 )
 
 $legacyPages = @(
@@ -116,7 +119,11 @@ foreach ($page in $pages) {
     if (-not $page.Public) {
         Assert-True ($html -match 'AuthSession\.bootstrap\s*\(\s*\{\s*requireAuth\s*:\s*true') "$($page.Path): authoritative protected-page bootstrap"
         Assert-True ($html -notmatch 'sessionStorage\.getItem\s*\(\s*["'']user') "$($page.Path): no direct trust in cached identity"
-        Assert-True ($html -notmatch 'JSON\.stringify\s*\(\s*\{[^}]*\b(uid|uname|aname|apic|vstate|puid|pstatus|status)\s*:') "$($page.Path): write payload excludes server-owned fields"
+        if ($page.Path -eq "page/end/operations.html") {
+            Assert-True ($html -notmatch 'JSON\.stringify\s*\(\s*\{[^}]*\b(userId|actorId|createdBy|completedAt)\s*:') "$($page.Path): workflow writes exclude identity and audit fields"
+        } else {
+            Assert-True ($html -notmatch 'JSON\.stringify\s*\(\s*\{[^}]*\b(uid|uname|aname|apic|vstate|puid|pstatus|status)\s*:') "$($page.Path): write payload excludes server-owned fields"
+        }
     }
 }
 
@@ -307,8 +314,8 @@ Assert-True ($noticePayload -match 'title:\s*this\.form\.title' -and $noticePayl
 Assert-True ($adminNoticeHtml -notmatch '(id|v-model)="[^"]*(date|time|draft|category|author|html)[^"]*"|发布日期输入|发布时间输入|定时发布按钮|草稿箱|分类管理|作者字段|v-html|tinymce') "admin notice: no fake date, draft, category, author, or rich HTML controls"
 Assert-True ($adminNoticeHtml -match 'admin-notice-cards[\s\S]*?@click="askDelete\(item\)"' -and $adminNoticeHtml -match 'res\.code\s*!==\s*"0"\s*\|\|\s*res\.data\s*!==\s*true') "admin notice: mobile delete parity and Boolean mutation success are enforced"
 Assert-True ($adminAccountHtml -match "url:\s*['`"]\/api\/account\/page['`"][\s\S]*?pageSize:\s*vm\.pageSize" -and $adminAccountHtml -match "url:\s*['`"]\/api\/account\/stats\/by-label['`"]" -and $adminAccountHtml -notmatch "url:\s*['`"]\/api\/account['`"]\s*,\s*type:\s*['`"]GET['`"]") "admin account: bounded records and aggregate-only whole-dataset totals"
-$accountPayload = [regex]::Match($adminAccountHtml, 'accountPayload:\s*function\s*\(\)[\s\S]*?save:\s*function').Value
-Assert-True ($accountPayload -match 'alabel:\s*this\.form\.alabel' -and $accountPayload -notmatch 'auname\s*:' -and $accountPayload -match 'avalue:\s*String\(this\.form\.avalue\)' -and $accountPayload -match 'adescribe:\s*this\.form\.adescribe' -and $accountPayload -notmatch '\b(id|date|time|currency|ledger|balance|income|expense)\s*:' -and $adminAccountHtml -match 'type:\s*["'']POST["'']' -and $adminAccountHtml -notmatch 'type:\s*vm\.form\.id\s*\?\s*["'']PUT' -and $adminAccountHtml -match '历史记录不可编辑' -and $adminAccountHtml -match '历史记录不可物理删除' -and $adminAccountHtml -match 'decimal-money\.js' -and $adminAccountHtml -match 'DecimalMoney\.format' -and $adminAccountHtml -notmatch '(Number|parseFloat)\([^\)]*avalue|avalue[^\r\n;]*\.toFixed') "admin account: append-only exact decimal payload derives handler server-side and rejects history mutation"
+$accountPayload = [regex]::Match($adminAccountHtml, 'accountPayload:\s*function\s*\([^)]*\)[\s\S]*?save:\s*function').Value
+Assert-True ($accountPayload -match 'alabel:\s*this\.form\.alabel' -and $accountPayload -notmatch 'auname\s*:' -and $accountPayload -match 'avalue:\s*String\(this\.form\.avalue\)' -and $accountPayload -match 'adescribe:\s*this\.form\.adescribe' -and $accountPayload -match 'occurredAt:' -and $accountPayload -match 'businessType:' -and $accountPayload -notmatch '\b(id|currency|ledger|balance|income|expense|createdBy|reversalOf)\s*:' -and $adminAccountHtml -match 'type:\s*["'']POST["'']' -and $adminAccountHtml -notmatch 'type:\s*vm\.form\.id\s*\?\s*["'']PUT' -and $adminAccountHtml -match '历史记录不可编辑' -and $adminAccountHtml -match '历史记录不可物理删除' -and $adminAccountHtml -match 'decimal-money\.js' -and $adminAccountHtml -match 'DecimalMoney\.format' -and $adminAccountHtml -notmatch '(Number|parseFloat)\([^\)]*avalue|avalue[^\r\n;]*\.toFixed') "admin account: append-only exact decimal and business-association payload derives handler server-side"
 Assert-True ($adminAccountHtml -match 'res\.code\s*!==\s*"0"\s*\|\|\s*res\.data\s*!==\s*true') "admin account: append success requires the exact Boolean API result"
 Assert-True ($adminAccountHtml -match '正数表示收入，负数表示支出' -and $adminAccountHtml -match '完整数据集|全量汇总' -and $adminAccountHtml -notmatch '(id|v-model)="[^"]*(date|time|currency|ledger)[^"]*"|交易日期输入|发生日期输入|币种选择|人民币金额|CNY|账本编号|总账') "admin account: signed semantics and whole-dataset totals without fake ledger controls or claims"
 Assert-True ($adminWorkspaceCss -match '@media\s*\(max-width:\s*960px\)[\s\S]*?\.admin-record-table\s*\{\s*display:\s*none' -and $adminWorkspaceCss -match '\.admin-record-cards\s*\{\s*display:\s*grid') "batch 6 admin: desktop tables become mobile cards"
@@ -353,7 +360,7 @@ Assert-True ($draftFinalizeBlock -match 'requestId:\s*vm\.aiFinalizeRequestId' -
 Assert-True ($draftServiceJava -match '@Transactional[\s\S]*?finalizeDraft' -and $draftServiceJava -match 'adoptService\.transition' -and $draftServiceJava -match 'drafts\.markFinalized' -and $draftServiceJava.IndexOf('adoptService.transition') -lt $draftServiceJava.IndexOf('drafts.markFinalized')) "admin adopt 3B: workflow state machine and execution credential share one transaction"
 Assert-True ($draftServiceJava -match 'requireDraftPermission\(actor\)' -and $draftServiceJava -match 'reviewedApplication' -and $draftServiceJava -match 'acknowledgeConsequences' -and $draftServiceJava -notmatch 'client\.generateAdoptionDraft[\s\S]{0,800}finalizeDraft') "admin adopt 3B: permissions and human acknowledgements precede execution without an AI write call"
 Assert-True ($draftRepositoryJava -match "status='executed'" -and $draftRepositoryJava -match 'final_request_id' -and $draftRepositoryJava -match 'expectedVersion' -and $adminAgentControllerJava -match '/adoption-drafts/\{id\}/finalize') "admin adopt 3B: executed drafts are versioned, idempotent, and exposed through a narrow endpoint"
-Assert-True ($schemaGuardJava -match 'workflow-operations-v11' -and $schemaGuardJava -match 'uk_admin_agent_draft_final_request' -and $schemaGuardJava -match 'override_reason') "admin adopt 3B: current schema preserves unique execution requests and human override evidence"
+Assert-True ($schemaGuardJava -match 'operations-p2-v12' -and $schemaGuardJava -match 'uk_admin_agent_draft_final_request' -and $schemaGuardJava -match 'override_reason') "admin adopt 3B: current schema preserves unique execution requests and human override evidence"
 $automationServiceJava = Read-Utf8 (Join-Path $root "src/main/java/com/example/service/AdminAgentAutomationService.java")
 $automationExecutorJava = Read-Utf8 (Join-Path $root "src/main/java/com/example/service/AdminAgentAutomationExecutor.java")
 $automationPolicyJava = Read-Utf8 (Join-Path $root "src/main/java/com/example/service/AdminAgentAutomationPolicy.java")

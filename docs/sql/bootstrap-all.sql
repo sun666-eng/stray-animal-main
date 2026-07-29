@@ -1,5 +1,5 @@
 -- =============================================================================
--- 闭环结构唯一手工入口（与 SchemaGuard 契约 SCHEMA_VERSION=2026.07.29-workflow-operations-v11 对齐）
+-- 闭环结构唯一手工入口（与 SchemaGuard 契约 SCHEMA_VERSION=2026.07.29-operations-p2-v12 对齐）
 -- 新库：可先导 test.sql（已含闭环列），再可选执行本脚本（幂等）
 -- 旧库：本脚本只补齐结构；历史业务图片元数据必须按 file-asset-migrate-RUNBOOK 执行迁移
 -- 调用方必须先选择目标库（mysql client: USE your_db; 或 -D your_db），禁止脚本内硬编码库名。
@@ -618,5 +618,7 @@ INSERT INTO t_permission (name, description, path, flag)
 SELECT 'AI管理助手', '使用管理员只读AI助手', '/page/end/admin_agent.html', 'admin_agent'
 WHERE NOT EXISTS (SELECT 1 FROM t_permission WHERE flag = 'admin_agent');
 
-INSERT INTO app_schema_meta (meta_key, meta_value) VALUES ('schema_version', '2026.07.29-workflow-operations-v11')
+-- P1/P2 运营表的完整可重复迁移见同目录 2026-07-29-operations-p1-p2.sql；
+-- SchemaGuard 在应用启动时以相同 DDL 检查并补齐，避免旧库漏跑增量脚本。
+INSERT INTO app_schema_meta (meta_key, meta_value) VALUES ('schema_version', '2026.07.29-operations-p2-v12')
   ON DUPLICATE KEY UPDATE meta_value = VALUES(meta_value);

@@ -8,19 +8,74 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+import com.example.entity.User;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import jakarta.annotation.Resource;
 
 @Service
 public class AccountService extends ServiceImpl<AccountMapper, Account> {
 
     private static final BigDecimal MAX_ABSOLUTE_AMOUNT = new BigDecimal("1000000000.00");
+    private static final Set<String> CATEGORIES = new HashSet<>(Arrays.asList(
+            "donation", "medical", "food", "rescue", "adoption", "operations", "other"));
+    private static final Set<String> BUSINESS_TYPES = new HashSet<>(Arrays.asList(
+            "animal", "rescue", "adopt", "proof", "volunteer_task", "other"));
+
+    @Resource
+    private FileAssetService fileAssetService;
 
     @Transactional
-    public boolean saveAccount(Account account, String authenticatedUsername) {
+    public boolean saveAccount(Account account, User actor) {
         validate(account);
         account.setId(null);
-        account.setAuname(required(authenticatedUsername, 100, "经手人"));
+        if (actor == null || actor.getId() == null) throw new CustomException("401", "登录状态无效");
+        account.setAuname(required(actor.getUsername(), 100, "经手人"));
+        account.setCreatedBy(actor.getId());
+        account.setReversalOf(null);
+        if (account.getOccurredAt() == null) account.setOccurredAt(new Date());
         if (!save(account)) throw new CustomException("500", "资金记录保存失败");
+        if (account.getReceiptFlag() != null && !account.getReceiptFlag().trim().isEmpty()) {
+            fileAssetService.bindToBusiness(actor, account.getReceiptFlag(), "account",
+                    "account", account.getId(), false);
+        }
         return true;
+    }
+
+    /** 兼容既有调用契约；Controller 会先覆盖 createdBy，禁止请求体伪造经手人。 */
+    @Transactional
+    public boolean saveAccount(Account account, String authenticatedUsername) {
+        User actor = new User();
+        actor.setId(account != null && account.getCreatedBy() != null ? account.getCreatedBy() : 0L);
+        actor.setUsername(authenticatedUsername);
+        return saveAccount(account, actor);
+    }
+
+    @Transactional
+    public Long reverse(Long originalId, String reason, User actor) {
+        if (originalId == null || originalId < 1) throw new CustomException("400", "原资金记录编号无效");
+        Account original = getOne(Wrappers.<Account>lambdaQuery()
+                .eq(Account::getId, originalId).last("FOR UPDATE"), false);
+        if (original == null) throw new CustomException("404", "原资金记录不存在");
+        if (original.getReversalOf() != null) throw new CustomException("409", "冲正记录不能再次冲正");
+        Account existing = getOne(Wrappers.<Account>lambdaQuery().eq(Account::getReversalOf, originalId), false);
+        if (existing != null) return existing.getId();
+        Account reversal = new Account();
+        reversal.setAlabel("冲正：" + original.getAlabel());
+        reversal.setAvalue(original.getAvalue().negate());
+        reversal.setAdescribe(required(reason, 355, "冲正原因"));
+        reversal.setAuname(required(actor == null ? null : actor.getUsername(), 100, "经手人"));
+        reversal.setOccurredAt(new Date());
+        reversal.setCategory(original.getCategory());
+        reversal.setBusinessType(original.getBusinessType());
+        reversal.setBusinessId(original.getBusinessId());
+        reversal.setReversalOf(originalId);
+        reversal.setCreatedBy(actor.getId());
+        if (!save(reversal)) throw new CustomException("500", "冲正记录保存失败");
+        return reversal.getId();
     }
 
     private void validate(Account account) {
@@ -29,6 +84,22 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> {
         }
         account.setAlabel(required(account.getAlabel(), 100, "款项名称"));
         account.setAdescribe(optional(account.getAdescribe(), 355, "用途详情"));
+        String category = optional(account.getCategory(), 32, "资金分类");
+        category = category == null ? "other" : category.toLowerCase();
+        if (!CATEGORIES.contains(category)) throw new CustomException("400", "资金分类无效");
+        account.setCategory(category);
+        String businessType = optional(account.getBusinessType(), 32, "关联业务类型");
+        String businessId = optional(account.getBusinessId(), 96, "关联业务编号");
+        if ((businessType == null) != (businessId == null)) {
+            throw new CustomException("400", "关联业务类型和编号必须同时填写");
+        }
+        if (businessType != null) {
+            businessType = businessType.toLowerCase();
+            if (!BUSINESS_TYPES.contains(businessType)) throw new CustomException("400", "关联业务类型无效");
+            account.setBusinessType(businessType);
+            account.setBusinessId(businessId);
+        }
+        account.setReceiptFlag(optional(account.getReceiptFlag(), 64, "票据文件"));
         BigDecimal amount = account.getAvalue();
         if (amount == null) throw new CustomException("400", "金额不能为空");
         if (amount.compareTo(BigDecimal.ZERO) == 0) throw new CustomException("400", "金额不能为零");

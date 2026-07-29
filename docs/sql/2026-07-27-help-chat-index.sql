@@ -1,5 +1,5 @@
 -- 崩溃预防 P0.2：t_help 聊天/归属查询索引
--- Schema contract: 2026.07.29-workflow-operations-v11.
+-- Schema contract: 2026.07.29-operations-p2-v12.
 -- 适用：生产 pure-check 模式（auto-migrate=false）须先手工执行；
 --       dev/auto-migrate 由 SchemaGuardRunner 自动创建。
 -- 背景：聊天轮询（每在线页面 10s 一次）执行

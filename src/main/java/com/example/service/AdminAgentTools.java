@@ -55,6 +55,15 @@ public class AdminAgentTools {
         tools.add(tool("get_data_quality_summary",
                 "统计动物档案中缺失图片、描述、生日和异常状态的数据质量问题。需要 animal 权限。",
                 objectSchema()));
+        tools.add(tool("get_operations_work_summary",
+                "读取统一待办按业务类型和优先级汇总的只读数据。适合回答当前运营压力和优先处理事项。",
+                objectSchema()));
+        tools.add(tool("get_volunteer_task_summary",
+                "读取义工任务、报名、已完成服务和累计服务分钟的汇总。需要 volunteer 权限。",
+                objectSchema()));
+        tools.add(tool("get_medical_record_summary",
+                "读取动物医疗档案按记录类型的汇总，不返回私密病历正文。需要 animal 权限。",
+                objectSchema()));
         return tools;
     }
 
@@ -74,6 +83,11 @@ public class AdminAgentTools {
         } else {
             result.set("open_rescues", null);
         }
+        if (hasAny(actor, "adopt", "proof", "visit", "help", "rescue", "volunteer", "animal", "account")) {
+            result.set("open_work_items", count("SELECT COUNT(*) FROM t_work_item WHERE status<>2"));
+        } else {
+            result.set("open_work_items", null);
+        }
         return result;
     }
 
@@ -87,6 +101,9 @@ public class AdminAgentTools {
                 case "list_open_rescues": return openRescues(actor).toString();
                 case "list_pending_proofs": return pendingProofs(actor).toString();
                 case "get_data_quality_summary": return dataQuality(actor).toString();
+                case "get_operations_work_summary": return workSummary(actor).toString();
+                case "get_volunteer_task_summary": return volunteerTaskSummary(actor).toString();
+                case "get_medical_record_summary": return medicalSummary(actor).toString();
                 default: return error("unknown_tool", "未知的管理员工具").toString();
             }
         } catch (Exception ex) {
@@ -229,6 +246,35 @@ public class AdminAgentTools {
         result.set("missing_birthday", count("SELECT COUNT(*) FROM t_animal WHERE tbirthday IS NULL"));
         result.set("invalid_status", count("SELECT COUNT(*) FROM t_animal WHERE tstate IS NULL OR tstate NOT IN (0,1,2)"));
         return result;
+    }
+
+    private JSONObject workSummary(User actor) {
+        if (!hasAny(actor, "adopt", "proof", "visit", "help", "rescue", "volunteer", "animal", "account")) {
+            return denied("operations");
+        }
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(
+                "SELECT business_type,COUNT(*) open_count,SUM(CASE WHEN priority>=2 THEN 1 ELSE 0 END) urgent_count "
+                        + "FROM t_work_item WHERE status<>2 GROUP BY business_type ORDER BY urgent_count DESC,open_count DESC");
+        return collection("operations_work_summary", toArray(rows));
+    }
+
+    private JSONObject volunteerTaskSummary(User actor) {
+        if (!has(actor, "volunteer")) return denied("volunteer");
+        JSONObject result = new JSONObject().set("read_only", true);
+        result.set("recruiting_tasks", count("SELECT COUNT(*) FROM t_volunteer_task WHERE status=1"));
+        result.set("pending_signups", count("SELECT COUNT(*) FROM t_volunteer_signup WHERE status=0"));
+        result.set("assigned_signups", count("SELECT COUNT(*) FROM t_volunteer_signup WHERE status=1"));
+        result.set("completed_services", count("SELECT COUNT(*) FROM t_volunteer_service_record"));
+        result.set("service_minutes", count("SELECT COALESCE(SUM(service_minutes),0) FROM t_volunteer_service_record"));
+        return result;
+    }
+
+    private JSONObject medicalSummary(User actor) {
+        if (!has(actor, "animal")) return denied("animal");
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(
+                "SELECT record_type,COUNT(*) record_count,COUNT(DISTINCT animal_id) animal_count "
+                        + "FROM t_animal_medical_record GROUP BY record_type ORDER BY record_count DESC");
+        return collection("medical_record_summary", toArray(rows));
     }
 
     private void putCount(JSONObject target, User actor, String flag, String key, String sql) {

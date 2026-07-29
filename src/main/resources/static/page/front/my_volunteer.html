@@ -26,7 +26,7 @@
   <main class="ui-container ui-workspace"><div class="ui-workspace-grid">
     <nav class="ui-side-nav" aria-label="个人业务导航"><strong>我的行动</strong><a href="./my_adopt.html">领养申请</a><a href="./my_visit.html">回访记录</a><a class="is-active" href="./my_volunteer.html" aria-current="page">义工申请</a><a href="./my_rescue.html">救助记录</a></nav>
     <section aria-labelledby="mineTitle">
-      <div class="ui-panel-head"><div><p class="ui-eyebrow">MY APPLICATIONS</p><h1 id="mineTitle" class="ui-workspace-title">我的义工申请</h1><p>这里只显示服务端按当前登录账号归属查询的记录。</p></div><a class="ui-button is-primary" href="./volunteer_apply.html">提交新申请</a></div>
+      <div class="ui-panel-head"><div><p class="ui-eyebrow">MY APPLICATIONS</p><h1 id="mineTitle" class="ui-workspace-title">我的义工申请</h1><p>这里只显示服务端按当前登录账号归属查询的记录。</p></div><div class="ui-form-actions"><a class="ui-button is-ghost" href="./volunteer_tasks.html">查看义工任务</a><a class="ui-button is-primary" href="./volunteer_apply.html">提交新申请</a></div></div>
       <div class="ui-status-key" aria-label="审核状态说明"><span><i class="is-pending"></i>待审核</span><span><i class="is-done"></i>已通过</span><span><i class="is-closed"></i>未通过</span></div>
 
       <div v-if="loading" class="ui-state" role="status"><div><span class="ui-state-mark ui-skeleton"></span><h2>正在加载申请记录</h2><p>正在向服务端确认当前账号的申请。</p></div></div>

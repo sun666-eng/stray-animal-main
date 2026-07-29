@@ -1,5 +1,5 @@
 -- 照顾助手幂等问答任务 v5 增量更新。
--- Schema contract: 2026.07.29-workflow-operations-v11.
+-- Schema contract: 2026.07.29-operations-p2-v12.
 -- 必须先选择目标业务库；DATABASE() 安全闸防止误操作系统库。
 
 SET @current_db := DATABASE();

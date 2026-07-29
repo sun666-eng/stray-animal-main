@@ -31,7 +31,7 @@ import java.util.Map;
 public class SchemaGuardRunner implements ApplicationRunner {
 
     /** 结构契约版本：变更闭环必需列/角色时递增，并写入 app_schema_meta */
-    public static final String SCHEMA_VERSION = "2026.07.29-workflow-operations-v11";
+    public static final String SCHEMA_VERSION = "2026.07.29-operations-p2-v12";
 
     private static final String FILE_FLAG_COLLATION = "utf8mb4_unicode_ci";
 
@@ -78,6 +78,7 @@ public class SchemaGuardRunner implements ApplicationRunner {
                     "ALTER TABLE t_volunteer ADD COLUMN apic VARCHAR(255) NULL DEFAULT NULL COMMENT '本人免冠照文件flag' AFTER uid",
                     errors);
             ensureWorkflowClosureSchema(errors);
+            ensureOperationsSchema(errors);
             // 业务实体常用列（防止旧库缺列）
             ensureColumnsPresent("t_adopt", Arrays.asList("aid", "uid", "vstate", "uname", "aname"), errors);
             ensureColumnsPresent("t_animal", Arrays.asList("id", "tname", "tstate", "tpic"), errors);
@@ -209,10 +210,76 @@ public class SchemaGuardRunner implements ApplicationRunner {
                         + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci", errors);
     }
 
+    /** P1 运营闭环与 P2 可插拔能力：义工任务、医疗档案、统一待办、业务资金、收藏和外部通知队列。 */
+    private void ensureOperationsSchema(List<String> errors) {
+        ensureWorkflowTable("t_volunteer_task",
+                "CREATE TABLE IF NOT EXISTS t_volunteer_task ("
+                        + "id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,title VARCHAR(120) NOT NULL,description VARCHAR(2000) NULL,"
+                        + "location VARCHAR(255) NULL,start_at DATETIME(3) NOT NULL,end_at DATETIME(3) NOT NULL,capacity INT NOT NULL DEFAULT 1,"
+                        + "status INT NOT NULL DEFAULT 0,creator_id BIGINT NOT NULL,created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),"
+                        + "updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),version INT NOT NULL DEFAULT 0,"
+                        + "INDEX idx_volunteer_task_queue (status,start_at,id)"
+                        + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci", errors);
+        ensureWorkflowTable("t_volunteer_signup",
+                "CREATE TABLE IF NOT EXISTS t_volunteer_signup ("
+                        + "id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,task_id BIGINT NOT NULL,user_id BIGINT NOT NULL,status INT NOT NULL DEFAULT 0,"
+                        + "note VARCHAR(500) NULL,assigned_by BIGINT NULL,assigned_at DATETIME(3) NULL,created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),"
+                        + "updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),version INT NOT NULL DEFAULT 0,"
+                        + "UNIQUE KEY uk_volunteer_signup (task_id,user_id),INDEX idx_volunteer_signup_user (user_id,status,created_at),"
+                        + "INDEX idx_volunteer_signup_task (task_id,status,id)"
+                        + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci", errors);
+        ensureWorkflowTable("t_volunteer_service_record",
+                "CREATE TABLE IF NOT EXISTS t_volunteer_service_record ("
+                        + "id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,signup_id BIGINT NOT NULL,task_id BIGINT NOT NULL,user_id BIGINT NOT NULL,"
+                        + "service_minutes INT NOT NULL,summary VARCHAR(1000) NULL,confirmed_by BIGINT NOT NULL,completed_at DATETIME(3) NOT NULL,"
+                        + "created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),UNIQUE KEY uk_service_signup (signup_id),"
+                        + "INDEX idx_service_user (user_id,completed_at,id)"
+                        + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci", errors);
+        ensureWorkflowTable("t_animal_medical_record",
+                "CREATE TABLE IF NOT EXISTS t_animal_medical_record ("
+                        + "id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,animal_id BIGINT NOT NULL,record_type VARCHAR(32) NOT NULL,title VARCHAR(120) NOT NULL,"
+                        + "content VARCHAR(2000) NULL,occurred_at DATETIME(3) NOT NULL,visibility VARCHAR(16) NOT NULL DEFAULT 'public',asset_flag VARCHAR(64) NULL,"
+                        + "created_by BIGINT NOT NULL,created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),"
+                        + "INDEX idx_medical_animal (animal_id,occurred_at,id)"
+                        + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci", errors);
+        ensureWorkflowTable("t_work_item",
+                "CREATE TABLE IF NOT EXISTS t_work_item ("
+                        + "id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,business_type VARCHAR(32) NOT NULL,business_id VARCHAR(96) NOT NULL,"
+                        + "title VARCHAR(160) NOT NULL,priority INT NOT NULL DEFAULT 0,assignee_id BIGINT NULL,due_at DATETIME(3) NULL,status INT NOT NULL DEFAULT 0,"
+                        + "source_event_key VARCHAR(160) NOT NULL,created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),"
+                        + "updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),completed_at DATETIME(3) NULL,version INT NOT NULL DEFAULT 0,"
+                        + "UNIQUE KEY uk_work_item_source (source_event_key),INDEX idx_work_item_queue (status,priority,due_at,id),"
+                        + "INDEX idx_work_item_assignee (assignee_id,status,due_at)"
+                        + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci", errors);
+        ensureWorkflowTable("t_animal_favorite",
+                "CREATE TABLE IF NOT EXISTS t_animal_favorite ("
+                        + "id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,user_id BIGINT NOT NULL,animal_id BIGINT NOT NULL,"
+                        + "created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),UNIQUE KEY uk_animal_favorite (user_id,animal_id),"
+                        + "INDEX idx_favorite_user (user_id,created_at,id)"
+                        + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci", errors);
+        ensureWorkflowTable("t_notification_outbox",
+                "CREATE TABLE IF NOT EXISTS t_notification_outbox ("
+                        + "id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,notification_id BIGINT NOT NULL,user_id BIGINT NOT NULL,channel VARCHAR(16) NOT NULL,"
+                        + "recipient VARCHAR(255) NULL,payload_json TEXT NOT NULL,status INT NOT NULL DEFAULT 0,attempts INT NOT NULL DEFAULT 0,"
+                        + "next_attempt_at DATETIME(3) NULL,last_error VARCHAR(500) NULL,created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),sent_at DATETIME(3) NULL,"
+                        + "UNIQUE KEY uk_notification_channel (notification_id,channel),INDEX idx_outbox_dispatch (status,next_attempt_at,id)"
+                        + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci", errors);
+
+        ensureColumn("t_account", "occurred_at", "ALTER TABLE t_account ADD COLUMN occurred_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) AFTER adescribe", errors);
+        ensureColumn("t_account", "category", "ALTER TABLE t_account ADD COLUMN category VARCHAR(32) NOT NULL DEFAULT 'other' AFTER occurred_at", errors);
+        ensureColumn("t_account", "business_type", "ALTER TABLE t_account ADD COLUMN business_type VARCHAR(32) NULL DEFAULT NULL AFTER category", errors);
+        ensureColumn("t_account", "business_id", "ALTER TABLE t_account ADD COLUMN business_id VARCHAR(96) NULL DEFAULT NULL AFTER business_type", errors);
+        ensureColumn("t_account", "receipt_flag", "ALTER TABLE t_account ADD COLUMN receipt_flag VARCHAR(64) NULL DEFAULT NULL AFTER business_id", errors);
+        ensureColumn("t_account", "reversal_of", "ALTER TABLE t_account ADD COLUMN reversal_of BIGINT NULL DEFAULT NULL AFTER receipt_flag", errors);
+        ensureColumn("t_account", "created_by", "ALTER TABLE t_account ADD COLUMN created_by BIGINT NULL DEFAULT NULL AFTER reversal_of", errors);
+        ensureIndex("t_account", "idx_account_business", "ALTER TABLE t_account ADD INDEX idx_account_business (business_type,business_id,occurred_at)", errors);
+        ensureIndex("t_account", "uk_account_reversal", "ALTER TABLE t_account ADD UNIQUE INDEX uk_account_reversal (reversal_of)", errors);
+    }
+
     private void ensureWorkflowTable(String table, String ddl, List<String> errors) {
         if (tableExists(table)) return;
         if (!autoMigrate) {
-            errors.add("缺少 " + table + "（请执行 P0 workflow closure 迁移）");
+            errors.add("缺少 " + table + "（请执行与当前契约版本对应的结构迁移）");
             return;
         }
         try {

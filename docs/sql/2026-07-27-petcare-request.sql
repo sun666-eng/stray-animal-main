@@ -1,5 +1,5 @@
 -- 照顾助手幂等问答任务 v4（已废弃，请使用 2026-07-27-petcare-request-v5.sql）。
--- Schema contract: 2026.07.29-workflow-operations-v11.
+-- Schema contract: 2026.07.29-operations-p2-v12.
 
 CREATE TABLE IF NOT EXISTS t_petcare_request (
   id BIGINT NOT NULL AUTO_INCREMENT,

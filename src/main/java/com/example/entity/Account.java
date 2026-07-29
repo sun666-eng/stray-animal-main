@@ -9,6 +9,8 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import java.math.BigDecimal;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import java.util.Date;
 
 
 @Data
@@ -41,5 +43,14 @@ public class Account extends Model<Account> {
       * 款项用途详情 
       */
     private String adescribe;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date occurredAt;
+    private String category;
+    private String businessType;
+    private String businessId;
+    private String receiptFlag;
+    private Long reversalOf;
+    private Long createdBy;
 
 }

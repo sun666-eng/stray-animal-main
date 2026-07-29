@@ -1,123 +1,366 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="了解待领养动物的详细信息">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="了解待领养动物的详细信息" />
     <title>动物详情 · 归途计划</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-    <link rel="stylesheet" href="../../css/product-ui.css?v=20260728">
-</head>
-<body>
-<div id="app" v-cloak>
-    <header class="ui-header">
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>"
+    />
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260728" />
+  </head>
+  <body>
+    <div id="app" v-cloak>
+      <header class="ui-header">
         <div class="ui-header-inner">
-            <a class="ui-brand" href="./index.html"><span class="ui-brand-mark" aria-hidden="true">♡</span><span class="ui-brand-copy"><strong>归途计划</strong><small>PAWS ON THE WAY HOME</small></span></a>
-            <nav class="ui-nav" aria-label="主导航">
-                <a href="./index.html">首页</a>
-                <a class="is-active" href="./animal_browse.html">等待一个家</a>
-                <a href="./notice_list.html">救助动态</a>
-                <a href="./account_public.html">透明公示</a>
-            </nav>
-            <div class="ui-header-actions">
-                <button class="ui-icon-button ui-mobile-toggle" type="button" aria-label="切换导航" @click="mobileOpen = !mobileOpen">☰</button>
-                <a class="ui-account-trigger" :href="user ? './index.html' : './login.html'">
-                    <span class="ui-avatar">{{ userInitial }}</span><span class="ui-account-name">{{ user ? user.username : '登录' }}</span>
-                </a>
-            </div>
+          <a class="ui-brand" href="./index.html"
+            ><span class="ui-brand-mark" aria-hidden="true">♡</span
+            ><span class="ui-brand-copy"
+              ><strong>归途计划</strong
+              ><small>PAWS ON THE WAY HOME</small></span
+            ></a
+          >
+          <nav class="ui-nav" aria-label="主导航">
+            <a href="./index.html">首页</a>
+            <a class="is-active" href="./animal_browse.html">等待一个家</a>
+            <a href="./notice_list.html">救助动态</a>
+            <a href="./account_public.html">透明公示</a>
+          </nav>
+          <div class="ui-header-actions">
+            <button
+              class="ui-icon-button ui-mobile-toggle"
+              type="button"
+              aria-label="切换导航"
+              @click="mobileOpen = !mobileOpen"
+            >
+              ☰
+            </button>
+            <a
+              class="ui-account-trigger"
+              :href="user ? './index.html' : './login.html'"
+            >
+              <span class="ui-avatar">{{ userInitial }}</span
+              ><span class="ui-account-name"
+                >{{ user ? user.username : '登录' }}</span
+              >
+            </a>
+          </div>
         </div>
-        <nav class="ui-mobile-nav" :class="{ 'is-open': mobileOpen }" aria-label="移动端导航">
-            <a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a href="./notice_list.html">救助动态</a><a href="./account_public.html">透明公示</a>
+        <nav
+          class="ui-mobile-nav"
+          :class="{ 'is-open': mobileOpen }"
+          aria-label="移动端导航"
+        >
+          <a href="./index.html">首页</a
+          ><a href="./animal_browse.html">等待一个家</a
+          ><a href="./notice_list.html">救助动态</a
+          ><a href="./account_public.html">透明公示</a>
         </nav>
-    </header>
+      </header>
 
-    <main class="ui-container">
+      <main class="ui-container">
         <div v-if="loading" class="ui-detail" aria-label="正在加载动物详情">
-            <div class="ui-detail-photo ui-skeleton"></div>
-            <div class="ui-detail-copy"><div class="ui-skeleton ui-skeleton-line short"></div><div class="ui-skeleton ui-skeleton-line"></div><div class="ui-skeleton ui-skeleton-line"></div></div>
+          <div class="ui-detail-photo ui-skeleton"></div>
+          <div class="ui-detail-copy">
+            <div class="ui-skeleton ui-skeleton-line short"></div>
+            <div class="ui-skeleton ui-skeleton-line"></div>
+            <div class="ui-skeleton ui-skeleton-line"></div>
+          </div>
         </div>
-        <div v-else-if="error || !animal" class="ui-state" role="alert" style="margin:70px 0">
-            <div><span class="ui-state-mark" aria-hidden="true">!</span><h2>没有找到这只动物</h2><p>{{ error || '记录可能已经下线或不存在。' }}</p><a class="ui-button is-dark" href="./animal_browse.html">返回动物列表</a></div>
+        <div
+          v-else-if="error || !animal"
+          class="ui-state"
+          role="alert"
+          style="margin: 70px 0"
+        >
+          <div>
+            <span class="ui-state-mark" aria-hidden="true">!</span>
+            <h2>没有找到这只动物</h2>
+            <p>{{ error || '记录可能已经下线或不存在。' }}</p>
+            <a class="ui-button is-dark" href="./animal_browse.html"
+              >返回动物列表</a
+            >
+          </div>
         </div>
         <article v-else class="ui-detail">
-            <div class="ui-detail-media">
-                <div class="ui-breadcrumb"><a href="./animal_browse.html" style="color:inherit;text-decoration:none">等待一个家</a><span>/</span><strong>{{ displayName }}</strong></div>
-                <div class="ui-detail-photo"><img :src="resolveImage(animal.tpic)" :alt="`${displayName}的照片`" fetchpriority="high" @error="handleImageError"></div>
+          <div class="ui-detail-media">
+            <div class="ui-breadcrumb">
+              <a
+                href="./animal_browse.html"
+                style="color: inherit; text-decoration: none"
+                >等待一个家</a
+              ><span>/</span><strong>{{ displayName }}</strong>
             </div>
-            <div class="ui-detail-copy">
-                <span class="ui-badge" :class="statusClass">{{ formatState(animal.tstate) }}</span>
-                <h1>{{ displayName }}</h1>
-                <p class="ui-detail-lead">{{ animal.tdescribe || '这只动物的详细故事正在补充中。你可以先了解它的基础资料，再决定是否提交领养申请。' }}</p>
-                <div class="ui-facts">
-                    <div class="ui-fact"><span>品种或类型</span><strong>{{ animal.ttype || '待确认' }}</strong></div>
-                    <div class="ui-fact"><span>性别</span><strong>{{ animal.tsex || '未知' }}</strong></div>
-                    <div class="ui-fact"><span>年龄</span><strong>{{ formatAge(animal.tbirthday) }}</strong></div>
-                    <div class="ui-fact"><span>档案编号</span><strong>#{{ animal.id }}</strong></div>
-                </div>
-                <div class="ui-callout"><strong>领养前请确认</strong><br>家庭成员意见一致，具备长期稳定照护能力，并愿意配合必要的领养回访。</div>
-                <div class="ui-detail-actions">
-                    <a v-if="canAdopt" class="ui-button is-primary" :href="adoptUrl">申请领养 {{ displayName }}</a>
-                    <button v-else class="ui-button is-primary" type="button" disabled>{{ formatState(animal.tstate) }}</button>
-                    <a class="ui-button is-ghost" href="./animal_browse.html">返回列表</a>
-                </div>
+            <div class="ui-detail-photo">
+              <img
+                :src="resolveImage(animal.tpic)"
+                :alt="`${displayName}的照片`"
+                fetchpriority="high"
+                @error="handleImageError"
+              />
             </div>
+          </div>
+          <div class="ui-detail-copy">
+            <span class="ui-badge" :class="statusClass"
+              >{{ formatState(animal.tstate) }}</span
+            >
+            <h1>{{ displayName }}</h1>
+            <p class="ui-detail-lead">
+              {{ animal.tdescribe ||
+              '这只动物的详细故事正在补充中。你可以先了解它的基础资料，再决定是否提交领养申请。'
+              }}
+            </p>
+            <div class="ui-facts">
+              <div class="ui-fact">
+                <span>品种或类型</span
+                ><strong>{{ animal.ttype || '待确认' }}</strong>
+              </div>
+              <div class="ui-fact">
+                <span>性别</span><strong>{{ animal.tsex || '未知' }}</strong>
+              </div>
+              <div class="ui-fact">
+                <span>年龄</span
+                ><strong>{{ formatAge(animal.tbirthday) }}</strong>
+              </div>
+              <div class="ui-fact">
+                <span>档案编号</span><strong>#{{ animal.id }}</strong>
+              </div>
+            </div>
+            <div class="ui-callout">
+              <strong>领养前请确认</strong
+              ><br />家庭成员意见一致，具备长期稳定照护能力，并愿意配合必要的领养回访。
+            </div>
+            <div class="ui-detail-actions">
+              <a v-if="canAdopt" class="ui-button is-primary" :href="adoptUrl"
+                >申请领养 {{ displayName }}</a
+              >
+              <button
+                v-else
+                class="ui-button is-primary"
+                type="button"
+                disabled
+              >
+                {{ formatState(animal.tstate) }}
+              </button>
+              <button
+                v-if="user"
+                class="ui-button is-ghost"
+                type="button"
+                :disabled="favoriteBusy"
+                @click="toggleFavorite"
+              >
+                {{ favorite ? '已收藏 · 取消' : '♡ 收藏' }}
+              </button>
+              <a class="ui-button is-ghost" href="./animal_browse.html"
+                >返回列表</a
+              >
+            </div>
+          </div>
         </article>
-    </main>
-    <footer class="ui-site-footer"><div class="ui-container ui-footer-inner"><div class="ui-footer-copy"><strong>归途计划</strong><span>© 2026 · 让每一次善意都有回音</span></div><nav class="ui-footer-nav" aria-label="页脚导航"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a href="./notice_list.html">救助动态</a><a href="./rescue_apply.html">发起救助</a><a href="./account_public.html">透明公示</a></nav></div></footer>
-</div>
+        <section
+          v-if="!loading&&animal"
+          style="
+            margin: 34px 0 70px;
+            padding: 28px;
+            border: 1px solid #e4e0da;
+            border-radius: 24px;
+          "
+        >
+          <p class="ui-eyebrow">HEALTH RECORD</p>
+          <h2 style="font-size: 30px; margin: 8px 0 18px">健康与医疗记录</h2>
+          <p v-if="medicalLoading">正在读取医疗档案...</p>
+          <p v-else-if="!medical.length" style="color: #777">
+            暂无对当前访客公开的医疗记录。
+          </p>
+          <div v-else class="ui-facts">
+            <div v-for="item in medical" :key="item.id" class="ui-fact">
+              <span
+                >{{ medicalType(item.record_type) }} · {{
+                String(item.occurred_at||'').slice(0,10) }}</span
+              ><strong>{{ item.title }}</strong
+              ><small
+                style="
+                  display: block;
+                  margin-top: 8px;
+                  color: #777;
+                  line-height: 1.5;
+                "
+                >{{ item.content||'无补充说明' }}</small
+              >
+            </div>
+          </div>
+        </section>
+      </main>
+      <footer class="ui-site-footer">
+        <div class="ui-container ui-footer-inner">
+          <div class="ui-footer-copy">
+            <strong>归途计划</strong><span>© 2026 · 让每一次善意都有回音</span>
+          </div>
+          <nav class="ui-footer-nav" aria-label="页脚导航">
+            <a href="./index.html">首页</a
+            ><a href="./animal_browse.html">等待一个家</a
+            ><a href="./notice_list.html">救助动态</a
+            ><a href="./rescue_apply.html">发起救助</a
+            ><a href="./account_public.html">透明公示</a>
+          </nav>
+        </div>
+      </footer>
+    </div>
 
-<script src="../../js/jquery.min.js"></script>
-<script src="../../js/vue.min.js"></script>
-<script src="../../js/auth-session.js?v=20260728"></script><script src="../../js/status-text.js?v=20260728"></script>
-<script>
-new Vue({
-  el: '#app',
-  data: { user: null, animal: null, loading: true, error: '', mobileOpen: false },
-  computed: {
-    userInitial() { return this.user && this.user.username ? this.user.username.slice(0, 1).toUpperCase() : '↗'; },
-    displayName() { return this.animal && this.animal.tname ? this.animal.tname : '未命名动物'; },
-    canAdopt() { return this.animal && [0, 1].includes(Number(this.animal.tstate)); },
-    adoptUrl() { return this.animal ? `./adopt_apply.html?animalId=${encodeURIComponent(this.animal.id)}` : '#'; },
-    statusClass() {
-      const state = this.animal ? Number(this.animal.tstate) : -1;
-      return state === 0 ? 'is-waiting' : state === 1 ? 'is-pending' : 'is-done';
-    }
-  },
-  mounted() {
-    const start = () => {
-      this.user = window.AuthSession ? AuthSession.getUser() : null;
-      this.loadDetail();
-    };
-    if (window.AuthSession) AuthSession.bootstrap({ requireAuth: false, onDone: start }); else start();
-  },
-  methods: {
-    loadDetail() {
-      const id = new URLSearchParams(location.search).get('id');
-      if (!id) { this.loading = false; this.error = '缺少动物编号。'; return; }
-      $.ajax({ url: `/api/animal/${encodeURIComponent(id)}`, type: 'GET' })
-        .done(res => {
-          if (res && res.code === '0' && res.data) this.animal = res.data;
-          else this.error = (res && res.msg) || '记录不存在。';
-        })
-        .fail(() => { this.error = '网络连接异常，请稍后重试。'; })
-        .always(() => { this.loading = false; });
-    },
-    formatState(state) { return StatusText.animal(state); },
-    formatAge(value) {
-      if (!value) return '年龄未知';
-      const birth = new Date(value);
-      if (Number.isNaN(birth.getTime())) return '年龄未知';
-      const months = Math.max(0, Math.floor((Date.now() - birth.getTime()) / 2629800000));
-      return months < 12 ? `${Math.max(1, months)} 个月` : `${Math.floor(months / 12)} 岁`;
-    },
-    resolveImage(path) {
-      return /^[a-zA-Z0-9-]{1,64}$/.test(path || '')
-        ? `/api/files/${encodeURIComponent(path)}`
-        : '/prototype-assets/editorial-02.svg';
-    },
-    handleImageError(event) { event.target.onerror = null; event.target.src = '/prototype-assets/editorial-02.svg'; }
-  }
-});
-</script>
-</body>
+    <script src="../../js/jquery.min.js"></script>
+    <script src="../../js/vue.min.js"></script>
+    <script src="../../js/auth-session.js?v=20260728"></script>
+    <script src="../../js/status-text.js?v=20260728"></script>
+    <script>
+      new Vue({
+        el: "#app",
+        data: {
+          user: null,
+          animal: null,
+          loading: true,
+          error: "",
+          mobileOpen: false,
+          favorite: false,
+          favoriteBusy: false,
+          medical: [],
+          medicalLoading: false,
+        },
+        computed: {
+          userInitial() {
+            return this.user && this.user.username
+              ? this.user.username.slice(0, 1).toUpperCase()
+              : "↗";
+          },
+          displayName() {
+            return this.animal && this.animal.tname
+              ? this.animal.tname
+              : "未命名动物";
+          },
+          canAdopt() {
+            return this.animal && [0, 1].includes(Number(this.animal.tstate));
+          },
+          adoptUrl() {
+            return this.animal
+              ? `./adopt_apply.html?animalId=${encodeURIComponent(this.animal.id)}`
+              : "#";
+          },
+          statusClass() {
+            const state = this.animal ? Number(this.animal.tstate) : -1;
+            return state === 0
+              ? "is-waiting"
+              : state === 1
+                ? "is-pending"
+                : "is-done";
+          },
+        },
+        mounted() {
+          const start = () => {
+            this.user = window.AuthSession ? AuthSession.getUser() : null;
+            this.loadDetail();
+          };
+          if (window.AuthSession)
+            AuthSession.bootstrap({ requireAuth: false, onDone: start });
+          else start();
+        },
+        methods: {
+          loadDetail() {
+            const id = new URLSearchParams(location.search).get("id");
+            if (!id) {
+              this.loading = false;
+              this.error = "缺少动物编号。";
+              return;
+            }
+            $.ajax({
+              url: `/api/animal/${encodeURIComponent(id)}`,
+              type: "GET",
+            })
+              .done((res) => {
+                if (res && res.code === "0" && res.data) {
+                  this.animal = res.data;
+                  this.loadMedical();
+                  if (this.user) this.loadFavorite();
+                } else this.error = (res && res.msg) || "记录不存在。";
+              })
+              .fail(() => {
+                this.error = "网络连接异常，请稍后重试。";
+              })
+              .always(() => {
+                this.loading = false;
+              });
+          },
+          loadMedical() {
+            this.medicalLoading = true;
+            $.get(
+              `/api/operations/animals/${encodeURIComponent(this.animal.id)}/medical`,
+            )
+              .done((res) => {
+                if (res && res.code === "0") this.medical = res.data || [];
+              })
+              .always(() => {
+                this.medicalLoading = false;
+              });
+          },
+          loadFavorite() {
+            $.get(
+              `/api/operations/favorites/${encodeURIComponent(this.animal.id)}`,
+            ).done((res) => {
+              if (res && res.code === "0") this.favorite = !!res.data;
+            });
+          },
+          toggleFavorite() {
+            if (this.favoriteBusy || !this.user) return;
+            this.favoriteBusy = true;
+            $.ajax({
+              url: `/api/operations/favorites/${encodeURIComponent(this.animal.id)}`,
+              type: this.favorite ? "DELETE" : "POST",
+            })
+              .done((res) => {
+                if (res && res.code === "0") this.favorite = !this.favorite;
+              })
+              .always(() => {
+                this.favoriteBusy = false;
+              });
+          },
+          medicalType(value) {
+            return (
+              {
+                exam: "体检",
+                vaccine: "疫苗",
+                deworm: "驱虫",
+                treatment: "治疗",
+                surgery: "手术",
+                other: "其他",
+              }[value] || "医疗记录"
+            );
+          },
+          formatState(state) {
+            return StatusText.animal(state);
+          },
+          formatAge(value) {
+            if (!value) return "年龄未知";
+            const birth = new Date(value);
+            if (Number.isNaN(birth.getTime())) return "年龄未知";
+            const months = Math.max(
+              0,
+              Math.floor((Date.now() - birth.getTime()) / 2629800000),
+            );
+            return months < 12
+              ? `${Math.max(1, months)} 个月`
+              : `${Math.floor(months / 12)} 岁`;
+          },
+          resolveImage(path) {
+            return /^[a-zA-Z0-9-]{1,64}$/.test(path || "")
+              ? `/api/files/${encodeURIComponent(path)}`
+              : "/prototype-assets/editorial-02.svg";
+          },
+          handleImageError(event) {
+            event.target.onerror = null;
+            event.target.src = "/prototype-assets/editorial-02.svg";
+          },
+        },
+      });
+    </script>
+  </body>
 </html>

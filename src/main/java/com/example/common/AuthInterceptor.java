@@ -31,6 +31,7 @@ public class AuthInterceptor implements HandlerInterceptor {
     private static final Set<String> LOGIN_REQUIRED_PAGE_PATHS = new HashSet<>(Arrays.asList(
             "/page/end/index.html",
             "/page/end/person.html",
+            "/page/end/operations.html",
             "/page/front/adopt_apply.html",
             "/page/front/my_adopt.html",
             "/page/front/notifications.html",
@@ -40,6 +41,8 @@ public class AuthInterceptor implements HandlerInterceptor {
             "/page/front/rescue_apply.html",
             "/page/front/my_rescue.html",
             "/page/front/my_visit.html",
+            "/page/front/volunteer_tasks.html",
+            "/page/front/favorites.html",
             "/page/front/pet_care.html"
     ));
 
@@ -139,6 +142,11 @@ public class AuthInterceptor implements HandlerInterceptor {
         // 页面请求：Session认证
         User user = getCurrentUser(request);
         if (user != null) {
+            if ("/page/end/operations.html".equals(path)) {
+                if (hasOperationsAccess(user)) return true;
+                response.sendRedirect("/page/end/index.html?error=forbidden");
+                return false;
+            }
             String requiredFlag = PAGE_FLAG_RULES.get(path);
             if (requiredFlag != null && hasPagePermission(user, requiredFlag)) {
                 return true;
@@ -177,6 +185,11 @@ public class AuthInterceptor implements HandlerInterceptor {
         ));
     }
 
+    private boolean hasOperationsAccess(User user) {
+        return hasAnyPermissionFlag(user, Arrays.asList(
+                "adopt", "proof", "visit", "help", "rescue", "volunteer", "animal", "account"));
+    }
+
     private boolean isPublicApi(String path, String method) {
         if (PUBLIC_API_PATHS.contains(path)) {
             return true;
@@ -189,6 +202,10 @@ public class AuthInterceptor implements HandlerInterceptor {
             return true;
         }
         if (isPublicAccountRead(path, method)) {
+            return true;
+        }
+        if ("GET".equalsIgnoreCase(method)
+                && path.matches("^/api/operations/animals/\\d+/medical$")) {
             return true;
         }
         if (("/api/dashboard/public-stats".equals(path) || "/api/dashboard/home-stats".equals(path))
@@ -356,6 +373,11 @@ public class AuthInterceptor implements HandlerInterceptor {
             return hasAnyPermissionFlag(user, Arrays.asList("my_adopt", "adopt_view", "adopt"));
         }
         if (path.equals("/api/notifications") || path.startsWith("/api/notifications/")) {
+            return true;
+        }
+        // P1/P2 运营接口统一要求登录；各写路径在 OperationsController 再按业务权限、
+        // 义工资格及资源归属做细粒度校验。未在该控制器声明的路径不会被 Spring 接收。
+        if (path.equals("/api/operations") || path.startsWith("/api/operations/")) {
             return true;
         }
         if (path.startsWith("/api/proof/page1")) {

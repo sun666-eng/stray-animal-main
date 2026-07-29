@@ -15,6 +15,12 @@ import java.util.Date;
 
 @Service
 public class NotificationService extends ServiceImpl<NotificationMapper, Notification> {
+    private final ExternalNotificationOutboxService externalOutbox;
+
+    public NotificationService(ExternalNotificationOutboxService externalOutbox) {
+        this.externalOutbox = externalOutbox;
+    }
+
     public void notifyOnce(Long userId, String type, String title, String summary,
                            String businessType, String businessId, String targetUrl,
                            String eventKey) {
@@ -32,6 +38,7 @@ public class NotificationService extends ServiceImpl<NotificationMapper, Notific
         item.setCreatedAt(new Date());
         try {
             save(item);
+            externalOutbox.enqueue(item);
         } catch (DuplicateKeyException ignored) {
             // 同一业务事件重试时保持幂等。
         }

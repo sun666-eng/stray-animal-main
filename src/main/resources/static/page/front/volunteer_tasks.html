@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <title>义工任务 · 归途计划</title>
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260728c" />
+    <style>
+      [v-cloak] {
+        display: none;
+      }
+      .task-hero {
+        padding: 64px 0 32px;
+      }
+      .task-hero h1 {
+        font-size: clamp(38px, 6vw, 72px);
+        margin: 6px 0;
+      }
+      .task-tabs {
+        display: flex;
+        gap: 8px;
+        margin: 20px 0 30px;
+      }
+      .task-tabs button {
+        border: 1px solid #ddd8d1;
+        background: #fff;
+        border-radius: 99px;
+        padding: 11px 18px;
+        font-weight: 700;
+      }
+      .task-tabs .active {
+        background: #111;
+        color: #fff;
+      }
+      .task-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+      }
+      .task-card {
+        border: 1px solid #e4e0da;
+        border-radius: 24px;
+        padding: 24px;
+        background: #fff;
+      }
+      .task-card h2 {
+        font-size: 24px;
+        margin: 12px 0;
+      }
+      .task-card p {
+        color: #74746f;
+        line-height: 1.65;
+      }
+      .task-meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        font-size: 13px;
+      }
+      .task-tag {
+        background: #f1f0ed;
+        border-radius: 99px;
+        padding: 6px 10px;
+      }
+      .task-actions {
+        display: flex;
+        gap: 9px;
+        margin-top: 20px;
+      }
+      .task-note {
+        width: 100%;
+        padding: 11px;
+        border: 1px solid #ddd8d1;
+        border-radius: 12px;
+        margin-top: 14px;
+      }
+      .task-state {
+        padding: 60px;
+        text-align: center;
+        border: 1px dashed #d9d5ce;
+        border-radius: 24px;
+        color: #777;
+      }
+      .task-message {
+        padding: 14px 18px;
+        background: #eef8f2;
+        color: #26714c;
+        border-radius: 12px;
+        margin-bottom: 20px;
+      }
+      .task-message.error {
+        background: #fff0ed;
+        color: #b92d1c;
+      }
+      @media (max-width: 900px) {
+        .task-grid {
+          grid-template-columns: 1fr;
+        }
+        .task-hero {
+          padding-top: 35px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app" v-cloak>
+      <header class="ui-header">
+        <div class="ui-header-inner">
+          <a class="ui-wordmark" href="./index.html">归途计划</a>
+          <nav class="ui-nav">
+            <a href="./animal_browse.html">等待一个家</a
+            ><a href="./my_volunteer.html">我的义工</a
+            ><a href="./notifications.html">通知</a>
+          </nav>
+        </div>
+      </header>
+      <main class="ui-container">
+        <section class="task-hero">
+          <p class="ui-eyebrow">VOLUNTEER MISSIONS</p>
+          <h1>一起把善意落到现场</h1>
+          <p>
+            只有审核通过的义工可以报名。报名后需等待管理员确认，完成服务后会形成可追溯的服务记录。
+          </p>
+        </section>
+        <div class="task-tabs">
+          <button :class="{active:!mine}" @click="mine=false;load()">
+            开放任务</button
+          ><button :class="{active:mine}" @click="mine=true;load()">
+            我的报名
+          </button>
+        </div>
+        <div v-if="message" class="task-message" :class="{error:messageError}">
+          {{message}}
+        </div>
+        <div v-if="loading" class="task-state">正在读取任务...</div>
+        <div v-else-if="!tasks.length" class="task-state">
+          {{mine?'你还没有报名任务。':'当前没有开放的义工任务。'}}
+        </div>
+        <div v-else class="task-grid">
+          <article v-for="item in tasks" :key="item.id" class="task-card">
+            <div class="task-meta">
+              <span class="task-tag">{{taskState(item.status)}}</span
+              ><span class="task-tag"
+                >{{item.signup_count}} / {{item.capacity}} 人</span
+              >
+            </div>
+            <h2>{{item.title}}</h2>
+            <p>{{item.description||'任务说明待补充。'}}</p>
+            <p>
+              <strong>{{item.location||'地点待定'}}</strong
+              ><br />{{time(item.start_at)}} — {{time(item.end_at)}}
+            </p>
+            <template v-if="item.signup_id"
+              ><p>
+                <strong>报名状态：{{signupState(item.signup_status)}}</strong>
+              </p>
+              <div
+                v-if="[0,1].includes(Number(item.signup_status))"
+                class="task-actions"
+              >
+                <button class="ui-button is-ghost" @click="withdraw(item)">
+                  撤回报名
+                </button>
+              </div></template
+            ><template v-else
+              ><input
+                v-model.trim="notes[item.id]"
+                class="task-note"
+                maxlength="500"
+                placeholder="补充可参与时间或技能（选填）"
+              />
+              <div class="task-actions">
+                <button class="ui-button is-primary" @click="signup(item)">
+                  报名任务
+                </button>
+              </div></template
+            >
+          </article>
+        </div>
+    </main><footer class="ui-site-footer"><div class="ui-container ui-footer-inner"><div class="ui-footer-copy"><strong>归途计划</strong><span>© 2026 · 让每一次善意都有回音</span></div><nav class="ui-footer-nav"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a href="./notifications.html">通知中心</a></nav></div></footer>
+    </div>
+    <script src="../../js/jquery.min.js"></script>
+    <script src="../../js/auth-session.js?v=20260728"></script>
+    <script src="../../js/vue.min.js"></script>
+    <script>
+      (function () {
+        AuthSession.bootstrap({
+          requireAuth: true,
+          onDone: function (ok, user) {
+            if (!ok || !user) return;
+            new Vue({
+              el: "#app",
+              data: {
+                user: user,
+                mine: false,
+                tasks: [],
+                notes: {},
+                loading: true,
+                message: "",
+                messageError: false,
+              },
+              created: function () {
+                this.load();
+              },
+              methods: {
+                load: function () {
+                  var vm = this;
+                  vm.loading = true;
+                  vm.message = "";
+                  $.ajax({
+                    url: "/api/operations/volunteer-tasks",
+                    data: { mine: vm.mine },
+                  })
+                    .done(function (r) {
+                      if (r.code === "0") vm.tasks = r.data || [];
+                      else vm.say(r.msg, true);
+                    })
+                    .fail(function (x) {
+                      vm.say(
+                        (x.responseJSON && x.responseJSON.msg) ||
+                          "任务加载失败",
+                        true,
+                      );
+                    })
+                    .always(function () {
+                      vm.loading = false;
+                    });
+                },
+                signup: function (item) {
+                  var vm = this;
+                  $.ajax({
+                    url:
+                      "/api/operations/volunteer-tasks/" + item.id + "/signup",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({ note: vm.notes[item.id] || "" }),
+                  })
+                    .done(function (r) {
+                      if (r.code === "0") {
+                        vm.say("报名已提交，等待管理员确认。");
+                        vm.load();
+                      } else vm.say(r.msg, true);
+                    })
+                    .fail(function (x) {
+                      vm.say(
+                        (x.responseJSON && x.responseJSON.msg) || "报名失败",
+                        true,
+                      );
+                    });
+                },
+                withdraw: function (item) {
+                  if (!confirm("确认撤回这次报名？")) return;
+                  var vm = this;
+                  $.ajax({
+                    url:
+                      "/api/operations/volunteer-tasks/" + item.id + "/signup",
+                    type: "DELETE",
+                  })
+                    .done(function (r) {
+                      if (r.code === "0") {
+                        vm.say("报名已撤回。");
+                        vm.load();
+                      } else vm.say(r.msg, true);
+                    })
+                    .fail(function (x) {
+                      vm.say(
+                        (x.responseJSON && x.responseJSON.msg) || "撤回失败",
+                        true,
+                      );
+                    });
+                },
+                say: function (t, e) {
+                  this.message = t;
+                  this.messageError = !!e;
+                },
+                taskState: function (v) {
+                  return (
+                    ["草稿", "招募中", "已关闭", "已取消"][Number(v)] || "未知"
+                  );
+                },
+                signupState: function (v) {
+                  return (
+                    ["待确认", "已指派", "已完成", "已撤回", "未通过"][
+                      Number(v)
+                    ] || "未知"
+                  );
+                },
+                time: function (v) {
+                  return v ? String(v).replace("T", " ").slice(0, 16) : "-";
+                },
+              },
+            });
+          },
+        });
+      })();
+    </script>
+  </body>
+</html>

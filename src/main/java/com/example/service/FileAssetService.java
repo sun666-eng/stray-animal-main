@@ -19,6 +19,8 @@ import com.example.mapper.ProofMapper;
 import com.example.mapper.UserMapper;
 import com.example.mapper.VisitMapper;
 import com.example.mapper.VolunteerMapper;
+import com.example.mapper.AccountMapper;
+import com.example.entity.Account;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -77,6 +79,9 @@ public class FileAssetService extends ServiceImpl<FileAssetMapper, FileAsset> {
     @Resource
     private UserMapper userMapper;
 
+    @Resource
+    private AccountMapper accountMapper;
+
     public static final String VIS_PUBLIC = "public";
     public static final String VIS_PRIVATE = "private";
 
@@ -86,7 +91,7 @@ public class FileAssetService extends ServiceImpl<FileAssetMapper, FileAsset> {
 
     /** private 上传后仅允许升为这些明确私有用途；图片用途必须在上传时完成内容解码。 */
     private static final Set<String> SPECIFIC_PRIVATE = new HashSet<>(Arrays.asList(
-            "help"
+            "help", "account"
     ));
 
     // 崩溃预防 P1.1：25MP 单张解码峰值约 100MB 堆（ARGB），并发上传即 OOM 源；
@@ -96,7 +101,7 @@ public class FileAssetService extends ServiceImpl<FileAssetMapper, FileAsset> {
     // 审计修复 L6：移除 purpose=notice——公告无图片字段、全系统零绑定点零前端调用，
     // 该用途上传的文件只会在 24h 后被静默清理，属无出口的死分支。
     private static final Set<String> KNOWN_PURPOSES = new HashSet<>(Arrays.asList(
-            "animal", "avatar", "proof", "visit", "volunteer", "help", "private"
+            "animal", "avatar", "proof", "visit", "volunteer", "help", "account", "private"
     ));
 
     private static final Set<String> IMAGE_EXT = new HashSet<>(Arrays.asList(
@@ -469,6 +474,7 @@ public class FileAssetService extends ServiceImpl<FileAssetMapper, FileAsset> {
             case "visit":
             case "volunteer":
             case "help":
+            case "account":
                 return businessType.equals(purpose);
             case "user":
                 return "avatar".equals(purpose);
@@ -497,6 +503,9 @@ public class FileAssetService extends ServiceImpl<FileAssetMapper, FileAsset> {
                 case "user":
                     User owner = userMapper.selectById(businessId);
                     return owner == null ? null : owner.getId();
+                case "account":
+                    Account account = accountMapper.selectById(businessId);
+                    return account == null ? null : account.getCreatedBy();
                 default:
                     return null;
             }
@@ -748,6 +757,8 @@ public class FileAssetService extends ServiceImpl<FileAssetMapper, FileAsset> {
                 return PermissionUtil.hasFlag(user, "help") || PermissionUtil.hasFlag(user, "rescue");
             case "animal":
                 return PermissionUtil.hasFlag(user, "animal");
+            case "account":
+                return PermissionUtil.hasFlag(user, "account");
             case "avatar":
                 return PermissionUtil.hasFlag(user, "user");
             default:

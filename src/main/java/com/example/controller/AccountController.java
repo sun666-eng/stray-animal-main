@@ -50,7 +50,18 @@ public class AccountController {
         if (user == null || user.getUsername() == null) {
             throw new CustomException("401", "登录状态无效");
         }
+        account.setCreatedBy(user.getId());
         return Result.success(accountService.saveAccount(account, user.getUsername()));
+    }
+
+    @AuditLog(module = "资金管理", action = "冲正资金记录")
+    @PostMapping("/{id}/reverse")
+    public Result<?> reverse(@PathVariable Long id, @RequestBody Map<String, Object> body,
+                             HttpServletRequest request) {
+        User user = sessionUser(request);
+        if (!PermissionUtil.hasFlag(user, "account")) throw new CustomException("403", "无权冲正资金记录");
+        return Result.success(accountService.reverse(id,
+                body == null || body.get("reason") == null ? null : String.valueOf(body.get("reason")), user));
     }
 
     @AuditLog(module = "资金管理", action = "更新资金记录")
@@ -203,6 +214,10 @@ public class AccountController {
             row.put("经手人", account.getAuname());
             row.put("金额", account.getAvalue());
             row.put("用途详情", account.getAdescribe());
+            row.put("发生时间", account.getOccurredAt());
+            row.put("资金分类", account.getCategory());
+            row.put("关联业务", account.getBusinessType() == null ? "" : account.getBusinessType() + ":" + account.getBusinessId());
+            row.put("冲正原记录", account.getReversalOf());
             return row;
         });
     }

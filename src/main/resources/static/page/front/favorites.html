@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>我的收藏 · 归途计划</title>
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260728c" />
+    <style>
+      [v-cloak] {
+        display: none;
+      }
+      .fav-head {
+        padding: 60px 0 28px;
+      }
+      .fav-head h1 {
+        font-size: clamp(38px, 6vw, 70px);
+        margin: 8px 0;
+      }
+      .fav-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 20px;
+      }
+      .fav-card {
+        border: 1px solid #e3dfd8;
+        border-radius: 24px;
+        overflow: hidden;
+        background: #fff;
+      }
+      .fav-card img {
+        width: 100%;
+        aspect-ratio: 4/3;
+        object-fit: cover;
+      }
+      .fav-copy {
+        padding: 20px;
+      }
+      .fav-copy h2 {
+        margin: 0 0 8px;
+      }
+      .fav-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 18px;
+      }
+      .fav-empty {
+        text-align: center;
+        padding: 80px;
+        border: 1px dashed #d8d4cc;
+        border-radius: 24px;
+      }
+      @media (max-width: 800px) {
+        .fav-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app" v-cloak>
+      <header class="ui-header">
+        <div class="ui-header-inner">
+          <a class="ui-wordmark" href="./index.html">归途计划</a>
+          <nav class="ui-nav">
+            <a href="./animal_browse.html">等待一个家</a
+            ><a href="./favorites.html" aria-current="page">我的收藏</a>
+          </nav>
+        </div>
+      </header>
+      <main class="ui-container">
+        <section class="fav-head">
+          <p class="ui-eyebrow">SAVED ANIMALS</p>
+          <h1>我的收藏</h1>
+          <p>把想进一步了解的动物先放在这里；收藏不等于占用领养名额。</p>
+        </section>
+        <div v-if="loading" class="fav-empty">正在读取收藏...</div>
+        <div v-else-if="!items.length" class="fav-empty">
+          <h2>还没有收藏</h2>
+          <p>浏览等待领养的动物，找到适合长期相伴的伙伴。</p>
+          <a class="ui-button is-primary" href="./animal_browse.html">去看看</a>
+        </div>
+        <div v-else class="fav-grid">
+          <article
+            v-for="item in items"
+            :key="item.favorite_id"
+            class="fav-card"
+          >
+            <img :src="image(item.tpic)" :alt="item.tname" />
+            <div class="fav-copy">
+              <h2>{{item.tname||'未命名动物'}}</h2>
+              <p>{{item.ttype||'类型待确认'}} · {{item.tsex||'性别未知'}}</p>
+              <div class="fav-actions">
+                <a
+                  class="ui-button is-dark"
+                  :href="'./animal_detail.html?id='+item.id"
+                  >查看档案</a
+                ><button class="ui-button is-ghost" @click="remove(item)">
+                  取消收藏
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+    </main><footer class="ui-site-footer"><div class="ui-container ui-footer-inner"><div class="ui-footer-copy"><strong>归途计划</strong><span>© 2026 · 让每一次善意都有回音</span></div><nav class="ui-footer-nav"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a href="./notifications.html">通知中心</a></nav></div></footer>
+    </div>
+    <script src="../../js/jquery.min.js"></script>
+    <script src="../../js/auth-session.js?v=20260728"></script>
+    <script src="../../js/vue.min.js"></script>
+    <script>
+      (function () {
+        AuthSession.bootstrap({
+          requireAuth: true,
+          onDone: function (ok) {
+            if (!ok) return;
+            new Vue({
+              el: "#app",
+              data: { items: [], loading: true },
+              created: function () {
+                this.load();
+              },
+              methods: {
+                load: function () {
+                  var vm = this;
+                  $.get("/api/operations/favorites")
+                    .done(function (r) {
+                      vm.items = r.data || [];
+                    })
+                    .always(function () {
+                      vm.loading = false;
+                    });
+                },
+                remove: function (item) {
+                  var vm = this;
+                  $.ajax({
+                    url: "/api/operations/favorites/" + item.id,
+                    type: "DELETE",
+                  }).done(function () {
+                    vm.load();
+                  });
+                },
+                image: function (flag) {
+                  return /^[A-Za-z0-9-]{1,64}$/.test(flag || "")
+                    ? "/api/files/" + encodeURIComponent(flag)
+                    : "/prototype-assets/editorial-02.svg";
+                },
+              },
+            });
+          },
+        });
+      })();
+    </script>
+  </body>
+</html>
