@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>救助管理 · 归途计划管理</title>
+  <title>救助处置工作台 · 归途计划管理</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
   <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c">
-  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260729c">
+  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260730g">
 </head>
 <body>
 <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
-<div id="workspace" :class="{'is-nav-open': mobileOpen}" class="admin-shell" v-cloak @keyup.esc="closeTopLayer" @click="closeMenus">
+<div id="workspace" :class="{'is-nav-open': mobileOpen}" class="admin-shell help-governance" v-cloak @click="closeMenus">
   <header class="ui-header admin-header" @click.stop>
     <div class="ui-header-inner">
       <a class="ui-brand" href="/page/end/index.html" aria-label="返回管理工作台">
@@ -90,41 +90,60 @@
   <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
 
   <main class="admin-main">
-    <section class="admin-hero" aria-labelledby="helpAdminTitle"><div><p class="admin-kicker">Rescue operations</p><h1 id="helpAdminTitle">救助管理</h1><p>分页处理正式救助工单，并在已认证用户共享的全局社区房间中参与公开交流。聊天室不是申请人的私人会话。</p></div><div class="admin-hero-meta"><span>当前登录账号</span><strong>{{ user.username }}</strong></div></section>
+    <section class="admin-hero help-governance-hero" aria-labelledby="helpAdminTitle">
+      <div>
+        <p class="admin-kicker">Rescue desk</p>
+        <h1 id="helpAdminTitle">救助处置工作台</h1>
+        <p class="help-governance-lead">分页处理正式救助工单；下方为已认证全局救助社区聊天室，不是私人会话，也不是申请人私聊。</p>
+      </div>
+      <div class="help-governance-metrics" aria-label="工单状态摘要">
+        <div class="help-governance-metric"><span>接口总数</span><strong>{{ total }}</strong><small>服务端 total</small></div>
+        <div class="help-governance-metric is-pending"><span>本页待处理</span><strong>{{ pagePending }}</strong><small>仅当前页</small></div>
+        <div class="help-governance-metric is-pending"><span>本页处理中</span><strong>{{ pageWorking }}</strong><small>仅当前页</small></div>
+        <div class="help-governance-metric is-urgent"><span>本页紧急</span><strong>{{ pageUrgent }}</strong><small>priority=2 · 本页</small></div>
+        <div class="help-governance-metric is-ok"><span>本页完成</span><strong>{{ pageDone }}</strong><small>仅当前页</small></div>
+        <div class="help-governance-metric is-closed"><span>本页关闭</span><strong>{{ pageClosed }}</strong><small>仅当前页</small></div>
+      </div>
+    </section>
 
-    <div class="admin-help-layout">
+    <div class="admin-help-layout help-governance-layout">
       <section class="admin-help-list" aria-labelledby="helpListTitle">
-        <div class="admin-section-head"><div><h2 id="helpListTitle">正式救助工单</h2><p>每次只读取当前页，处理状态和管理员回复通过专用管理接口更新。</p></div></div>
-        <form class="ui-toolbar admin-review-toolbar" role="search" @submit.prevent="load(1)"><label class="ui-search"><span aria-hidden="true">搜索</span><span class="sr-only">按求助标题搜索</span><input v-model.trim="search" type="search" maxlength="100" placeholder="按求助标题搜索"></label><button class="ui-button is-dark" type="submit" :disabled="loading"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-search" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-search"></use></svg>查询</button><button v-if="search" class="ui-button is-ghost" type="button" @click="resetSearch">清除</button></form>
+        <div class="admin-section-head"><div><h2 id="helpListTitle">正式救助工单</h2><p>每次只读取当前页；处理状态与回复经专用管理接口更新。</p></div></div>
+        <form class="ui-toolbar admin-review-toolbar" role="search" @submit.prevent="load(1)"><label class="ui-search"><span aria-hidden="true">搜索</span><span class="sr-only">按求助标题搜索</span><input v-model.trim="search" type="search" maxlength="100" autocomplete="off" placeholder="按求助标题搜索"></label><button class="ui-button is-dark" type="submit" :class="{'is-loading':loading}" :disabled="loading" :aria-busy="loading?'true':'false'"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-search" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-search"></use></svg>{{ loading?'查询中…':'查询' }}</button><button v-if="search" class="ui-button is-ghost" type="button" @click="resetSearch">清除</button></form>
         <div class="admin-status-key" aria-label="救助状态说明"><span><i class="is-pending"></i>待处理</span><span><i></i>处理中</span><span><i class="is-done"></i>已完成</span><span><i class="is-closed"></i>已关闭</span></div>
-        <div v-if="message" class="admin-inline-message" :class="{'is-error':messageType==='error','is-success':messageType==='success'}" :role="messageType==='error'?'alert':'status'" aria-live="polite">{{ message }}</div>
+        <div v-if="message" class="help-governance-feedback" :class="{'is-error':messageType==='error','is-success':messageType==='success'}" :role="messageType==='error'?'alert':'status'" aria-live="polite">{{ message }}</div>
         <div v-if="loading" class="admin-status" role="status">正在读取当前页救助工单...</div>
         <div v-else-if="loadError" class="admin-status is-error" role="alert"><div><strong>救助工单暂时无法读取</strong><br>{{ loadError }}<br><button class="ui-button is-ghost" type="button" @click="load(pageNum)">重新加载</button></div></div>
         <div v-else-if="!records.length" class="admin-status">当前筛选条件下没有正式救助工单。</div>
         <template v-else>
-          <div class="admin-help-table" aria-label="救助工单桌面列表"><table><thead><tr><th scope="col">工单</th><th scope="col">申请人</th><th scope="col">位置与联系</th><th scope="col">提交时间</th><th scope="col">状态</th><th scope="col">操作</th></tr></thead><tbody><tr v-for="item in records" :key="item.id"><td><strong>{{ item.title || '未命名救助请求' }}</strong><small>#{{ item.id }} · {{ item.description || '未填写现场情况' }}</small></td><td>{{ item.uname || '-' }}</td><td><strong>{{ item.location || '-' }}</strong><small>{{ item.phone || '未填写电话' }}</small></td><td>{{ formatTime(item.createTime) || '-' }}</td><td><span class="ui-badge" :class="badgeClass(item.status)">{{ statusText(item.status) }}</span></td><td><div class="admin-row-actions"><button type="button" @click="openDetail(item)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-eye" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-eye"></use></svg>详情</button><button class="is-primary" type="button" @click="openManage(item)">处理</button></div></td></tr></tbody></table></div>
-          <div class="admin-help-cards" aria-label="救助工单移动端列表"><article v-for="item in records" :key="'card-'+item.id" class="admin-help-card"><div><span class="ui-record-id">工单 #{{ item.id }}</span><h3>{{ item.title || '未命名救助请求' }}</h3><p>{{ item.location || '未填写发现地点' }}<br>{{ formatTime(item.createTime) || '-' }}</p></div><span class="ui-badge" :class="badgeClass(item.status)">{{ statusText(item.status) }}</span><div class="admin-help-card-actions"><button class="ui-button is-ghost" type="button" @click="openDetail(item)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-eye" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-eye"></use></svg>查看详情</button><button class="ui-button is-dark" type="button" @click="openManage(item)">处理工单</button></div></article></div>
+          <div class="admin-help-table" aria-label="救助工单桌面列表"><table><thead><tr><th scope="col">工单</th><th scope="col">优先级</th><th scope="col">申请人</th><th scope="col">位置与联系</th><th scope="col">提交时间</th><th scope="col">状态</th><th scope="col">关联档案</th><th scope="col">操作</th></tr></thead><tbody><tr v-for="item in records" :key="item.id"><td><strong>{{ item.title || '未命名救助请求' }}</strong><small>#{{ item.id }} · {{ item.description || '未填写现场情况' }}</small></td><td><span :class="{'help-governance-priority-urgent':Number(item.priority)===2}">{{ priorityText(item.priority) }}</span></td><td>{{ item.uname || '-' }}</td><td><strong>{{ item.location || '-' }}</strong><small>{{ item.phone || '未填写电话' }}</small></td><td>{{ formatTime(item.createTime) || '-' }}</td><td><span class="ui-badge" :class="badgeClass(item.status)">{{ statusText(item.status) }}</span></td><td>{{ item.animalId ? ('动物 #'+item.animalId) : '未关联' }}</td><td><div class="admin-row-actions"><button type="button" @click="openDetail(item,$event)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-eye" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-eye"></use></svg>详情</button><button class="is-primary" type="button" @click="openManage(item,$event)">处理工单</button></div></td></tr></tbody></table></div>
+          <div class="admin-help-cards" aria-label="救助工单移动端列表"><article v-for="item in records" :key="'card-'+item.id" class="admin-help-card"><div><span class="ui-record-id">工单 #{{ item.id }} · {{ priorityText(item.priority) }}</span><h3>{{ item.title || '未命名救助请求' }}</h3><p>{{ item.uname||'-' }} · {{ item.location || '未填写发现地点' }}<br>{{ formatTime(item.createTime) || '-' }} · {{ item.animalId?('档案 #'+item.animalId):'未关联档案' }}</p></div><span class="ui-badge" :class="badgeClass(item.status)">{{ statusText(item.status) }}</span><div class="admin-help-card-actions"><button class="ui-button is-ghost" type="button" @click="openDetail(item,$event)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-eye" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-eye"></use></svg>查看详情</button><button class="ui-button is-dark" type="button" @click="openManage(item,$event)">处理工单</button></div></article></div>
         </template>
         <div v-if="!loading&&!loadError&&totalPages>1" class="ui-pagination admin-pagination"><span>第 {{ pageNum }} 页，共 {{ total }} 条工单</span><div class="ui-page-buttons"><button type="button" :disabled="pageNum===1" aria-label="上一页" @click="load(pageNum-1)">上一页</button><button v-for="page in pages" :key="page" type="button" :class="{'is-current':page===pageNum}" :aria-current="page===pageNum?'page':null" @click="load(page)">{{ page }}</button><button type="button" :disabled="pageNum===totalPages" aria-label="下一页" @click="load(pageNum+1)">下一页</button></div></div>
       </section>
 
-      <aside class="admin-panel admin-help-chat" aria-labelledby="adminCommunityTitle">
-        <div class="ui-rescue-chat-head"><div><h2 id="adminCommunityTitle">已认证全局救助社区聊天室</h2><p>所有已登录用户共享的公共房间，不是私人申请人会话。</p></div><span class="ui-connection" :class="connectionClass" aria-live="polite">{{ connectionText }}</span></div>
-        <div class="ui-chat-notice" role="note">聊天消息通过 HTTP 保存；页面可见时每 10 秒读取数据库中的最近消息。</div>
+      <aside class="admin-panel admin-help-chat help-governance-chat" aria-labelledby="adminCommunityTitle">
+        <div class="ui-rescue-chat-head"><div><h2 id="adminCommunityTitle">已认证全局救助社区聊天室</h2><p>已认证用户共享的全局公共房间 · 不是私人会话 · 非申请人私聊</p></div><span class="ui-connection" :class="connectionClass" aria-live="polite">{{ connectionText }}</span></div>
+        <div class="ui-chat-notice" role="note">消息经 HTTP 保存；页面可见时每 10 秒轮询最近消息。</div>
         <div ref="chatBox" class="ui-chat-messages" aria-live="polite" aria-relevant="additions text">
           <div v-if="historyLoading" class="ui-chat-empty" role="status">正在读取最近的社区消息...</div>
           <div v-else-if="historyError&&!messages.length" class="ui-chat-empty"><div>{{ historyError }}<br><button class="ui-button is-ghost" type="button" @click="loadHistory">重新加载</button></div></div>
           <div v-else-if="!messages.length" class="ui-chat-empty">最近没有社区消息。</div>
           <article v-for="chatMessage in messages" :key="chatMessage.key" class="ui-chat-message" :class="{'is-self':isSelf(chatMessage)}"><span class="ui-chat-avatar" aria-hidden="true">{{ messageInitial(chatMessage) }}</span><div class="ui-chat-copy"><div class="ui-chat-meta"><strong>{{ chatMessage.username || '社区成员' }}</strong><time>{{ formatTime(chatMessage.createdTime) }}</time></div><div class="ui-chat-bubble">{{ chatMessage.text }}</div></div></article>
         </div>
-        <form class="ui-chat-compose" @submit.prevent="sendChat"><label for="adminCommunityMessage">发送到全局公共房间</label><div class="ui-chat-compose-row"><textarea id="adminCommunityMessage" v-model.trim="chatText" class="ui-form-textarea" maxlength="500" rows="2" placeholder="输入公开社区消息（最多500字）" :disabled="chatSending"></textarea><button class="ui-button is-dark" type="submit" :disabled="chatSending||!chatText">{{ chatSending ? '发送中' : '发送' }}</button></div><p class="ui-chat-feedback" :class="{'is-error':chatError}" aria-live="polite">{{ chatError || '消息通过 HTTP 保存，页面可见时每 10 秒定时更新。' }}</p></form>
+        <form class="ui-chat-compose" @submit.prevent="sendChat"><label for="adminCommunityMessage">发送到全局公共房间 <span>{{ chatText.length }}/500</span></label><div class="ui-chat-compose-row"><textarea id="adminCommunityMessage" v-model.trim="chatText" class="ui-form-textarea" maxlength="500" rows="2" placeholder="输入公开社区消息（最多500字）" :disabled="chatSending"></textarea><button class="ui-button is-dark" type="submit" :disabled="chatSending||!chatText" :aria-busy="chatSending?'true':'false'">{{ chatSending ? '发送中…' : '发送' }}</button></div><p class="ui-chat-feedback" :class="{'is-error':chatError}" aria-live="polite">{{ chatError || '消息通过 HTTP 保存，页面可见时每 10 秒定时更新。' }}</p></form>
       </aside>
     </div>
   </main>
 
-  <div v-if="detailItem" class="admin-dialog-backdrop" @click.self="closeDetail"><section class="admin-dialog admin-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="helpDetailTitle"><div class="admin-dialog-head"><div><span>工单 #{{ detailItem.id }}</span><h2 id="helpDetailTitle">{{ detailItem.title || '未命名救助请求' }}</h2></div><button class="admin-dialog-close" ref="detailClose" type="button" aria-label="关闭救助工单详情" @click="closeDetail" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button></div><dl class="admin-detail-grid"><div><dt>申请人</dt><dd>{{ detailItem.uname || '-' }}</dd></div><div><dt>状态</dt><dd><span class="ui-badge" :class="badgeClass(detailItem.status)">{{ statusText(detailItem.status) }}</span></dd></div><div><dt>优先级</dt><dd>{{ ['普通','较急','紧急'][Number(detailItem.priority||0)] }}</dd></div><div><dt>联系电话</dt><dd>{{ detailItem.phone || '-' }}</dd></div><div><dt>发现地点</dt><dd>{{ detailItem.location || '-' }}</dd></div><div><dt>提交时间</dt><dd>{{ formatTime(detailItem.createTime) || '-' }}</dd></div><div><dt>处理结果</dt><dd>{{ outcomeText(detailItem.outcome) }}</dd></div><div><dt>关联动物</dt><dd>{{ detailItem.animalId ? '#'+detailItem.animalId : '未关联' }}</dd></div></dl><div class="admin-detail-statement"><strong>动物与现场情况</strong><p>{{ detailItem.description || '未填写' }}</p></div><div v-if="detailItem.resolutionNote" class="admin-detail-statement"><strong>最终处理结论</strong><p>{{ detailItem.resolutionNote }}</p></div><div class="admin-detail-statement"><strong>管理员回复</strong><p>{{ detailItem.remark || '暂无回复' }}</p></div><div v-if="safeFileUrl(detailItem.pic)" class="admin-private-photo"><strong>现场照片</strong><img :src="safeFileUrl(detailItem.pic)" alt="救助工单现场照片"></div><div class="admin-dialog-actions"><button class="ui-button is-ghost" type="button" @click="closeDetail">关闭</button><button class="ui-button is-dark" type="button" @click="manageFromDetail">处理工单</button></div></section></div>
+  <div v-if="detailItem" class="admin-dialog-backdrop" @click.self="closeDetail"><section class="admin-dialog admin-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="helpDetailTitle"><div class="admin-dialog-head"><div><span>工单 #{{ detailItem.id }} · {{ priorityText(detailItem.priority) }}</span><h2 id="helpDetailTitle">{{ detailItem.title || '未命名救助请求' }}</h2></div><button class="admin-dialog-close" ref="detailClose" type="button" aria-label="关闭救助工单详情" @click="closeDetail" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button></div><div class="admin-dialog-body"><dl class="admin-detail-grid"><div><dt>申请人</dt><dd>{{ detailItem.uname || '-' }}</dd></div><div><dt>状态</dt><dd><span class="ui-badge" :class="badgeClass(detailItem.status)">{{ statusText(detailItem.status) }}</span></dd></div><div><dt>优先级</dt><dd>{{ priorityText(detailItem.priority) }}</dd></div><div><dt>联系电话</dt><dd>{{ detailItem.phone || '-' }}</dd></div><div><dt>发现地点</dt><dd>{{ detailItem.location || '-' }}</dd></div><div><dt>提交时间</dt><dd>{{ formatTime(detailItem.createTime) || '-' }}</dd></div><div><dt>更新时间</dt><dd>{{ formatTime(detailItem.updateTime) || '-' }}</dd></div><div><dt>处理结果</dt><dd>{{ outcomeText(detailItem.outcome) }}</dd></div><div><dt>关联动物</dt><dd>{{ detailItem.animalId ? '#'+detailItem.animalId : '未关联' }}</dd></div></dl><div class="admin-detail-statement"><strong>动物与现场情况</strong><p>{{ detailItem.description || '未填写' }}</p></div><div v-if="detailItem.resolutionNote" class="admin-detail-statement"><strong>最终处理结论</strong><p>{{ detailItem.resolutionNote }}</p></div><div class="admin-detail-statement"><strong>管理员回复</strong><p>{{ detailItem.remark || '暂无回复' }}</p></div><div class="admin-private-photo"><strong>现场照片</strong><img v-if="safeFileUrl(detailItem.pic)" :src="safeFileUrl(detailItem.pic)" alt="救助工单现场照片" @error="photoFallback"><div v-else class="help-governance-photo-fallback">暂无现场照片</div></div></div><div class="admin-dialog-actions"><button class="ui-button is-ghost" type="button" @click="closeDetail">关闭</button><button class="ui-button is-dark" type="button" @click="manageFromDetail">处理工单</button></div></section></div>
 
-  <div v-if="manageItem" class="admin-dialog-backdrop" @click.self="cancelManage"><section class="admin-dialog" role="dialog" aria-modal="true" aria-labelledby="manageTitle"><div class="admin-dialog-head"><div><span>工单 #{{ manageItem.id }}</span><h2 id="manageTitle">更新处理结果</h2></div><button class="admin-dialog-close" type="button" aria-label="取消更新救助工单" @click="cancelManage" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button></div><form class="admin-manager-form" @submit.prevent="saveManage"><h3>{{ manageItem.title || '未命名救助请求' }}</h3><p>完成救助时必须选择明确结果；接收入站必须创建或关联动物档案。</p><div class="admin-form-grid"><div class="ui-form-field"><label for="managerStatus">处理状态</label><select id="managerStatus" ref="managerStatus" v-model.number="manageForm.status" class="ui-form-input"><option :value="0">待处理</option><option :value="1">处理中</option><option :value="2">已完成</option><option :value="3">已关闭</option></select></div><div class="ui-form-field"><label for="managerPriority">优先级</label><select id="managerPriority" v-model.number="manageForm.priority" class="ui-form-input"><option :value="0">普通</option><option :value="1">较急</option><option :value="2">紧急</option></select></div><div v-if="Number(manageForm.status)>=2" class="ui-form-field"><label for="managerOutcome">处理结果</label><select id="managerOutcome" v-model="manageForm.outcome" class="ui-form-input"><option value="">请选择</option><option value="intake">接收入站</option><option value="transfer">转交其他机构</option><option value="owner_found">找到原主人</option><option value="not_found">未找到动物</option><option value="duplicate">重复信息</option><option value="invalid">无效信息</option></select></div><div v-if="Number(manageForm.status)>=2" class="ui-form-field is-full"><label for="managerResolution">处理结论</label><textarea id="managerResolution" v-model.trim="manageForm.resolutionNote" class="ui-form-textarea" maxlength="2000" rows="3" placeholder="说明动物去向与最终处理情况"></textarea></div><template v-if="Number(manageForm.status)===2&&manageForm.outcome==='intake'"><div class="ui-form-field is-full"><label>动物档案方式</label><div class="admin-segmented"><button type="button" :class="{'is-active':manageForm.animalMode==='existing'}" @click="manageForm.animalMode='existing'">关联已有档案</button><button type="button" :class="{'is-active':manageForm.animalMode==='new'}" @click="manageForm.animalMode='new'">创建新档案</button></div></div><div v-if="manageForm.animalMode==='existing'" class="ui-form-field"><label for="existingAnimalId">动物编号</label><input id="existingAnimalId" v-model.number="manageForm.existingAnimalId" class="ui-form-input" type="number" min="1" placeholder="例如 10011"></div><template v-else><div class="ui-form-field"><label>动物名称</label><input v-model.trim="manageForm.animal.tname" class="ui-form-input" maxlength="12"></div><div class="ui-form-field"><label>动物类型</label><input v-model.trim="manageForm.animal.ttype" class="ui-form-input" maxlength="12" placeholder="猫、狗等"></div><div class="ui-form-field"><label>性别</label><select v-model="manageForm.animal.tsex" class="ui-form-input"><option value="公">公</option><option value="母">母</option><option value="未知">未知</option></select></div><div class="ui-form-field is-full"><label>档案描述</label><textarea v-model.trim="manageForm.animal.tdescribe" class="ui-form-textarea" maxlength="355"></textarea></div></template></template><div class="ui-form-field is-full"><label for="managerRemark">给申请人的进度回复</label><textarea id="managerRemark" v-model.trim="manageForm.remark" class="ui-form-textarea" maxlength="2000" rows="4" placeholder="说明当前进展或下一步安排"></textarea></div></div><div v-if="manageError" class="admin-inline-message is-error" role="alert">{{ manageError }}</div><div class="admin-dialog-actions"><button class="ui-button is-ghost" type="button" :disabled="manageSaving" @click="cancelManage">取消</button><button class="ui-button is-primary" type="submit" :disabled="manageSaving">{{ manageSaving ? '正在保存...' : '保存处理结果' }}</button></div></form></section></div>
+  <div v-if="manageItem" class="admin-dialog-backdrop" @click.self="cancelManage"><section class="admin-dialog" role="dialog" aria-modal="true" aria-labelledby="manageTitle"><div class="admin-dialog-head"><div><span>工单 #{{ manageItem.id }}</span><h2 id="manageTitle">{{ Number(manageForm.status)>=2 ? '确认终态处置' : '更新处理结果' }}</h2></div><button class="admin-dialog-close" type="button" :disabled="manageSaving" aria-label="取消更新救助工单" @click="cancelManage" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button></div><form class="admin-manager-form" @submit.prevent="saveManage"><div class="admin-dialog-body"><div class="help-governance-context" aria-label="当前工单只读上下文"><div><span>工单</span><strong>#{{ manageItem.id }} · {{ manageItem.title || '未命名' }}</strong></div><div><span>申请人</span><strong>{{ manageItem.uname || '-' }}</strong></div><div><span>地点</span><strong>{{ manageItem.location || '-' }}</strong></div><div><span>当前状态</span><strong>{{ statusText(manageItem.status) }}</strong></div></div><p class="admin-dialog-note">完成救助时必须选择明确结果；接收入站必须创建或关联动物档案，保存后将建立工单与档案关联。</p>
+<div class="help-governance-form-group"><h3>处理状态与优先级</h3><div class="admin-form-grid"><div class="ui-form-field"><label for="managerStatus">处理状态</label><select id="managerStatus" ref="managerStatus" v-model.number="manageForm.status" class="ui-form-input" :disabled="manageSaving"><option :value="0">待处理</option><option :value="1">处理中</option><option :value="2">已完成</option><option :value="3">已关闭</option></select></div><div class="ui-form-field"><label for="managerPriority">优先级</label><select id="managerPriority" v-model.number="manageForm.priority" class="ui-form-input" :disabled="manageSaving"><option :value="0">普通</option><option :value="1">较急</option><option :value="2">紧急</option></select></div></div></div>
+<div v-if="Number(manageForm.status)>=2" class="help-governance-form-group"><h3>处理结果与结论</h3><div class="admin-form-grid"><div class="ui-form-field"><label for="managerOutcome">处理结果</label><select id="managerOutcome" v-model="manageForm.outcome" class="ui-form-input" :disabled="manageSaving"><option value="">请选择</option><option value="intake">接收入站</option><option value="transfer">转交其他机构</option><option value="owner_found">找到原主人</option><option value="not_found">未找到动物</option><option value="duplicate">重复信息</option><option value="invalid">无效信息</option></select></div><div class="ui-form-field is-full"><label for="managerResolution">处理结论</label><textarea id="managerResolution" v-model.trim="manageForm.resolutionNote" class="ui-form-textarea" maxlength="2000" rows="3" placeholder="说明动物去向与最终处理情况" :disabled="manageSaving"></textarea></div></div></div>
+<template v-if="Number(manageForm.status)===2&&manageForm.outcome==='intake'"><div class="help-governance-form-group"><h3>动物档案处置</h3><p class="admin-dialog-note">只能选择「关联已有」或「创建新档案」之一，不可同时提交两种方式。</p><div class="admin-form-grid"><div class="ui-form-field is-full"><label id="helpAnimalModeLabel">动物档案方式</label><div class="admin-segmented" role="group" aria-labelledby="helpAnimalModeLabel" aria-label="动物档案处置方式"><button type="button" id="helpAnimalModeExisting" :class="{'is-active':manageForm.animalMode==='existing'}" :aria-pressed="manageForm.animalMode==='existing' ? 'true' : 'false'" :disabled="manageSaving" @click="manageForm.animalMode='existing'">关联已有档案</button><button type="button" id="helpAnimalModeNew" :class="{'is-active':manageForm.animalMode==='new'}" :aria-pressed="manageForm.animalMode==='new' ? 'true' : 'false'" :disabled="manageSaving" @click="manageForm.animalMode='new'">创建新档案</button></div></div><div v-if="manageForm.animalMode==='existing'" class="ui-form-field"><label for="existingAnimalId">动物编号</label><input id="existingAnimalId" v-model.number="manageForm.existingAnimalId" class="ui-form-input" type="number" min="1" placeholder="例如 10011" :disabled="manageSaving"></div><template v-else><div class="ui-form-field"><label for="helpNewAnimalName">动物名称</label><input id="helpNewAnimalName" v-model.trim="manageForm.animal.tname" class="ui-form-input" maxlength="12" :disabled="manageSaving"></div><div class="ui-form-field"><label for="helpNewAnimalType">动物类型</label><input id="helpNewAnimalType" v-model.trim="manageForm.animal.ttype" class="ui-form-input" maxlength="12" placeholder="猫、狗等" :disabled="manageSaving"></div><div class="ui-form-field"><label for="helpNewAnimalSex">性别</label><select id="helpNewAnimalSex" v-model="manageForm.animal.tsex" class="ui-form-input" :disabled="manageSaving"><option value="公">公</option><option value="母">母</option><option value="未知">未知</option></select></div><div class="ui-form-field is-full"><label for="helpNewAnimalDescribe">档案描述</label><textarea id="helpNewAnimalDescribe" v-model.trim="manageForm.animal.tdescribe" class="ui-form-textarea" maxlength="355" :disabled="manageSaving"></textarea></div></template></div></div></template>
+<div class="help-governance-form-group"><h3>给申请人的进度回复</h3><div class="ui-form-field is-full"><label for="managerRemark">进度回复</label><textarea id="managerRemark" v-model.trim="manageForm.remark" class="ui-form-textarea" maxlength="2000" rows="4" placeholder="说明当前进展或下一步安排" :disabled="manageSaving"></textarea></div></div>
+<div v-if="manageError" id="helpManageError" class="admin-inline-message is-error" role="alert" tabindex="-1">{{ manageError }}</div></div><div class="admin-dialog-actions"><button class="ui-button is-ghost" type="button" :disabled="manageSaving" @click="cancelManage">取消</button><button class="ui-button is-primary" type="submit" :class="{'is-loading':manageSaving}" :disabled="manageSaving" :aria-busy="manageSaving?'true':'false'">{{ manageSaving ? '正在保存...' : (Number(manageForm.status)>=2?'确认并保存终态':'保存处理结果') }}</button></div></form></section></div>
 </div>
 <script src="../../js/jquery.min.js"></script>
 <script src="../../js/auth-session.js?v=20260728"></script>
@@ -138,6 +157,68 @@
   var pollingGeneration = 0;
   var pollingStopped = false;
   var pollInterval = 10000;
+  var writeLocks = { manage: false, chat: false };
+  window.__helpWriteLocks = writeLocks;
+  function createFocusTrap() {
+    var state = { root: null, onKey: null, prevOverflow: '', onEscape: null };
+    function focusable(root) {
+      return Array.prototype.slice.call(root.querySelectorAll(
+        'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+      )).filter(function (el) {
+        return !el.disabled && (el.offsetParent !== null || el === document.activeElement || el.getClientRects().length);
+      });
+    }
+    return {
+      activate: function (root, initial, onEscape) {
+        this.deactivate();
+        if (!root) return;
+        state.root = root;
+        state.onEscape = typeof onEscape === 'function' ? onEscape : null;
+        state.prevOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        if (!root.hasAttribute('tabindex')) root.setAttribute('tabindex', '-1');
+        state.onKey = function (e) {
+          if (!state.root) return;
+          if (e.key === 'Escape' || e.keyCode === 27) {
+            if (state.onEscape) {
+              e.preventDefault();
+              e.stopPropagation();
+              state.onEscape();
+            }
+            return;
+          }
+          if (e.key !== 'Tab') return;
+          var list = focusable(state.root);
+          if (!list.length) { e.preventDefault(); state.root.focus(); return; }
+          var first = list[0], last = list[list.length - 1], active = document.activeElement;
+          if (e.shiftKey) {
+            if (active === first || !state.root.contains(active)) { e.preventDefault(); last.focus(); }
+          } else if (active === last || !state.root.contains(active)) {
+            e.preventDefault(); first.focus();
+          }
+        };
+        document.addEventListener('keydown', state.onKey, true);
+        setTimeout(function () {
+          var target = initial;
+          if (!target || !state.root.contains(target) || target.disabled) {
+            var list = focusable(state.root);
+            target = list[0] || state.root;
+          }
+          if (target && target.focus) target.focus();
+        }, 0);
+      },
+      deactivate: function () {
+        if (state.onKey) {
+          document.removeEventListener('keydown', state.onKey, true);
+          state.onKey = null;
+        }
+        state.onEscape = null;
+        document.body.style.overflow = state.prevOverflow || '';
+        state.root = null;
+      },
+      root: function () { return state.root; }
+    };
+  }
   AuthSession.bootstrap({
     requireAuth: true,
     allowCachedOnNetworkError: false,
@@ -145,6 +226,7 @@
       if (!ok || !authenticatedUser) return;
       if (!AdminWorkspace.hasFlag(authenticatedUser, 'help') && !AdminWorkspace.hasFlag(authenticatedUser, 'rescue')) { window.location.replace('/page/end/index.html?error=forbidden'); return; }
       document.getElementById('authWait').hidden = true;
+      var focusTrap = createFocusTrap();
       var vm = new Vue({
         el: '#workspace',
         data: {
@@ -160,6 +242,7 @@
           records: [],
           loading: true,
           loadError: '',
+          loadSeq: 0,
           message: '',
           messageType: '',
           pageNum: 1,
@@ -171,6 +254,7 @@
           manageForm: { status: 0, remark: '', priority:0, outcome:'', resolutionNote:'', animalMode:'new', existingAnimalId:null, animal:{tname:'',ttype:'',tsex:'未知',tdescribe:''} },
           manageSaving: false,
           manageError: '',
+          triggerEl: null,
           messages: [],
           historyLoading: true,
           connectionState: 'connecting',
@@ -189,10 +273,61 @@
             return this.connectionState === 'connected' ? '每 10 秒更新'
                  : this.connectionState === 'error' ? '连接异常' : '更新中…';
           },
-          pages: function () { var result = []; var start = Math.max(1, this.pageNum - 2); var end = Math.min(this.totalPages, start + 4); start = Math.max(1, end - 4); for (var page = start; page <= end; page += 1) result.push(page); return result; }
+          pages: function () { var result = []; var start = Math.max(1, this.pageNum - 2); var end = Math.min(this.totalPages, start + 4); start = Math.max(1, end - 4); for (var page = start; page <= end; page += 1) result.push(page); return result; },
+          pagePending: function () { return (this.records||[]).filter(function(r){return Number(r.status)===0;}).length; },
+          pageWorking: function () { return (this.records||[]).filter(function(r){return Number(r.status)===1;}).length; },
+          pageUrgent: function () { return (this.records||[]).filter(function(r){return Number(r.priority)===2;}).length; },
+          pageDone: function () { return (this.records||[]).filter(function(r){return Number(r.status)===2;}).length; },
+          pageClosed: function () { return (this.records||[]).filter(function(r){return Number(r.status)===3;}).length; }
         },
-        created: function () { this.load(1); this.startPolling(); },
-        beforeDestroy: function () { this.stopPolling(); },
+        created: function () {
+          var view = this;
+          // Esc for dialogs is owned by focusTrap when active — avoid double-close
+          this._onDocEsc = function (e) {
+            if (e.key !== 'Escape' && e.keyCode !== 27) return;
+            if (focusTrap.root()) return;
+            if (view.manageSaving || view.chatSending) { e.preventDefault(); e.stopPropagation(); return; }
+            if (view.manageItem || view.detailItem) { e.preventDefault(); e.stopPropagation(); view.closeTopLayer(); }
+          };
+          document.addEventListener('keydown', this._onDocEsc, true);
+          this.load(1); this.startPolling();
+        },
+        beforeDestroy: function () {
+          if (this._onDocEsc) { document.removeEventListener('keydown', this._onDocEsc, true); this._onDocEsc = null; }
+          focusTrap.deactivate();
+          this.stopPolling();
+        },
+        watch: {
+          detailItem: function (v) {
+            var view = this;
+            if (v) {
+              this.$nextTick(function () {
+                var root = document.querySelector('[role="dialog"][aria-labelledby="helpDetailTitle"]');
+                focusTrap.activate(root, view.$refs.detailClose || (root && root.querySelector('button')), function () {
+                  if (view.manageSaving) return;
+                  view.closeDetail();
+                });
+              });
+            } else if (!this.manageItem) {
+              focusTrap.deactivate();
+            }
+          },
+          manageItem: function (v) {
+            var view = this;
+            if (v) {
+              this.$nextTick(function () {
+                var root = document.querySelector('[role="dialog"][aria-labelledby="manageTitle"]');
+                var initial = view.$refs.managerStatus || (root && root.querySelector('select,button,textarea,input'));
+                focusTrap.activate(root, initial, function () {
+                  if (view.manageSaving) return;
+                  view.cancelManage();
+                });
+              });
+            } else if (!this.detailItem) {
+              focusTrap.deactivate();
+            }
+          }
+        },
         methods: {
           closeMenus: function () { this.mobileOpen = false; this.accountOpen = false; this.moreOpen = false; },
           toggleMore: function () { this.moreOpen = !this.moreOpen; this.accountOpen = false; this.mobileOpen = false; },
@@ -201,52 +336,118 @@
           isNavActive: function (flag) { return AdminWorkspace.flagsMatch(flag, this.currentNavFlag); },
           isMoreCurrent: function () { var vm = this; var more = (this.desktopNav && this.desktopNav.more) || []; return more.some(function (item) { return AdminWorkspace.flagsMatch(item.flag, vm.currentNavFlag); }); },
           isOverviewActive: function () { return !this.currentNavFlag; },
+          resolveStableFocusTarget: function () {
+            var main = document.querySelector('main') || document;
+            var sels = ['input[type="search"]', '.admin-review-toolbar input', 'button[type="submit"]', 'h2', 'h1'];
+            for (var i = 0; i < sels.length; i++) { var el = main.querySelector(sels[i]); if (el && el.isConnected) return el; }
+            return null;
+          },
+          restoreTriggerFocus: function () {
+            var t = this.triggerEl; this.triggerEl = null; var view = this;
+            this.$nextTick(function () {
+              var target = t;
+              if (!target || !target.isConnected || typeof target.focus !== 'function') target = view.resolveStableFocusTarget();
+              if (!target || typeof target.focus !== 'function') return;
+              try { if (/^H[12]$/.test(target.tagName)) target.setAttribute('tabindex', '-1'); target.focus(); } catch (e) { /* */ }
+            });
+          },
+          focusManageError: function () {
+            this.$nextTick(function () {
+              var err = document.getElementById('helpManageError');
+              if (err) { try { err.focus(); return; } catch (e1) { /* */ } }
+              var root = document.querySelector('[role="dialog"][aria-labelledby="manageTitle"]');
+              if (root) { var b = root.querySelector('button.is-primary, select, textarea'); if (b) try { b.focus(); } catch (e2) { /* */ } }
+            });
+          },
 
           avatarUrl: function (flag) { var value = flag == null ? '' : String(flag); return /^[a-zA-Z0-9-]{1,64}$/.test(value) ? AdminWorkspace.avatarUrl(value) : '/api/files/'; },
           avatarFallback: function (event) { AdminWorkspace.avatarFallback(event); },
+          photoFallback: function (e) { e.target.onerror = null; e.target.style.display = 'none'; var p = e.target.parentNode; if (p && !p.querySelector('.help-governance-photo-fallback')) { var d = document.createElement('div'); d.className = 'help-governance-photo-fallback'; d.textContent = '照片暂不可用'; p.appendChild(d); } },
           logout: function () { this.stopPolling(); AuthSession.logout(); },
-          closeTopLayer: function () { if (this.closeMenus) this.closeMenus();  if (this.manageItem) this.cancelManage(); else if (this.detailItem) this.closeDetail(); else { this.mobileOpen = false; this.accountOpen = false; } },
-          load: function (page) {
+          closeTopLayer: function () { if (this.closeMenus) this.closeMenus(); if (this.manageSaving) return; if (this.manageItem) this.cancelManage(); else if (this.detailItem) this.closeDetail(); else { this.mobileOpen = false; this.accountOpen = false; } },
+          load: function (page, preserveFeedback, onDone) {
             var view = this;
+            var seq = ++view.loadSeq;
+            if (!preserveFeedback) { view.message = ''; view.messageType = ''; }
             view.loading = true;
             view.loadError = '';
             $.ajax({ url: '/api/help/page', type: 'GET', data: { name: view.search, pageNum: page, pageSize: view.pageSize }, cache: false }).done(function (res) {
+              if (seq !== view.loadSeq) return;
               if (!res || res.code !== '0' || !res.data || !Array.isArray(res.data.records)) { view.loadError = (res && res.msg) || '服务返回了无法识别的数据。'; return; }
               view.records = res.data.records;
               view.pageNum = Number(res.data.current || page);
               view.total = Number(res.data.total || 0);
               view.totalPages = Math.max(1, Number(res.data.pages || Math.ceil(view.total / view.pageSize) || 1));
-            }).fail(function (xhr) { view.loadError = (xhr.responseJSON && xhr.responseJSON.msg) || '请检查网络连接后重试。'; }).always(function () { view.loading = false; });
+            }).fail(function (xhr) { if (seq !== view.loadSeq) return; view.loadError = (xhr.responseJSON && xhr.responseJSON.msg) || '请检查网络连接后重试。'; }).always(function () { if (seq !== view.loadSeq) return; view.loading = false; if (typeof onDone === 'function') view.$nextTick(function () { onDone(); }); });
           },
           resetSearch: function () { this.search = ''; this.load(1); },
           statusText: function (value) { return { 0: '待处理', 1: '处理中', 2: '已完成', 3: '已关闭' }[Number(value)] || '状态未知'; },
+          priorityText: function (value) { return { 0: '普通', 1: '较急', 2: '紧急' }[Number(value)] || '普通'; },
           outcomeText: function (value) { return {intake:'接收入站',transfer:'转交其他机构',owner_found:'找到原主人',not_found:'未找到动物',duplicate:'重复信息',invalid:'无效信息'}[value] || '尚未确定'; },
           badgeClass: function (value) { return Number(value) === 0 ? 'is-pending' : Number(value) === 1 ? 'is-waiting' : Number(value) === 2 ? 'is-done' : 'is-closed'; },
           formatTime: function (value) { if (!value) return ''; var date = new Date(typeof value === 'string' ? value.replace(' ', 'T') : value); return isNaN(date.getTime()) ? String(value) : date.toLocaleString('zh-CN'); },
           safeFileUrl: function (flag) { var value = flag == null ? '' : String(flag); return /^[a-zA-Z0-9-]{1,64}$/.test(value) ? '/api/files/' + encodeURIComponent(value) : ''; },
-          openDetail: function (item) { this.detailItem = item; this.$nextTick(function () { if (this.$refs.detailClose) this.$refs.detailClose.focus(); }); },
-          closeDetail: function () { this.detailItem = null; },
-          openManage: function (item) { this.manageItem = item; this.manageForm = { status: Number(item.status), remark: item.remark || '', priority:Number(item.priority||0), outcome:item.outcome||'', resolutionNote:item.resolutionNote||'', animalMode:item.animalId?'existing':'new', existingAnimalId:item.animalId||null, animal:{tname:'',ttype:'',tsex:'未知',tdescribe:item.description||''}, expectedVersion:Number(item.version||0) }; this.manageError = ''; this.$nextTick(function () { if (this.$refs.managerStatus) this.$refs.managerStatus.focus(); }); },
-          manageFromDetail: function () { var item = this.detailItem; this.closeDetail(); this.openManage(item); },
-          cancelManage: function () { if (this.manageSaving) return; this.manageItem = null; this.manageError = ''; },
+          openDetail: function (item, evt) {
+            this.triggerEl = (evt && evt.currentTarget) || document.activeElement;
+            this.detailItem = item;
+          },
+          closeDetail: function () {
+            this.detailItem = null;
+            focusTrap.deactivate();
+            this.restoreTriggerFocus();
+          },
+          openManage: function (item, evt) {
+            if (evt) this.triggerEl = (evt && evt.currentTarget) || document.activeElement;
+            this.manageItem = item;
+            this.manageForm = {
+              status: Number(item.status), remark: item.remark || '', priority: Number(item.priority || 0),
+              outcome: item.outcome || '', resolutionNote: item.resolutionNote || '',
+              animalMode: item.animalId ? 'existing' : 'new', existingAnimalId: item.animalId || null,
+              animal: { tname: '', ttype: '', tsex: '未知', tdescribe: item.description || '' },
+              expectedVersion: Number(item.version || 0)
+            };
+            this.manageError = '';
+          },
+          manageFromDetail: function () {
+            var item = this.detailItem;
+            var t = this.triggerEl;
+            this.detailItem = null;
+            this.triggerEl = t;
+            this.openManage(item);
+          },
+          cancelManage: function () {
+            if (this.manageSaving) return;
+            this.manageItem = null;
+            this.manageError = '';
+            focusTrap.deactivate();
+            this.restoreTriggerFocus();
+          },
           managerPayload: function () { var f=this.manageForm;var payload={status:Number(f.status),remark:f.remark,priority:Number(f.priority||0),outcome:f.outcome||null,resolutionNote:f.resolutionNote||null,expectedVersion:f.expectedVersion};if(Number(f.status)===2&&f.outcome==='intake'){if(f.animalMode==='existing')payload.existingAnimalId=Number(f.existingAnimalId||0);else payload.animal={tname:f.animal.tname,ttype:f.animal.ttype,tsex:f.animal.tsex,tdescribe:f.animal.tdescribe};}return payload; },
           saveManage: function () {
             var view = this;
-            if (!view.manageItem || view.manageSaving || [0, 1, 2, 3].indexOf(Number(view.manageForm.status)) < 0) return;
-            if (Number(view.manageForm.status)>=2&&!view.manageForm.outcome){view.manageError='完成或关闭工单时请选择处理结果。';return;}
-            if (Number(view.manageForm.status)===2&&!String(view.manageForm.resolutionNote||'').trim()){view.manageError='完成工单时请填写处理结论。';return;}
-            if (Number(view.manageForm.status)===2&&view.manageForm.outcome==='intake'&&view.manageForm.animalMode==='existing'&&!Number(view.manageForm.existingAnimalId)){view.manageError='请输入要关联的动物编号。';return;}
-            if (Number(view.manageForm.status)===2&&view.manageForm.outcome==='intake'&&view.manageForm.animalMode==='new'&&(!String(view.manageForm.animal.tname||'').trim()||!String(view.manageForm.animal.ttype||'').trim())){view.manageError='创建动物档案时请填写名称和类型。';return;}
+            if (!view.manageItem || view.manageSaving || writeLocks.manage || [0, 1, 2, 3].indexOf(Number(view.manageForm.status)) < 0) return;
+            if (Number(view.manageForm.status)>=2&&!view.manageForm.outcome){view.manageError='完成或关闭工单时请选择处理结果。';view.focusManageError();return;}
+            if (Number(view.manageForm.status)===2&&!String(view.manageForm.resolutionNote||'').trim()){view.manageError='完成工单时请填写处理结论。';view.focusManageError();return;}
+            if (Number(view.manageForm.status)===2&&view.manageForm.outcome==='intake'&&view.manageForm.animalMode==='existing'&&!Number(view.manageForm.existingAnimalId)){view.manageError='请输入要关联的动物编号。';view.focusManageError();return;}
+            if (Number(view.manageForm.status)===2&&view.manageForm.outcome==='intake'&&view.manageForm.animalMode==='new'&&(!String(view.manageForm.animal.tname||'').trim()||!String(view.manageForm.animal.ttype||'').trim())){view.manageError='创建动物档案时请填写名称和类型。';view.focusManageError();return;}
+            writeLocks.manage = true;
             view.manageSaving = true;
             view.manageError = '';
             $.ajax({ url: '/api/help/' + encodeURIComponent(view.manageItem.id) + '/manage', type: 'PUT', contentType: 'application/json', data: JSON.stringify(view.managerPayload()) }).done(function (res) {
-              if (!res || res.code !== '0' || res.data !== true) { view.manageError = (res && res.msg) || '处理结果保存失败。'; return; }
+              if (!res || res.code !== '0' || res.data !== true) { view.manageError = (res && res.msg) || '处理结果保存失败。'; view.focusManageError(); return; }
               var id = view.manageItem.id;
               view.manageItem = null;
-              view.load(view.pageNum);
+              focusTrap.deactivate();
               view.messageType = 'success';
               view.message = '工单 #' + id + ' 的状态与回复已更新。';
-            }).fail(function (xhr) { view.manageError = (xhr.responseJSON && xhr.responseJSON.msg) || '网络异常，处理结果未保存。'; }).always(function () { view.manageSaving = false; });
+              view.triggerEl = view.resolveStableFocusTarget();
+              view.load(view.pageNum, true, function () { view.restoreTriggerFocus(); });
+            }).fail(function (xhr) {
+              var st = xhr && xhr.status;
+              view.manageError = (xhr.responseJSON && xhr.responseJSON.msg) || (st===409?'状态冲突，请刷新后重试。':st===403?'无权限。':st>=500?'服务异常。':'网络异常，处理结果未保存。');
+              view.message = ''; view.messageType = '';
+              view.focusManageError();
+            }).always(function () { view.manageSaving = false; writeLocks.manage = false; });
           },
           normalizeMessage: function (item) {
             if (!item || typeof item !== 'object' || item.id == null) return null;
@@ -302,16 +503,17 @@
             }).fail(function (xhr, status) { if (generation === pollingGeneration && status !== 'abort') view.historyError = (xhr.responseJSON && xhr.responseJSON.msg) || '最近社区消息暂时无法读取。'; view.connectionState = 'error'; }).always(function () { if (generation !== pollingGeneration) return; historyRequest = null; view.historyRequestActive = false; view.historyLoading = false; view.schedulePoll(); });
           },
           sendChat: function () {
-            if (this.chatSending || !this.chatText) return;
+            if (this.chatSending || writeLocks.chat || !this.chatText) return;
             var view = this;
             var text = view.chatText.slice(0, 500);
+            writeLocks.chat = true;
             view.chatSending = true;
             view.chatError = '';
             $.ajax({ url: '/api/help/chat', type: 'POST', contentType: 'application/json', data: JSON.stringify({ text: text }) }).done(function (res) {
               if (!res || res.code !== '0' || !res.data) { view.chatError = (res && res.msg) || '消息未能保存。'; return; }
               view.appendMessage(res.data);
               view.chatText = '';
-            }).fail(function (xhr) { view.chatError = (xhr.responseJSON && xhr.responseJSON.msg) || '网络异常，消息未能保存。'; }).always(function () { view.chatSending = false; });
+            }).fail(function (xhr) { view.chatError = (xhr.responseJSON && xhr.responseJSON.msg) || '网络异常，消息未能保存。'; }).always(function () { view.chatSending = false; writeLocks.chat = false; });
           },
           schedulePoll: function () { var view = this; if (pollingStopped || document.hidden) return; pollTimer = window.setTimeout(function () { view.loadHistory(); }, pollInterval); },
           startPolling: function () { pollingStopped = false; if (!document.hidden) this.loadHistory(); },

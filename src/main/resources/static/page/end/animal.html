@@ -6,16 +6,16 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <title>动物档案 · 归途计划管理</title>
+    <title>动物档案治理 · 归途计划管理</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
     <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c" />
-    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260729c" />
+    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260730g" />
   </head>
   <body>
     <div id="authWait" class="admin-auth-wait" role="status">
       正在验证登录状态...
     </div>
-    <div id="workspace" :class="{'is-nav-open': mobileOpen}" class="admin-shell" v-cloak @keyup.esc="closeTopLayer" @click="closeMenus">
+    <div id="workspace" :class="{'is-nav-open': mobileOpen}" class="admin-shell animal-governance" v-cloak @click="closeMenus">
       <header class="ui-header admin-header" @click.stop>
     <div class="ui-header-inner">
       <a class="ui-brand" href="/page/end/index.html" aria-label="返回管理工作台">
@@ -94,16 +94,20 @@
   </header>
   <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
       <main class="admin-main">
-        <section class="admin-hero" aria-labelledby="animalTitle">
+        <section class="admin-hero animal-governance-hero" aria-labelledby="animalTitle">
           <div>
-            <p class="admin-kicker">Animal records</p>
-            <h1 id="animalTitle">动物档案</h1>
-            <p>
-              维护动物名称、品种、性别、生日、单张图片和描述。领养状态由领养流程统一维护，列表始终只读取当前页。
+            <p class="admin-kicker">Animal archive desk</p>
+            <h1 id="animalTitle">动物档案治理</h1>
+            <p class="animal-governance-lead">
+              维护名称、品种、性别、生日、图片与描述。领养状态由领养流程统一维护；列表只读当前页。
             </p>
           </div>
-          <div class="admin-hero-meta">
-            <span>当前登录账号</span><strong>{{ user.username }}</strong>
+          <div class="animal-governance-metrics" aria-label="档案状态摘要">
+            <div class="animal-governance-metric"><span>接口总数</span><strong>{{ total }}</strong><small>服务端 total</small></div>
+            <div class="animal-governance-metric is-pending"><span>本页待领养</span><strong>{{ pageAvailable }}</strong><small>仅当前页</small></div>
+            <div class="animal-governance-metric is-pending"><span>本页流程中</span><strong>{{ pageInFlow }}</strong><small>预留/申请中</small></div>
+            <div class="animal-governance-metric is-ok"><span>本页已领养</span><strong>{{ pageAdopted }}</strong><small>仅当前页</small></div>
+            <div class="animal-governance-metric is-closed"><span>本页其他终态</span><strong>{{ pageOther }}</strong><small>仅当前页</small></div>
           </div>
         </section>
         <section aria-labelledby="animalListTitle">
@@ -111,7 +115,7 @@
             <div>
               <h2 id="animalListTitle">动物记录</h2>
               <p>
-                状态只读并由领养流程维护；新增和导入始终从“待领养”开始，工作簿状态不会被采用。
+                状态只读并由领养流程维护；新增和导入始终从「待领养」开始，工作簿状态不会被采用。
               </p>
             </div>
             <div class="admin-head-actions">
@@ -124,13 +128,13 @@
               ><button
                 class="ui-button is-ghost"
                 type="button"
-                @click="openImport"
+                @click="openImport($event)"
               >
                 批量导入</button
               ><button
                 class="ui-button is-primary"
                 type="button"
-                @click="openCreate"
+                @click="openCreate($event)"
               >
                 新增动物
               </button>
@@ -166,7 +170,7 @@
           </form>
           <div
             v-if="message"
-            class="admin-inline-message"
+            class="animal-governance-feedback"
             :class="{'is-error':messageType==='error','is-success':messageType==='success'}"
             :role="messageType==='error'?'alert':'status'"
             aria-live="polite"
@@ -237,18 +241,18 @@
                     </td>
                     <td>
                       <div class="admin-row-actions">
-                        <button type="button" @click="openDetail(item)">
+                        <button type="button" @click="openDetail(item, $event)">
                           详情</button
                         ><button
                           class="is-primary"
                           type="button"
-                          @click="openEdit(item)"
+                          @click="openEdit(item, $event)"
                         >
                           编辑</button
                         ><button
                           class="is-danger"
                           type="button"
-                          @click="askDelete(item)"
+                          @click="askDelete(item, $event)"
                         ><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-trash" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-trash"></use></svg>删除
                         </button>
                       </div>
@@ -283,13 +287,13 @@
                   <button
                     class="ui-button is-ghost"
                     type="button"
-                    @click="openDetail(item)"
+                    @click="openDetail(item, $event)"
                   >
                     查看详情</button
                   ><button
                     class="ui-button is-dark"
                     type="button"
-                    @click="openEdit(item)"
+                    @click="openEdit(item, $event)"
                   >
                     编辑档案
                   </button><button
@@ -466,16 +470,18 @@
                 /><small>未知时留空，不会生成默认日期。</small>
               </div>
               <div class="ui-form-field">
-                <label for="animalState">状态</label
-                ><select
+                <label for="animalState">流程状态（只读）</label>
+                <input
                   id="animalState"
-                  v-model.number="form.tstate"
                   class="ui-form-input"
-                >
-                  <option :value="0">待领养</option>
-                  <option :value="1">申请中</option>
-                  <option :value="2">已领养</option>
-                </select>
+                  type="text"
+                  :value="stateText(form.tstate)"
+                  readonly
+                  disabled
+                  aria-readonly="true"
+                  title="状态由领养流程维护，档案编辑不能修改"
+                />
+                <small>编辑档案不会改写 tstate；状态由领养状态机维护。</small>
               </div>
               <div class="ui-form-field">
                 <label for="animalImage">单张动物图片</label
@@ -511,8 +517,10 @@
             </div>
             <div
               v-if="editError"
+              id="animalEditError"
               class="admin-inline-message is-error"
               role="alert"
+              tabindex="-1"
             >
               {{ editError }}
             </div>
@@ -561,8 +569,10 @@
           </p>
           <div
             v-if="deleteError"
+            id="animalDeleteError"
             class="admin-inline-message is-error"
             role="alert"
+            tabindex="-1"
           >
             {{ deleteError }}
           </div>
@@ -624,8 +634,10 @@
             />
             <div
               v-if="importError"
+              id="animalImportError"
               class="admin-inline-message is-error"
               role="alert"
+              tabindex="-1"
             >
               {{ importError }}
             </div>
@@ -677,6 +689,89 @@
     <script>
       (function () {
         "use strict";
+        var writeLocks = { save: false, del: false, import: false };
+        window.__animalWriteLocks = writeLocks;
+        function createFocusTrap() {
+          var state = { root: null, onKey: null, prevOverflow: "", onEscape: null };
+          function focusable(root) {
+            return Array.prototype.slice
+              .call(
+                root.querySelectorAll(
+                  'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])',
+                ),
+              )
+              .filter(function (el) {
+                return (
+                  !el.disabled &&
+                  (el.offsetParent !== null ||
+                    el === document.activeElement ||
+                    el.getClientRects().length)
+                );
+              });
+          }
+          return {
+            activate: function (root, initial, onEscape) {
+              this.deactivate();
+              if (!root) return;
+              state.root = root;
+              state.onEscape = typeof onEscape === "function" ? onEscape : null;
+              state.prevOverflow = document.body.style.overflow;
+              document.body.style.overflow = "hidden";
+              if (!root.hasAttribute("tabindex")) root.setAttribute("tabindex", "-1");
+              state.onKey = function (e) {
+                if (!state.root) return;
+                if (e.key === "Escape" || e.keyCode === 27) {
+                  if (state.onEscape) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    state.onEscape();
+                  }
+                  return;
+                }
+                if (e.key !== "Tab") return;
+                var list = focusable(state.root);
+                if (!list.length) {
+                  e.preventDefault();
+                  state.root.focus();
+                  return;
+                }
+                var first = list[0],
+                  last = list[list.length - 1],
+                  active = document.activeElement;
+                if (e.shiftKey) {
+                  if (active === first || !state.root.contains(active)) {
+                    e.preventDefault();
+                    last.focus();
+                  }
+                } else if (active === last || !state.root.contains(active)) {
+                  e.preventDefault();
+                  first.focus();
+                }
+              };
+              document.addEventListener("keydown", state.onKey, true);
+              setTimeout(function () {
+                var target = initial;
+                if (!target || !state.root.contains(target) || target.disabled) {
+                  var list = focusable(state.root);
+                  target = list[0] || state.root;
+                }
+                if (target && target.focus) target.focus();
+              }, 0);
+            },
+            deactivate: function () {
+              if (state.onKey) {
+                document.removeEventListener("keydown", state.onKey, true);
+                state.onKey = null;
+              }
+              state.onEscape = null;
+              document.body.style.overflow = state.prevOverflow || "";
+              state.root = null;
+            },
+            root: function () {
+              return state.root;
+            },
+          };
+        }
         AuthSession.bootstrap({
           requireAuth: true,
           allowCachedOnNetworkError: false,
@@ -687,6 +782,7 @@
               return;
             }
             document.getElementById("authWait").hidden = true;
+            var focusTrap = createFocusTrap();
             new Vue({
               el: "#workspace",
               data: {
@@ -708,6 +804,7 @@
                 records: [],
                 loading: true,
                 loadError: "",
+                loadSeq: 0,
                 message: "",
                 messageType: "",
                 pageNum: 1,
@@ -728,6 +825,7 @@
                 importing: false,
                 importError: "",
                 importResult: null,
+                triggerEl: null,
               },
               computed: {
                 pages: function () {
@@ -739,9 +837,131 @@
                     result.push(page);
                   return result;
                 },
+                pageAvailable: function () {
+                  return (this.records || []).filter(function (r) { return Number(r.tstate) === 0; }).length;
+                },
+                pageInFlow: function () {
+                  return (this.records || []).filter(function (r) { return Number(r.tstate) === 1; }).length;
+                },
+                pageAdopted: function () {
+                  return (this.records || []).filter(function (r) { return Number(r.tstate) === 2; }).length;
+                },
+                pageOther: function () {
+                  return (this.records || []).filter(function (r) {
+                    var s = Number(r.tstate);
+                    return s !== 0 && s !== 1 && s !== 2;
+                  }).length;
+                },
               },
               created: function () {
+                var vm = this;
+                // Dialog Esc owned by focusTrap when active — avoid double-close
+                this._onDocEsc = function (e) {
+                  if (e.key !== "Escape" && e.keyCode !== 27) return;
+                  if (focusTrap.root()) return;
+                  if (vm.saving || vm.uploading || vm.deleting || vm.importing) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                  }
+                  if (vm.importOpen || vm.deleteItem || vm.editOpen || vm.detailItem) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    vm.closeTopLayer();
+                  }
+                };
+                document.addEventListener("keydown", this._onDocEsc, true);
                 this.load(1);
+              },
+              beforeDestroy: function () {
+                if (this._onDocEsc) {
+                  document.removeEventListener("keydown", this._onDocEsc, true);
+                  this._onDocEsc = null;
+                }
+                focusTrap.deactivate();
+              },
+              watch: {
+                detailItem: function (v) {
+                  var vm = this;
+                  if (v) {
+                    this.$nextTick(function () {
+                      var root = document.querySelector(
+                        '[role="dialog"][aria-labelledby="animalDetailTitle"]',
+                      );
+                      focusTrap.activate(
+                        root,
+                        vm.$refs.detailClose || (root && root.querySelector("button")),
+                        function () {
+                          if (vm.saving || vm.uploading || vm.deleting || vm.importing) return;
+                          vm.closeDetail();
+                        },
+                      );
+                    });
+                  } else if (!this.editOpen && !this.deleteItem && !this.importOpen) {
+                    focusTrap.deactivate();
+                  }
+                },
+                editOpen: function (open) {
+                  var vm = this;
+                  if (open) {
+                    this.$nextTick(function () {
+                      var root = document.querySelector(
+                        '[role="dialog"][aria-labelledby="animalEditTitle"]',
+                      );
+                      focusTrap.activate(
+                        root,
+                        vm.$refs.editFirst || document.getElementById("animalName"),
+                        function () {
+                          if (vm.saving || vm.uploading) return;
+                          vm.cancelEdit();
+                        },
+                      );
+                    });
+                  } else if (!this.detailItem && !this.deleteItem && !this.importOpen) {
+                    focusTrap.deactivate();
+                  }
+                },
+                deleteItem: function (v) {
+                  var vm = this;
+                  if (v) {
+                    this.$nextTick(function () {
+                      var root = document.querySelector(
+                        '[role="alertdialog"][aria-labelledby="animalDeleteTitle"]',
+                      );
+                      var cancelBtn =
+                        root &&
+                        root.querySelector(
+                          ".admin-dialog-actions button.is-ghost, .admin-dialog-actions button",
+                        );
+                      focusTrap.activate(root, cancelBtn, function () {
+                        if (vm.deleting) return;
+                        vm.cancelDelete();
+                      });
+                    });
+                  } else if (!this.detailItem && !this.editOpen && !this.importOpen) {
+                    focusTrap.deactivate();
+                  }
+                },
+                importOpen: function (open) {
+                  var vm = this;
+                  if (open) {
+                    this.$nextTick(function () {
+                      var root = document.querySelector(
+                        '[role="dialog"][aria-labelledby="animalImportTitle"]',
+                      );
+                      focusTrap.activate(
+                        root,
+                        (root && root.querySelector("button, input")) || null,
+                        function () {
+                          if (vm.importing) return;
+                          vm.closeImport();
+                        },
+                      );
+                    });
+                  } else if (!this.detailItem && !this.editOpen && !this.deleteItem) {
+                    focusTrap.deactivate();
+                  }
+                },
               },
               methods: {
           closeMenus: function () { this.mobileOpen = false; this.accountOpen = false; this.moreOpen = false; },
@@ -751,6 +971,67 @@
           isNavActive: function (flag) { return AdminWorkspace.flagsMatch(flag, this.currentNavFlag); },
           isMoreCurrent: function () { var vm = this; var more = (this.desktopNav && this.desktopNav.more) || []; return more.some(function (item) { return AdminWorkspace.flagsMatch(item.flag, vm.currentNavFlag); }); },
           isOverviewActive: function () { return !this.currentNavFlag; },
+                resolveStableFocusTarget: function () {
+                  var main = document.querySelector("main") || document;
+                  var sels = ['input[type="search"]', ".admin-review-toolbar input", 'button[type="submit"]', "h2", "h1"];
+                  for (var i = 0; i < sels.length; i++) {
+                    var el = main.querySelector(sels[i]);
+                    if (el && el.isConnected) return el;
+                  }
+                  return null;
+                },
+                restoreTriggerFocus: function () {
+                  var t = this.triggerEl;
+                  this.triggerEl = null;
+                  var vm = this;
+                  this.$nextTick(function () {
+                    var target = t;
+                    if (!target || !target.isConnected || typeof target.focus !== "function") target = vm.resolveStableFocusTarget();
+                    if (!target || typeof target.focus !== "function") return;
+                    try {
+                      if (/^H[12]$/.test(target.tagName)) target.setAttribute("tabindex", "-1");
+                      target.focus();
+                    } catch (e) { /* */ }
+                  });
+                },
+                focusInDialog: function (errorId, labelledBy) {
+                  this.$nextTick(function () {
+                    var err = errorId ? document.getElementById(errorId) : null;
+                    if (err) {
+                      try {
+                        err.focus();
+                        return;
+                      } catch (e1) { /* */ }
+                    }
+                    var root = labelledBy
+                      ? document.querySelector(
+                          '[role="dialog"][aria-labelledby="' +
+                            labelledBy +
+                            '"], [role="alertdialog"][aria-labelledby="' +
+                            labelledBy +
+                            '"]',
+                        )
+                      : document.querySelector('[role="dialog"], [role="alertdialog"]');
+                    if (!root) return;
+                    var btn = root.querySelector(
+                      "button.is-primary, button.is-danger-solid, button, input, select, textarea",
+                    );
+                    if (btn) {
+                      try {
+                        btn.focus();
+                      } catch (e2) { /* */ }
+                    }
+                  });
+                },
+                focusEditError: function () {
+                  this.focusInDialog("animalEditError", "animalEditTitle");
+                },
+                focusDeleteError: function () {
+                  this.focusInDialog("animalDeleteError", "animalDeleteTitle");
+                },
+                focusImportError: function () {
+                  this.focusInDialog("animalImportError", "animalImportTitle");
+                },
 
                 avatarUrl: function (flag) {
                   return this.fileUrl(flag) || "/api/files/";
@@ -762,6 +1043,7 @@
                   AuthSession.logout();
                 },
                 closeTopLayer: function () { if (this.closeMenus) this.closeMenus();
+                  if (this.saving || this.uploading || this.deleting || this.importing) return;
                   if (this.importOpen) this.closeImport();
                   else if (this.deleteItem) this.cancelDelete();
                   else if (this.editOpen) this.cancelEdit();
@@ -798,8 +1080,13 @@
                           ? "is-done"
                           : "is-unknown";
                 },
-                load: function (page) {
+                load: function (page, preserveFeedback, onDone) {
                   var vm = this;
+                  var seq = ++vm.loadSeq;
+                  if (!preserveFeedback) {
+                    vm.message = "";
+                    vm.messageType = "";
+                  }
                   vm.loading = true;
                   vm.loadError = "";
                   $.ajax({
@@ -813,6 +1100,7 @@
                     cache: false,
                   })
                     .done(function (res) {
+                      if (seq !== vm.loadSeq) return;
                       if (
                         !res ||
                         res.code !== "0" ||
@@ -836,30 +1124,37 @@
                       );
                     })
                     .fail(function (xhr) {
+                      if (seq !== vm.loadSeq) return;
                       vm.loadError =
                         (xhr.responseJSON && xhr.responseJSON.msg) ||
                         "请检查网络连接后重试。";
                     })
                     .always(function () {
+                      if (seq !== vm.loadSeq) return;
                       vm.loading = false;
+                      if (typeof onDone === "function") {
+                        vm.$nextTick(function () { onDone(); });
+                      }
                     });
                 },
                 resetSearch: function () {
                   this.search = "";
                   this.load(1);
                 },
-                openDetail: function (item) {
+                openDetail: function (item, evt) {
+                  this.triggerEl = (evt && evt.currentTarget) || document.activeElement;
                   this.detailItem = item;
-                  this.$nextTick(function () {
-                    if (this.$refs.detailClose) this.$refs.detailClose.focus();
-                  });
                 },
                 closeDetail: function () {
                   this.detailItem = null;
+                  focusTrap.deactivate();
+                  this.restoreTriggerFocus();
                 },
                 editFromDetail: function () {
                   var item = this.detailItem;
-                  this.closeDetail();
+                  var t = this.triggerEl;
+                  this.detailItem = null;
+                  this.triggerEl = t;
                   this.openEdit(item);
                 },
                 blankForm: function () {
@@ -874,13 +1169,14 @@
                     tdescribe: "",
                   };
                 },
-                openCreate: function () {
+                openCreate: function (evt) {
+                  this.triggerEl = (evt && evt.currentTarget) || document.activeElement;
                   this.form = this.blankForm();
                   this.editError = "";
                   this.editOpen = true;
-                  this.focusEdit();
                 },
-                openEdit: function (item) {
+                openEdit: function (item, evt) {
+                  if (evt) this.triggerEl = (evt && evt.currentTarget) || document.activeElement;
                   this.form = {
                     id: item.id,
                     tname: item.tname || "",
@@ -893,25 +1189,16 @@
                   };
                   this.editError = "";
                   this.editOpen = true;
-                  this.focusEdit();
-                },
-                focusEdit: function () {
-                  this.$nextTick(function () {
-                    var state = document.getElementById("animalState");
-                    if (state) {
-                      state.disabled = true;
-                      state.setAttribute("aria-readonly", "true");
-                      state.title = "状态由领养流程维护，档案编辑不能修改";
-                    }
-                    if (this.$refs.editFirst) this.$refs.editFirst.focus();
-                  });
                 },
                 cancelEdit: function () {
                   if (this.saving || this.uploading) return;
                   this.editOpen = false;
                   this.editError = "";
+                  focusTrap.deactivate();
+                  this.restoreTriggerFocus();
                 },
                 animalPayload: function () {
+                  // Never send tstate — status is process-owned
                   var payload = {
                     tname: this.form.tname,
                     ttype: this.form.ttype,
@@ -972,7 +1259,8 @@
                 },
                 save: function () {
                   var vm = this;
-                  if (vm.saving || vm.uploading || !vm.form.tname || !vm.form.ttype || !vm.form.tsex) return;
+                  if (vm.saving || writeLocks.save || vm.uploading || !vm.form.tname || !vm.form.ttype || !vm.form.tsex) return;
+                  writeLocks.save = true;
                   vm.saving = true;
                   vm.editError = "";
                   $.ajax({
@@ -984,24 +1272,33 @@
                     .done(function (res) {
                       if (!res || res.code !== "0" || res.data !== true) {
                         vm.editError = (res && res.msg) || "动物档案保存失败。";
+                        vm.focusEditError();
                         return;
                       }
                       var label = vm.form.tname;
                       vm.editOpen = false;
-                      vm.load(vm.pageNum);
+                      focusTrap.deactivate();
                       vm.messageType = "success";
                       vm.message = "“" + label + "”的动物档案已保存。";
+                      vm.triggerEl = vm.resolveStableFocusTarget();
+                      vm.load(vm.pageNum, true, function () { vm.restoreTriggerFocus(); });
                     })
                     .fail(function (xhr) {
+                      var st = xhr && xhr.status;
                       vm.editError =
                         (xhr.responseJSON && xhr.responseJSON.msg) ||
-                        "网络异常，动物档案未保存。";
+                        (st === 409 ? "保存冲突，请刷新后重试。" : st === 403 ? "无写入权。" : "网络异常，动物档案未保存。");
+                      vm.message = "";
+                      vm.messageType = "";
+                      vm.focusEditError();
                     })
                     .always(function () {
                       vm.saving = false;
+                      writeLocks.save = false;
                     });
                 },
-                askDelete: function (item) {
+                askDelete: function (item, evt) {
+                  this.triggerEl = (evt && evt.currentTarget) || document.activeElement;
                   this.deleteItem = item;
                   this.deleteError = "";
                 },
@@ -1009,10 +1306,13 @@
                   if (this.deleting) return;
                   this.deleteItem = null;
                   this.deleteError = "";
+                  focusTrap.deactivate();
+                  this.restoreTriggerFocus();
                 },
                 confirmDelete: function () {
                   var vm = this;
-                  if (!vm.deleteItem || vm.deleting) return;
+                  if (!vm.deleteItem || vm.deleting || writeLocks.del) return;
+                  writeLocks.del = true;
                   vm.deleting = true;
                   vm.deleteError = "";
                   $.ajax({
@@ -1022,28 +1322,37 @@
                     .done(function (res) {
                       if (!res || res.code !== "0" || res.data !== true) {
                         vm.deleteError = (res && res.msg) || "删除失败。";
+                        vm.focusDeleteError();
                         return;
                       }
                       var label =
                         vm.deleteItem.tname || "动物 #" + vm.deleteItem.id;
                       vm.deleteItem = null;
-                      vm.load(vm.pageNum);
+                      focusTrap.deactivate();
                       vm.messageType = "success";
                       vm.message = "“" + label + "”已删除。";
+                      vm.triggerEl = vm.resolveStableFocusTarget();
+                      vm.load(vm.pageNum, true, function () { vm.restoreTriggerFocus(); });
                     })
                     .fail(function (xhr) {
+                      var st = xhr && xhr.status;
                       vm.deleteError =
                         (xhr.responseJSON && xhr.responseJSON.msg) ||
-                        "网络异常，记录未删除。";
+                        (st === 409 ? "删除冲突，请刷新后重试。" : st === 403 ? "无权限删除。" : "网络异常，记录未删除。");
+                      vm.message = "";
+                      vm.messageType = "";
+                      vm.focusDeleteError();
                     })
                     .always(function () {
                       vm.deleting = false;
+                      writeLocks.del = false;
                     });
                 },
                 downloadTemplate: function () {
                   window.location.assign("/api/animal/template");
                 },
-                openImport: function () {
+                openImport: function (evt) {
+                  this.triggerEl = (evt && evt.currentTarget) || document.activeElement;
                   this.importOpen = true;
                   this.importFile = null;
                   this.importResult = null;
@@ -1053,6 +1362,8 @@
                   if (this.importing) return;
                   this.importOpen = false;
                   this.importFile = null;
+                  focusTrap.deactivate();
+                  this.restoreTriggerFocus();
                 },
                 selectImport: function (event) {
                   var file = event.target.files && event.target.files[0];
@@ -1072,9 +1383,10 @@
                 },
                 submitImport: function () {
                   var vm = this;
-                  if (!vm.importFile || vm.importing) return;
+                  if (!vm.importFile || vm.importing || writeLocks.import) return;
                   var data = new FormData();
                   data.append("file", vm.importFile);
+                  writeLocks.import = true;
                   vm.importing = true;
                   vm.importError = "";
                   vm.importResult = null;
@@ -1088,18 +1400,21 @@
                     .done(function (res) {
                       if (!res || res.code !== "0" || !res.data) {
                         vm.importError = (res && res.msg) || "导入失败。";
+                        vm.focusImportError();
                         return;
                       }
                       vm.importResult = res.data;
-                      vm.load(1);
+                      vm.load(1, true);
                     })
                     .fail(function (xhr) {
                       vm.importError =
                         (xhr.responseJSON && xhr.responseJSON.msg) ||
                         "网络异常，导入未完成。";
+                      vm.focusImportError();
                     })
                     .always(function () {
                       vm.importing = false;
+                      writeLocks.import = false;
                     });
                 },
               },

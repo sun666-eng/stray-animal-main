@@ -2256,3 +2256,250 @@
   .adopt-governance-search-mode { width: 100%; }
   .adopt-governance-search-mode button { flex: 1; }
 }
+
+/* ===== Phase 2D: Rescue / Animal governance ===== */
+.help-governance-hero,
+.animal-governance-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(240px, 0.65fr);
+  gap: 20px;
+  align-items: end;
+  margin-bottom: 10px;
+}
+.help-governance-hero h1,
+.animal-governance-hero h1 {
+  margin: 0;
+  font-size: clamp(30px, 3.8vw, 42px);
+  letter-spacing: -.03em;
+}
+.help-governance-lead,
+.animal-governance-lead {
+  margin: 10px 0 0;
+  max-width: 54ch;
+  color: var(--ui-muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.help-governance-metrics,
+.animal-governance-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.help-governance-metric,
+.animal-governance-metric {
+  padding: 12px 14px;
+  border: 1px solid var(--ui-line);
+  border-radius: 12px;
+  background: #fff;
+}
+.help-governance-metric span,
+.animal-governance-metric span {
+  display: block;
+  color: var(--ui-muted);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .04em;
+}
+.help-governance-metric strong,
+.animal-governance-metric strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 22px;
+  letter-spacing: -.03em;
+}
+.help-governance-metric.is-pending strong,
+.animal-governance-metric.is-pending strong { color: #b7791f; }
+.help-governance-metric.is-urgent strong { color: #c0392b; }
+.help-governance-metric.is-ok strong,
+.animal-governance-metric.is-ok strong { color: #3d6b55; }
+.help-governance-metric.is-closed strong,
+.animal-governance-metric.is-closed strong { color: #8a4b42; }
+.help-governance-metric small,
+.animal-governance-metric small {
+  display: block;
+  margin-top: 4px;
+  color: var(--ui-muted);
+  font-size: 10px;
+}
+.help-governance-feedback,
+.animal-governance-feedback {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--ui-line);
+  background: #fff;
+}
+.help-governance-feedback.is-success,
+.animal-governance-feedback.is-success {
+  border-color: #c5ddd0;
+  background: #eef7f1;
+  color: #2f6b4f;
+}
+.help-governance-feedback.is-error,
+.animal-governance-feedback.is-error {
+  border-color: #e8c4bc;
+  background: #fdf1ee;
+  color: #a33;
+}
+.help-governance-form-group,
+.animal-governance-form-group {
+  margin: 0 0 16px;
+  padding: 14px 14px 6px;
+  border: 1px solid var(--ui-line);
+  border-radius: 12px;
+  background: #fcfbf8;
+}
+.help-governance-form-group h3,
+.animal-governance-form-group h3 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: #5c5a55;
+  letter-spacing: .03em;
+}
+.help-governance-context,
+.animal-governance-context {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px dashed var(--ui-line);
+  background: #f4f3ef;
+}
+.help-governance-context span,
+.animal-governance-context span {
+  display: block;
+  color: var(--ui-muted);
+  font-size: 11px;
+}
+.help-governance-context strong,
+.animal-governance-context strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 13px;
+}
+.help-governance-photo-fallback,
+.animal-governance-photo-fallback {
+  display: grid;
+  place-items: center;
+  min-height: 120px;
+  color: var(--ui-muted);
+  background: #f4f3ef;
+  border-radius: 8px;
+  font-size: 13px;
+}
+.help-governance-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.75fr);
+  gap: 18px;
+  align-items: start;
+}
+.help-governance-chat {
+  position: sticky;
+  top: 88px;
+  max-height: calc(100vh - 110px);
+  display: flex;
+  flex-direction: column;
+}
+.help-governance-priority-urgent { color: #c0392b; font-weight: 750; }
+.animal-governance-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+@media (max-width: 960px) {
+  .help-governance-hero,
+  .animal-governance-hero,
+  .help-governance-layout { grid-template-columns: 1fr; }
+  .help-governance-chat { position: static; max-height: none; }
+}
+@media (max-width: 640px) {
+  .help-governance-metrics,
+  .animal-governance-metrics { grid-template-columns: 1fr 1fr; }
+  .help-governance-context,
+  .animal-governance-context { grid-template-columns: 1fr; }
+}
+
+/* Phase 2D — segmented choice control (animal archive mode etc.)
+   Warm paper / ink / crimson; never browser-default buttons. */
+.admin-segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 6px;
+  border: 1px solid var(--ui-line, #e4e2dc);
+  border-radius: 14px;
+  background: #f4f3ef;
+  box-sizing: border-box;
+}
+.admin-segmented > button {
+  flex: 1 1 140px;
+  min-width: 0;
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1.5px solid #d5d2ca;
+  border-radius: 10px;
+  background: #fffefb;
+  color: #3a3936;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+  text-align: center;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  box-shadow: none;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
+}
+.admin-segmented > button:hover:not(:disabled):not(.is-active) {
+  border-color: #b8b4aa;
+  background: #faf9f5;
+  color: var(--ui-ink, #111211);
+}
+.admin-segmented > button:focus-visible {
+  outline: 2px solid var(--ui-accent-strong, #d63a1f);
+  outline-offset: 2px;
+  z-index: 1;
+}
+.admin-segmented > button.is-active,
+.admin-segmented > button[aria-pressed="true"] {
+  border-color: var(--ui-accent-strong, #d63a1f);
+  background: #fdeee9;
+  color: #8f2a18;
+  font-weight: 750;
+  box-shadow: inset 0 0 0 1px rgba(214, 58, 31, 0.18);
+}
+.admin-segmented > button.is-active:hover:not(:disabled),
+.admin-segmented > button[aria-pressed="true"]:hover:not(:disabled) {
+  background: #fce4dc;
+  border-color: #c23318;
+  color: #7a2212;
+}
+.admin-segmented > button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  color: #8a8780;
+  background: #f0efeb;
+  border-color: #ddd9d0;
+  box-shadow: none;
+}
+.admin-segmented > button.is-active:disabled,
+.admin-segmented > button[aria-pressed="true"]:disabled {
+  opacity: 0.7;
+  background: #f5e6e1;
+  border-color: #d9a99a;
+  color: #9a5a4a;
+}
+@media (max-width: 360px) {
+  .admin-segmented {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .admin-segmented > button {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+}

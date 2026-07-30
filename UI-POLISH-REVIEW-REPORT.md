@@ -715,3 +715,84 @@ GPT 确认焦点已过；真实 390×844 复现搜索区空白：
 - 端口 18092：2c **115/0/0** · 2b 234/0 · 2a 173/0 · 1c 134/0 · adversarial 851/0 · mvn 473/0
 - 权威：`output/playwright/ui-polish-phase-2c/PHASE-2C-REPORT.md`
 - **停止**：不提交、不推送，等待 GPT 再审核
+
+### Phase 2D：救助工单与动物档案治理（2026-07-30）
+
+**基线**: `813eaadec40995fb92135a1ad88480ea757546ff`
+**分支**: `ui-polish/phase-2d-rescue-animal-governance-20260730`（自 813eaad 创建，未碰 main）
+**端口（初轮）**: `18093`（未触碰 9999）
+
+| 项 | 值 |
+|----|-----|
+| 初轮完成 | 2d 113/0/0 + 全量回归绿（后经 GPT 复现 P0 焦点缺陷） |
+| 后端/API/状态机/权限规则 | **未改** |
+| Phase 2C 页面 | adopt/proof **未改**（仍 `v=20260730d`） |
+| 提交/推送 | **否** |
+
+**修改文件**: help.html / animal.html / admin-workspace.css / tools/ui-polish-phase-2d.cjs / 报告产物。
+
+权威: `output/playwright/ui-polish-phase-2d/PHASE-2D-REPORT.md`
+
+### Phase 2D 验收返修（焦点陷阱 + 假绿 + 场景补齐 · 2026-07-30）
+
+**端口**: `18095`（未触碰 9999）
+**缓存**: `v=20260730f`
+
+| 项 | 值 |
+|----|-----|
+| 完成 | **是**（2d **180/0/0** + 2c 115/0/0 + 2b 234/0 + 2a 173/0 + 1c 134/0 + adversarial 851/0 + mvn 473/0 + **git diff --check exit 0**） |
+| P0 焦点 | **已修**：全部 2D 弹窗 `createFocusTrap`（Tab/Shift+Tab 循环、打开焦点进弹窗、Esc 精确恢复、提交中禁 Esc） |
+| 删除 409 焦点 | **`#animalDeleteError`** + `focusDeleteError()`（不再复用 focusEditError） |
+| 测试假绿 | **已删** `inDialog \|\| roleAlert \|\| focusOk`；改为 `dialogFocusOk` 强制 `inDialog===true` |
+| Vue E2E | **已禁**；接收入站新建档案走 `#helpNewAnimalName/Type/Sex/Describe` 真实输入 |
+| 补场景 | 聊天 500、编辑成功、导入 100% 成功、桌面+移动删除焦点、移动端 390/360/320 弹窗 |
+| 权限 | admin 双页 OK；jerry 双拒；匿名登录；tom animal-only 真实；help-only me mock 页门禁 |
+| 建议提交 | **待 GPT 再审** |
+| 进入 2E | **否** |
+| 提交/推送 | **否** |
+
+**焦点审计**: dialogStrict **12/12** `inDialog=true`；删除 409 → `#animalDeleteError`；编辑 409 → `#animalEditError`；成功关闭后稳定焦点（搜索区），不恢复已卸载行按钮。
+
+**git diff --check**: 已清除 report 第 721–722 行尾空格；最终 **exit 0**（仅有 CRLF 警告，无 trailing whitespace 错误）。
+
+权威: `output/playwright/ui-polish-phase-2d/PHASE-2D-REPORT.md` · `phase-2d-report.json` · `run-strict-final.log` · `screenshots-index.json`
+
+**停止**: 不提交、不推送、不合并 main、**不进入 Phase 2E**。等待 GPT 再审核。
+
+### Phase 2D 验收返修：动物档案方式选中态（2026-07-30）
+
+**端口**: `18096` · **缓存**: `v=20260730g` · **结果**: 2d **212/0/0**（>180）
+
+| 项 | 说明 |
+|----|------|
+| 根因 | HTML 已有 `.admin-segmented` / `.is-active`，但 CSS 无完整规则 → 浏览器默认按钮、选中不可辨识 |
+| 修复 | `admin-workspace.css` 补充分段控件（暖纸底 + 朱红选中 + focus-visible + disabled + min-height 44px + ≤360 纵向堆叠） |
+| a11y | `role="group"`、`aria-labelledby`、双按钮动态 `aria-pressed` |
+| 协议 | 仅切换 `animalMode` 展示；不改 payload / 不改状态机 |
+| 新增断言 | **32** 条（含 getComputedStyle 色差、5 视口几何、保存中 disabled） |
+| 截图 | +`04b` 创建选中、+`04c` 320px；共 **19** = index |
+| 回归 | 2c 115/0 · 2b 234/0 · 2a 173/0 · 1c 134/0 · adv 851/0 · mvn 473/0 · git-diff exit 0 |
+| 焦点 P0 | 删除 409 仍 `#animalDeleteError`；未回退 trap |
+| 后端 | **未改** |
+| 建议封存 | **是**（待 GPT 最终视觉确认） |
+| 提交/推送/2E | **否** |
+
+**停止**: 不提交、不推送、不合并 main、不进入 Phase 2E。等待 GPT 再审核。
+
+### Phase 2D 测试可信度返修：受控 409 disabled 探针（2026-07-30）
+
+**端口**: `18097` · **结果**: 2d **224/0/0**（≥212）
+
+| 项 | 说明 |
+|----|------|
+| 范围 | **仅** `tools/ui-polish-phase-2d.cjs` + 报告；**产品 HTML/CSS/后端零新增改动** |
+| 假绿根因 | `disabledProbe.catch(()=>null)` 后 CSS 兜底；`assert(..., true, 'css-fallback')`；`noBestEffortPass` 硬编码 true |
+| 修复 | manage PUT 受控 `hold409` Promise：`requestStarted` → 挂起读 DOM → 断言 disabled → `release409` → 409 |
+| 运行时探针 | baseline opacity=1 cursor=pointer → inflight disabled=true/true、pressed true/false、opacity=0.7、cursor=not-allowed、puts=1 |
+| 审计字段 | `bestEffortPassCount=0`、`fallbackPassCount=0`、`strictRuntimeProbeCount=1`；`noBestEffortPass = (best===0 && fallback===0)` **计算得出** |
+| 自检 | 禁止 css-fallback 字符串、禁止 `assert(..., true, ...)`、禁止 disabledProbe null catch |
+| 回归 | 2c 115 · 2b 234 · 2a 173 · 1c 134 · adv 851 · mvn 473 · git-diff exit 0 |
+| 建议封存 | **是**（测试与产品均过 GPT 视觉后可封） |
+| 提交/推送/2E | **否** |
+
+**停止**: 不提交、不推送、不合并 main、不进入 Phase 2E。等待 GPT 最终封存审核。
