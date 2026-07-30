@@ -688,3 +688,30 @@ GPT 确认焦点已过；真实 390×844 复现搜索区空白：
 权威：`output/playwright/ui-polish-phase-2b/PHASE-2B-REPORT.md` · `phase-2b-report.json` · `run-strict-final.log`
 
 **停止**：不提交、不推送、**未进入 Phase 2C**。等待 GPT **再次审核**。
+
+### Phase 2C：领养审核与材料治理（2026-07-30）
+
+**基线**: `1c0a0ff` · **分支**: `ui-polish/phase-2c-adoption-governance-20260730`
+
+| 项 | 值 |
+|----|-----|
+| 完成 | **是**（2c **92/0** + 2b 234/0 + 2a 173/0 + 1c 134/0 + adversarial 851/0 + mvn 473/0） |
+| 后端/API/状态机 | **未改** |
+| 建议提交 2C | **是**（待 GPT） |
+| 建议进入下一阶段 | **否** |
+
+**修改**: adopt.html / proof.html / admin-workspace.css（`.adopt-governance-*` / `.proof-governance-*`，缓存 `v=20260730d`）/ tools/ui-polish-phase-2c.cjs / adversarial 适配。
+
+**要点**: 本页状态摘要、搜索模式切换不自动请求、问卷分组、写锁与 loadSeq、流转 expectedVersion、自定义确认、材料非证书措辞、焦点恢复严格。
+
+权威: `output/playwright/ui-polish-phase-2c/PHASE-2C-REPORT.md` · `phase-2c-report.json` · `run-strict-final.log`
+
+**停止**: 不提交、不推送、不合并、不进入下一阶段。等待 GPT 审核。
+
+### Phase 2C 验收返修（Esc/焦点 + 零 skip）
+
+- document capture Esc；409 后 `focusDialogError`；关闭后精确回到触发按钮
+- 删除全部 `pass(skipped)`；fixture 注入待审记录
+- 端口 18092：2c **115/0/0** · 2b 234/0 · 2a 173/0 · 1c 134/0 · adversarial 851/0 · mvn 473/0
+- 权威：`output/playwright/ui-polish-phase-2c/PHASE-2C-REPORT.md`
+- **停止**：不提交、不推送，等待 GPT 再审核

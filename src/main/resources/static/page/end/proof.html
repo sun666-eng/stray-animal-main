@@ -6,16 +6,16 @@
       name="viewport"
       content="width=device-width,initial-scale=1,viewport-fit=cover"
     />
-    <title>领养材料审核 · 归途计划管理</title>
+    <title>领养材料治理 · 归途计划管理</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
     <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c" />
-    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260729c" />
+    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260730d" />
   </head>
   <body>
     <div id="authWait" class="admin-auth-wait" role="status">
       正在验证登录状态...
     </div>
-    <div id="workspace" :class="{'is-nav-open': mobileOpen}" class="admin-shell" v-cloak @keyup.esc="closeTopLayer" @click="closeMenus">
+    <div id="workspace" :class="{'is-nav-open': mobileOpen}" class="admin-shell proof-governance" v-cloak @click="closeMenus">
       <header class="ui-header admin-header" @click.stop>
     <div class="ui-header-inner">
       <a class="ui-brand" href="/page/end/index.html" aria-label="返回管理工作台">
@@ -94,16 +94,36 @@
   </header>
   <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
       <main class="admin-main">
-        <section class="admin-hero" aria-labelledby="proofTitle">
+        <section class="admin-hero proof-governance-hero" aria-labelledby="proofTitle">
           <div>
-            <p class="admin-kicker">Adoption materials</p>
-            <h1 id="proofTitle">领养材料审核</h1>
-            <p>
-              这里只审核已通过领养关系提交的私有材料，不代表证书签发，也不生成日期或编号。
+            <p class="admin-kicker">Adoption materials desk</p>
+            <h1 id="proofTitle">领养材料治理</h1>
+            <p class="proof-governance-lead">
+              仅审核已通过领养关系提交的私有材料。本页<strong>不代表证书签发</strong>，不生成日期或正式编号。
+              终态材料不可反复审核。
             </p>
           </div>
-          <div class="admin-hero-meta">
-            <span>当前账号</span><strong>{{ user.username }}</strong>
+          <div class="proof-governance-metrics" aria-label="本页材料状态摘要">
+            <div class="proof-governance-metric">
+              <span>接口总数</span>
+              <strong>{{ total }}</strong>
+              <small>服务端 total</small>
+            </div>
+            <div class="proof-governance-metric is-ok">
+              <span>本页待审</span>
+              <strong>{{ pagePendingCount }}</strong>
+              <small>仅当前页</small>
+            </div>
+            <div class="proof-governance-metric is-ok">
+              <span>本页已通过</span>
+              <strong>{{ pagePassedCount }}</strong>
+              <small>仅当前页</small>
+            </div>
+            <div class="proof-governance-metric is-closed">
+              <span>本页已驳回</span>
+              <strong>{{ pageRejectedCount }}</strong>
+              <small>仅当前页</small>
+            </div>
           </div>
         </section>
         <section aria-labelledby="proofList">
@@ -120,21 +140,24 @@
             </button>
           </div>
           <form
-            class="ui-toolbar admin-review-toolbar"
+            class="ui-toolbar admin-review-toolbar proof-governance-toolbar"
+            role="search"
             @submit.prevent="load(1)"
           >
             <label class="ui-search"
-              ><span>搜索</span><span class="sr-only">按用户名称搜索</span
+              ><span>搜索</span><span class="sr-only">按用户名称搜索材料</span
               ><input
                 v-model.trim="search"
                 type="search"
                 maxlength="100"
-                placeholder="按用户名称搜索" /></label
-            ><button class="ui-button is-dark" type="submit"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-search" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-search"></use></svg>查询</button>
+                autocomplete="off"
+                placeholder="按用户名称搜索"
+                aria-label="按用户名称搜索材料" /></label
+            ><button class="ui-button is-dark" type="submit" :class="{'is-loading': loading}" :disabled="loading" :aria-busy="loading ? 'true' : 'false'"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-search" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-search"></use></svg>{{ loading ? '查询中…' : '查询' }}</button>
           </form>
           <div
             v-if="message"
-            class="admin-inline-message"
+            class="proof-governance-feedback"
             :class="{'is-error':messageType==='error','is-success':messageType==='success'}"
             :role="messageType==='error'?'alert':'status'"
           >
@@ -184,31 +207,31 @@
                     </td>
                     <td>
                       <div class="admin-row-actions">
-                        <button type="button" @click="openDetail(item)">
+                        <button type="button" @click="openDetail(item, $event)">
                           详情</button
                         ><button
                           class="is-primary"
                           type="button"
-                          @click="openEdit(item)"
+                          @click="openEdit(item, $event)"
                         >
                           编辑</button
                         ><button
                           v-if="Number(item.pstatus)===0"
                           type="button"
-                          @click="askAudit(item,1)"
+                          @click="askAudit(item,1, $event)"
                         >
                           通过</button
                         ><button
                           v-if="Number(item.pstatus)===0"
                           class="is-danger"
                           type="button"
-                          @click="askAudit(item,2)"
+                          @click="askAudit(item,2, $event)"
                         >
                           驳回</button
                         ><button
                           class="is-danger"
                           type="button"
-                          @click="askDelete(item)"
+                          @click="askDelete(item, $event)"
                         ><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-trash" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-trash"></use></svg>删除
                         </button>
                       </div>
@@ -240,33 +263,33 @@
                   <button
                     class="ui-button is-ghost"
                     type="button"
-                    @click="openDetail(item)"
+                    @click="openDetail(item, $event)"
                   >
                     详情</button
                   ><button
                     class="ui-button is-dark"
                     type="button"
-                    @click="openEdit(item)"
+                    @click="openEdit(item, $event)"
                   >
                     编辑</button
                   ><button
                     v-if="Number(item.pstatus)===0"
                     class="ui-button is-primary"
                     type="button"
-                    @click="askAudit(item,1)"
+                    @click="askAudit(item,1, $event)"
                   >
                     通过</button
                   ><button
                     v-if="Number(item.pstatus)===0"
                     class="ui-button is-danger"
                     type="button"
-                    @click="askAudit(item,2)"
+                    @click="askAudit(item,2, $event)"
                   >
                     驳回</button
                   ><button
                     class="ui-button is-danger"
                     type="button"
-                    @click="askDelete(item)"
+                    @click="askDelete(item, $event)"
                   ><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-trash" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-trash"></use></svg>删除
                   </button>
                 </div>
@@ -301,7 +324,7 @@
       <div
         v-if="detailItem"
         class="admin-dialog-backdrop"
-        @click.self="detailItem=null"
+        @click.self="closeDetail"
       >
         <section
           class="admin-dialog admin-detail-dialog"
@@ -314,7 +337,7 @@
               <span>材料 #{{ detailItem.id }}</span>
               <h2 id="proofDetail">{{ detailItem.ptitle }}</h2>
             </div>
-            <button class="admin-dialog-close" type="button" @click="detailItem=null" title="关闭" aria-label="关闭凭证详情"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button>
+            <button class="admin-dialog-close" type="button" @click="closeDetail" title="关闭" aria-label="关闭凭证详情"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button>
           </div>
           <dl class="admin-detail-grid">
             <div>
@@ -330,9 +353,13 @@
               <dd>{{ statusText(detailItem.pstatus) }}</dd>
             </div>
           </dl>
-          <div v-if="imageUrl(detailItem.ppic)" class="admin-private-photo">
-            <strong>私有材料图片</strong
-            ><img :src="imageUrl(detailItem.ppic)" alt="领养材料" @error="contentImageFallback" />
+          <div class="proof-governance-preview">
+            <strong>私有材料图片（非证书）</strong>
+            <img v-if="imageUrl(detailItem.ppic)" :src="imageUrl(detailItem.ppic)" alt="领养材料预览" @error="contentImageFallback" />
+            <div v-else class="is-missing">暂无材料图片</div>
+          </div>
+          <div class="admin-dialog-actions">
+            <button class="ui-button is-ghost" type="button" @click="closeDetail">关闭</button>
           </div>
         </section>
       </div>
@@ -381,8 +408,10 @@
             </div>
             <div
               v-if="editError"
+              id="proofEditError"
               class="admin-inline-message is-error"
               role="alert"
+              tabindex="-1"
             >
               {{ editError }}
             </div>
@@ -404,51 +433,61 @@
           </form>
         </section>
       </div>
-      <div v-if="decisionItem" class="admin-dialog-backdrop">
+      <div v-if="decisionItem" class="admin-dialog-backdrop" @click.self="cancelDecision">
         <section
-          class="admin-dialog"
+          class="admin-dialog proof-governance-dialog"
+          :class="{'is-danger': decisionKind==='delete' || decisionState===2}"
           role="alertdialog"
           aria-modal="true"
           aria-labelledby="proofDecision"
         >
           <div class="admin-dialog-head">
             <div>
-              <span>不可反复审核</span>
+              <span>{{ decisionKind==='delete' ? '危险操作' : '不可反复审核' }}</span>
               <h2 id="proofDecision">
                 {{
-                decisionKind==='delete'?'删除材料':decisionState===1?'通过材料':'驳回材料'
-                }}？
+                decisionKind==='delete'
+                  ? ('删除材料「'+(decisionItem.ptitle||'未命名')+'」#'+decisionItem.id+'？')
+                  : (decisionState===1?'通过材料':'驳回材料') + ' 「'+(decisionItem.ptitle||'未命名')+'」#'+decisionItem.id+'？'
+                }}
               </h2>
             </div>
+            <button class="admin-dialog-close" type="button" :disabled="deciding" @click="cancelDecision" aria-label="关闭确认"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button>
           </div>
-          <p class="admin-dialog-copy">
-            {{
-            decisionKind==='delete'?'删除后关联图片立即失效。':'该操作将材料从待审核改为终态。'
-            }}
-          </p>
-          <div v-if="decisionKind==='audit'" class="ui-form-field" style="margin:0 24px 18px">
-            <label for="proofDecisionReason">审核说明</label>
-            <textarea id="proofDecisionReason" v-model.trim="decisionReason" maxlength="1000" :placeholder="decisionState===2?'请填写材料不通过的具体原因':'可填写核验说明'"></textarea>
-          </div>
-          <div
-            v-if="decisionError"
-            class="admin-inline-message is-error"
-            role="alert"
-          >
-            {{ decisionError }}
+          <div class="admin-dialog-body">
+            <p class="admin-dialog-copy">
+              {{
+              decisionKind==='delete'?'删除后关联图片立即失效，且不可撤销。':'该操作将材料从待审核改为终态；不代表证书签发。'
+              }}
+            </p>
+            <div v-if="decisionKind==='audit'" class="ui-form-field">
+              <label for="proofDecisionReason">审核说明</label>
+              <textarea id="proofDecisionReason" v-model.trim="decisionReason" maxlength="1000" :disabled="deciding" :placeholder="decisionState===2?'请填写材料不通过的具体原因':'可填写核验说明'"></textarea>
+            </div>
+            <div
+              v-if="decisionError"
+              id="proofDecisionError"
+              class="admin-inline-message is-error"
+              role="alert"
+              tabindex="-1"
+            >
+              {{ decisionError }}
+            </div>
           </div>
           <div class="admin-dialog-actions">
             <button
               class="ui-button is-ghost"
               type="button"
               :disabled="deciding"
-              @click="decisionItem=null"
+              @click="cancelDecision"
             >
               取消</button
             ><button
-              class="ui-button is-danger"
+              class="ui-button"
+              :class="decisionKind==='delete' || decisionState===2 ? 'is-danger' : 'is-primary'"
               type="button"
               :disabled="deciding"
+              :aria-busy="deciding ? 'true' : 'false'"
               @click="confirmDecision"
             >
               {{ deciding?'正在处理...':'确认' }}
@@ -464,6 +503,68 @@
     <script>
       (function () {
         "use strict";
+        var writeLocks = { save: false, audit: false, del: false };
+        window.__proofWriteLocks = writeLocks;
+        function createFocusTrap() {
+          var state = { root: null, onKey: null, prevOverflow: "", onEscape: null };
+          function focusable(root) {
+            return Array.prototype.slice.call(root.querySelectorAll(
+              'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+            )).filter(function (el) {
+              return !el.disabled && (el.offsetParent !== null || el === document.activeElement || el.getClientRects().length);
+            });
+          }
+          return {
+            activate: function (root, initial, onEscape) {
+              this.deactivate();
+              if (!root) return;
+              state.root = root;
+              state.onEscape = typeof onEscape === "function" ? onEscape : null;
+              state.prevOverflow = document.body.style.overflow;
+              document.body.style.overflow = "hidden";
+              if (!root.hasAttribute("tabindex")) root.setAttribute("tabindex", "-1");
+              state.onKey = function (e) {
+                if (!state.root) return;
+                if (e.key === "Escape" || e.keyCode === 27) {
+                  if (state.onEscape) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    state.onEscape();
+                  }
+                  return;
+                }
+                if (e.key !== "Tab") return;
+                var list = focusable(state.root);
+                if (!list.length) { e.preventDefault(); state.root.focus(); return; }
+                var first = list[0], last = list[list.length - 1], active = document.activeElement;
+                if (e.shiftKey) {
+                  if (active === first || !state.root.contains(active)) { e.preventDefault(); last.focus(); }
+                } else if (active === last || !state.root.contains(active)) {
+                  e.preventDefault(); first.focus();
+                }
+              };
+              document.addEventListener("keydown", state.onKey, true);
+              setTimeout(function () {
+                var target = initial;
+                if (!target || !state.root.contains(target) || target.disabled) {
+                  var list = focusable(state.root);
+                  target = list[0] || state.root;
+                }
+                if (target && target.focus) target.focus();
+              }, 0);
+            },
+            deactivate: function () {
+              if (state.onKey) {
+                document.removeEventListener("keydown", state.onKey, true);
+                state.onKey = null;
+              }
+              state.onEscape = null;
+              document.body.style.overflow = state.prevOverflow || "";
+              state.root = null;
+            },
+            root: function () { return state.root; }
+          };
+        }
         AuthSession.bootstrap({
           requireAuth: true,
           allowCachedOnNetworkError: false,
@@ -474,6 +575,7 @@
               return;
             }
             document.getElementById("authWait").hidden = true;
+            var focusTrap = createFocusTrap();
             new Vue({
               el: "#workspace",
               data: {
@@ -489,6 +591,7 @@
                 records: [],
                 loading: true,
                 loadError: "",
+                loadSeq: 0,
                 message: "",
                 messageType: "",
                 pageNum: 1,
@@ -508,6 +611,7 @@
                 decisionReason: "",
                 deciding: false,
                 decisionError: "",
+                triggerEl: null,
               },
               computed: {
                 pages: function () {
@@ -517,9 +621,70 @@
                   for (var p = s; p <= e; p += 1) a.push(p);
                   return a;
                 },
+                pagePendingCount: function () {
+                  return (this.records || []).filter(function (r) { return Number(r.pstatus) === 0; }).length;
+                },
+                pagePassedCount: function () {
+                  return (this.records || []).filter(function (r) { return Number(r.pstatus) === 1; }).length;
+                },
+                pageRejectedCount: function () {
+                  return (this.records || []).filter(function (r) { return Number(r.pstatus) === 2; }).length;
+                },
               },
               created: function () {
+                var vm = this;
+                this._onDocEsc = function (e) {
+                  if (e.key !== "Escape" && e.keyCode !== 27) return;
+                  if (vm.saving || vm.uploading || vm.deciding) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                  }
+                  if (vm.decisionItem || vm.editOpen || vm.detailItem) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    vm.closeTopLayer();
+                  }
+                };
+                document.addEventListener("keydown", this._onDocEsc, true);
                 this.load(1);
+              },
+              beforeDestroy: function () {
+                if (this._onDocEsc) {
+                  document.removeEventListener("keydown", this._onDocEsc, true);
+                  this._onDocEsc = null;
+                }
+                focusTrap.deactivate();
+              },
+              watch: {
+                editOpen: function (open) {
+                  var vm = this;
+                  if (open) {
+                    this.$nextTick(function () {
+                      var root = document.querySelector('[role="dialog"][aria-labelledby="proofEdit"]');
+                      focusTrap.activate(root, document.getElementById("proofName") || (root && root.querySelector("input")), function () { vm.cancelEdit(); });
+                    });
+                  } else if (!this.decisionItem && !this.detailItem) focusTrap.deactivate();
+                },
+                decisionItem: function (v) {
+                  var vm = this;
+                  if (v) {
+                    this.$nextTick(function () {
+                      var root = document.querySelector('[role="alertdialog"][aria-labelledby="proofDecision"]');
+                      var initial = document.getElementById("proofDecisionReason") || (root && root.querySelector("button"));
+                      focusTrap.activate(root, initial, function () { vm.cancelDecision(); });
+                    });
+                  } else if (!this.editOpen && !this.detailItem) focusTrap.deactivate();
+                },
+                detailItem: function (v) {
+                  var vm = this;
+                  if (v) {
+                    this.$nextTick(function () {
+                      var root = document.querySelector('[role="dialog"][aria-labelledby="proofDetail"]');
+                      focusTrap.activate(root, root && root.querySelector("button"), function () { vm.closeDetail(); });
+                    });
+                  }
+                }
               },
               methods: {
           closeMenus: function () { this.mobileOpen = false; this.accountOpen = false; this.moreOpen = false; },
@@ -529,6 +694,46 @@
           isNavActive: function (flag) { return AdminWorkspace.flagsMatch(flag, this.currentNavFlag); },
           isMoreCurrent: function () { var vm = this; var more = (this.desktopNav && this.desktopNav.more) || []; return more.some(function (item) { return AdminWorkspace.flagsMatch(item.flag, vm.currentNavFlag); }); },
           isOverviewActive: function () { return !this.currentNavFlag; },
+                resolveStableFocusTarget: function () {
+                  var main = document.querySelector("main") || document;
+                  var selectors = ['input[type="search"]', ".admin-review-toolbar input", 'button[type="submit"]', "h2", "h1"];
+                  for (var i = 0; i < selectors.length; i++) {
+                    var el = main.querySelector(selectors[i]);
+                    if (el && el.isConnected) return el;
+                  }
+                  return null;
+                },
+                restoreTriggerFocus: function () {
+                  var t = this.triggerEl;
+                  this.triggerEl = null;
+                  var vm = this;
+                  this.$nextTick(function () {
+                    var target = t;
+                    if (!target || !target.isConnected || typeof target.focus !== "function") target = vm.resolveStableFocusTarget();
+                    if (!target || typeof target.focus !== "function") return;
+                    try {
+                      if (/^H[12]$/.test(target.tagName)) target.setAttribute("tabindex", "-1");
+                      target.focus();
+                    } catch (e1) { /* */ }
+                  });
+                },
+                focusDialogError: function (errorId) {
+                  var vm = this;
+                  this.$nextTick(function () {
+                    var err = (errorId && document.getElementById(errorId)) ||
+                      document.querySelector('[role="dialog"] .is-error, [role="alertdialog"] .is-error');
+                    if (err) {
+                      if (!err.hasAttribute("tabindex")) err.setAttribute("tabindex", "-1");
+                      try { err.focus(); return; } catch (e1) { /* */ }
+                    }
+                    var root = focusTrap.root && focusTrap.root();
+                    if (!root) root = document.querySelector('[role="alertdialog"], [role="dialog"]');
+                    if (root) {
+                      var btn = root.querySelector("button.is-primary, button.is-danger, textarea, input, button");
+                      if (btn) try { btn.focus(); } catch (e2) { /* */ }
+                    }
+                  });
+                },
 
                 avatarUrl: function (f) {
                   return AdminWorkspace.avatarUrl(f);
@@ -539,14 +744,32 @@
                 contentImageFallback: function (e) {
                   e.target.onerror = null;
                   e.target.src = "/prototype-assets/editorial-04.svg";
+                  var wrap = e.target.parentNode;
+                  if (wrap && !wrap.querySelector(".is-missing")) {
+                    var m = document.createElement("div");
+                    m.className = "is-missing";
+                    m.textContent = "材料图片暂不可用";
+                    wrap.appendChild(m);
+                  }
                 },
                 logout: function () {
                   AuthSession.logout();
                 },
                 closeTopLayer: function () { if (this.closeMenus) this.closeMenus();
-                  if (this.decisionItem) this.decisionItem = null;
+                  if (this.saving || this.uploading || this.deciding) return;
+                  if (this.decisionItem) this.cancelDecision();
                   else if (this.editOpen) this.cancelEdit();
-                  else if (this.detailItem) this.detailItem = null;
+                  else if (this.detailItem) this.closeDetail();
+                },
+                closeDetail: function () {
+                  this.detailItem = null;
+                  this.restoreTriggerFocus();
+                },
+                cancelDecision: function () {
+                  if (this.deciding) return;
+                  this.decisionItem = null;
+                  this.decisionError = "";
+                  this.restoreTriggerFocus();
                 },
                 statusText: function (v) {
                   return Number(v) === 1
@@ -568,8 +791,13 @@
                     ? "/api/files/" + encodeURIComponent(v)
                     : "";
                 },
-                load: function (page) {
+                load: function (page, preserveFeedback, onDone) {
                   var vm = this;
+                  var seq = ++vm.loadSeq;
+                  if (!preserveFeedback) {
+                    vm.message = "";
+                    vm.messageType = "";
+                  }
                   vm.loading = true;
                   vm.loadError = "";
                   $.ajax({
@@ -583,6 +811,7 @@
                     cache: false,
                   })
                     .done(function (res) {
+                      if (seq !== vm.loadSeq) return;
                       if (
                         !res ||
                         res.code !== "0" ||
@@ -598,18 +827,25 @@
                       vm.totalPages = Math.max(1, Number(res.data.pages || 1));
                     })
                     .fail(function (xhr) {
+                      if (seq !== vm.loadSeq) return;
                       vm.loadError =
                         (xhr.responseJSON && xhr.responseJSON.msg) ||
                         "网络异常。";
                     })
                     .always(function () {
+                      if (seq !== vm.loadSeq) return;
                       vm.loading = false;
+                      if (typeof onDone === "function") {
+                        vm.$nextTick(function () { onDone(); });
+                      }
                     });
                 },
-                openDetail: function (i) {
+                openDetail: function (i, evt) {
+                  this.triggerEl = (evt && evt.currentTarget) || document.activeElement;
                   this.detailItem = i;
                 },
-                openEdit: function (i) {
+                openEdit: function (i, evt) {
+                  this.triggerEl = (evt && evt.currentTarget) || document.activeElement;
                   this.form = {
                     id: i.id,
                     ptitle: i.ptitle || "",
@@ -624,6 +860,7 @@
                   this.retireStage(this.stagedFlag);
                   this.stagedFlag = "";
                   this.editOpen = false;
+                  this.restoreTriggerFocus();
                 },
                 retireStage: function (flag) {
                   if (!/^[a-zA-Z0-9-]{1,64}$/.test(String(flag || ""))) return;
@@ -677,6 +914,8 @@
                 },
                 save: function () {
                   var vm = this;
+                  if (vm.saving || writeLocks.save) return;
+                  writeLocks.save = true;
                   vm.saving = true;
                   vm.editError = "";
                   var payload = {
@@ -701,27 +940,35 @@
                       vm.editOpen = false;
                       vm.messageType = "success";
                       vm.message = "材料已保存。";
-                      vm.load(vm.pageNum);
+                      vm.triggerEl = vm.resolveStableFocusTarget();
+                      vm.load(vm.pageNum, true, function () { vm.restoreTriggerFocus(); });
                     })
                     .fail(function (xhr) {
                       vm.retireStage(vm.stagedFlag);
                       vm.stagedFlag = "";
+                      var st = xhr && xhr.status;
                       vm.editError =
                         (xhr.responseJSON && xhr.responseJSON.msg) ||
-                        "网络异常。";
+                        (st === 409 ? "保存冲突，请刷新后重试。" : st === 403 ? "无写入权。" : "网络异常。");
+                      vm.message = "";
+                      vm.messageType = "";
+                      vm.focusDialogError("proofEditError");
                     })
                     .always(function () {
                       vm.saving = false;
+                      writeLocks.save = false;
                     });
                 },
-                askAudit: function (i, s) {
+                askAudit: function (i, s, evt) {
+                  this.triggerEl = (evt && evt.currentTarget) || document.activeElement;
                   this.decisionItem = i;
                   this.decisionKind = "audit";
                   this.decisionState = s;
                   this.decisionReason = s === 1 ? "材料内容清晰且符合要求" : "";
                   this.decisionError = "";
                 },
-                askDelete: function (i) {
+                askDelete: function (i, evt) {
+                  this.triggerEl = (evt && evt.currentTarget) || document.activeElement;
                   this.decisionItem = i;
                   this.decisionKind = "delete";
                   this.decisionReason = "";
@@ -730,14 +977,26 @@
                 confirmDecision: function () {
                   var vm = this;
                   if (!vm.decisionItem || vm.deciding) return;
+                  var lockKey = vm.decisionKind === "delete" ? "del" : "audit";
+                  if (writeLocks[lockKey]) return;
+                  if (vm.decisionKind === "audit" && Number(vm.decisionState) === 2 && String(vm.decisionReason||"").trim().length < 2) {
+                    vm.decisionError = "驳回材料时必须填写明确原因。";
+                    return;
+                  }
+                  writeLocks[lockKey] = true;
                   vm.deciding = true;
-                  if (vm.decisionKind === "audit" && Number(vm.decisionState) === 2 && String(vm.decisionReason||"").trim().length < 2) { vm.decisionError = "驳回材料时必须填写明确原因。"; vm.deciding = false; return; }
+                  vm.decisionError = "";
                   var url =
                     vm.decisionKind === "delete"
                       ? "/api/proof/" + encodeURIComponent(vm.decisionItem.id)
                       : "/api/proof/" + encodeURIComponent(vm.decisionItem.id) + "/audit";
                   var type = vm.decisionKind === "delete" ? "DELETE" : "PUT";
-                  $.ajax({ url: url, type: type, contentType:vm.decisionKind === "audit"?"application/json":undefined, data:vm.decisionKind === "audit"?JSON.stringify({state:vm.decisionState,reason:vm.decisionReason}):undefined })
+                  $.ajax({
+                    url: url,
+                    type: type,
+                    contentType: vm.decisionKind === "audit" ? "application/json" : undefined,
+                    data: vm.decisionKind === "audit" ? JSON.stringify({ state: vm.decisionState, reason: vm.decisionReason }) : undefined
+                  })
                     .done(function (res) {
                       if (!res || res.code !== "0" || res.data !== true) {
                         vm.decisionError = (res && res.msg) || "操作失败。";
@@ -747,15 +1006,22 @@
                       vm.decisionReason = "";
                       vm.messageType = "success";
                       vm.message = "材料记录已更新。";
-                      vm.load(vm.pageNum);
+                      vm.triggerEl = vm.resolveStableFocusTarget();
+                      vm.load(vm.pageNum, true, function () { vm.restoreTriggerFocus(); });
                     })
                     .fail(function (xhr) {
+                      var st = xhr && xhr.status;
                       vm.decisionError =
                         (xhr.responseJSON && xhr.responseJSON.msg) ||
-                        "网络异常。";
+                        (st === 409 ? "状态冲突，请刷新后重试。" : st === 403 ? "无权限。" : st >= 500 ? "服务异常。" : "网络异常。");
+                      vm.message = "";
+                      vm.messageType = "";
+                      vm.focusDialogError("proofDecisionError");
                     })
                     .always(function () {
                       vm.deciding = false;
+                      writeLocks.audit = false;
+                      writeLocks.del = false;
                     });
                 },
                 exportRows: function () {

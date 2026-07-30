@@ -6,16 +6,16 @@
       name="viewport"
       content="width=device-width,initial-scale=1,viewport-fit=cover"
     />
-    <title>领养管理 · 归途计划管理</title>
+    <title>领养审核工作台 · 归途计划管理</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
     <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c" />
-    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260729c" />
+    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260730d" />
   </head>
   <body>
     <div id="authWait" class="admin-auth-wait" role="status">
       正在验证登录状态...
     </div>
-    <div id="workspace" :class="{'is-nav-open': mobileOpen}" class="admin-shell" v-cloak @keyup.esc="closeTopLayer" @click="closeMenus">
+    <div id="workspace" :class="{'is-nav-open': mobileOpen}" class="admin-shell adopt-governance" v-cloak @click="closeMenus">
       <header class="ui-header admin-header" @click.stop>
     <div class="ui-header-inner">
       <a class="ui-brand" href="/page/end/index.html" aria-label="返回管理工作台">
@@ -94,16 +94,36 @@
   </header>
   <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
       <main class="admin-main">
-        <section class="admin-hero" aria-labelledby="adoptTitle">
+        <section class="admin-hero adopt-governance-hero" aria-labelledby="adoptTitle">
           <div>
-            <p class="admin-kicker">Adoption review</p>
-            <h1 id="adoptTitle">领养管理</h1>
-            <p>
-              审核使用专用状态接口；身份、动物快照和审核状态不能通过问卷编辑改写。
+            <p class="admin-kicker">Adoption review desk</p>
+            <h1 id="adoptTitle">领养审核工作台</h1>
+            <p class="adopt-governance-lead">
+              审核使用专用状态接口。身份、动物快照与审核状态不可通过问卷改写。
+              通过、驳回、取消等操作不可逆，请先核对申请人与动物关系。
             </p>
           </div>
-          <div class="admin-hero-meta">
-            <span>当前账号</span><strong>{{ user.username }}</strong>
+          <div class="adopt-governance-metrics" aria-label="本页申请状态摘要">
+            <div class="adopt-governance-metric">
+              <span>接口总数</span>
+              <strong>{{ total }}</strong>
+              <small>服务端返回的全局 total</small>
+            </div>
+            <div class="adopt-governance-metric is-pending">
+              <span>本页待审/流转中</span>
+              <strong>{{ pagePendingCount }}</strong>
+              <small>仅统计当前页 records</small>
+            </div>
+            <div class="adopt-governance-metric is-ok">
+              <span>本页已交接</span>
+              <strong>{{ pageDoneCount }}</strong>
+              <small>仅本页 · vstate=4</small>
+            </div>
+            <div class="adopt-governance-metric is-closed">
+              <span>本页终态</span>
+              <strong>{{ pageClosedCount }}</strong>
+              <small>驳回/取消等 · 仅本页</small>
+            </div>
           </div>
         </section>
         <section aria-labelledby="adoptList">
@@ -111,33 +131,40 @@
             <div>
               <h2 id="adoptList">领养申请</h2>
               <p>
-                状态 3 保持中性“其他状态”，系统没有时间线、截止日期或完成日期。
+                状态文案统一使用 StatusText.adopt；状态 3 保持中性「其他状态」。
               </p>
             </div>
-            <button class="ui-button is-ghost" @click="exportRows"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-download" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-download"></use></svg>导出</button>
+            <button class="ui-button is-ghost" type="button" @click="exportRows"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-download" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-download"></use></svg>导出</button>
           </div>
           <form
-            class="ui-toolbar admin-review-toolbar"
+            class="ui-toolbar admin-review-toolbar adopt-governance-toolbar"
+            role="search"
             @submit.prevent="load(1)"
           >
-            <label class="ui-search"
-              ><span>动物</span
-              ><input
+            <div class="adopt-governance-search-mode" role="group" aria-label="搜索模式">
+              <button type="button" :aria-pressed="searchMode==='animal' ? 'true' : 'false'" @click="setSearchMode('animal')">按动物</button>
+              <button type="button" :aria-pressed="searchMode==='user' ? 'true' : 'false'" @click="setSearchMode('user')">按申请人</button>
+            </div>
+            <label class="ui-search">
+              <span>{{ searchMode==='animal' ? '动物' : '申请人' }}</span>
+              <span class="sr-only">{{ searchMode==='animal' ? '按动物名称搜索领养申请' : '按申请人名称搜索领养申请' }}</span>
+              <input
+                type="search"
                 v-model.trim="search"
                 maxlength="100"
-                placeholder="按动物名称搜索" /></label
-            ><button class="ui-button is-dark" type="submit">查询</button
-            ><button
-              class="ui-button is-ghost"
-              type="button"
-              @click="searchMode=searchMode==='animal'?'user':'animal';load(1)"
-            >
-              切换为{{ searchMode==='animal'?'申请人':'动物' }}搜索
+                autocomplete="off"
+                :placeholder="searchMode==='animal' ? '按动物名称搜索' : '按申请人名称搜索'"
+                :aria-label="searchMode==='animal' ? '按动物名称搜索' : '按申请人名称搜索'"
+              />
+            </label>
+            <button class="ui-button is-dark" type="submit" :class="{'is-loading': loading}" :disabled="loading" :aria-busy="loading ? 'true' : 'false'">
+              <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-search" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-search"></use></svg>
+              {{ loading ? '查询中…' : '查询' }}
             </button>
           </form>
           <div
             v-if="message"
-            class="admin-inline-message"
+            class="adopt-governance-feedback"
             :class="{'is-error':messageType==='error','is-success':messageType==='success'}"
             :role="messageType==='error'?'alert':'status'"
           >
@@ -185,61 +212,64 @@
                       >
                     </td>
                     <td>
-                      <div class="admin-row-actions">
-                        <button @click="openDetail(item)">详情</button
-                        ><button
+                      <div class="admin-row-actions adopt-governance-actions">
+                        <span class="is-group-label">查看 / 辅助</span>
+                        <button type="button" @click="openDetail(item, $event)">详情</button>
+                        <button
                           v-if="canUseAgent"
+                          type="button"
                           class="is-ai"
                           :disabled="Number(item.vstate)!==0"
                           :title="Number(item.vstate)===0?'生成或打开个人AI审核草稿':'仅待审核申请可以使用AI草稿'"
-                          @click="openAiDraft(item)"
-                        >AI 草稿</button
-                        ><button
+                          @click="openAiDraft(item, $event)"
+                        >AI 草稿</button>
+                        <button
                           v-if="Number(item.vstate)===0"
+                          type="button"
                           class="is-primary"
                           @click="openEdit(item, $event)"
-                        >
-                          编辑问卷</button
-                        ><button
+                        >编辑问卷</button>
+                        <span class="is-group-label">流程</span>
+                        <button
                           v-if="[0,3].includes(Number(item.vstate))"
-                          @click="askAction(item,'approve')"
-                        >
-                          通过并预留</button
-                        ><button
-                          v-if="Number(item.vstate)===0"
-                          @click="askAction(item,'material')"
-                        >
-                          补充材料</button
-                        ><button
-                          v-if="[0,3].includes(Number(item.vstate))"
-                          class="is-danger"
-                          @click="askAction(item,'reject')"
-                        >
-                          驳回</button
-                        ><button
-                          v-if="Number(item.vstate)===1"
+                          type="button"
                           class="is-primary"
-                          @click="askAction(item,'handover')"
-                        >
-                          确认交接</button
-                        ><button
+                          @click="askAction(item,'approve', $event)"
+                        >通过并预留</button>
+                        <button
+                          v-if="Number(item.vstate)===0"
+                          type="button"
+                          @click="askAction(item,'material', $event)"
+                        >补充材料</button>
+                        <button
+                          v-if="Number(item.vstate)===1"
+                          type="button"
+                          class="is-primary"
+                          @click="askAction(item,'handover', $event)"
+                        >确认交接</button>
+                        <button
                           v-if="Number(item.vstate)===4&&canVisit"
-                          @click="openVisit(item)"
-                        >
-                          录入回访</button
-                        ><button
-                          v-if="[0,1,3].includes(Number(item.vstate))"
-                          class="is-danger"
-                          @click="askAction(item,'cancel')"
-                        >
-                          取消
-                        </button
-                        ><button
+                          type="button"
+                          @click="openVisit(item, $event)"
+                        >录入回访</button>
+                        <button
                           v-if="[2,5,6].includes(Number(item.vstate))"
-                          @click="askAction(item,'reopen')"
-                        >
-                          重新打开
-                        </button>
+                          type="button"
+                          @click="askAction(item,'reopen', $event)"
+                        >重新打开</button>
+                        <span class="is-group-label">风险</span>
+                        <button
+                          v-if="[0,3].includes(Number(item.vstate))"
+                          type="button"
+                          class="is-danger"
+                          @click="askAction(item,'reject', $event)"
+                        >驳回</button>
+                        <button
+                          v-if="[0,1,3].includes(Number(item.vstate))"
+                          type="button"
+                          class="is-danger"
+                          @click="askAction(item,'cancel', $event)"
+                        >取消</button>
                       </div>
                     </td>
                   </tr>
@@ -264,66 +294,64 @@
                     >{{ stateText(item.vstate) }}</span
                   >
                 </div>
-                <div class="admin-card-actions">
-                  <button class="ui-button is-ghost" @click="openDetail(item)">
-                    详情</button
-                  ><button
+                <div class="admin-card-actions adopt-governance-actions">
+                  <button class="ui-button is-ghost" type="button" @click="openDetail(item, $event)">详情</button>
+                  <button
                     v-if="canUseAgent"
                     class="ui-button is-ai"
+                    type="button"
                     :disabled="Number(item.vstate)!==0"
                     :title="Number(item.vstate)===0?'生成或打开个人AI审核草稿':'仅待审核申请可以使用AI草稿'"
-                    @click="openAiDraft(item)"
-                  >AI 草稿</button
-                  ><button
+                    @click="openAiDraft(item, $event)"
+                  >AI 草稿</button>
+                  <button
                     v-if="Number(item.vstate)===0"
                     class="ui-button is-dark"
+                    type="button"
                     @click="openEdit(item, $event)"
-                  >
-                    编辑</button
-                  ><button
+                  >编辑问卷</button>
+                  <button
                     v-if="[0,3].includes(Number(item.vstate))"
                     class="ui-button is-primary"
-                    @click="askAction(item,'approve')"
-                  >
-                    通过并预留</button
-                  ><button
+                    type="button"
+                    @click="askAction(item,'approve', $event)"
+                  >通过并预留</button>
+                  <button
                     v-if="Number(item.vstate)===0"
                     class="ui-button is-ghost"
-                    @click="askAction(item,'material')"
-                  >
-                    补充材料</button
-                  ><button
-                    v-if="[0,3].includes(Number(item.vstate))"
-                    class="ui-button is-danger"
-                    @click="askAction(item,'reject')"
-                  >
-                    驳回</button
-                  ><button
+                    type="button"
+                    @click="askAction(item,'material', $event)"
+                  >补充材料</button>
+                  <button
                     v-if="Number(item.vstate)===1"
                     class="ui-button is-primary"
-                    @click="askAction(item,'handover')"
-                  >
-                    确认交接</button
-                  ><button
+                    type="button"
+                    @click="askAction(item,'handover', $event)"
+                  >确认交接</button>
+                  <button
                     v-if="Number(item.vstate)===4&&canVisit"
                     class="ui-button is-ghost"
-                    @click="openVisit(item)"
-                  >
-                    录入回访</button
-                  ><button
-                    v-if="[0,1,3].includes(Number(item.vstate))"
-                    class="ui-button is-danger"
-                    @click="askAction(item,'cancel')"
-                  >
-                    取消
-                  </button
-                  ><button
+                    type="button"
+                    @click="openVisit(item, $event)"
+                  >录入回访</button>
+                  <button
                     v-if="[2,5,6].includes(Number(item.vstate))"
                     class="ui-button is-ghost"
-                    @click="askAction(item,'reopen')"
-                  >
-                    重新打开
-                  </button>
+                    type="button"
+                    @click="askAction(item,'reopen', $event)"
+                  >重新打开</button>
+                  <button
+                    v-if="[0,3].includes(Number(item.vstate))"
+                    class="ui-button is-danger"
+                    type="button"
+                    @click="askAction(item,'reject', $event)"
+                  >驳回</button>
+                  <button
+                    v-if="[0,1,3].includes(Number(item.vstate))"
+                    class="ui-button is-danger"
+                    type="button"
+                    @click="askAction(item,'cancel', $event)"
+                  >取消</button>
                 </div>
               </article>
             </div></template
@@ -356,19 +384,20 @@
       <div
         v-if="detailItem"
         class="admin-dialog-backdrop"
-        @click.self="detailItem=null"
+        @click.self="closeDetail"
       >
         <section
-          class="admin-dialog admin-detail-dialog"
+          class="admin-dialog admin-detail-dialog adopt-governance-dialog"
           role="dialog"
           aria-modal="true"
+          aria-labelledby="adoptDetailTitle"
         >
           <div class="admin-dialog-head">
             <div>
               <span>{{ stateText(detailItem.vstate) }}</span>
-              <h2>{{ detailItem.aname }} · {{ detailItem.uname }}</h2>
+              <h2 id="adoptDetailTitle">{{ detailItem.aname }} · {{ detailItem.uname }}</h2>
             </div>
-            <button class="admin-dialog-close" type="button" @click="detailItem=null" title="关闭" aria-label="关闭领养详情"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button>
+            <button class="admin-dialog-close" type="button" @click="closeDetail" title="关闭" aria-label="关闭领养详情"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button>
           </div>
           <div class="admin-dialog-body">
             <dl class="admin-detail-grid">
@@ -568,157 +597,101 @@
                 <strong>可编辑：</strong>申请人问卷字段。
                 <strong>不可编辑：</strong>用户身份、动物编号、审核状态等由服务端关系约束，不能通过本表单改写。
               </p>
-              <div class="admin-form-grid">
+              <div class="adopt-governance-context" aria-label="只读上下文">
+                <div><span>动物编号</span><strong>#{{ form.aid }}</strong></div>
+                <div><span>申请人编号</span><strong>#{{ form.uid }}</strong></div>
+                <div><span>申请状态</span><strong>只读 · 不可在此改写</strong></div>
+                <div><span>审核人 / 时间</span><strong>服务端权威</strong></div>
+              </div>
+              <div class="adopt-governance-form-group">
+                <h3>基本身份</h3>
+                <div class="admin-form-grid">
                 <div class="ui-form-field">
                   <label for="adoptEditAge">年龄</label>
-                  <input
-                    id="adoptEditAge"
-                    v-model.number="form.age"
-                    class="ui-form-input"
-                    type="number"
-                    min="18"
-                    max="100"
-                    inputmode="numeric"
-                    required
-                    :disabled="saving"
-                    aria-describedby="adoptEditAgeHint"
-                  />
-                  <span id="adoptEditAgeHint" class="admin-field-hint" style="display:block;margin-top:6px;color:var(--ui-muted);font-size:11px">18–100</span>
+                  <input id="adoptEditAge" v-model.number="form.age" class="ui-form-input" type="number" min="18" max="100" inputmode="numeric" required :disabled="saving" aria-describedby="adoptEditAgeHint" />
+                  <span id="adoptEditAgeHint" class="admin-field-hint">18–100</span>
                 </div>
                 <div class="ui-form-field">
                   <label for="adoptEditGender">性别</label>
-                  <input
-                    id="adoptEditGender"
-                    v-model.trim="form.gender"
-                    class="ui-form-input"
-                    type="text"
-                    maxlength="4"
-                    required
-                    :disabled="saving"
-                  />
-                </div>
-                <div class="ui-form-field">
-                  <label for="adoptEditOccupation">职业</label>
-                  <input
-                    id="adoptEditOccupation"
-                    v-model.trim="form.occupation"
-                    class="ui-form-input"
-                    type="text"
-                    maxlength="12"
-                    required
-                    :disabled="saving"
-                  />
-                </div>
-                <div class="ui-form-field">
-                  <label for="adoptEditTel">电话</label>
-                  <input
-                    id="adoptEditTel"
-                    v-model="form.tel"
-                    class="ui-form-input"
-                    type="tel"
-                    inputmode="numeric"
-                    maxlength="20"
-                    required
-                    :disabled="saving"
-                    autocomplete="tel"
-                  />
-                </div>
-                <div class="ui-form-field">
-                  <label for="adoptEditWechat">微信</label>
-                  <input
-                    id="adoptEditWechat"
-                    v-model.trim="form.wechat"
-                    class="ui-form-input"
-                    type="text"
-                    maxlength="20"
-                    required
-                    :disabled="saving"
-                  />
-                </div>
-                <div class="ui-form-field">
-                  <label for="adoptEditIncome">收入</label>
-                  <input
-                    id="adoptEditIncome"
-                    v-model.number="form.income"
-                    class="ui-form-input"
-                    type="number"
-                    min="0"
-                    step="1"
-                    inputmode="numeric"
-                    required
-                    :disabled="saving"
-                  />
-                </div>
-                <div class="ui-form-field">
-                  <label for="adoptEditPetnum">现有宠物数量</label>
-                  <input
-                    id="adoptEditPetnum"
-                    v-model.number="form.petnum"
-                    class="ui-form-input"
-                    type="number"
-                    min="0"
-                    max="30"
-                    inputmode="numeric"
-                    required
-                    :disabled="saving"
-                  />
+                  <input id="adoptEditGender" v-model.trim="form.gender" class="ui-form-input" type="text" maxlength="4" required :disabled="saving" />
                 </div>
                 <div class="ui-form-field">
                   <label for="adoptEditMarital">婚姻状态</label>
-                  <select
-                    id="adoptEditMarital"
-                    v-model.number="form.maritalstatus"
-                    :disabled="saving"
-                  >
+                  <select id="adoptEditMarital" v-model.number="form.maritalstatus" :disabled="saving">
                     <option :value="1">已婚</option>
                     <option :value="2">未婚</option>
                   </select>
                 </div>
+                </div>
+              </div>
+              <div class="adopt-governance-form-group">
+                <h3>联系方式</h3>
+                <div class="admin-form-grid">
                 <div class="ui-form-field">
-                  <label for="adoptEditResident">固定住所</label>
-                  <select
-                    id="adoptEditResident"
-                    v-model.number="form.fixresident"
-                    :disabled="saving"
-                  >
-                    <option :value="1">是</option>
-                    <option :value="0">否</option>
-                  </select>
+                  <label for="adoptEditTel">电话</label>
+                  <input id="adoptEditTel" v-model="form.tel" class="ui-form-input" type="tel" inputmode="numeric" maxlength="20" required :disabled="saving" autocomplete="tel" />
                 </div>
                 <div class="ui-form-field">
-                  <label for="adoptEditExperience">养宠经验</label>
-                  <select
-                    id="adoptEditExperience"
-                    v-model.number="form.experience"
-                    :disabled="saving"
-                  >
-                    <option :value="1">是</option>
-                    <option :value="0">否</option>
-                  </select>
-                </div>
-                <div class="ui-form-field">
-                  <label for="adoptEditFamily">家人同意</label>
-                  <select
-                    id="adoptEditFamily"
-                    v-model.number="form.familyagree"
-                    :disabled="saving"
-                  >
-                    <option :value="1">是</option>
-                    <option :value="0">否</option>
-                  </select>
+                  <label for="adoptEditWechat">微信</label>
+                  <input id="adoptEditWechat" v-model.trim="form.wechat" class="ui-form-input" type="text" maxlength="20" required :disabled="saving" />
                 </div>
                 <div class="ui-form-field is-full">
                   <label for="adoptEditLocation">家庭住址</label>
-                  <input
-                    id="adoptEditLocation"
-                    v-model.trim="form.location"
-                    class="ui-form-input"
-                    type="text"
-                    maxlength="255"
-                    required
-                    :disabled="saving"
-                    autocomplete="street-address"
-                  />
+                  <input id="adoptEditLocation" v-model.trim="form.location" class="ui-form-input" type="text" maxlength="255" required :disabled="saving" autocomplete="street-address" />
+                </div>
+                </div>
+              </div>
+              <div class="adopt-governance-form-group">
+                <h3>居住条件</h3>
+                <div class="admin-form-grid">
+                <div class="ui-form-field">
+                  <label for="adoptEditResident">固定住所</label>
+                  <select id="adoptEditResident" v-model.number="form.fixresident" :disabled="saving">
+                    <option :value="1">是</option>
+                    <option :value="0">否</option>
+                  </select>
+                </div>
+                </div>
+              </div>
+              <div class="adopt-governance-form-group">
+                <h3>家庭条件</h3>
+                <div class="admin-form-grid">
+                <div class="ui-form-field">
+                  <label for="adoptEditFamily">家人同意</label>
+                  <select id="adoptEditFamily" v-model.number="form.familyagree" :disabled="saving">
+                    <option :value="1">是</option>
+                    <option :value="0">否</option>
+                  </select>
+                </div>
+                </div>
+              </div>
+              <div class="adopt-governance-form-group">
+                <h3>养宠经验</h3>
+                <div class="admin-form-grid">
+                <div class="ui-form-field">
+                  <label for="adoptEditExperience">养宠经验</label>
+                  <select id="adoptEditExperience" v-model.number="form.experience" :disabled="saving">
+                    <option :value="1">是</option>
+                    <option :value="0">否</option>
+                  </select>
+                </div>
+                <div class="ui-form-field">
+                  <label for="adoptEditPetnum">现有宠物数量</label>
+                  <input id="adoptEditPetnum" v-model.number="form.petnum" class="ui-form-input" type="number" min="0" max="30" inputmode="numeric" required :disabled="saving" />
+                </div>
+                </div>
+              </div>
+              <div class="adopt-governance-form-group">
+                <h3>经济与职业情况</h3>
+                <div class="admin-form-grid">
+                <div class="ui-form-field">
+                  <label for="adoptEditOccupation">职业</label>
+                  <input id="adoptEditOccupation" v-model.trim="form.occupation" class="ui-form-input" type="text" maxlength="12" required :disabled="saving" />
+                </div>
+                <div class="ui-form-field">
+                  <label for="adoptEditIncome">收入</label>
+                  <input id="adoptEditIncome" v-model.number="form.income" class="ui-form-input" type="number" min="0" step="1" inputmode="numeric" required :disabled="saving" />
+                </div>
                 </div>
               </div>
               <div
@@ -726,6 +699,7 @@
                 id="adoptEditFormError"
                 class="admin-inline-message is-error"
                 role="alert"
+                tabindex="-1"
               >
                 {{ formError }}
               </div>
@@ -742,7 +716,9 @@
               <button
                 class="ui-button is-primary"
                 type="submit"
+                :class="{'is-loading': saving}"
                 :disabled="saving"
+                :aria-busy="saving ? 'true' : 'false'"
               >
                 {{ saving ? '保存中…' : '保存问卷' }}
               </button>
@@ -750,14 +726,14 @@
           </form>
         </section>
       </div>
-      <div v-if="visitOpen" class="admin-dialog-backdrop">
-        <section class="admin-dialog" role="dialog" aria-modal="true">
+      <div v-if="visitOpen" class="admin-dialog-backdrop" @click.self="cancelVisit">
+        <section class="admin-dialog adopt-governance-dialog" role="dialog" aria-modal="true" aria-labelledby="adoptVisitTitle">
           <div class="admin-dialog-head">
             <div>
               <span>已通过领养关系</span>
-              <h2>录入 {{ visitForm.aname }} 的回访</h2>
+              <h2 id="adoptVisitTitle">录入 {{ visitForm.aname }} 的回访</h2>
             </div>
-            <button class="admin-dialog-close" type="button" @click="cancelVisit" title="关闭" aria-label="关闭回访录入"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button>
+            <button class="admin-dialog-close" type="button" :disabled="saving||uploading" @click="cancelVisit" title="关闭" aria-label="关闭回访录入"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button>
           </div>
           <form class="admin-edit-form" @submit.prevent="saveVisit">
             <div class="admin-dialog-body">
@@ -823,40 +799,71 @@
           </form>
         </section>
       </div>
-      <div v-if="actionItem" class="admin-dialog-backdrop">
-        <section class="admin-dialog" role="alertdialog" aria-modal="true">
+      <div v-if="actionItem" class="admin-dialog-backdrop" @click.self="cancelAction">
+        <section
+          class="admin-dialog adopt-governance-dialog"
+          :class="{'is-danger': actionIsRisk, 'is-ok': actionType==='approve'||actionType==='handover'}"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="adoptActionTitle"
+        >
           <div class="admin-dialog-head">
             <div>
-              <span>状态与依赖约束由服务端确认</span>
-              <h2>
-                {{
-                actionTitle(actionType)
-                }}？
+              <span>状态与依赖约束由服务端确认 · {{ actionTypeLabel }}</span>
+              <h2 id="adoptActionTitle">
+                对申请人「{{ actionItem.uname||('用户 #'+actionItem.uid) }}」的动物「{{ actionItem.aname||('#'+actionItem.aid) }}」执行：{{ actionTitle(actionType) }}？
               </h2>
             </div>
-            <button class="admin-dialog-close" type="button" @click="actionItem=null" title="关闭" aria-label="关闭操作确认"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button>
+            <button class="admin-dialog-close" type="button" :disabled="transitioning" @click="cancelAction" title="关闭" aria-label="关闭操作确认"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button>
           </div>
           <div class="admin-dialog-body">
             <div class="ui-form-field">
               <label for="adoptActionReason">操作原因</label>
-              <textarea id="adoptActionReason" v-model.trim="actionReason" maxlength="1000" :placeholder="actionPlaceholder(actionType)"></textarea>
+              <textarea id="adoptActionReason" v-model.trim="actionReason" maxlength="1000" :disabled="transitioning" :placeholder="actionPlaceholder(actionType)"></textarea>
               <span class="admin-field-hint">驳回、补充材料、取消和重新打开必须填写明确原因；用户会看到必要说明。</span>
             </div>
             <div
               v-if="actionError"
+              id="adoptActionError"
               class="admin-inline-message is-error"
               role="alert"
+              tabindex="-1"
             >
               {{ actionError }}
             </div>
           </div>
           <div class="admin-dialog-actions">
-            <button class="ui-button is-ghost" type="button" @click="actionItem=null">
+            <button class="ui-button is-ghost" type="button" :disabled="transitioning" @click="cancelAction">
               取消
             </button>
-            <button class="ui-button is-danger" type="button" @click="confirmAction">
-              确认
+            <button
+              class="ui-button"
+              :class="actionIsRisk ? 'is-danger' : 'is-primary'"
+              type="button"
+              :disabled="transitioning"
+              :aria-busy="transitioning ? 'true' : 'false'"
+              @click="confirmAction"
+            >
+              {{ transitioning ? '处理中…' : '确认执行' }}
             </button>
+          </div>
+        </section>
+      </div>
+      <div v-if="discardDraftAsk" class="admin-dialog-backdrop" @click.self="discardDraftAsk=false">
+        <section class="admin-dialog adopt-governance-dialog is-danger" role="alertdialog" aria-modal="true" aria-labelledby="adoptDiscardTitle">
+          <div class="admin-dialog-head">
+            <div>
+              <span>不可自动改申请状态</span>
+              <h2 id="adoptDiscardTitle">丢弃这份个人审核草稿？</h2>
+            </div>
+            <button class="admin-dialog-close" type="button" @click="discardDraftAsk=false" aria-label="关闭"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button>
+          </div>
+          <div class="admin-dialog-body">
+            <p class="admin-dialog-copy">领养申请状态不会改变。仅删除当前管理员的个人 AI 草稿。</p>
+          </div>
+          <div class="admin-dialog-actions">
+            <button class="ui-button is-ghost" type="button" @click="discardDraftAsk=false">取消</button>
+            <button class="ui-button is-danger" type="button" @click="confirmDiscardAiDraft">确认丢弃</button>
           </div>
         </section>
       </div>
@@ -868,6 +875,71 @@
     <script>
       (function () {
         "use strict";
+        var writeLocks = { save: false, transition: false, visit: false, discard: false };
+        window.__adoptWriteLocks = writeLocks;
+        function createFocusTrap() {
+          var state = { root: null, onKey: null, prevOverflow: "", onEscape: null };
+          function focusable(root) {
+            return Array.prototype.slice.call(root.querySelectorAll(
+              'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+            )).filter(function (el) {
+              return !el.disabled && (el.offsetParent !== null || el === document.activeElement || el.getClientRects().length);
+            });
+          }
+          return {
+            activate: function (root, initial, onEscape) {
+              this.deactivate();
+              if (!root) return;
+              state.root = root;
+              state.onEscape = typeof onEscape === "function" ? onEscape : null;
+              state.prevOverflow = document.body.style.overflow;
+              document.body.style.overflow = "hidden";
+              if (!root.hasAttribute("tabindex")) root.setAttribute("tabindex", "-1");
+              state.onKey = function (e) {
+                if (!state.root) return;
+                if (e.key === "Escape" || e.keyCode === 27) {
+                  if (state.onEscape) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    state.onEscape();
+                  }
+                  return;
+                }
+                if (e.key !== "Tab") return;
+                var list = focusable(state.root);
+                if (!list.length) { e.preventDefault(); state.root.focus(); return; }
+                var first = list[0], last = list[list.length - 1], active = document.activeElement;
+                if (e.shiftKey) {
+                  if (active === first || !state.root.contains(active)) { e.preventDefault(); last.focus(); }
+                } else if (active === last || !state.root.contains(active)) {
+                  e.preventDefault(); first.focus();
+                }
+              };
+              document.addEventListener("keydown", state.onKey, true);
+              setTimeout(function () {
+                var target = initial;
+                if (!target || !state.root.contains(target) || target.disabled) {
+                  var list = focusable(state.root);
+                  target = list[0] || state.root;
+                }
+                if (target && target.focus) target.focus();
+              }, 0);
+            },
+            deactivate: function () {
+              if (state.onKey) {
+                document.removeEventListener("keydown", state.onKey, true);
+                state.onKey = null;
+              }
+              state.onEscape = null;
+              document.body.style.overflow = state.prevOverflow || "";
+              state.root = null;
+            },
+            contains: function (el) {
+              return !!(state.root && el && state.root.contains(el));
+            },
+            root: function () { return state.root; }
+          };
+        }
         AuthSession.bootstrap({
           requireAuth: true,
           allowCachedOnNetworkError: false,
@@ -878,6 +950,7 @@
               return;
             }
             document.getElementById("authWait").hidden = true;
+            var focusTrap = createFocusTrap();
             new Vue({
               el: "#workspace",
               data: {
@@ -896,6 +969,7 @@
                 records: [],
                 loading: true,
                 loadError: "",
+                loadSeq: 0,
                 message: "",
                 messageType: "",
                 pageNum: 1,
@@ -907,6 +981,7 @@
                 form: {},
                 formError: "",
                 saving: false,
+                transitioning: false,
                 visitOpen: false,
                 visitForm: {},
                 visitError: "",
@@ -916,6 +991,8 @@
                 actionType: "",
                 actionReason: "",
                 actionError: "",
+                triggerEl: null,
+                discardDraftAsk: false,
                 aiDraftOpen: false,
                 aiDraftTarget: null,
                 aiDraft: null,
@@ -941,6 +1018,27 @@
                   for (var p = s; p <= e; p += 1) a.push(p);
                   return a;
                 },
+                pagePendingCount: function () {
+                  return (this.records || []).filter(function (r) {
+                    return [0, 1, 3].indexOf(Number(r.vstate)) >= 0;
+                  }).length;
+                },
+                pageDoneCount: function () {
+                  return (this.records || []).filter(function (r) {
+                    return Number(r.vstate) === 4;
+                  }).length;
+                },
+                pageClosedCount: function () {
+                  return (this.records || []).filter(function (r) {
+                    return [2, 5, 6].indexOf(Number(r.vstate)) >= 0;
+                  }).length;
+                },
+                actionIsRisk: function () {
+                  return ["reject", "cancel"].indexOf(this.actionType) >= 0;
+                },
+                actionTypeLabel: function () {
+                  return this.actionTitle(this.actionType);
+                },
                 aiDraftBusy: function () {
                   return this.aiDraftLoading || this.aiDraftGenerating || this.aiDraftSaving || this.aiFinalizeSaving;
                 },
@@ -962,7 +1060,86 @@
                 },
               },
               created: function () {
+                var vm = this;
+                // Document-level Escape (capture): works even when focus is BODY after 409
+                this._onDocEsc = function (e) {
+                  if (e.key !== "Escape" && e.keyCode !== 27) return;
+                  if (vm.saving || vm.uploading || vm.transitioning || vm.aiDraftBusy) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                  }
+                  if (vm.discardDraftAsk || vm.actionItem || vm.aiDraftOpen || vm.visitOpen || vm.editOpen || vm.detailItem) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    vm.closeTopLayer();
+                  }
+                };
+                document.addEventListener("keydown", this._onDocEsc, true);
                 this.load(1);
+              },
+              beforeDestroy: function () {
+                if (this._onDocEsc) {
+                  document.removeEventListener("keydown", this._onDocEsc, true);
+                  this._onDocEsc = null;
+                }
+                focusTrap.deactivate();
+              },
+              watch: {
+                editOpen: function (open) {
+                  var vm = this;
+                  if (open) {
+                    this.$nextTick(function () {
+                      var root = document.querySelector('[role="dialog"][aria-labelledby="adoptQuestionnaireTitle"]');
+                      if (!root) {
+                        var form = document.querySelector(".admin-edit-form");
+                        root = form && form.closest('[role="dialog"]');
+                      }
+                      if (!root) root = document.querySelector(".admin-dialog.admin-detail-dialog");
+                      focusTrap.activate(root, document.getElementById("adoptEditAge"), function () { vm.closeEdit(); });
+                    });
+                  } else if (!this.actionItem && !this.visitOpen && !this.aiDraftOpen && !this.detailItem) {
+                    focusTrap.deactivate();
+                  }
+                },
+                actionItem: function (v) {
+                  var vm = this;
+                  if (v) {
+                    this.$nextTick(function () {
+                      var root = document.querySelector('[role="alertdialog"][aria-labelledby="adoptActionTitle"]');
+                      focusTrap.activate(root, document.getElementById("adoptActionReason"), function () { vm.cancelAction(); });
+                    });
+                  } else if (!this.editOpen && !this.visitOpen && !this.aiDraftOpen && !this.detailItem) {
+                    focusTrap.deactivate();
+                  }
+                },
+                visitOpen: function (open) {
+                  var vm = this;
+                  if (open) {
+                    this.$nextTick(function () {
+                      var root = document.querySelector('[role="dialog"][aria-labelledby="adoptVisitTitle"]');
+                      focusTrap.activate(root, root && root.querySelector("input,textarea,button"), function () { vm.cancelVisit(); });
+                    });
+                  }
+                },
+                detailItem: function (v) {
+                  var vm = this;
+                  if (v) {
+                    this.$nextTick(function () {
+                      var root = document.querySelector('[role="dialog"][aria-labelledby="adoptDetailTitle"]');
+                      focusTrap.activate(root, root && root.querySelector("button"), function () { vm.closeDetail(); });
+                    });
+                  }
+                },
+                discardDraftAsk: function (open) {
+                  var vm = this;
+                  if (open) {
+                    this.$nextTick(function () {
+                      var root = document.querySelector('[role="alertdialog"][aria-labelledby="adoptDiscardTitle"]');
+                      focusTrap.activate(root, root && root.querySelector("button"), function () { vm.discardDraftAsk = false; });
+                    });
+                  }
+                }
               },
               methods: {
           closeMenus: function () { this.mobileOpen = false; this.accountOpen = false; this.moreOpen = false; },
@@ -972,6 +1149,70 @@
           isNavActive: function (flag) { return AdminWorkspace.flagsMatch(flag, this.currentNavFlag); },
           isMoreCurrent: function () { var vm = this; var more = (this.desktopNav && this.desktopNav.more) || []; return more.some(function (item) { return AdminWorkspace.flagsMatch(item.flag, vm.currentNavFlag); }); },
           isOverviewActive: function () { return !this.currentNavFlag; },
+                resolveStableFocusTarget: function () {
+                  var main = document.querySelector("main") || document;
+                  var selectors = ['input[type="search"]', ".admin-review-toolbar input", "button[type=\"submit\"]", "h2", "h1"];
+                  for (var i = 0; i < selectors.length; i++) {
+                    var el = main.querySelector(selectors[i]);
+                    if (el && el.isConnected) return el;
+                  }
+                  return null;
+                },
+                restoreTriggerFocus: function () {
+                  var t = this.triggerEl;
+                  this.triggerEl = null;
+                  var vm = this;
+                  this.$nextTick(function () {
+                    var target = t;
+                    if (!target || !target.isConnected || typeof target.focus !== "function") {
+                      target = vm.resolveStableFocusTarget();
+                    }
+                    if (!target || typeof target.focus !== "function") return;
+                    try {
+                      if (/^H[12]$/.test(target.tagName)) target.setAttribute("tabindex", "-1");
+                      target.focus();
+                    } catch (e1) { /* ignore */ }
+                    if (document.activeElement !== target) {
+                      var fb = vm.resolveStableFocusTarget();
+                      if (fb && typeof fb.focus === "function") {
+                        try {
+                          if (/^H[12]$/.test(fb.tagName)) fb.setAttribute("tabindex", "-1");
+                          fb.focus();
+                        } catch (e2) { /* ignore */ }
+                      }
+                    }
+                  });
+                },
+                /** Keep focus inside open dialog after write error (never BODY). */
+                focusDialogError: function (errorId) {
+                  var vm = this;
+                  this.$nextTick(function () {
+                    var err = (errorId && document.getElementById(errorId)) ||
+                      document.querySelector('[role="dialog"] .is-error, [role="alertdialog"] .is-error, .admin-inline-message.is-error');
+                    if (err) {
+                      if (!err.hasAttribute("tabindex")) err.setAttribute("tabindex", "-1");
+                      try { err.focus(); } catch (e1) { /* */ }
+                      if (document.activeElement === err) return;
+                    }
+                    var root = focusTrap.root && focusTrap.root();
+                    if (!root) {
+                      root = document.querySelector('[role="alertdialog"], [role="dialog"]');
+                    }
+                    if (root) {
+                      var btn = root.querySelector('button[type="submit"], button.is-primary, button.is-danger, textarea, input');
+                      if (btn && typeof btn.focus === "function") {
+                        try { btn.focus(); return; } catch (e2) { /* */ }
+                      }
+                      try { root.focus(); } catch (e3) { /* */ }
+                    }
+                  });
+                },
+                setSearchMode: function (mode) {
+                  if (mode !== "animal" && mode !== "user") return;
+                  if (this.searchMode === mode) return;
+                  this.searchMode = mode;
+                  // do not auto-request; user submits explicitly
+                },
 
                 avatarUrl: function (f) {
                   return AdminWorkspace.avatarUrl(f);
@@ -983,25 +1224,33 @@
                   AuthSession.logout();
                 },
                 closeTopLayer: function () { if (this.closeMenus) this.closeMenus();
-                  if (this.saving || this.uploading) return;
-                  if (this.actionItem) this.actionItem = null;
+                  if (this.saving || this.uploading || this.transitioning || this.aiDraftBusy) return;
+                  if (this.discardDraftAsk) this.discardDraftAsk = false;
+                  else if (this.actionItem) this.cancelAction();
                   else if (this.aiFinalizeOpen) this.cancelAiFinalize();
                   else if (this.aiDraftOpen) this.closeAiDraft();
                   else if (this.visitOpen) this.cancelVisit();
                   else if (this.editOpen) this.closeEdit();
-                  else this.detailItem = null;
+                  else if (this.detailItem) this.closeDetail();
+                },
+                closeDetail: function () {
+                  this.detailItem = null;
+                  focusTrap.deactivate();
+                  this.restoreTriggerFocus();
                 },
                 closeEdit: function () {
                   if (this.saving) return;
                   this.editOpen = false;
                   this.formError = "";
-                  this.$nextTick(function () {
-                    var btn = document.getElementById("adopt-edit-trigger-focus");
-                    if (btn) {
-                      btn.focus();
-                      btn.removeAttribute("id");
-                    }
-                  });
+                  focusTrap.deactivate();
+                  this.restoreTriggerFocus();
+                },
+                cancelAction: function () {
+                  if (this.transitioning) return;
+                  this.actionItem = null;
+                  this.actionError = "";
+                  focusTrap.deactivate();
+                  this.restoreTriggerFocus();
                 },
                 stateText: function (v) {
                   // 状态词统一走 StatusText（此前用户端「未通过」/管理端「已驳回」两套并存）
@@ -1023,8 +1272,13 @@
                 yesNo: function (v) {
                   return Number(v) === 1 ? "是" : "否";
                 },
-                load: function (page) {
+                load: function (page, preserveFeedback, onDone) {
                   var vm = this;
+                  var seq = ++vm.loadSeq;
+                  if (!preserveFeedback) {
+                    vm.message = "";
+                    vm.messageType = "";
+                  }
                   vm.loading = true;
                   vm.loadError = "";
                   $.ajax({
@@ -1040,6 +1294,7 @@
                     },
                   })
                     .done(function (res) {
+                      if (seq !== vm.loadSeq) return;
                       if (
                         !res ||
                         res.code !== "0" ||
@@ -1055,15 +1310,21 @@
                       vm.totalPages = Math.max(1, Number(res.data.pages || 1));
                     })
                     .fail(function (xhr) {
+                      if (seq !== vm.loadSeq) return;
                       vm.loadError =
                         (xhr.responseJSON && xhr.responseJSON.msg) ||
                         "网络异常。";
                     })
                     .always(function () {
+                      if (seq !== vm.loadSeq) return;
                       vm.loading = false;
+                      if (typeof onDone === "function") {
+                        vm.$nextTick(function () { onDone(); });
+                      }
                     });
                 },
-                openDetail: function (i) {
+                openDetail: function (i, evt) {
+                  this.triggerEl = (evt && evt.currentTarget) || document.activeElement;
                   this.detailItem = i;
                 },
                 requestId: function () {
@@ -1072,8 +1333,9 @@
                   }
                   return Date.now().toString(36) + "_" + Math.random().toString(36).slice(2);
                 },
-                openAiDraft: function (item) {
+                openAiDraft: function (item, evt) {
                   if (!this.canUseAgent || Number(item.vstate) !== 0) return;
+                  this.triggerEl = (evt && evt.currentTarget) || document.activeElement;
                   this.aiDraftTarget = item;
                   this.aiDraft = null;
                   this.aiDraftForm = null;
@@ -1090,6 +1352,8 @@
                   this.aiDraftForm = null;
                   this.aiDraftError = "";
                   this.resetAiFinalize();
+                  focusTrap.deactivate();
+                  this.restoreTriggerFocus();
                 },
                 applyAiDraft: function (draft) {
                   this.aiDraft = draft;
@@ -1162,10 +1426,11 @@
                     }
                     var decision = res.data.finalDecision === "approve" ? "通过" : "驳回";
                     vm.aiFinalizeSaving = false;
+                    vm.triggerEl = vm.resolveStableFocusTarget();
                     vm.closeAiDraft();
                     vm.messageType = "success";
                     vm.message = "人工确认已完成：领养申请已" + decision + "。";
-                    vm.load(vm.pageNum);
+                    vm.load(vm.pageNum, true, function () { vm.restoreTriggerFocus(); });
                   }).fail(function (xhr) {
                     vm.aiFinalizeError = (xhr.responseJSON && xhr.responseJSON.msg) ||
                       (xhr.status === 409 ? "草稿或申请状态已变化，请刷新后重新复核。" : "审核执行失败，申请状态未确认改变。请刷新列表核对。" );
@@ -1225,8 +1490,14 @@
                   }).always(function () { vm.aiDraftSaving = false; });
                 },
                 discardAiDraft: function () {
+                  if (!this.aiDraft || this.aiDraftBusy) return;
+                  this.discardDraftAsk = true;
+                },
+                confirmDiscardAiDraft: function () {
                   var vm = this;
-                  if (!vm.aiDraft || vm.aiDraftBusy || !window.confirm("丢弃这份个人审核草稿？领养申请不会改变。")) return;
+                  if (!vm.aiDraft || vm.aiDraftBusy || writeLocks.discard) return;
+                  writeLocks.discard = true;
+                  vm.discardDraftAsk = false;
                   vm.aiDraftSaving = true;
                   $.ajax({
                     url: "/api/admin-agent/adoption-drafts/" + encodeURIComponent(vm.aiDraft.id),
@@ -1243,14 +1514,13 @@
                     vm.message = "个人审核草稿已丢弃；申请状态没有改变。";
                   }).fail(function (xhr) {
                     vm.aiDraftError = (xhr.responseJSON && xhr.responseJSON.msg) || "草稿丢弃失败。";
-                  }).always(function () { vm.aiDraftSaving = false; });
+                  }).always(function () {
+                    vm.aiDraftSaving = false;
+                    writeLocks.discard = false;
+                  });
                 },
                 openEdit: function (i, evt) {
-                  var prev = document.getElementById("adopt-edit-trigger-focus");
-                  if (prev) prev.removeAttribute("id");
-                  if (evt && evt.currentTarget) {
-                    evt.currentTarget.id = "adopt-edit-trigger-focus";
-                  }
+                  this.triggerEl = (evt && evt.currentTarget) || document.activeElement;
                   this.form = {
                     aid: i.aid,
                     uid: i.uid,
@@ -1269,14 +1539,10 @@
                   };
                   this.formError = "";
                   this.editOpen = true;
-                  this.$nextTick(function () {
-                    var first = document.getElementById("adoptEditAge");
-                    if (first) first.focus();
-                  });
                 },
                 saveEdit: function () {
                   var vm = this;
-                  if (vm.saving) return;
+                  if (vm.saving || writeLocks.save) return;
                   var payload = {
                     gender: vm.form.gender,
                     age: vm.form.age,
@@ -1291,7 +1557,9 @@
                     familyagree: vm.form.familyagree,
                     wechat: vm.form.wechat,
                   };
+                  // Never send aid/uid/vstate/auditor fields
                   vm.formError = "";
+                  writeLocks.save = true;
                   vm.saving = true;
                   $.ajax({
                     url:
@@ -1309,15 +1577,12 @@
                         return;
                       }
                       vm.editOpen = false;
+                      focusTrap.deactivate();
                       vm.messageType = "success";
                       vm.message = "领养问卷已保存。";
-                      vm.load(vm.pageNum);
-                      vm.$nextTick(function () {
-                        var btn = document.getElementById("adopt-edit-trigger-focus");
-                        if (btn) {
-                          btn.focus();
-                          btn.removeAttribute("id");
-                        }
+                      vm.triggerEl = vm.resolveStableFocusTarget();
+                      vm.load(vm.pageNum, true, function () {
+                        vm.restoreTriggerFocus();
                       });
                     })
                     .fail(function (xhr) {
@@ -1349,12 +1614,15 @@
                       // 绝不关闭弹窗、不展示成功横幅
                       vm.message = "";
                       vm.messageType = "";
+                      vm.focusDialogError("adoptEditFormError");
                     })
                     .always(function () {
                       vm.saving = false;
+                      writeLocks.save = false;
                     });
                 },
-                askAction: function (i, t) {
+                askAction: function (i, t, evt) {
+                  this.triggerEl = (evt && evt.currentTarget) || document.activeElement;
                   this.actionItem = i;
                   this.actionType = t;
                   this.actionReason = t === "approve" ? "资料符合要求，审核通过并进入待交接阶段" : t === "handover" ? "已核对材料并确认完成线下交接" : "";
@@ -1362,11 +1630,25 @@
                 },
                 confirmAction: function () {
                   var vm = this;
+                  if (vm.transitioning || writeLocks.transition) return;
                   var action = {approve:"APPROVE",material:"REQUEST_MATERIAL",reject:"REJECT",handover:"COMPLETE_HANDOVER",cancel:"CANCEL",reopen:"REOPEN"}[vm.actionType];
                   if (!action) { vm.actionError = "操作类型无效。"; return; }
                   if (["material","reject","cancel","reopen"].includes(vm.actionType) && String(vm.actionReason||"").trim().length < 2) { vm.actionError = "请填写明确的操作原因。"; return; }
+                  writeLocks.transition = true;
+                  vm.transitioning = true;
+                  vm.actionError = "";
                   var url = "/api/adopt/" + vm.actionItem.aid + "/" + vm.actionItem.uid + "/transition";
-                  $.ajax({ url: url, type: "POST", contentType:"application/json", data:JSON.stringify({action:action,reason:vm.actionReason,note:vm.actionType==="handover"?vm.actionReason:null,expectedVersion:Number(vm.actionItem.version||0)}) })
+                  $.ajax({
+                    url: url,
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                      action: action,
+                      reason: vm.actionReason,
+                      note: vm.actionType === "handover" ? vm.actionReason : null,
+                      expectedVersion: Number(vm.actionItem.version || 0)
+                    })
+                  })
                     .done(function (res) {
                       if (!res || res.code !== "0" || res.data !== true) {
                         vm.actionError = (res && res.msg) || "操作失败。";
@@ -1374,17 +1656,33 @@
                       }
                       vm.actionItem = null;
                       vm.actionReason = "";
+                      focusTrap.deactivate();
                       vm.messageType = "success";
                       vm.message = "领养申请已更新。";
-                      vm.load(vm.pageNum);
+                      vm.triggerEl = vm.resolveStableFocusTarget();
+                      vm.load(vm.pageNum, true, function () {
+                        vm.restoreTriggerFocus();
+                      });
                     })
                     .fail(function (xhr) {
-                      vm.actionError =
-                        (xhr.responseJSON && xhr.responseJSON.msg) ||
-                        "网络异常。";
+                      var st = xhr && xhr.status;
+                      var msg = (xhr.responseJSON && xhr.responseJSON.msg) || "";
+                      if (st === 409) msg = msg || "状态已变化（冲突），请重新核对后重试。";
+                      if (st === 403) msg = msg || "无权限执行该操作。";
+                      if (st >= 500) msg = msg || "服务异常，操作未成功。";
+                      if (!msg) msg = "网络异常。";
+                      vm.actionError = msg;
+                      vm.message = "";
+                      vm.messageType = "";
+                      vm.focusDialogError("adoptActionError");
+                    })
+                    .always(function () {
+                      vm.transitioning = false;
+                      writeLocks.transition = false;
                     });
                 },
-                openVisit: function (i) {
+                openVisit: function (i, evt) {
+                  this.triggerEl = (evt && evt.currentTarget) || document.activeElement;
                   this.visitForm = {
                     petId: i.aid,
                     uid: i.uid,
@@ -1411,6 +1709,8 @@
                   this.retireStage(this.visitStagedFlag);
                   this.visitStagedFlag = "";
                   this.visitOpen = false;
+                  focusTrap.deactivate();
+                  this.restoreTriggerFocus();
                 },
                 uploadVisitImage: function (e) {
                   var file = e.target.files && e.target.files[0];
@@ -1451,6 +1751,7 @@
                 },
                 saveVisit: function () {
                   var vm = this;
+                  if (vm.saving || writeLocks.visit) return;
                   var payload = {
                     petId: vm.visitForm.petId,
                     uid: vm.visitForm.uid,
@@ -1460,6 +1761,7 @@
                     remark: vm.visitForm.remark,
                     pic: vm.visitForm.pic,
                   };
+                  writeLocks.visit = true;
                   vm.saving = true;
                   $.ajax({
                     url: "/api/visit",
@@ -1476,8 +1778,11 @@
                       }
                       vm.visitStagedFlag = "";
                       vm.visitOpen = false;
+                      focusTrap.deactivate();
                       vm.messageType = "success";
                       vm.message = "回访记录已创建。";
+                      vm.triggerEl = vm.resolveStableFocusTarget();
+                      vm.restoreTriggerFocus();
                     })
                     .fail(function (xhr) {
                       vm.retireStage(vm.visitStagedFlag);
@@ -1488,6 +1793,7 @@
                     })
                     .always(function () {
                       vm.saving = false;
+                      writeLocks.visit = false;
                     });
                 },
                 exportRows: function () {
