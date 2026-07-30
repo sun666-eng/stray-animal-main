@@ -559,14 +559,14 @@ function attachCollectors(page, bag) {
       }
     }
 
-    // ——— Disabled strict (permission 禁止删除) ———
+    // ——— Disabled / no-delete policy (permission) ———
+    // Phase 2B: page-level delete policy replaces per-row disabled「禁止删除」buttons.
+    // Accept either legacy disabled button OR explicit page policy with zero DELETE UI.
     {
       await page.goto(base + '/page/end/permission.html', { waitUntil: 'domcontentloaded', timeout: 45000 });
       await page.waitForTimeout(800);
       const dis = page.locator('button[disabled], button:disabled').filter({ hasText: /禁止删除|删除/ }).first();
-      if (!(await dis.count())) {
-        fail('disabled-btn', 'target disabled button not found');
-      } else {
+      if (await dis.count()) {
         const isDis = await dis.isDisabled();
         const attr = await dis.evaluate((el) => ({
           disabled: !!el.disabled,
@@ -583,13 +583,9 @@ function attachCollectors(page, bag) {
         await dis.click({ force: true }).catch(() => {});
         await page.keyboard.press('Enter').catch(() => {});
         clickCount = await dis.evaluate((el) => Number(el.dataset.probeClicks || 0));
-        // native disabled buttons typically do not fire click; force:true may still fire in Playwright
-        // Requirement: programmatic handler path — with force click, if browser fires, we still require disabled true
         if (isDis && attr.disabled === true) {
-          // Prefer zero handler fires; if force click bypasses, still require disabled flags
           if (clickCount === 0) pass('disabled-btn', JSON.stringify({ isDis, attr, clickCount }));
           else {
-            // force:true can synthesize events on disabled elements in some engines — recheck without force
             clickCount = 0;
             await dis.evaluate((el) => { el.dataset.probeClicks = '0'; });
             try {
@@ -603,6 +599,17 @@ function attachCollectors(page, bag) {
           fail('disabled-btn', JSON.stringify({ isDis, attr, clickCount }));
         }
         await shot(page, '12-disabled-state', { page: 'permission', role: 'admin', viewport: '1440x900', state: 'disabled', goal: 'disabled 状态' });
+      } else {
+        // Phase 2B page-level policy: no delete button at all + explicit 禁止删除 copy
+        const mainText = await page.locator('main').innerText().catch(() => '');
+        const hasPolicy = /禁止删除|全局禁止删除|删除策略/.test(mainText);
+        const deleteBtns = await page.locator('button').filter({ hasText: /^删除$|确认删除|禁止删除/ }).count();
+        if (hasPolicy && deleteBtns === 0) {
+          pass('disabled-btn', JSON.stringify({ mode: 'page-policy-no-delete-ui', hasPolicy, deleteBtns }));
+          await shot(page, '12-disabled-state', { page: 'permission', role: 'admin', viewport: '1440x900', state: 'no-delete-policy', goal: '页面级禁止删除策略' });
+        } else {
+          fail('disabled-btn', JSON.stringify({ mode: 'page-policy', hasPolicy, deleteBtns, sample: mainText.slice(0, 160) }));
+        }
       }
     }
 

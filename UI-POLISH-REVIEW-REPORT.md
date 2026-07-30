@@ -543,3 +543,148 @@ admin-workspace.css?v=20260729c  →  admin-workspace.css?v=20260730a
 权威：`output/playwright/ui-polish-phase-2a/run-strict-final.log` · `PHASE-2A-REPORT.md`
 
 **停止**：不提交、不推送、不进入 Phase 2B，等待 GPT **最终放行**。
+
+---
+
+# Phase 2B：角色与权限治理工作台
+
+**日期**: 2026-07-30
+**分支**: `ui-polish/phase-2b-rbac-governance-20260730`
+**Phase 2A 基线**: `cd24ab1`（已提交并推送，未合并 main）
+**独立报告**: `output/playwright/ui-polish-phase-2b/PHASE-2B-REPORT.md`
+
+### Phase 2A 封存
+
+- Commit：`cd24ab1` · `feat(ui): refine operations workspace`
+- 推送：`origin/ui-polish/phase-2a-operations-workspace-20260729`
+- 自该 commit 拉出 2B 分支
+
+### 结论
+
+| 项 | 值 |
+|----|-----|
+| 完成 | **是**（严格 2b **81/0** + 2a 173/0 + 1c 134/0 + adversarial 851/0 + mvn 473/0） |
+| 后端/API/DB/权限规则 | **未改** |
+| 1B 导航 / 1C 按钮体系 | **保留**（1c 适配权限页页面级禁止删除） |
+| 建议提交 2B | **是**（待 GPT） |
+| 建议 Phase 2C | **否** |
+
+### 修改文件
+
+- `role.html` / `permission.html` — 治理台、指标、超管写入边界、权限选择器 / admin_agent、缓存 `v=20260730b`
+- `admin-workspace.css` — `.rbac-*`
+- `tools/ui-polish-phase-2b.cjs` — 严格套件
+- `tools/ui-polish-phase-1c.cjs` — disabled-btn 接受页面级禁止删除策略
+
+### 关键能力
+
+1. 角色：全局 total + 本页内置/自定义；#1 只读；#2–4 可改不可删；自定义可删
+2. 真实超管（`user.role` 含 id=1）才显示写操作；非超管只读横幅
+3. 可搜索、分组权限选择器；payload 仅 `permission:[{id}]`
+4. 角色 3/4 契约前端防错（用户闭环 / 禁止后台 flag）
+5. 权限：补齐 `admin_agent`；前后端 flag/path 集合严格一致；无 DELETE
+6. 缓存：role/permission=`20260730b`；operations 仍=`20260730a`
+
+### 自动化终态（端口 18083）
+
+| 命令 | 结果 |
+|------|------|
+| ui-polish-phase-2b | **81/0** |
+| ui-polish-phase-2a | **173/0** |
+| ui-polish-phase-1c | **134/0** |
+| adversarial | **851/0** |
+| mvn test | **473/0** |
+| git diff --check | 0 |
+
+### 停止
+
+**不提交 Phase 2B、不推送、不合并 main、不进入 Phase 2C。等待 GPT 审核。**
+
+### 验收返修（2026-07-30）
+
+针对 GPT 审核缺口：
+
+1. **弹窗焦点/键盘**：`createFocusTrap`、Tab 循环、Escape 守卫、删除聚焦取消、关闭恢复 trigger
+2. **真 try/finally 清理**：`UI_AUDIT_2B_*` 必清；cleanup self-test 受控抛错后仍 leftover=0
+3. **权限矩阵**：admin / jerry / anon / 非超管(sim) 对 **role + permission 两页分别** 断言
+4. **#3/#4 契约**：`normalizePermissionIds` + 分组操作不可绕过
+5. **竞态/双提交/状态**：loadSeq、writeLocks、ajaxPrefilter、error 保留数据
+6. **git diff --check** 终态 0；报告无「权限页同左」空话
+
+**终态回归（端口 18084）**：2b **107/0** · 2a 173/0 · 1c 134/0 · adversarial 851/0 · mvn 473/0 · git-diff 0
+
+**停止**：不提交、不推送、不进入 Phase 2C。等待 GPT **再审核**。
+
+### 第二次验收返修（2026-07-30）— P1 零请求 + 真实网络
+
+GPT 在独立端口 18085 复现：权限保存 / 角色删除浏览器网络 **0 请求**、UI「网络异常」。
+
+| 根因 | 修复 |
+|------|------|
+| `saveSent`/`delSent` + `ajaxPrefilter` 在首次 `$.ajax` 前即标记 sent，prefilter 取消**第一次**写 | **移除** prefilter 与 `*Sent`；仅 `writeLocks` + `saving`/`deleting` |
+| 测试用 `$.ajax` mock / API delete fallback 假绿 | **禁止** mock 与 API 回退；`page.route` + 真实按钮双击；count===1；UI 删除失败即 fail |
+| 文案 locator 在 loading 结束后重解析导致“假双发” | 稳定 class 元素句柄上两次 DOM click |
+
+**终态回归（端口 18086）**：
+
+| 命令 | 结果 |
+|------|------|
+| ui-polish-phase-2b | **138/0** |
+| ui-polish-phase-2a | **173/0** |
+| ui-polish-phase-1c | **134/0** |
+| adversarial | **851/0** |
+| mvn test | **473/0** |
+| git diff --check | **0** |
+| leftover `UI_AUDIT_2B_*` | **0** |
+| 18086 结束后 | **stopped**；9999 未触碰 |
+
+权威：`output/playwright/ui-polish-phase-2b/run-strict-final.log` · `PHASE-2B-REPORT.md` · `phase-2b-report.json`
+
+**停止**：不提交、不推送、不进入 Phase 2C。等待 GPT **独立真实浏览器复审**。
+
+### P2 焦点返修（2026-07-30）
+
+GPT 在 18087 放行两个 P1 后，剩余 **P2**：保存/刷新后焦点落到 BODY，旧测试把 BODY 判通过。
+
+| 根因 | 修复 |
+|------|------|
+| 查询框无 `type=search`，且保存后在列表刷新前恢复到行内「编辑」按钮，刷新后按钮脱离 DOM → BODY | `type="search"` + `resolveStableFocusTarget`；保存/删除成功在 `load` 完成回调后再恢复到稳定查询输入 |
+| 弱断言 `body.contains(activeElement)` / 允许 BODY | `inspectFocus` 严格规则：`!isBody && !isHtml && (interactive \|\| explicitHeading)` |
+
+**焦点审计（8 场景均 strictOk，无 BODY/HTML）**：
+
+| 场景 | tag | exactTrigger | listRefreshed |
+|------|-----|:------------:|:-------------:|
+| role-readonly-close | BUTTON | yes | no |
+| role-edit-escape | BUTTON | yes | no |
+| role-create-success | INPUT | no | yes |
+| role-delete-success | INPUT | no | yes |
+| perm-cancel | BUTTON | yes | no |
+| perm-success | INPUT | no | yes |
+| perm-escape | BUTTON | yes | no |
+| perm-readonly-close | BUTTON | yes | no |
+
+**终态回归（端口 18088）**：2b **154/0** · 2a 173/0 · 1c 134/0 · adversarial 851/0 · mvn 473/0 · git-diff 0 · leftover 0 · 18088 stopped
+
+**停止**：不提交、不推送、**未进入 Phase 2C**。等待 GPT **最终审核**。
+
+### 移动端工具栏 P2（2026-07-30）
+
+GPT 确认焦点已过；真实 390×844 复现搜索区空白：
+
+| 修复前 | 修复后（390/360） |
+|--------|-------------------|
+| `.ui-search` **180px** | **46px** |
+| `.admin-review-toolbar` **256px** | **118px** |
+
+**根因**：`.ui-search { flex: 1 1 180px }` 在 `.ui-toolbar { flex-direction: column }` 下把 180px 当高度。
+
+**修复范围**：仅 `admin-workspace.css` `@media (max-width: 640px)` 内 `.admin-review-toolbar .ui-search`（`flex: 0 0 auto; height: 46px`）+ 查询按钮 `min-height: 44px`。未改 `product-ui.css`。缓存 `v=20260730c`（ops 仍 `30a`）。
+
+**断言**：真实 `getBoundingClientRect` 覆盖 1440 / 720 / 390 / 360 × role+permission；Phase 2B **234/0**（>154）。焦点/网络 P1 断言未放宽。
+
+**终态回归（端口 18089）**：2b **234/0** · 2a 173/0 · 1c 134/0 · adversarial 851/0 · mvn 473/0 · git-diff 0 · leftover 0 · 18089 stopped
+
+权威：`output/playwright/ui-polish-phase-2b/PHASE-2B-REPORT.md` · `phase-2b-report.json` · `run-strict-final.log`
+
+**停止**：不提交、不推送、**未进入 Phase 2C**。等待 GPT **再次审核**。

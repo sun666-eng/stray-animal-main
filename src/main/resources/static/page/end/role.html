@@ -6,7 +6,7 @@
   <title>角色治理 · 归途计划管理</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
   <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c">
-  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260729c">
+  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260730c">
 </head>
 <body>
 <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
@@ -89,21 +89,43 @@
   </header>
   <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
 
-  <main class="admin-main">
-    <section class="admin-hero">
+  <main class="admin-main rbac-page">
+    <section class="rbac-hero">
       <div>
         <p class="admin-kicker">Role governance</p>
         <h1>角色治理</h1>
-        <p>
+        <p class="rbac-hero-lead">
           超级管理员角色（#1）不可修改或删除。志愿者 / 普通用户 / 认证义工（#2–#4）可在契约约束下调整权限。
-          自定义角色可自由编辑与删除。权限只接收数据库中已有权限 ID。
+          自定义角色可自由编辑与删除。权限只接收数据库中已有权限 ID。写入最终仅真实超级管理员可执行。
         </p>
       </div>
-      <div class="admin-hero-meta">
-        <span>写入权限</span>
-        <strong>超级管理员</strong>
+      <div class="rbac-hero-meta">
+        <span>当前模式</span>
+        <strong>{{ canWrite ? '可写入' : '只读' }}</strong>
       </div>
     </section>
+
+    <div class="rbac-metrics" aria-label="角色统计">
+      <div class="rbac-metric">
+        <span>角色总数</span>
+        <strong>{{ total }}</strong>
+        <small>来自接口 total（全局）</small>
+      </div>
+      <div class="rbac-metric">
+        <span>本页内置</span>
+        <strong>{{ pageBuiltInCount }}</strong>
+        <small>当前页 #1–#4</small>
+      </div>
+      <div class="rbac-metric">
+        <span>本页自定义</span>
+        <strong>{{ pageCustomCount }}</strong>
+        <small>当前页 #5+</small>
+      </div>
+    </div>
+
+    <div v-if="!canWrite" class="rbac-readonly-banner" role="status">
+      当前账号不是真实超级管理员：可查看角色列表，但不能新增、编辑或删除角色。服务端仍是最终权威。
+    </div>
 
     <section>
       <div class="admin-section-head">
@@ -112,7 +134,7 @@
           <p>权限变更会影响后台导航与 API 访问，请保持最小授权。普通用户角色必须保留用户闭环权限。</p>
         </div>
         <div>
-          <button class="ui-button is-primary" type="button" @click="openCreate"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-plus" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-plus"></use></svg>新增</button>
+          <button v-if="canWrite" class="ui-button is-primary" type="button" @click="openCreate"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-plus" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-plus"></use></svg>新增</button>
           <button class="ui-button is-ghost" type="button" @click="exportRows"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-download" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-download"></use></svg>导出</button>
         </div>
       </div>
@@ -120,7 +142,7 @@
       <form class="ui-toolbar admin-review-toolbar" @submit.prevent="load(1)">
         <label class="ui-search">
           <span>搜索</span>
-          <input v-model.trim="search" maxlength="100" placeholder="按角色名称搜索">
+          <input type="search" v-model.trim="search" maxlength="100" placeholder="按角色名称搜索" autocomplete="off">
         </label>
         <button
           class="ui-button is-dark"
@@ -132,15 +154,16 @@
         ><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-search" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-search"></use></svg>查询</button>
       </form>
 
-      <div v-if="message" class="admin-inline-message" :class="{'is-error':messageType==='error','is-success':messageType==='success'}" :role="messageType==='error'?'alert':'status'">{{ message }}</div>
-      <div v-if="loading" class="admin-status" role="status">正在读取角色...</div>
-      <div v-else-if="loadError" class="admin-status is-error" role="alert">
+      <div v-if="message" class="rbac-feedback" :class="{'is-error':messageType==='error','is-success':messageType==='success'}" :role="messageType==='error'?'alert':'status'">{{ message }}</div>
+      <div v-if="loading && !records.length" class="admin-status" role="status">正在读取角色...</div>
+      <div v-if="loading && records.length" class="rbac-inline-status" role="status">正在刷新角色…</div>
+      <div v-if="loadError" class="rbac-state-banner" role="alert">
         {{ loadError }}
-        <button class="ui-button is-ghost" type="button" @click="load(pageNum)">重试</button>
+        <button class="ui-button is-ghost" type="button" @click="load(pageNum, true)">重试</button>
       </div>
-      <div v-else-if="!records.length" class="admin-status">暂无角色。</div>
+      <div v-else-if="!loading && !records.length" class="admin-status">暂无角色。</div>
 
-      <template v-else>
+      <div v-if="records.length" :class="{'rbac-list-dimmed': loading}">
         <div class="admin-record-table">
           <table>
             <thead>
@@ -156,8 +179,15 @@
               <tr v-for="item in records" :key="item.id">
                 <td>#{{ item.id }}</td>
                 <td>
-                  <strong>{{ item.name }}</strong>
-                  <small>{{ roleKindLabel(item.id) }}</small>
+                  <div class="rbac-row-title">
+                    <strong>{{ item.name }}</strong>
+                    <div class="rbac-row-meta">
+                      <span class="rbac-badge" :class="badgeClass(item.id)">{{ roleKindLabel(item.id) }}</span>
+                      <small v-if="isSuperRole(item.id)">不可修改 · 不可删除</small>
+                      <small v-else-if="isBuiltIn(item.id)">可改权限 · 不可删除</small>
+                      <small v-else>可修改 · 无用户引用时可删除</small>
+                    </div>
+                  </div>
                 </td>
                 <td>{{ item.description || '-' }}</td>
                 <td>{{ (item.permission || []).length }}</td>
@@ -165,12 +195,11 @@
                   <div class="admin-row-actions">
                     <button type="button" @click="openEdit(item)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-edit" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-edit"></use></svg>{{ canEdit(item) ? '编辑' : '查看' }}</button>
                     <button
+                      v-if="canDelete(item)"
                       class="is-danger"
                       type="button"
-                      :disabled="!canDelete(item)"
-                      :title="canDelete(item) ? '删除角色' : '内置角色不可删除'"
                       @click="askDelete(item)"
-                    ><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-trash" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-trash"></use></svg>{{ canDelete(item) ? '删除' : '禁止删除' }}</button>
+                    ><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-trash" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-trash"></use></svg>删除</button>
                   </div>
                 </td>
               </tr>
@@ -186,22 +215,24 @@
                 <h3>{{ item.name }}</h3>
                 <p>{{ item.description || '无描述' }}</p>
               </div>
-              <span class="ui-badge" :class="isBuiltIn(item.id) ? 'is-closed' : 'is-done'">{{ roleKindLabel(item.id) }}</span>
+              <span class="rbac-badge" :class="badgeClass(item.id)">{{ roleKindLabel(item.id) }}</span>
             </div>
             <p>权限数 {{ (item.permission || []).length }}</p>
+            <p class="rbac-hint" v-if="isSuperRole(item.id)">内置超级管理员：不可修改、不可删除。</p>
+            <p class="rbac-hint" v-else-if="isBuiltIn(item.id)">内置角色：可在契约范围内修改权限，不可删除。</p>
+            <p class="rbac-hint" v-else>自定义角色：可修改；被用户引用时服务端拒绝删除。</p>
             <div class="admin-card-actions">
               <button class="ui-button is-dark" type="button" @click="openEdit(item)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-edit" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-edit"></use></svg>{{ canEdit(item) ? '编辑' : '查看' }}</button>
               <button
+                v-if="canDelete(item)"
                 class="ui-button is-danger"
                 type="button"
-                :disabled="!canDelete(item)"
-                :title="canDelete(item) ? '删除角色' : '内置角色不可删除'"
                 @click="askDelete(item)"
-              ><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-trash" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-trash"></use></svg>{{ canDelete(item) ? '删除' : '禁止删除' }}</button>
+              ><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-trash" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-trash"></use></svg>删除</button>
             </div>
           </article>
         </div>
-      </template>
+      </div>
 
       <div v-if="!loading && !loadError && totalPages > 1" class="ui-pagination admin-pagination">
         <span>第 {{ pageNum }} 页，共 {{ total }} 条</span>
@@ -247,14 +278,35 @@
             </div>
           </div>
           <div class="ui-form-field is-full">
-            <label>权限</label>
-            <div class="admin-checkbox-grid">
-              <label v-for="perm in permissions" :key="perm.id">
-                <input type="checkbox" :value="perm.id" v-model="form.permissionIds" :disabled="formReadOnly">
-                {{ perm.name }} <small>{{ perm.flag }}</small>
-              </label>
+            <label>权限 <span class="rbac-perm-count">已选 {{ (form.permissionIds || []).length }}</span></label>
+            <div class="rbac-perm-picker">
+              <div class="rbac-perm-toolbar">
+                <input type="search" v-model.trim="permSearch" placeholder="按名称 / flag / 路径搜索" :disabled="formReadOnly" aria-label="搜索权限">
+                <span class="rbac-perm-count">可见 {{ filteredPermissions.length }} / {{ permissions.length }}</span>
+              </div>
+              <div class="rbac-perm-groups">
+                <div v-for="group in permissionGroups" :key="group.id" class="rbac-perm-group">
+                  <div class="rbac-perm-group-head">
+                    <strong>{{ group.label }}（{{ group.items.length }}）</strong>
+                    <div class="rbac-perm-group-actions" v-if="!formReadOnly">
+                      <button type="button" @click="selectGroup(group, true)">全选</button>
+                      <button type="button" @click="selectGroup(group, false)">清空</button>
+                    </div>
+                  </div>
+                  <label v-for="perm in group.items" :key="perm.id" class="rbac-perm-item" :class="{'is-locked': isPermLocked(perm)}">
+                    <input type="checkbox" :value="perm.id" v-model="form.permissionIds" :disabled="formReadOnly || isPermLocked(perm)">
+                    <span class="rbac-perm-item-body">
+                      <strong>{{ perm.name }}</strong>
+                      <code>{{ perm.flag }}</code>
+                      <small>{{ perm.path || '无页面路径' }}</small>
+                    </span>
+                  </label>
+                  <p v-if="!group.items.length" class="rbac-hint rbac-group-empty">本组无匹配项</p>
+                </div>
+              </div>
             </div>
             <small v-if="!permissions.length" class="admin-field-hint">未加载到权限定义，请确认账号具备 permission 权限或稍后重试。</small>
+            <p class="rbac-hint">提交时仅发送 permission: [{ id }]，不会提交 flag/path。</p>
           </div>
           <div v-if="editError" class="admin-inline-message is-error" role="alert">{{ editError }}</div>
         </div>
@@ -274,18 +326,25 @@
     </section>
   </div>
 
-  <div v-if="deleteItem" class="admin-dialog-backdrop">
-    <section class="admin-dialog" role="alertdialog" aria-modal="true">
+  <div v-if="deleteItem" class="admin-dialog-backdrop" @click.self="cancelDelete">
+    <section class="admin-dialog" role="alertdialog" aria-modal="true" aria-labelledby="roleDeleteTitle">
       <div class="admin-dialog-head">
         <div>
-          <span>引用用户时不能删除</span>
-          <h2>删除角色 {{ deleteItem.name }}？</h2>
+          <span>被用户引用时服务端会拒绝</span>
+          <h2 id="roleDeleteTitle">删除角色 {{ deleteItem.name }}？</h2>
         </div>
+        <button type="button" class="admin-dialog-close" :disabled="deleting" aria-label="关闭删除确认" @click="cancelDelete">
+          <span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span>
+          <span class="admin-dialog-close-text">关闭</span>
+        </button>
       </div>
-      <div v-if="deleteError" class="admin-inline-message is-error" role="alert">{{ deleteError }}</div>
+      <div class="rbac-dialog-body">
+        <p class="rbac-policy-note">将永久删除自定义角色「{{ deleteItem.name }}」（#{{ deleteItem.id }}）。若仍有用户引用该角色，服务端会返回冲突并拒绝删除。</p>
+        <div v-if="deleteError" class="admin-inline-message is-error" role="alert">{{ deleteError }}</div>
+      </div>
       <div class="admin-dialog-actions">
-        <button class="ui-button is-ghost" type="button" @click="deleteItem=null">取消</button>
-        <button class="ui-button is-danger-solid" type="button" :disabled="deleting" @click="confirmDelete" :aria-label="'确认删除角色 ' + (deleteItem && deleteItem.name ? deleteItem.name : '')"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-trash" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-trash"></use></svg>确认删除角色</button>
+        <button class="ui-button is-ghost" type="button" :disabled="deleting" @click="cancelDelete">取消</button>
+        <button class="ui-button is-danger-solid" type="button" :class="{ 'is-loading': deleting }" :disabled="deleting" :aria-busy="deleting ? 'true' : 'false'" @click="confirmDelete" :aria-label="'确认删除角色 ' + (deleteItem && deleteItem.name ? deleteItem.name : '')"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-trash" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-trash"></use></svg>{{ deleting ? '删除中...' : '确认删除角色' }}</button>
       </div>
     </section>
   </div>
@@ -298,6 +357,75 @@
 <script>
 (function () {
   'use strict';
+
+  /** Small modal focus helper — Tab trap, Escape, restore trigger. */
+  function createFocusTrap() {
+    var state = { root: null, onKey: null, prevOverflow: '' };
+    function focusable(root) {
+      if (!root) return [];
+      var sel = 'a[href],button:not([disabled]),input:not([disabled]):not([type="hidden"]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+      return Array.prototype.filter.call(root.querySelectorAll(sel), function (el) {
+        if (el.disabled || el.getAttribute('aria-hidden') === 'true') return false;
+        if (el.tabIndex < 0 && !el.matches('input,select,textarea,button,a[href]')) return false;
+        var st = window.getComputedStyle(el);
+        return st.display !== 'none' && st.visibility !== 'hidden';
+      });
+    }
+    return {
+      activate: function (root, initial) {
+        this.deactivate();
+        if (!root) return;
+        state.root = root;
+        state.prevOverflow = document.body.style.overflow || '';
+        document.body.style.overflow = 'hidden';
+        state.onKey = function (e) {
+          if (!state.root) return;
+          if (e.key === 'Tab') {
+            var list = focusable(state.root);
+            if (!list.length) {
+              e.preventDefault();
+              state.root.focus();
+              return;
+            }
+            var first = list[0];
+            var last = list[list.length - 1];
+            var active = document.activeElement;
+            if (e.shiftKey) {
+              if (active === first || !state.root.contains(active)) {
+                e.preventDefault();
+                last.focus();
+              }
+            } else if (active === last || !state.root.contains(active)) {
+              e.preventDefault();
+              first.focus();
+            }
+          }
+        };
+        document.addEventListener('keydown', state.onKey, true);
+        setTimeout(function () {
+          var target = initial;
+          if (!target || !state.root.contains(target) || target.disabled) {
+            var list = focusable(state.root);
+            target = list[0] || state.root;
+          }
+          if (target && target.focus) target.focus();
+        }, 0);
+      },
+      deactivate: function () {
+        if (state.onKey) {
+          document.removeEventListener('keydown', state.onKey, true);
+          state.onKey = null;
+        }
+        document.body.style.overflow = state.prevOverflow || '';
+        state.root = null;
+      }
+    };
+  }
+
+  // Sync write locks only (no transport-layer request cancellation)
+  var writeLocks = { save: false, del: false };
+  window.__rbacWriteLocks = writeLocks;
+
   AuthSession.bootstrap({
     requireAuth: true,
     allowCachedOnNetworkError: false,
@@ -308,6 +436,7 @@
         return;
       }
       document.getElementById('authWait').hidden = true;
+      var focusTrap = createFocusTrap();
       new Vue({
         el: '#workspace',
         data: {
@@ -338,7 +467,13 @@
           editError: '',
           deleteItem: null,
           deleting: false,
-          deleteError: ''
+          deleteError: '',
+          permSearch: '',
+          loadSeq: 0,
+          triggerEl: null,
+          _onDocEsc: null,
+          USER_LOOP_FLAGS: ['im', 'adopt_view', 'my_adopt', 'my_proof', 'apply'],
+          ADMIN_FLAGS: ['user', 'role', 'permission', 'animal', 'adopt', 'proof', 'visit', 'volunteer', 'account', 'notice', 'help', 'rescue', 'admin_agent']
         },
         computed: {
           pages: function () {
@@ -347,11 +482,112 @@
             var e = Math.min(this.totalPages, s + 4);
             for (var p = s; p <= e; p += 1) a.push(p);
             return a;
+          },
+          canWrite: function () {
+            var roles = (this.user && this.user.role) || [];
+            for (var i = 0; i < roles.length; i += 1) {
+              var r = roles[i];
+              var id = r && (r.id != null ? r.id : r);
+              if (Number(id) === 1) return true;
+            }
+            return false;
+          },
+          pageBuiltInCount: function () {
+            var vm = this;
+            return (this.records || []).filter(function (r) { return vm.isBuiltIn(r.id); }).length;
+          },
+          pageCustomCount: function () {
+            var vm = this;
+            return (this.records || []).filter(function (r) { return !vm.isBuiltIn(r.id); }).length;
+          },
+          filteredPermissions: function () {
+            var q = (this.permSearch || '').toLowerCase();
+            var list = this.permissions || [];
+            if (!q) return list.slice();
+            return list.filter(function (p) {
+              var blob = ((p.name || '') + ' ' + (p.flag || '') + ' ' + (p.path || '')).toLowerCase();
+              return blob.indexOf(q) >= 0;
+            });
+          },
+          permissionGroups: function () {
+            var groups = [
+              { id: 'account', label: '账号治理', flags: ['user', 'role', 'permission'], items: [] },
+              { id: 'animal', label: '动物与领养', flags: ['animal', 'adopt', 'proof', 'visit'], items: [] },
+              { id: 'ops', label: '运营与服务', flags: ['volunteer', 'account', 'notice', 'help', 'rescue', 'im', 'admin_agent'], items: [] },
+              { id: 'loop', label: '用户闭环', flags: ['adopt_view', 'my_adopt', 'my_proof', 'apply'], items: [] },
+              { id: 'other', label: '其他', flags: [], items: [] }
+            ];
+            var known = {};
+            groups.forEach(function (g) { g.flags.forEach(function (f) { known[f] = g.id; }); });
+            var map = {};
+            groups.forEach(function (g) { map[g.id] = g; });
+            this.filteredPermissions.forEach(function (p) {
+              var gid = known[p.flag] || 'other';
+              map[gid].items.push(p);
+            });
+            return groups;
           }
         },
         created: function () {
+          var vm = this;
           this.load(1);
           this.loadPermissions();
+          this._onDocEsc = function (e) {
+            if (e.key !== 'Escape') return;
+            if (vm.saving || vm.deleting) {
+              e.preventDefault();
+              e.stopPropagation();
+              return;
+            }
+            if (vm.deleteItem) {
+              e.preventDefault();
+              vm.cancelDelete();
+            } else if (vm.editOpen) {
+              e.preventDefault();
+              vm.cancelEdit();
+            }
+          };
+          document.addEventListener('keydown', this._onDocEsc, true);
+        },
+        beforeDestroy: function () {
+          if (this._onDocEsc) {
+            document.removeEventListener('keydown', this._onDocEsc, true);
+            this._onDocEsc = null;
+          }
+          focusTrap.deactivate();
+        },
+        watch: {
+          editOpen: function (open) {
+            var vm = this;
+            if (open) {
+              this.$nextTick(function () {
+                var root = document.querySelector('[role="dialog"]');
+                if (root && !root.hasAttribute('tabindex')) root.setAttribute('tabindex', '-1');
+                var initial = null;
+                if (vm.formReadOnly) {
+                  initial = root && root.querySelector('.admin-dialog-close, .admin-dialog-actions button');
+                } else {
+                  initial = document.getElementById('roleName');
+                }
+                focusTrap.activate(root, initial);
+              });
+            } else if (!vm.deleteItem) {
+              focusTrap.deactivate();
+            }
+          },
+          deleteItem: function (item) {
+            var vm = this;
+            if (item) {
+              this.$nextTick(function () {
+                var root = document.querySelector('[role="alertdialog"]');
+                if (root && !root.hasAttribute('tabindex')) root.setAttribute('tabindex', '-1');
+                var cancelBtn = root && root.querySelector('.admin-dialog-actions button.ui-button.is-ghost, .admin-dialog-actions button:not(.is-danger-solid)');
+                focusTrap.activate(root, cancelBtn);
+              });
+            } else if (!vm.editOpen) {
+              focusTrap.deactivate();
+            }
+          }
         },
         methods: {
           toggleMore: function () { this.moreOpen = !this.moreOpen; this.accountOpen = false; this.mobileOpen = false; },
@@ -365,17 +601,78 @@
           avatarUrl: function (f) { return AdminWorkspace.avatarUrl(f); },
           avatarFallback: function (e) { e.target.src = '/api/files/'; },
           logout: function () { AuthSession.logout(); },
+          /** Stable target outside list rows (survives Vue list refresh / row delete). */
+          resolveStableFocusTarget: function () {
+            var scopes = [];
+            var main = document.querySelector('main');
+            if (main) scopes.push(main);
+            scopes.push(document);
+            var selectors = [
+              'input[type="search"]',
+              '.ui-toolbar input',
+              '.admin-review-toolbar input',
+              'button[type="submit"]',
+              'h2',
+              'h1'
+            ];
+            for (var s = 0; s < scopes.length; s++) {
+              for (var i = 0; i < selectors.length; i++) {
+                var el = scopes[s].querySelector(selectors[i]);
+                if (el && el.isConnected) return el;
+              }
+            }
+            return null;
+          },
+          /**
+           * Restore focus after dialog close.
+           * Cancel/Escape: original trigger if still connected.
+           * Save/delete success: stable triggerEl after load completes.
+           */
+          restoreTriggerFocus: function () {
+            var t = this.triggerEl;
+            this.triggerEl = null;
+            var vm = this;
+            this.$nextTick(function () {
+              var target = t;
+              if (!target || !target.isConnected || typeof target.focus !== 'function') {
+                target = vm.resolveStableFocusTarget();
+              }
+              if (!target || typeof target.focus !== 'function') return;
+              try {
+                if (/^H[12]$/.test(target.tagName)) {
+                  target.setAttribute('tabindex', '-1');
+                }
+                target.focus();
+              } catch (e1) { /* ignore */ }
+              if (document.activeElement !== target) {
+                var fb = vm.resolveStableFocusTarget();
+                if (fb && typeof fb.focus === 'function') {
+                  try {
+                    if (/^H[12]$/.test(fb.tagName)) fb.setAttribute('tabindex', '-1');
+                    fb.focus();
+                  } catch (e2) { /* ignore */ }
+                }
+              }
+            });
+          },
           isBuiltIn: function (id) {
             var n = Number(id);
             return n >= 1 && n <= 4;
           },
           isSuperRole: function (id) { return Number(id) === 1; },
+          badgeClass: function (id) {
+            var n = Number(id);
+            if (n === 1) return 'is-super';
+            if (n >= 2 && n <= 4) return 'is-builtin';
+            return 'is-custom';
+          },
           canEdit: function (item) {
-            // 超级管理员角色只读；其余内置与自定义均可编辑（服务端再做契约校验）
+            // 仅真实超级管理员可写；超级管理员角色 #1 只读
+            if (!this.canWrite) return false;
             return item && !this.isSuperRole(item.id);
           },
           canDelete: function (item) {
-            return item && !this.isBuiltIn(item.id);
+            return this.canWrite && item && !this.isBuiltIn(item.id);
           },
           roleKindLabel: function (id) {
             var n = Number(id);
@@ -383,8 +680,63 @@
             if (n >= 2 && n <= 4) return '内置·可编辑';
             return '自定义角色';
           },
-          load: function (page) {
+          /** Normalize permission ids to RoleContracts for role #3/#4 (UI pre-check only). */
+          normalizePermissionIds: function (roleId, ids) {
             var vm = this;
+            var rid = Number(roleId);
+            var set = {};
+            (ids || []).forEach(function (id) { set[id] = true; });
+            var byFlag = {};
+            (vm.permissions || []).forEach(function (p) { byFlag[p.flag] = p.id; });
+            if (rid === 3) {
+              vm.USER_LOOP_FLAGS.forEach(function (f) {
+                if (byFlag[f] != null) set[byFlag[f]] = true;
+              });
+              (vm.permissions || []).forEach(function (p) {
+                if (vm.ADMIN_FLAGS.indexOf(p.flag) >= 0) delete set[p.id];
+              });
+            } else if (rid === 4) {
+              (vm.permissions || []).forEach(function (p) {
+                if (vm.ADMIN_FLAGS.indexOf(p.flag) >= 0) delete set[p.id];
+              });
+            }
+            return Object.keys(set).map(function (k) { return isNaN(Number(k)) ? k : Number(k); });
+          },
+          isPermLocked: function (perm) {
+            // 角色 #3 用户闭环必须保留；#3/#4 不可选后台管理权限（前端防错）
+            if (!this.form || !this.form.id) return false;
+            var rid = Number(this.form.id);
+            var flag = perm && perm.flag;
+            if (rid === 3 && this.USER_LOOP_FLAGS.indexOf(flag) >= 0) return true;
+            if ((rid === 3 || rid === 4) && this.ADMIN_FLAGS.indexOf(flag) >= 0) return true;
+            return false;
+          },
+          selectGroup: function (group, on) {
+            if (this.formReadOnly || !group) return;
+            var vm = this;
+            var ids = (group.items || []).map(function (p) { return p.id; });
+            var set = {};
+            (vm.form.permissionIds || []).forEach(function (id) { set[id] = true; });
+            ids.forEach(function (id) {
+              var perm = (vm.permissions || []).filter(function (p) { return p.id === id; })[0];
+              if (perm && vm.isPermLocked(perm)) {
+                // required loop flags stay on; admin flags stay off
+                if (vm.USER_LOOP_FLAGS.indexOf(perm.flag) >= 0) set[id] = true;
+                else if (vm.ADMIN_FLAGS.indexOf(perm.flag) >= 0) delete set[id];
+                return;
+              }
+              if (on) set[id] = true; else delete set[id];
+            });
+            var next = Object.keys(set).map(function (k) { return isNaN(Number(k)) ? k : Number(k); });
+            vm.form.permissionIds = vm.normalizePermissionIds(vm.form.id, next);
+          },
+          load: function (page, preserveFeedback, onDone) {
+            var vm = this;
+            var seq = ++vm.loadSeq;
+            if (!preserveFeedback) {
+              vm.message = '';
+              vm.messageType = '';
+            }
             vm.loading = true;
             vm.loadError = '';
             $.ajax({
@@ -392,6 +744,7 @@
               type: 'GET',
               data: { name: vm.search, pageNum: page, pageSize: vm.pageSize }
             }).done(function (res) {
+              if (seq !== vm.loadSeq) return;
               if (!res || res.code !== '0' || !res.data || !Array.isArray(res.data.records)) {
                 vm.loadError = (res && res.msg) || '响应格式无效。';
                 return;
@@ -401,9 +754,14 @@
               vm.total = Number(res.data.total || 0);
               vm.totalPages = Math.max(1, Number(res.data.pages || 1));
             }).fail(function (xhr) {
+              if (seq !== vm.loadSeq) return;
               vm.loadError = (xhr.responseJSON && xhr.responseJSON.msg) || '网络异常。';
             }).always(function () {
+              if (seq !== vm.loadSeq) return;
               vm.loading = false;
+              if (typeof onDone === 'function') {
+                vm.$nextTick(function () { onDone(); });
+              }
             });
           },
           loadPermissions: function () {
@@ -415,43 +773,63 @@
             });
           },
           openCreate: function () {
+            if (!this.canWrite) return;
+            this.triggerEl = document.activeElement;
             this.form = { name: '', description: '', permissionIds: [] };
             this.formReadOnly = false;
             this.formHint = '新增自定义角色后，可在用户管理中分配。';
             this.editError = '';
+            this.permSearch = '';
+            this.message = '';
             this.editOpen = true;
           },
           openEdit: function (item) {
+            this.triggerEl = document.activeElement;
             var readOnly = !this.canEdit(item);
+            var rawIds = (item.permission || []).map(function (p) { return p.id; }).filter(function (id) {
+              return id != null && id !== '';
+            });
             this.form = {
               id: item.id,
               name: item.name || '',
               description: item.description || '',
-              permissionIds: (item.permission || []).map(function (p) { return p.id; }).filter(function (id) {
-                return id != null && id !== '';
-              })
+              permissionIds: this.normalizePermissionIds(item.id, rawIds)
             };
             this.formReadOnly = readOnly;
             this.formHint = readOnly
-              ? '超级管理员角色受保护，仅可查看。'
+              ? (this.isSuperRole(item.id) ? '超级管理员角色受保护，仅可查看。' : '当前账号无写入权，仅可查看。')
               : (this.isBuiltIn(item.id)
                 ? (Number(item.id) === 3
-                  ? '普通用户角色必须保留用户闭环权限，且不能勾选后台管理权限。'
+                  ? '普通用户角色必须保留用户闭环权限（im/adopt_view/my_adopt/my_proof/apply），且不能勾选后台管理权限。打开时已按契约归一化。'
                   : Number(item.id) === 4
-                    ? '认证义工是轻量徽章角色，不能勾选后台管理权限。'
+                    ? '认证义工是轻量徽章角色，不能勾选后台管理权限。打开时已按契约归一化。'
                     : '志愿者角色可配置后台管理权限。')
                 : '');
             this.editError = '';
+            this.permSearch = '';
+            this.message = '';
             this.editOpen = true;
           },
           cancelEdit: function () {
-            if (!this.saving) this.editOpen = false;
+            if (this.saving) return;
+            this.editOpen = false;
+            focusTrap.deactivate();
+            this.restoreTriggerFocus();
           },
           save: function () {
             var vm = this;
-            if (vm.formReadOnly) return;
+            if (vm.formReadOnly || !vm.canWrite || vm.saving || writeLocks.save) return;
+            writeLocks.save = true;
             vm.saving = true;
+            try {
+              var root = document.querySelector('[role="dialog"]');
+              if (root) {
+                Array.prototype.forEach.call(root.querySelectorAll('button'), function (b) { b.disabled = true; });
+              }
+            } catch (e) { /* ignore */ }
             vm.editError = '';
+            // re-normalize before send
+            vm.form.permissionIds = vm.normalizePermissionIds(vm.form.id, vm.form.permissionIds);
             var payload = {
               id: vm.form.id,
               name: vm.form.name,
@@ -469,13 +847,21 @@
                 return;
               }
               vm.editOpen = false;
+              focusTrap.deactivate();
               vm.messageType = 'success';
               vm.message = '角色已保存。';
-              vm.load(vm.pageNum);
+              // List refresh may replace row action buttons — stable search after load
+              vm.triggerEl = vm.resolveStableFocusTarget();
+              vm.load(vm.pageNum, true, function () {
+                vm.restoreTriggerFocus();
+              });
             }).fail(function (xhr) {
-              vm.editError = (xhr.responseJSON && xhr.responseJSON.msg) || '网络异常。';
+              var st = xhr && xhr.status;
+              if (st === 403) vm.editError = (xhr.responseJSON && xhr.responseJSON.msg) || '无写入权。';
+              else vm.editError = (xhr.responseJSON && xhr.responseJSON.msg) || '网络异常。';
             }).always(function () {
               vm.saving = false;
+              writeLocks.save = false;
             });
           },
           askDelete: function (item) {
@@ -484,29 +870,69 @@
               this.message = '内置角色（#1–#4）不可删除，请新增自定义角色后再删除。';
               return;
             }
+            this.triggerEl = document.activeElement;
             this.deleteItem = item;
             this.deleteError = '';
+            this.message = '';
+          },
+          cancelDelete: function () {
+            if (this.deleting) return;
+            this.deleteItem = null;
+            focusTrap.deactivate();
+            this.restoreTriggerFocus();
           },
           confirmDelete: function () {
             var vm = this;
-            if (!vm.deleteItem) return;
+            // Single lock path: saving/deleting + writeLocks only (no prefilter/sent flags)
+            if (!vm.deleteItem || vm.deleting || writeLocks.del) return;
+            writeLocks.del = true;
             vm.deleting = true;
+            try {
+              var root = document.querySelector('[role="alertdialog"]');
+              if (root) {
+                Array.prototype.forEach.call(root.querySelectorAll('button'), function (b) { b.disabled = true; });
+              }
+            } catch (e) { /* ignore */ }
+            vm.deleteError = '';
+            var pageBefore = vm.pageNum;
+            var wasLastOnPage = vm.records.length === 1;
+            var roleId = vm.deleteItem.id;
             $.ajax({
-              url: '/api/role/' + encodeURIComponent(vm.deleteItem.id),
+              url: '/api/role/' + encodeURIComponent(roleId),
               type: 'DELETE'
             }).done(function (res) {
               if (!res || res.code !== '0') {
                 vm.deleteError = (res && res.msg) || '删除失败。';
                 return;
               }
+              // Row delete button is gone — stable search after load completes
+              vm.triggerEl = vm.resolveStableFocusTarget();
               vm.deleteItem = null;
+              focusTrap.deactivate();
               vm.messageType = 'success';
               vm.message = '角色已删除。';
-              vm.load(vm.pageNum);
+              var nextPage = pageBefore;
+              if (wasLastOnPage && pageBefore > 1) nextPage = pageBefore - 1;
+              vm.load(nextPage, true, function () {
+                vm.restoreTriggerFocus();
+              });
             }).fail(function (xhr) {
-              vm.deleteError = (xhr.responseJSON && xhr.responseJSON.msg) || '网络异常。';
+              var msg = (xhr.responseJSON && xhr.responseJSON.msg) || '';
+              if (!msg && xhr.responseText) {
+                try { msg = JSON.parse(xhr.responseText).msg || ''; } catch (e2) { /* */ }
+              }
+              if (!msg && xhr.status === 409) msg = '角色仍被用户引用，无法删除';
+              if (!msg) msg = '网络异常。';
+              vm.deleteError = msg;
             }).always(function () {
               vm.deleting = false;
+              writeLocks.del = false;
+              try {
+                var root2 = document.querySelector('[role="alertdialog"]');
+                if (root2) {
+                  Array.prototype.forEach.call(root2.querySelectorAll('button'), function (b) { b.disabled = false; });
+                }
+              } catch (e3) { /* */ }
             });
           },
           exportRows: function () {

@@ -6,7 +6,7 @@
   <title>权限治理 · 归途计划管理</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
   <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c">
-  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260729c">
+  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260730c">
 </head>
 <body>
 <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
@@ -89,18 +89,44 @@
   </header>
   <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
 
-  <main class="admin-main">
-    <section class="admin-hero">
+  <main class="admin-main rbac-page">
+    <section class="rbac-hero">
       <div>
         <p class="admin-kicker">Permission governance</p>
         <h1>权限治理</h1>
-        <p>权限定义只允许固定 flag 和固定后台路径。客户端路径不会驱动导航，角色引用中的权限不可随意删除。</p>
+        <p class="rbac-hero-lead">权限定义只允许固定 flag 和固定后台路径。客户端路径不会驱动导航。权限定义全局禁止删除。写入最终仅真实超级管理员可执行。</p>
       </div>
-      <div class="admin-hero-meta">
-        <span>删除策略</span>
-        <strong>禁止删除</strong>
+      <div class="rbac-hero-meta">
+        <span>当前模式</span>
+        <strong>{{ canWrite ? '可写入' : '只读' }}</strong>
       </div>
     </section>
+
+    <div class="rbac-metrics" aria-label="权限统计">
+      <div class="rbac-metric">
+        <span>权限总数</span>
+        <strong>{{ total }}</strong>
+        <small>来自接口 total（全局）</small>
+      </div>
+      <div class="rbac-metric">
+        <span>本页有路径</span>
+        <strong>{{ pageWithPathCount }}</strong>
+        <small>当前页管理页面型</small>
+      </div>
+      <div class="rbac-metric">
+        <span>本页动作型</span>
+        <strong>{{ pageActionCount }}</strong>
+        <small>当前页无页面路径</small>
+      </div>
+    </div>
+
+    <div v-if="!canWrite" class="rbac-readonly-banner" role="status">
+      当前账号不是真实超级管理员：可查看权限定义，但不能新增或编辑。服务端仍是最终权威。
+    </div>
+    <p class="rbac-policy-note">
+      <span class="rbac-badge is-policy">删除策略</span>
+      权限定义全局禁止删除，后端对 DELETE 恒返回拒绝。本页不提供删除操作。
+    </p>
 
     <section>
       <div class="admin-section-head">
@@ -109,7 +135,7 @@
           <p>修改已被角色引用的权限会被服务端拒绝，避免历史角色 JSON 失真。</p>
         </div>
         <div>
-          <button class="ui-button is-primary" type="button" @click="openCreate"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-plus" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-plus"></use></svg>新增</button>
+          <button v-if="canWrite" class="ui-button is-primary" type="button" @click="openCreate"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-plus" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-plus"></use></svg>新增</button>
           <button class="ui-button is-ghost" type="button" @click="exportRows"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-download" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-download"></use></svg>导出</button>
         </div>
       </div>
@@ -117,20 +143,21 @@
       <form class="ui-toolbar admin-review-toolbar" @submit.prevent="load(1)">
         <label class="ui-search">
           <span>搜索</span>
-          <input v-model.trim="search" maxlength="100" placeholder="按权限名称搜索">
+          <input type="search" v-model.trim="search" maxlength="100" placeholder="按权限名称搜索" autocomplete="off">
         </label>
         <button class="ui-button is-dark" type="submit"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-search" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-search"></use></svg>查询</button>
       </form>
 
-      <div v-if="message" class="admin-inline-message" :class="{'is-error':messageType==='error','is-success':messageType==='success'}" :role="messageType==='error'?'alert':'status'">{{ message }}</div>
-      <div v-if="loading" class="admin-status" role="status">正在读取权限...</div>
-      <div v-else-if="loadError" class="admin-status is-error" role="alert">
+      <div v-if="message" class="rbac-feedback" :class="{'is-error':messageType==='error','is-success':messageType==='success'}" :role="messageType==='error'?'alert':'status'">{{ message }}</div>
+      <div v-if="loading && !records.length" class="admin-status" role="status">正在读取权限...</div>
+      <div v-if="loading && records.length" class="rbac-inline-status" role="status">正在刷新权限…</div>
+      <div v-if="loadError" class="rbac-state-banner" role="alert">
         {{ loadError }}
-        <button class="ui-button is-ghost" type="button" @click="load(pageNum)">重试</button>
+        <button class="ui-button is-ghost" type="button" @click="load(pageNum, true)">重试</button>
       </div>
-      <div v-else-if="!records.length" class="admin-status">暂无权限定义。</div>
+      <div v-else-if="!loading && !records.length" class="admin-status">暂无权限定义。</div>
 
-      <template v-else>
+      <div v-if="records.length" :class="{'rbac-list-dimmed': loading}">
         <div class="admin-record-table">
           <table>
             <thead>
@@ -139,6 +166,7 @@
                 <th>名称</th>
                 <th>Flag</th>
                 <th>固定路径</th>
+                <th>类型</th>
                 <th>操作</th>
               </tr>
             </thead>
@@ -146,15 +174,19 @@
               <tr v-for="item in records" :key="item.id">
                 <td>#{{ item.id }}</td>
                 <td>
-                  <strong>{{ item.name }}</strong>
-                  <small>{{ item.description || '-' }}</small>
+                  <div class="rbac-row-title">
+                    <strong>{{ item.name }}</strong>
+                    <small>{{ item.description || '-' }}</small>
+                  </div>
                 </td>
-                <td><code>{{ item.flag }}</code></td>
+                <td><code class="rbac-code">{{ item.flag }}</code></td>
                 <td>{{ item.path || '无页面' }}</td>
                 <td>
+                  <span class="rbac-badge" :class="item.path ? 'is-page' : 'is-action'">{{ item.path ? '有管理页面' : '动作型权限' }}</span>
+                </td>
+                <td>
                   <div class="admin-row-actions">
-                    <button type="button" @click="openEdit(item)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-edit" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-edit"></use></svg>编辑</button>
-                    <button class="is-danger" type="button" disabled title="权限定义禁止删除">禁止删除</button>
+                    <button type="button" @click="openEdit(item)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-edit" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-edit"></use></svg>{{ canWrite ? '编辑' : '查看' }}</button>
                   </div>
                 </td>
               </tr>
@@ -170,16 +202,15 @@
                 <h3>{{ item.name }}</h3>
                 <p>{{ item.description || '无描述' }}</p>
               </div>
-              <span class="ui-badge is-done">{{ item.flag }}</span>
+              <span class="rbac-badge" :class="item.path ? 'is-page' : 'is-action'">{{ item.path ? '有管理页面' : '动作型' }}</span>
             </div>
-            <p>{{ item.path || '无页面路径' }}</p>
+            <p><code class="rbac-code">{{ item.flag }}</code> · {{ item.path || '无页面路径' }}</p>
             <div class="admin-card-actions">
-              <button class="ui-button is-dark" type="button" @click="openEdit(item)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-edit" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-edit"></use></svg>编辑</button>
-              <button class="ui-button is-danger" type="button" disabled title="权限定义禁止删除">禁止删除</button>
+              <button class="ui-button is-dark" type="button" @click="openEdit(item)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-edit" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-edit"></use></svg>{{ canWrite ? '编辑' : '查看' }}</button>
             </div>
           </article>
         </div>
-      </template>
+      </div>
 
       <div v-if="!loading && !loadError && totalPages > 1" class="ui-pagination admin-pagination">
         <span>第 {{ pageNum }} 页，共 {{ total }} 条</span>
@@ -196,8 +227,8 @@
     <section class="admin-dialog admin-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="permEditTitle">
       <div class="admin-dialog-head">
         <div>
-          <span>固定 flag 与路径白名单</span>
-          <h2 id="permEditTitle">{{ form.id ? '编辑权限' : '新增权限' }}</h2>
+          <span>{{ formReadOnly ? '只读查看' : '固定 flag 与路径白名单' }}</span>
+          <h2 id="permEditTitle">{{ formReadOnly ? '查看权限' : (form.id ? '编辑权限' : '新增权限') }}</h2>
         </div>
         <button
           type="button"
@@ -212,35 +243,44 @@
         </button>
       </div>
       <form class="admin-edit-form" @submit.prevent="save">
-        <div class="admin-dialog-body">
+        <div class="admin-dialog-body rbac-dialog-body">
           <div class="admin-form-grid">
             <div class="ui-form-field">
               <label for="permName">名称</label>
-              <input id="permName" v-model.trim="form.name" class="ui-form-input" maxlength="255" required>
+              <input id="permName" v-model.trim="form.name" class="ui-form-input" maxlength="255" required :disabled="formReadOnly">
             </div>
             <div class="ui-form-field">
               <label for="permFlag">Flag</label>
-              <select id="permFlag" v-model="form.flag" class="ui-form-input" required>
+              <select id="permFlag" v-model="form.flag" class="ui-form-input" required :disabled="formReadOnly">
+                <option value="" disabled>请选择</option>
                 <option v-for="flag in flags" :value="flag">{{ flag }}</option>
               </select>
             </div>
             <div class="ui-form-field">
               <label for="permPath">后台路径</label>
-              <select id="permPath" v-model="form.path" class="ui-form-input">
+              <select id="permPath" v-model="form.path" class="ui-form-input" :disabled="formReadOnly">
                 <option value="">无页面</option>
                 <option v-for="path in paths" :value="path">{{ path }}</option>
               </select>
             </div>
             <div class="ui-form-field">
               <label for="permDesc">描述</label>
-              <input id="permDesc" v-model.trim="form.description" class="ui-form-input" maxlength="255">
+              <input id="permDesc" v-model.trim="form.description" class="ui-form-input" maxlength="255" :disabled="formReadOnly">
             </div>
           </div>
           <div v-if="editError" class="admin-inline-message is-error" role="alert">{{ editError }}</div>
         </div>
         <div class="admin-dialog-actions">
-          <button class="ui-button is-ghost" type="button" :disabled="saving" @click="cancelEdit">取消</button>
-          <button class="ui-button is-primary" type="submit" :disabled="saving || !form.name || !form.flag">{{ saving ? '保存中...' : '保存权限' }}</button>
+          <button class="ui-button is-ghost" type="button" :disabled="saving" @click="cancelEdit">{{ formReadOnly ? '关闭' : '取消' }}</button>
+          <button
+            v-if="!formReadOnly"
+            class="ui-button is-primary"
+            type="submit"
+            :class="{ 'is-loading': saving }"
+            :disabled="saving || !form.name || !form.flag"
+            :aria-busy="saving ? 'true' : 'false'"
+            :aria-disabled="(saving || !form.name || !form.flag) ? 'true' : 'false'"
+          ><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-save" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-save"></use></svg>{{ saving ? '保存中...' : '保存权限' }}</button>
         </div>
       </form>
     </section>
@@ -254,6 +294,71 @@
 <script>
 (function () {
   'use strict';
+
+  function createFocusTrap() {
+    var state = { root: null, onKey: null, prevOverflow: '' };
+    function focusable(root) {
+      if (!root) return [];
+      var sel = 'a[href],button:not([disabled]),input:not([disabled]):not([type="hidden"]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+      return Array.prototype.filter.call(root.querySelectorAll(sel), function (el) {
+        if (el.disabled || el.getAttribute('aria-hidden') === 'true') return false;
+        var st = window.getComputedStyle(el);
+        return st.display !== 'none' && st.visibility !== 'hidden';
+      });
+    }
+    return {
+      activate: function (root, initial) {
+        this.deactivate();
+        if (!root) return;
+        state.root = root;
+        state.prevOverflow = document.body.style.overflow || '';
+        document.body.style.overflow = 'hidden';
+        state.onKey = function (e) {
+          if (!state.root || e.key !== 'Tab') return;
+          var list = focusable(state.root);
+          if (!list.length) {
+            e.preventDefault();
+            state.root.focus();
+            return;
+          }
+          var first = list[0];
+          var last = list[list.length - 1];
+          var active = document.activeElement;
+          if (e.shiftKey) {
+            if (active === first || !state.root.contains(active)) {
+              e.preventDefault();
+              last.focus();
+            }
+          } else if (active === last || !state.root.contains(active)) {
+            e.preventDefault();
+            first.focus();
+          }
+        };
+        document.addEventListener('keydown', state.onKey, true);
+        setTimeout(function () {
+          var target = initial;
+          if (!target || !state.root.contains(target) || target.disabled) {
+            var list = focusable(state.root);
+            target = list[0] || state.root;
+          }
+          if (target && target.focus) target.focus();
+        }, 0);
+      },
+      deactivate: function () {
+        if (state.onKey) {
+          document.removeEventListener('keydown', state.onKey, true);
+          state.onKey = null;
+        }
+        document.body.style.overflow = state.prevOverflow || '';
+        state.root = null;
+      }
+    };
+  }
+
+  // Sync write lock only (no transport-layer request cancellation)
+  var writeLocks = { save: false };
+  window.__rbacWriteLocks = writeLocks;
+
   AuthSession.bootstrap({
     requireAuth: true,
     allowCachedOnNetworkError: false,
@@ -264,6 +369,7 @@
         return;
       }
       document.getElementById('authWait').hidden = true;
+      var focusTrap = createFocusTrap();
       new Vue({
         el: '#workspace',
         data: {
@@ -287,9 +393,14 @@
           totalPages: 1,
           editOpen: false,
           form: {},
+          formReadOnly: false,
           saving: false,
           editError: '',
-          flags: ['user', 'role', 'permission', 'animal', 'adopt', 'proof', 'visit', 'volunteer', 'account', 'notice', 'help', 'rescue', 'im', 'adopt_view', 'my_adopt', 'my_proof', 'apply'],
+          loadSeq: 0,
+          triggerEl: null,
+          _onDocEsc: null,
+          /* Must match PermissionService.KNOWN_FLAGS / ALLOWED_PATHS exactly */
+          flags: ['user', 'role', 'permission', 'animal', 'adopt', 'proof', 'visit', 'volunteer', 'account', 'notice', 'help', 'rescue', 'im', 'adopt_view', 'my_adopt', 'my_proof', 'apply', 'admin_agent'],
           paths: [
             '/page/end/user.html',
             '/page/end/role.html',
@@ -302,7 +413,8 @@
             '/page/end/account.html',
             '/page/end/notice.html',
             '/page/end/help.html',
-            '/page/end/rescue.html'
+            '/page/end/rescue.html',
+            '/page/end/admin_agent.html'
           ]
         },
         computed: {
@@ -312,10 +424,66 @@
             var e = Math.min(this.totalPages, s + 4);
             for (var p = s; p <= e; p += 1) a.push(p);
             return a;
+          },
+          canWrite: function () {
+            var roles = (this.user && this.user.role) || [];
+            for (var i = 0; i < roles.length; i += 1) {
+              var r = roles[i];
+              var id = r && (r.id != null ? r.id : r);
+              if (Number(id) === 1) return true;
+            }
+            return false;
+          },
+          pageWithPathCount: function () {
+            return (this.records || []).filter(function (r) { return !!(r.path && String(r.path).trim()); }).length;
+          },
+          pageActionCount: function () {
+            return (this.records || []).filter(function (r) { return !(r.path && String(r.path).trim()); }).length;
           }
         },
         created: function () {
+          var vm = this;
           this.load(1);
+          this._onDocEsc = function (e) {
+            if (e.key !== 'Escape') return;
+            if (vm.saving) {
+              e.preventDefault();
+              e.stopPropagation();
+              return;
+            }
+            if (vm.editOpen) {
+              e.preventDefault();
+              vm.cancelEdit();
+            }
+          };
+          document.addEventListener('keydown', this._onDocEsc, true);
+        },
+        beforeDestroy: function () {
+          if (this._onDocEsc) {
+            document.removeEventListener('keydown', this._onDocEsc, true);
+            this._onDocEsc = null;
+          }
+          focusTrap.deactivate();
+        },
+        watch: {
+          editOpen: function (open) {
+            var vm = this;
+            if (open) {
+              this.$nextTick(function () {
+                var root = document.querySelector('[role="dialog"]');
+                if (root && !root.hasAttribute('tabindex')) root.setAttribute('tabindex', '-1');
+                var initial = null;
+                if (vm.formReadOnly) {
+                  initial = root && root.querySelector('.admin-dialog-close, .admin-dialog-actions button');
+                } else {
+                  initial = document.getElementById('permName');
+                }
+                focusTrap.activate(root, initial);
+              });
+            } else {
+              focusTrap.deactivate();
+            }
+          }
         },
         methods: {
           toggleMore: function () { this.moreOpen = !this.moreOpen; this.accountOpen = false; this.mobileOpen = false; },
@@ -329,8 +497,67 @@
           avatarUrl: function (f) { return AdminWorkspace.avatarUrl(f); },
           avatarFallback: function (e) { e.target.src = '/api/files/'; },
           logout: function () { AuthSession.logout(); },
-          load: function (page) {
+          /** Stable target outside list rows (survives Vue list refresh). */
+          resolveStableFocusTarget: function () {
+            var scopes = [];
+            var main = document.querySelector('main');
+            if (main) scopes.push(main);
+            scopes.push(document);
+            var selectors = [
+              'input[type="search"]',
+              '.ui-toolbar input',
+              '.admin-review-toolbar input',
+              'button[type="submit"]',
+              'h2',
+              'h1'
+            ];
+            for (var s = 0; s < scopes.length; s++) {
+              for (var i = 0; i < selectors.length; i++) {
+                var el = scopes[s].querySelector(selectors[i]);
+                if (el && el.isConnected) return el;
+              }
+            }
+            return null;
+          },
+          /**
+           * Restore focus after dialog close.
+           * Cancel/Escape: original trigger if still connected.
+           * Save success: pass stable triggerEl (search) after load completes.
+           */
+          restoreTriggerFocus: function () {
+            var t = this.triggerEl;
+            this.triggerEl = null;
             var vm = this;
+            this.$nextTick(function () {
+              var target = t;
+              if (!target || !target.isConnected || typeof target.focus !== 'function') {
+                target = vm.resolveStableFocusTarget();
+              }
+              if (!target || typeof target.focus !== 'function') return;
+              try {
+                if (/^H[12]$/.test(target.tagName)) {
+                  target.setAttribute('tabindex', '-1');
+                }
+                target.focus();
+              } catch (e1) { /* ignore */ }
+              if (document.activeElement !== target) {
+                var fb = vm.resolveStableFocusTarget();
+                if (fb && typeof fb.focus === 'function') {
+                  try {
+                    if (/^H[12]$/.test(fb.tagName)) fb.setAttribute('tabindex', '-1');
+                    fb.focus();
+                  } catch (e2) { /* ignore */ }
+                }
+              }
+            });
+          },
+          load: function (page, preserveFeedback, onDone) {
+            var vm = this;
+            var seq = ++vm.loadSeq;
+            if (!preserveFeedback) {
+              vm.message = '';
+              vm.messageType = '';
+            }
             vm.loading = true;
             vm.loadError = '';
             $.ajax({
@@ -338,6 +565,7 @@
               type: 'GET',
               data: { name: vm.search, pageNum: page, pageSize: vm.pageSize }
             }).done(function (res) {
+              if (seq !== vm.loadSeq) return;
               if (!res || res.code !== '0' || !res.data || !Array.isArray(res.data.records)) {
                 vm.loadError = (res && res.msg) || '响应格式无效。';
                 return;
@@ -347,17 +575,27 @@
               vm.total = Number(res.data.total || 0);
               vm.totalPages = Math.max(1, Number(res.data.pages || 1));
             }).fail(function (xhr) {
+              if (seq !== vm.loadSeq) return;
               vm.loadError = (xhr.responseJSON && xhr.responseJSON.msg) || '网络异常。';
             }).always(function () {
+              if (seq !== vm.loadSeq) return;
               vm.loading = false;
+              if (typeof onDone === 'function') {
+                vm.$nextTick(function () { onDone(); });
+              }
             });
           },
           openCreate: function () {
+            if (!this.canWrite) return;
+            this.triggerEl = document.activeElement;
             this.form = { name: '', description: '', flag: '', path: '' };
+            this.formReadOnly = false;
             this.editError = '';
+            this.message = '';
             this.editOpen = true;
           },
           openEdit: function (item) {
+            this.triggerEl = document.activeElement;
             this.form = {
               id: item.id,
               name: item.name || '',
@@ -365,15 +603,40 @@
               flag: item.flag || '',
               path: item.path || ''
             };
+            this.formReadOnly = !this.canWrite;
             this.editError = '';
+            this.message = '';
             this.editOpen = true;
           },
           cancelEdit: function () {
-            if (!this.saving) this.editOpen = false;
+            if (this.saving) return;
+            this.editOpen = false;
+            focusTrap.deactivate();
+            this.restoreTriggerFocus();
           },
           save: function () {
             var vm = this;
+            if (vm.formReadOnly || !vm.canWrite || vm.saving || writeLocks.save) return;
+            if (!vm.form.name || !vm.form.flag) {
+              vm.editError = '名称与 flag 为必填。';
+              return;
+            }
+            if (vm.flags.indexOf(vm.form.flag) < 0) {
+              vm.editError = 'flag 不在固定白名单内。';
+              return;
+            }
+            if (vm.form.path && vm.paths.indexOf(vm.form.path) < 0) {
+              vm.editError = '路径不在固定白名单内。';
+              return;
+            }
+            writeLocks.save = true;
             vm.saving = true;
+            try {
+              var root = document.querySelector('[role="dialog"]');
+              if (root) {
+                Array.prototype.forEach.call(root.querySelectorAll('button'), function (b) { b.disabled = true; });
+              }
+            } catch (e) { /* ignore */ }
             vm.editError = '';
             var payload = {
               id: vm.form.id,
@@ -393,13 +656,26 @@
                 return;
               }
               vm.editOpen = false;
+              focusTrap.deactivate();
               vm.messageType = 'success';
               vm.message = '权限定义已保存。';
-              vm.load(vm.pageNum);
+              // List refresh replaces row "编辑" nodes — use stable search target after load
+              vm.triggerEl = vm.resolveStableFocusTarget();
+              vm.load(vm.pageNum, true, function () {
+                vm.restoreTriggerFocus();
+              });
             }).fail(function (xhr) {
-              vm.editError = (xhr.responseJSON && xhr.responseJSON.msg) || '网络异常。';
+              var st = xhr && xhr.status;
+              var msg = (xhr.responseJSON && xhr.responseJSON.msg) || '';
+              if (!msg && xhr.responseText) {
+                try { msg = JSON.parse(xhr.responseText).msg || ''; } catch (e2) { /* */ }
+              }
+              if (st === 403) vm.editError = msg || '无写入权。';
+              else if (st === 409) vm.editError = msg || '保存冲突。';
+              else vm.editError = msg || '网络异常。';
             }).always(function () {
               vm.saving = false;
+              writeLocks.save = false;
             });
           },
           exportRows: function () {
