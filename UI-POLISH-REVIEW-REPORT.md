@@ -857,3 +857,41 @@ GPT 确认焦点已过；真实 390×844 复现搜索区空白：
 权威: `output/playwright/ui-polish-phase-2e/PHASE-2E-REPORT.md` · `phase-2e-report.json` · `run-strict-final.log`
 
 **停止**: 不提交、不推送、不合并 main、不进入下一阶段。等待 GPT 最终封存审核。
+
+### Phase 2F：用户治理与个人资料工作台（2026-07-30）
+
+**基线**: `83fbf1ba10df9942633133d08e35cd7b1882f291`
+**分支**: `ui-polish/phase-2f-user-profile-governance-20260730`
+**端口**: `18104`（9999 全程空闲）
+
+| 项 | 值 |
+|----|-----|
+| 完成 | **是**（2f **126/0/0** + 2e 164 + 2d 224 + 2c 115 + 2b 234 + 2a 173 + 1c 134 + adversarial 851 + mvn 473 + git-diff 0） |
+| 缓存 | user/person `v=20260730j` |
+| 删除用户 | **移除**可操作删除；DELETE `/api/user/**` = 0；仅保留业务历史说明 |
+| 超管编辑 | payload **省略 role**（证据见 superAdminPayloadAudit） |
+| 头像 | 暂存状态机：上传≠保存；409 保留 staged；成功清本地 staged 不 DELETE |
+| 严格门禁 | bestEffort=0 · fallback=0 · probes=5 · shots 7=index · unexpected/real/pageerror=0 |
+| 提交/推送/2G | **否** |
+
+**修改**: user.html / person.html / admin-workspace.css / tools/ui-polish-phase-2f.cjs
+
+权威: `output/playwright/ui-polish-phase-2f/PHASE-2F-REPORT.md` · `phase-2f-report.json` · `run-strict-final.log`
+
+**停止**: 不提交、不推送、不合并 main、不进入 Phase 2G。等待 GPT 独立审核。
+
+### Phase 2F 验收返修：空角色与 UUID 头像生命周期（2026-07-30）
+
+**端口**: `18105` · **9999**: 空闲 · **结果**: 2f **139/0/0**（>126）
+
+| 项 | 说明 |
+|----|------|
+| P2-1 | 编辑取消全部手动角色 → 前端错误、**PUT=0**、焦点 `#userRoleErr`、aria-invalid；新建仍可空角色 |
+| P2-2 | 上传夹具改为 32-hex UUID；sessionStagedFlags；绑定头像移除零 staged DELETE；reset 仅删一次暂存 |
+| 证据 | emptyRolePuts=[] · replace 清理 UUID_A 一次 · save 成功无 staged DELETE |
+| 回归 | 2e 164 · 2d 224 · 2c 115 · 2b 234 · 2a 173 · 1c 134 · adv 851 · mvn 473 · git-diff 0 |
+| 提交/推送/2G | **否** |
+
+权威: `output/playwright/ui-polish-phase-2f/PHASE-2F-REPORT.md` · `run-strict-final.log`
+
+**停止**: 不提交、不推送、不合并 main、不进入 Phase 2G。等待 GPT 最终封存审核。

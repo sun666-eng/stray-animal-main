@@ -2841,3 +2841,288 @@
   .visit-relation-grid { grid-template-columns: 1fr; }
   .visit-file-label { min-height: 48px; }
 }
+
+/* ——— Phase 2F: user governance + person profile ——— */
+.user-governance-hero,
+.person-governance-hero {
+  display: grid;
+  gap: 18px;
+  align-items: start;
+}
+@media (min-width: 960px) {
+  .user-governance-hero,
+  .person-governance-hero {
+    grid-template-columns: minmax(0, 1.35fr) minmax(280px, 1fr);
+  }
+}
+.user-gov-lead { max-width: 52ch; }
+.user-governance-metrics,
+.person-governance-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.user-governance-metric,
+.person-governance-metric {
+  border: 1px solid #ddd6c8;
+  border-radius: 8px;
+  background: #fbf9f4;
+  padding: 10px 12px;
+  min-width: 0;
+}
+.user-governance-metric span,
+.person-governance-metric span {
+  display: block;
+  font-size: 12px;
+  color: #6b6a66;
+  font-weight: 650;
+}
+.user-governance-metric strong,
+.person-governance-metric strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 20px;
+  line-height: 1.15;
+  color: #161615;
+  font-weight: 780;
+}
+.user-governance-metric small,
+.person-governance-metric small {
+  display: block;
+  margin-top: 4px;
+  color: #8a8680;
+  font-size: 11px;
+}
+.user-gov-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.user-retention-note {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-left: 3px solid #d63a1f;
+  background: #faf6f2;
+  color: #3a3936;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.user-governance-feedback,
+.person-governance-feedback {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd6c8;
+  background: #f7f5f0;
+  font-size: 13px;
+}
+.user-governance-feedback.is-error,
+.person-governance-feedback.is-error {
+  border-color: #e2b4ab;
+  background: #fdf4f1;
+  color: #8f2a18;
+}
+.user-governance-feedback.is-success,
+.person-governance-feedback.is-success {
+  border-color: #c5d4b8;
+  background: #f4f8ef;
+  color: #2f4a22;
+}
+.admin-user-table .user-contact-cell,
+.user-contact-line {
+  display: block;
+  max-width: 18ch;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.35;
+}
+.admin-user-table .user-name-cell {
+  display: inline-block;
+  max-width: 14ch;
+  overflow-wrap: anywhere;
+}
+.user-role-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: 28ch;
+}
+.user-derived-note {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #6b6a66;
+}
+.user-action-muted {
+  font-size: 12px;
+  color: #8a8680;
+}
+.user-form-group {
+  margin: 0 0 16px;
+  padding: 12px 14px 14px;
+  border: 1px solid #e2ddd3;
+  border-radius: 10px;
+  background: #fcfbf8;
+  min-width: 0;
+}
+.user-form-group legend {
+  padding: 0 6px;
+  font-size: 13px;
+  font-weight: 750;
+  color: #2c2b28;
+}
+.user-password-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  min-width: 0;
+}
+.user-password-row .ui-form-input { flex: 1 1 auto; min-width: 0; }
+.user-password-toggle { flex: 0 0 auto; min-height: 44px; }
+.user-role-protected,
+.user-role-readonly,
+.person-security-note {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2ddd3;
+  background: #f7f5f0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #3a3936;
+}
+.user-role-protected strong,
+.user-role-readonly strong,
+.person-security-note strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #161615;
+}
+.user-role-grid { gap: 8px 12px; }
+.user-role-option {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  min-height: 40px;
+}
+.user-online-list {
+  margin: 0;
+  padding: 0 0 0 1.1em;
+  max-height: 240px;
+  overflow: auto;
+}
+.user-online-list li { margin: 4px 0; }
+
+.person-governance-layout {
+  display: grid;
+  gap: 16px;
+  align-items: start;
+}
+@media (min-width: 900px) {
+  .person-governance-layout {
+    grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  }
+}
+.person-identity-card,
+.person-form-card {
+  border: 1px solid #ddd6c8;
+  border-radius: 10px;
+  background: #fcfbf8;
+  padding: 16px;
+  min-width: 0;
+}
+.person-identity-card .admin-profile-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e2ddd3;
+  background: #f0eeea;
+  display: block;
+  margin-bottom: 10px;
+}
+.person-identity-note {
+  font-size: 13px;
+  color: #6b6a66;
+  line-height: 1.45;
+  margin: 0 0 14px;
+}
+.person-avatar-field { min-width: 0; }
+.person-file-caption {
+  display: block;
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 650;
+  color: #3a3936;
+}
+.person-file-picker {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+.person-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.person-file-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1.5px dashed #cfcbc2;
+  border-radius: 12px;
+  background: #f7f5f0;
+  color: var(--ui-ink, #111211);
+  box-sizing: border-box;
+  cursor: pointer;
+}
+.person-file-input:focus-visible + .person-file-label,
+.person-file-label:focus-within {
+  outline: 2px solid var(--ui-accent-strong, #d63a1f);
+  outline-offset: 2px;
+  border-color: var(--ui-accent-strong, #d63a1f);
+}
+.person-file-label.is-disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+.person-file-label.is-busy { border-style: solid; }
+.person-file-action {
+  font-size: 13px;
+  font-weight: 750;
+  color: #8f2a18;
+}
+.person-file-name {
+  flex: 1 1 120px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ui-muted, #6b6a66);
+  font-size: 12px;
+}
+.person-avatar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+@media (max-width: 640px) {
+  .user-governance-metrics,
+  .person-governance-metrics { grid-template-columns: 1fr 1fr; }
+  .admin-user-table { overflow-x: auto; }
+  .user-contact-cell,
+  .user-contact-line { max-width: 100%; }
+  .person-file-label { min-height: 48px; }
+}

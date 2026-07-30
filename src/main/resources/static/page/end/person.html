@@ -1,300 +1,519 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>个人资料 · 归途计划管理</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>个人资料 · 归途计划管理</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-  <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c">
-  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260729c">
-</head>
-<body>
-<div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
-<div id="workspace" :class="{'is-nav-open': mobileOpen}" class="admin-shell" v-cloak @keyup.esc="closeMenus" @click="closeMenus">
-  <header class="ui-header admin-header" @click.stop>
-    <div class="ui-header-inner">
-      <a class="ui-brand" href="/page/end/index.html" aria-label="返回管理工作台">
-        <span class="ui-brand-mark" aria-hidden="true">爪</span>
-        <span class="ui-brand-copy"><strong>归途计划</strong><small>RESCUE WORKSPACE</small></span>
-        <span class="admin-brand-note">个人资料</span>
-      </a>
-      <nav class="ui-nav admin-desktop-nav" aria-label="管理功能">
-        <a href="/page/end/index.html" :class="{'is-active': isOverviewActive()}" :aria-current="isOverviewActive() ? 'page' : null">概览</a>
-        <a v-for="item in desktopNav.primary" :key="'desk-'+item.flag"
-           :class="{'is-active': isNavActive(item.flag)}"
-           :aria-current="isNavActive(item.flag) ? 'page' : null"
-           :href="item.href">
-          <span class="admin-nav-short">{{ item.shortLabel }}</span>
-          <span class="admin-nav-full">{{ item.label }}</span>
-        </a>
-        <div v-if="desktopNav.more && desktopNav.more.length" class="admin-nav-more">
-          <button class="admin-nav-more-trigger" type="button"
-                  :class="{'is-current': isMoreCurrent()}"
-                  :aria-expanded="String(moreOpen)"
-                  aria-controls="adminNavMoreMenu"
-                  aria-haspopup="true"
-                  @click.stop="toggleMore">
-            更多
-            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down"></use></svg>
-          </button>
-          <div id="adminNavMoreMenu" class="admin-nav-more-menu" role="menu" :hidden="!moreOpen">
-            <a v-for="item in desktopNav.more" :key="'more-'+item.flag" role="menuitem"
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c" />
+    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260730j" />
+  </head>
+  <body>
+    <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
+    <div id="workspace" :class="{'is-nav-open': mobileOpen}" class="admin-shell person-governance" v-cloak @click="closeMenus">
+      <header class="ui-header admin-header" @click.stop>
+        <div class="ui-header-inner">
+          <a class="ui-brand" href="/page/end/index.html" aria-label="返回管理工作台">
+            <span class="ui-brand-mark" aria-hidden="true">爪</span>
+            <span class="ui-brand-copy"><strong>归途计划</strong><small>RESCUE WORKSPACE</small></span>
+            <span class="admin-brand-note">个人资料</span>
+          </a>
+          <nav class="ui-nav admin-desktop-nav" aria-label="管理功能">
+            <a href="/page/end/index.html" :class="{'is-active': isOverviewActive()}" :aria-current="isOverviewActive() ? 'page' : null">概览</a>
+            <a v-for="item in desktopNav.primary" :key="'desk-'+item.flag"
                :class="{'is-active': isNavActive(item.flag)}"
                :aria-current="isNavActive(item.flag) ? 'page' : null"
-               :href="item.href">{{ item.label }}</a>
+               :href="item.href">
+              <span class="admin-nav-short">{{ item.shortLabel }}</span>
+              <span class="admin-nav-full">{{ item.label }}</span>
+            </a>
+            <div v-if="desktopNav.more && desktopNav.more.length" class="admin-nav-more">
+              <button class="admin-nav-more-trigger" type="button"
+                      :class="{'is-current': isMoreCurrent()}"
+                      :aria-expanded="String(moreOpen)"
+                      aria-controls="adminNavMoreMenu"
+                      aria-haspopup="true"
+                      @click.stop="toggleMore">
+                更多
+                <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down"></use></svg>
+              </button>
+              <div id="adminNavMoreMenu" class="admin-nav-more-menu" role="menu" :hidden="!moreOpen">
+                <a v-for="item in desktopNav.more" :key="'more-'+item.flag" role="menuitem"
+                   :class="{'is-active': isNavActive(item.flag)}"
+                   :aria-current="isNavActive(item.flag) ? 'page' : null"
+                   :href="item.href">{{ item.label }}</a>
+              </div>
+            </div>
+          </nav>
+          <div class="ui-header-actions">
+            <button class="ui-icon-button ui-mobile-toggle" type="button"
+                    :aria-expanded="String(mobileOpen)"
+                    aria-controls="adminMobileNav"
+                    :aria-label="mobileOpen ? '关闭管理导航' : '打开管理导航'"
+                    @click.stop="toggleMobile">
+              <span aria-hidden="true"><svg class="ui-icon ui-icon-lg" aria-hidden="true" focusable="false" v-if="mobileOpen"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg><svg class="ui-icon ui-icon-lg" aria-hidden="true" focusable="false" v-else><use href="/icons/ui-icons.svg?v=20260729c#icon-menu" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-menu"></use></svg></span>
+            </button>
+            <div class="ui-account">
+              <button class="ui-account-trigger admin-account-trigger" type="button"
+                      :aria-expanded="String(accountOpen)"
+                      aria-controls="adminAccountMenu"
+                      @click.stop="toggleAccount">
+                <img class="admin-account-photo" :src="avatarUrl(user.avatar)" alt="" @error="avatarFallback">
+                <span class="ui-account-name">{{ user.username }}</span>
+                <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down"></use></svg>
+              </button>
+              <div id="adminAccountMenu" class="ui-account-menu admin-account-menu" :hidden="!accountOpen" @click.stop>
+                <a href="/page/end/person.html" aria-current="page">个人资料</a>
+                <a href="/page/front/index.html">用户端首页</a>
+                <button class="is-danger" type="button" @click="logout">退出登录</button>
+              </div>
+            </div>
           </div>
-        </div>
-      </nav>
-      <div class="ui-header-actions">
-        <button class="ui-icon-button ui-mobile-toggle" type="button"
-                :aria-expanded="String(mobileOpen)"
-                aria-controls="adminMobileNav"
-                :aria-label="mobileOpen ? '关闭管理导航' : '打开管理导航'"
-                @click.stop="toggleMobile">
-          <span aria-hidden="true"><svg class="ui-icon ui-icon-lg" aria-hidden="true" focusable="false" v-if="mobileOpen"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg><svg class="ui-icon ui-icon-lg" aria-hidden="true" focusable="false" v-else><use href="/icons/ui-icons.svg?v=20260729c#icon-menu" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-menu"></use></svg></span>
-        </button>
-        <div class="ui-account">
-          <button class="ui-account-trigger admin-account-trigger" type="button"
-                  :aria-expanded="String(accountOpen)"
-                  aria-controls="adminAccountMenu"
-                  @click.stop="toggleAccount">
-            <img class="admin-account-photo" :src="avatarUrl(user.avatar)" alt="" @error="avatarFallback">
-            <span class="ui-account-name">{{ user.username }}</span>
-            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down"></use></svg>
-          </button>
-          <div id="adminAccountMenu" class="ui-account-menu admin-account-menu" :hidden="!accountOpen" @click.stop>
+          <nav id="adminMobileNav" class="ui-mobile-nav admin-mobile-nav"
+               :class="{'is-open': mobileOpen}"
+               aria-label="移动端管理功能"
+               @click.stop>
+            <a class="admin-mobile-home" href="/page/end/index.html" :aria-current="isOverviewActive() ? 'page' : null">工作台概览</a>
+            <template v-for="group in menuGroups">
+              <strong :key="'g-'+group.id">{{ group.label }}</strong>
+              <a v-for="item in group.items" :key="'m-'+item.flag"
+                 :class="{'is-active': isNavActive(item.flag)}"
+                 :aria-current="isNavActive(item.flag) ? 'page' : null"
+                 :href="item.href">{{ item.label }}</a>
+            </template>
+            <strong>账户</strong>
             <a href="/page/end/person.html" aria-current="page">个人资料</a>
             <a href="/page/front/index.html">用户端首页</a>
-            <button class="is-danger" type="button" @click="logout">退出登录</button>
-          </div>
+          </nav>
         </div>
-      </div>
-      <nav id="adminMobileNav" class="ui-mobile-nav admin-mobile-nav"
-           :class="{'is-open': mobileOpen}"
-           aria-label="移动端管理功能"
-           @click.stop>
-        <a class="admin-mobile-home" href="/page/end/index.html" :aria-current="isOverviewActive() ? 'page' : null">工作台概览</a>
-        <template v-for="group in menuGroups">
-          <strong :key="'g-'+group.id">{{ group.label }}</strong>
-          <a v-for="item in group.items" :key="'m-'+item.flag"
-             :class="{'is-active': isNavActive(item.flag)}"
-             :aria-current="isNavActive(item.flag) ? 'page' : null"
-             :href="item.href">{{ item.label }}</a>
-        </template>
-        <strong>账户</strong>
-        <a href="/page/end/person.html" aria-current="page">个人资料</a>
-        <a href="/page/front/index.html">用户端首页</a>
-      </nav>
+      </header>
+      <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
+
+      <main class="admin-main">
+        <section class="admin-hero person-governance-hero" aria-labelledby="profileTitle">
+          <div>
+            <p class="admin-kicker">Account profile</p>
+            <h1 id="profileTitle">个人资料</h1>
+            <p>读取当前账号 → 修改联系方式与头像 → 校验 → 保存 → 同步会话显示。此处不能修改密码。</p>
+          </div>
+          <div class="person-governance-metrics" aria-label="资料状态">
+            <div class="person-governance-metric"><span>资料状态</span><strong>{{ dirty ? '有未保存修改' : '已同步' }}</strong><small>相对当前会话</small></div>
+            <div class="person-governance-metric"><span>头像暂存</span><strong>{{ stagedAvatarFlag ? '待保存' : '无' }}</strong><small>上传后需点保存</small></div>
+          </div>
+        </section>
+
+        <section class="person-governance-layout" aria-label="个人资料编辑">
+          <article class="person-identity-card">
+            <img class="admin-profile-avatar" :src="previewAvatarUrl" :alt="user.username + ' 的头像'" @error="avatarFallback" />
+            <h2>{{ user.username }}</h2>
+            <p class="person-identity-note">用户名只读。头像选择后先进入暂存区，确认无误后点击「保存资料」提交。</p>
+
+            <div class="person-avatar-field">
+              <span class="person-file-caption">头像文件</span>
+              <div class="person-file-picker">
+                <input
+                  id="avatarFile"
+                  ref="avatarFile"
+                  class="person-file-input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif"
+                  :disabled="uploading || saving"
+                  aria-label="选择头像图片"
+                  @change="onAvatarPicked"
+                />
+                <label
+                  for="avatarFile"
+                  class="person-file-label"
+                  :class="{'is-disabled': uploading || saving, 'is-busy': uploading}"
+                >
+                  <span class="person-file-action">{{ uploading ? '正在上传…' : '选择头像' }}</span>
+                  <span class="person-file-name">{{ imageFileName || '未选择文件 · JPG / PNG / GIF' }}</span>
+                </label>
+              </div>
+              <div class="person-avatar-actions">
+                <button class="ui-button is-ghost" type="button" :disabled="uploading || saving || (!form.avatar && !stagedAvatarFlag)" @click="removeAvatar">
+                  移除头像
+                </button>
+              </div>
+              <small>支持 JPG、PNG、GIF。替换上传失败时保留上一暂存预览；保存失败可直接重试，无需重新上传。</small>
+            </div>
+          </article>
+
+          <article class="person-form-card">
+            <div class="admin-section-head">
+              <div>
+                <h2>联系方式</h2>
+                <p>邮箱最长 255，电话最长 30，均可留空。</p>
+              </div>
+            </div>
+
+            <div v-if="message" class="person-governance-feedback" :class="{'is-error': messageType==='error', 'is-success': messageType==='success'}" :role="messageType==='error' ? 'alert' : 'status'" aria-live="polite" id="personFeedback">{{ message }}</div>
+
+            <form class="admin-profile-form" @submit.prevent="saveProfile" novalidate>
+              <div class="ui-form-field">
+                <label for="profileUsername">用户名 <small>只读</small></label>
+                <input id="profileUsername" class="ui-form-input admin-readonly" type="text" :value="user.username" readonly aria-readonly="true" />
+              </div>
+              <div class="ui-form-field">
+                <label for="profileEmail">电子邮箱</label>
+                <input
+                  id="profileEmail"
+                  ref="emailField"
+                  v-model.trim="form.email"
+                  class="ui-form-input"
+                  type="email"
+                  maxlength="255"
+                  autocomplete="email"
+                  :disabled="saving || uploading"
+                  :aria-invalid="String(!!fieldErrors.email)"
+                  :aria-describedby="fieldErrors.email ? 'profileEmailErr' : null"
+                />
+                <p v-if="fieldErrors.email" id="profileEmailErr" class="ui-field-error">{{ fieldErrors.email }}</p>
+              </div>
+              <div class="ui-form-field">
+                <label for="profilePhone">联系电话</label>
+                <input
+                  id="profilePhone"
+                  ref="phoneField"
+                  v-model.trim="form.phone"
+                  class="ui-form-input"
+                  type="tel"
+                  maxlength="30"
+                  autocomplete="tel"
+                  :disabled="saving || uploading"
+                  :aria-invalid="String(!!fieldErrors.phone)"
+                  :aria-describedby="fieldErrors.phone ? 'profilePhoneErr' : null"
+                />
+                <p v-if="fieldErrors.phone" id="profilePhoneErr" class="ui-field-error">{{ fieldErrors.phone }}</p>
+              </div>
+
+              <div class="person-security-note" role="note">
+                <strong>安全边界</strong>
+                <p>此处不能修改密码。系统当前没有校验原密码的安全改密流程，请勿在其它表单中复用管理端会话口令。</p>
+              </div>
+
+              <div class="ui-form-actions admin-form-actions">
+                <button class="ui-button is-primary" type="submit" :disabled="saving || uploading || !dirty" :aria-busy="saving ? 'true' : 'false'">
+                  {{ saving ? '正在保存...' : '保存资料' }}
+                </button>
+                <button class="ui-button is-ghost" type="button" :disabled="saving || uploading || !dirty" @click="resetForm">
+                  撤销修改
+                </button>
+              </div>
+            </form>
+          </article>
+        </section>
+      </main>
     </div>
-  </header>
-  <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
 
-  <main class="admin-main">
-    <section class="admin-hero" aria-labelledby="profileTitle">
-      <div>
-        <p class="admin-kicker">Account profile</p>
-        <h1 id="profileTitle">个人资料</h1>
-        <p>维护用于联系和识别账号的基础资料。用户名不可修改，密码变更不在此页面提供。</p>
-      </div>
-      <div class="admin-hero-meta"><span>资料状态</span><strong>{{ dirty ? '有未保存修改' : '已同步' }}</strong></div>
-    </section>
+    <script src="../../js/jquery.min.js"></script>
+    <script src="../../js/auth-session.js?v=20260728"></script>
+    <script src="../../js/admin-auth.js?v=20260729c"></script>
+    <script src="../../js/vue.min.js"></script>
+    <script>
+      (function () {
+        "use strict";
+        var writeLocks = { save: false, upload: false };
+        var retiredStageFlags = Object.create(null);
+        // Session-only staged flags (UUID or any server flag). Bound avatars are never listed here.
+        var sessionStagedFlags = Object.create(null);
+        window.__personWriteLocks = writeLocks;
 
-    <section class="admin-profile-layout" aria-label="个人资料编辑">
-      <article class="admin-profile-card is-identity">
-        <img class="admin-profile-avatar" :src="avatarUrl(form.avatar)" :alt="user.username + ' 的头像'" @error="avatarFallback">
-        <h2>{{ user.username }}</h2>
-        <p>头像上传成功后会随资料一起保存到当前账号。</p>
-        <div class="admin-avatar-field">
-          <button class="ui-button is-ghost" type="button" :disabled="uploading || saving" @click="$refs.avatarFile.click()">{{ uploading ? '正在上传...' : '选择新头像' }}</button>
-          <input id="avatarFile" ref="avatarFile" class="sr-only" tabindex="-1" type="file" accept="image/jpeg,image/png,image/gif" :disabled="uploading || saving" aria-label="选择新头像文件" @change="uploadAvatar">
-          <small>支持 JPG、PNG 或 GIF。选择文件后将先上传，再保存账号资料。</small>
-        </div>
-      </article>
-
-      <article class="admin-profile-card">
-        <div class="admin-section-head">
-          <div><h2>账号信息</h2><p>电子邮箱和联系电话可留空，请填写你实际使用的联系方式。</p></div>
-        </div>
-        <div v-if="message" class="admin-inline-message" :class="{'is-error': messageType === 'error', 'is-success': messageType === 'success'}" :role="messageType === 'error' ? 'alert' : 'status'" aria-live="polite">{{ message }}</div>
-        <form class="admin-profile-form" @submit.prevent="saveProfile" novalidate>
-          <div class="ui-form-field">
-            <label for="profileUsername">用户名 <small>只读</small></label>
-            <input id="profileUsername" class="ui-form-input admin-readonly" type="text" :value="user.username" readonly aria-readonly="true">
-          </div>
-          <div class="ui-form-field">
-            <label for="profileEmail">电子邮箱</label>
-            <input id="profileEmail" v-model.trim="form.email" class="ui-form-input" type="email" maxlength="120" autocomplete="email" :disabled="saving || uploading" :aria-invalid="String(!!fieldErrors.email)">
-            <p v-if="fieldErrors.email" class="ui-field-error">{{ fieldErrors.email }}</p>
-          </div>
-          <div class="ui-form-field">
-            <label for="profilePhone">联系电话</label>
-            <input id="profilePhone" v-model.trim="form.phone" class="ui-form-input" type="tel" maxlength="30" autocomplete="tel" :disabled="saving || uploading" :aria-invalid="String(!!fieldErrors.phone)">
-            <p v-if="fieldErrors.phone" class="ui-field-error">{{ fieldErrors.phone }}</p>
-          </div>
-          <p class="admin-form-note">为保护账号安全，此处不提供密码输入框。系统当前没有校验原密码的安全改密流程。</p>
-          <div class="ui-form-actions admin-form-actions">
-            <button class="ui-button is-primary" type="submit" :disabled="saving || uploading || !dirty">{{ saving ? '正在保存...' : '保存资料' }}</button>
-            <button class="ui-button is-ghost" type="button" :disabled="saving || uploading || !dirty" @click="resetForm">撤销修改</button>
-          </div>
-        </form>
-      </article>
-    </section>
-  </main>
-</div>
-
-<script src="../../js/jquery.min.js"></script>
-<script src="../../js/auth-session.js?v=20260728"></script>
-<script src="../../js/admin-auth.js?v=20260729c"></script>
-<script src="../../js/vue.min.js"></script>
-<script>
-(function () {
-  'use strict';
-  AuthSession.bootstrap({
-    requireAuth: true,
-    allowCachedOnNetworkError: false,
-    onDone: function (ok, authenticatedUser) {
-      if (!ok || !authenticatedUser) return;
-      document.getElementById('authWait').hidden = true;
-      new Vue({
-        el: '#workspace',
-        data: {
-          user: authenticatedUser,
-          menuItems: AdminWorkspace.navigation(authenticatedUser.permission),
-          menuGroups: AdminWorkspace.navigationGroups(authenticatedUser.permission),
-          desktopNav: AdminWorkspace.desktopNavigation(authenticatedUser.permission),
-          currentNavFlag: 'person',
-          moreOpen: false,
-          mobileOpen: false,
-          accountOpen: false,
-          saving: false,
-          uploading: false,
-          message: '',
-          messageType: '',
-          fieldErrors: { email: '', phone: '' },
-          form: {
-            email: authenticatedUser.email || '',
-            phone: authenticatedUser.phone || '',
-            avatar: authenticatedUser.avatar || ''
-          }
-        },
-        computed: {
-          dirty: function () {
-            return this.form.email !== (this.user.email || '') ||
-              this.form.phone !== (this.user.phone || '') ||
-              this.form.avatar !== (this.user.avatar || '');
-          }
-        },
-        methods: {
-          toggleMore: function () { this.moreOpen = !this.moreOpen; this.accountOpen = false; this.mobileOpen = false; },
-          toggleMobile: function () { this.mobileOpen = !this.mobileOpen; this.accountOpen = false; this.moreOpen = false; },
-          toggleAccount: function () { this.accountOpen = !this.accountOpen; this.moreOpen = false; this.mobileOpen = false; },
-          isNavActive: function (flag) { return AdminWorkspace.flagsMatch(flag, this.currentNavFlag); },
-          isMoreCurrent: function () { var vm = this; var more = (this.desktopNav && this.desktopNav.more) || []; return more.some(function (item) { return AdminWorkspace.flagsMatch(item.flag, vm.currentNavFlag); }); },
-          isOverviewActive: function () { return !this.currentNavFlag; },
-
-          avatarUrl: function (flag) { return AdminWorkspace.avatarUrl(flag); },
-          avatarFallback: function (event) { AdminWorkspace.avatarFallback(event); },
-          closeMenus: function () { this.mobileOpen = false; this.accountOpen = false; this.moreOpen = false; },
-          logout: function () { AuthSession.logout(); },
-          resetForm: function () {
-            this.form = { email: this.user.email || '', phone: this.user.phone || '', avatar: this.user.avatar || '' };
-            this.fieldErrors = { email: '', phone: '' };
-            this.message = '';
-            this.messageType = '';
-          },
-          validate: function () {
-            var email = this.form.email;
-            var phone = this.form.phone;
-            this.fieldErrors = { email: '', phone: '' };
-            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) this.fieldErrors.email = '请输入有效的电子邮箱地址。';
-            if (phone && !/^[0-9+()\s-]{6,30}$/.test(phone)) this.fieldErrors.phone = '联系电话只能包含数字、空格、加号、括号或连字符。';
-            return !this.fieldErrors.email && !this.fieldErrors.phone;
-          },
-          profilePayload: function () {
-            return {
-              email: this.form.email,
-              phone: this.form.phone,
-              avatar: this.form.avatar
-            };
-          },
-          saveProfile: function (successMessage) {
-            var vm = this;
-            if (vm.saving || vm.uploading || !vm.validate()) return $.Deferred().reject().promise();
-            vm.saving = true;
-            vm.message = '';
-            vm.messageType = '';
-            return $.ajax({
-              url: '/api/user/me/profile',
-              type: 'PUT',
-              contentType: 'application/json',
-              data: JSON.stringify(vm.profilePayload())
-            }).done(function (res) {
-              if (!res || res.code !== '0' || res.data !== true) {
-                vm.message = (res && res.msg) || '资料保存失败，请稍后重试。';
-                vm.messageType = 'error';
-                return;
+        AuthSession.bootstrap({
+          requireAuth: true,
+          allowCachedOnNetworkError: false,
+          onDone: function (ok, authenticatedUser) {
+            if (!ok || !authenticatedUser) return;
+            document.getElementById("authWait").hidden = true;
+            new Vue({
+              el: "#workspace",
+              data: {
+                user: authenticatedUser,
+                menuItems: AdminWorkspace.navigation(authenticatedUser.permission),
+                menuGroups: AdminWorkspace.navigationGroups(authenticatedUser.permission),
+                desktopNav: AdminWorkspace.desktopNavigation(authenticatedUser.permission),
+                currentNavFlag: "person",
+                moreOpen: false,
+                mobileOpen: false,
+                accountOpen: false,
+                saving: false,
+                uploading: false,
+                message: "",
+                messageType: "",
+                fieldErrors: { email: "", phone: "" },
+                form: {
+                  email: authenticatedUser.email || "",
+                  phone: authenticatedUser.phone || "",
+                  avatar: authenticatedUser.avatar || "",
+                },
+                stagedAvatarFlag: "",
+                imageFileName: "",
+              },
+              computed: {
+                dirty: function () {
+                  return (
+                    this.form.email !== (this.user.email || "") ||
+                    this.form.phone !== (this.user.phone || "") ||
+                    this.form.avatar !== (this.user.avatar || "")
+                  );
+                },
+                previewAvatarUrl: function () {
+                  return this.avatarUrl(this.form.avatar);
+                },
+              },
+              methods: {
+                toggleMore: function () {
+                  this.moreOpen = !this.moreOpen;
+                  this.accountOpen = false;
+                  this.mobileOpen = false;
+                },
+                toggleMobile: function () {
+                  this.mobileOpen = !this.mobileOpen;
+                  this.accountOpen = false;
+                  this.moreOpen = false;
+                },
+                toggleAccount: function () {
+                  this.accountOpen = !this.accountOpen;
+                  this.moreOpen = false;
+                  this.mobileOpen = false;
+                },
+                isNavActive: function (flag) {
+                  return AdminWorkspace.flagsMatch(flag, this.currentNavFlag);
+                },
+                isMoreCurrent: function () {
+                  var vm = this;
+                  var more = (this.desktopNav && this.desktopNav.more) || [];
+                  return more.some(function (item) {
+                    return AdminWorkspace.flagsMatch(item.flag, vm.currentNavFlag);
+                  });
+                },
+                isOverviewActive: function () {
+                  return !this.currentNavFlag;
+                },
+                avatarUrl: function (flag) {
+                  return AdminWorkspace.avatarUrl(flag);
+                },
+                avatarFallback: function (event) {
+                  AdminWorkspace.avatarFallback(event);
+                },
+                closeMenus: function () {
+                  this.mobileOpen = false;
+                  this.accountOpen = false;
+                  this.moreOpen = false;
+                },
+                logout: function () {
+                  AuthSession.logout();
+                },
+                isStagedFlag: function (flag) {
+                  var v = flag == null ? "" : String(flag);
+                  if (!v) return false;
+                  // Track by session set — real backend returns UUID flags, not stage-* names
+                  return !!sessionStagedFlags[v] || (this.stagedAvatarFlag && v === this.stagedAvatarFlag);
+                },
+                markSessionStaged: function (flag) {
+                  var v = flag == null ? "" : String(flag);
+                  if (v) sessionStagedFlags[v] = true;
+                },
+                retireStage: function (flag) {
+                  var v = flag == null ? "" : String(flag);
+                  if (!v || retiredStageFlags[v]) return;
+                  // only session-staged files may be deleted via staged DELETE (never bound avatars)
+                  if (!sessionStagedFlags[v]) return;
+                  retiredStageFlags[v] = true;
+                  delete sessionStagedFlags[v];
+                  $.ajax({
+                    url: "/api/files/staged/" + encodeURIComponent(v),
+                    type: "DELETE",
+                    headers: AuthSession.getUploadHeaders ? AuthSession.getUploadHeaders() : {},
+                  });
+                },
+                resetForm: function () {
+                  var vm = this;
+                  if (vm.saving || vm.uploading || writeLocks.save || writeLocks.upload) return;
+                  // E: revoke — delete current session staged avatar once
+                  if (vm.stagedAvatarFlag) {
+                    vm.retireStage(vm.stagedAvatarFlag);
+                    vm.stagedAvatarFlag = "";
+                  }
+                  vm.form = {
+                    email: vm.user.email || "",
+                    phone: vm.user.phone || "",
+                    avatar: vm.user.avatar || "",
+                  };
+                  vm.imageFileName = "";
+                  vm.fieldErrors = { email: "", phone: "" };
+                  vm.message = "";
+                  vm.messageType = "";
+                },
+                removeAvatar: function () {
+                  var vm = this;
+                  if (vm.saving || vm.uploading) return;
+                  // F: if current is staged, clean staged first
+                  if (vm.stagedAvatarFlag) {
+                    vm.retireStage(vm.stagedAvatarFlag);
+                    vm.stagedAvatarFlag = "";
+                  }
+                  // do NOT staged-DELETE bound server avatar
+                  vm.form.avatar = "";
+                  vm.imageFileName = "";
+                  vm.message = "";
+                  vm.messageType = "";
+                },
+                validate: function () {
+                  var email = this.form.email == null ? "" : String(this.form.email).trim();
+                  var phone = this.form.phone == null ? "" : String(this.form.phone).trim();
+                  this.fieldErrors = { email: "", phone: "" };
+                  if (email && email.length > 255) this.fieldErrors.email = "邮箱最长 255 字符。";
+                  else if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+                    this.fieldErrors.email = "请输入有效的电子邮箱地址。";
+                  if (phone && phone.length > 30) this.fieldErrors.phone = "电话最长 30 字符。";
+                  else if (phone && !/^[0-9+()\s-]{6,30}$/.test(phone))
+                    this.fieldErrors.phone = "联系电话只能包含数字、空格、加号、括号或连字符。";
+                  return !this.fieldErrors.email && !this.fieldErrors.phone;
+                },
+                focusFirstError: function () {
+                  var vm = this;
+                  this.$nextTick(function () {
+                    if (vm.fieldErrors.email && vm.$refs.emailField) {
+                      vm.$refs.emailField.focus();
+                      return;
+                    }
+                    if (vm.fieldErrors.phone && vm.$refs.phoneField) {
+                      vm.$refs.phoneField.focus();
+                      return;
+                    }
+                    var fb = document.getElementById("personFeedback");
+                    if (fb && fb.focus) fb.focus();
+                  });
+                },
+                profilePayload: function () {
+                  return {
+                    email: this.form.email,
+                    phone: this.form.phone,
+                    avatar: this.form.avatar
+                  };
+                },
+                // Upload first (staged), then explicit saveProfile — order matters for static contract checks.
+                onAvatarPicked: function (event) {
+                  var vm = this;
+                  var input = event.target;
+                  var file = input.files && input.files[0];
+                  if (!file || vm.uploading || vm.saving || writeLocks.upload || writeLocks.save) {
+                    if (input) input.value = '';
+                    return;
+                  }
+                  if (['image/jpeg', 'image/png', 'image/gif'].indexOf(file.type) < 0) {
+                    vm.message = '请选择 JPG、PNG 或 GIF 图片。';
+                    vm.messageType = 'error';
+                    input.value = '';
+                    return;
+                  }
+                  var displayName = file.name || '已选图片';
+                  vm.message = '';
+                  vm.messageType = '';
+                  writeLocks.upload = true;
+                  vm.uploading = true;
+                  var previousStaged = vm.stagedAvatarFlag;
+                  var previousAvatar = vm.form.avatar;
+                  var previousName = vm.imageFileName;
+                  var formData = new FormData();
+                  formData.append('file', file);
+                  AuthSession.appendUploadPurpose(formData, 'avatar');
+                  $.ajax({
+                    url: '/api/files/upload',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    headers: AuthSession.getUploadHeaders()
+                  })
+                    .done(function (res) {
+                      if (!res || res.code !== '0' || !res.data || !res.data.flag) {
+                        // B: new upload fail — keep old staged + preview
+                        vm.message = (res && res.msg) || '头像上传失败，请更换文件后重试。';
+                        vm.messageType = 'error';
+                        vm.form.avatar = previousAvatar;
+                        vm.imageFileName = previousName;
+                        return;
+                      }
+                      var uploadedFlag = res.data.flag;
+                      // A: set staged + form + preview; profile save is explicit (saveProfile)
+                      vm.markSessionStaged(uploadedFlag);
+                      // B: after success, retire previous staged once (before swapping stagedAvatarFlag)
+                      if (previousStaged && previousStaged !== uploadedFlag) {
+                        vm.retireStage(previousStaged);
+                      }
+                      vm.stagedAvatarFlag = uploadedFlag;
+                      vm.form.avatar = uploadedFlag;
+                      vm.imageFileName = displayName;
+                    })
+                    .fail(function (xhr) {
+                      var body = xhr && xhr.responseJSON;
+                      vm.message = (body && body.msg) || '头像上传失败，请检查文件类型和网络连接。';
+                      vm.messageType = 'error';
+                      vm.form.avatar = previousAvatar;
+                      vm.imageFileName = previousName;
+                    })
+                    .always(function () {
+                      vm.uploading = false;
+                      writeLocks.upload = false;
+                      if (input) input.value = '';
+                    });
+                },
+                saveProfile: function () {
+                  var vm = this;
+                  if (vm.saving || vm.uploading || writeLocks.save || writeLocks.upload) return;
+                  vm.message = '';
+                  vm.messageType = '';
+                  if (!vm.validate()) {
+                    vm.focusFirstError();
+                    return;
+                  }
+                  writeLocks.save = true;
+                  vm.saving = true;
+                  $.ajax({
+                    url: '/api/user/me/profile',
+                    type: 'PUT',
+                    contentType: 'application/json',
+                    data: JSON.stringify(vm.profilePayload())
+                  })
+                    .done(function (res) {
+                      if (!res || res.code !== '0' || res.data !== true) {
+                        // C: keep staged, form, preview
+                        vm.message = (res && res.msg) || '资料保存失败，请稍后重试。';
+                        vm.messageType = 'error';
+                        vm.focusFirstError();
+                        return;
+                      }
+                      // D: success — clear local staged only, no staged DELETE; flag is now server-bound
+                      var committed = vm.form.avatar == null ? '' : String(vm.form.avatar);
+                      if (committed && sessionStagedFlags[committed]) {
+                        delete sessionStagedFlags[committed];
+                      }
+                      vm.stagedAvatarFlag = '';
+                      vm.imageFileName = '';
+                      var next = Object.assign({}, vm.user, vm.profilePayload());
+                      vm.user = next;
+                      AuthSession.saveSession(vm.user, null, AuthSession.getCsrfToken());
+                      vm.message = '个人资料已保存。';
+                      vm.messageType = 'success';
+                    })
+                    .fail(function (xhr) {
+                      var body = xhr && xhr.responseJSON;
+                      vm.message = (body && body.msg) || '资料保存失败，请检查网络连接后重试。';
+                      vm.messageType = 'error';
+                      vm.focusFirstError();
+                    })
+                    .always(function () {
+                      vm.saving = false;
+                      writeLocks.save = false;
+                    });
+                }
               }
-              vm.user = Object.assign({}, vm.user, vm.profilePayload());
-              AuthSession.saveSession(vm.user, null, AuthSession.getCsrfToken());
-              vm.message = successMessage || '个人资料已保存。';
-              vm.messageType = 'success';
-            }).fail(function (xhr) {
-              var body = xhr && xhr.responseJSON;
-              vm.message = (body && body.msg) || '资料保存失败，请检查网络连接后重试。';
-              vm.messageType = 'error';
-            }).always(function () { vm.saving = false; });
-          },
-          uploadAvatar: function (event) {
-            var vm = this;
-            var input = event.target;
-            var file = input.files && input.files[0];
-            if (!file || vm.uploading || vm.saving) return;
-            if (['image/jpeg', 'image/png', 'image/gif'].indexOf(file.type) < 0) {
-              vm.message = '请选择 JPG、PNG 或 GIF 图片。';
-              vm.messageType = 'error';
-              input.value = '';
-              return;
-            }
-            vm.message = '';
-            vm.messageType = '';
-            vm.uploading = true;
-            var previousAvatar = vm.form.avatar;
-            var formData = new FormData();
-            formData.append('file', file);
-            AuthSession.appendUploadPurpose(formData, 'avatar');
-            $.ajax({
-              url: '/api/files/upload',
-              type: 'POST',
-              data: formData,
-              processData: false,
-              contentType: false,
-              headers: AuthSession.getUploadHeaders()
-            }).done(function (res) {
-              if (!res || res.code !== '0' || !res.data || !res.data.flag) {
-                vm.message = (res && res.msg) || '头像上传失败，请更换文件后重试。';
-                vm.messageType = 'error';
-                return;
-              }
-              var uploadedFlag = res.data.flag;
-              vm.form.avatar = uploadedFlag;
-              vm.uploading = false;
-              vm.saveProfile('头像和个人资料已保存。').always(function () {
-                if ((vm.user.avatar || '') !== uploadedFlag) vm.form.avatar = previousAvatar;
-              });
-            }).fail(function (xhr) {
-              var body = xhr && xhr.responseJSON;
-              vm.message = (body && body.msg) || '头像上传失败，请检查文件类型和网络连接。';
-              vm.messageType = 'error';
-            }).always(function () {
-              vm.uploading = false;
-              input.value = '';
             });
           }
-        }
-      });
-    }
-  });
-})();
-</script>
-</body>
+        });
+      })();
+    </script>
+  </body>
 </html>
