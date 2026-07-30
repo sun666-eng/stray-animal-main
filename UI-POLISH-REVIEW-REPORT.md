@@ -330,7 +330,8 @@
 | Phase 1B 全页推广 + 交互 | ✅ 已提交 `14c4bc5` |
 | Phase 1B 验收收尾 | ✅ 已完成 |
 | Phase 1C 按钮层级与本地图标 | ✅ **严格验收通过，待审核后提交** |
-| Phase 2 / 后续 | ⏸ 未开始（停止条件禁止进入） |
+| Phase 2A 运营中心工作台 | ✅ **实现完成，待审核后提交** |
+| Phase 2B / 后续 | ⏸ 未开始 |
 
 ---
 
@@ -403,3 +404,142 @@
 ---
 
 *报告生成/更新日：2026-07-29。后续阶段请在本文件末尾续写同级章节。*
+
+---
+
+# Phase 2A：统一运营中心信息架构与工作流界面
+
+**日期**: 2026-07-29
+**分支**: `ui-polish/phase-2a-operations-workspace-20260729`
+**基线**: Phase 1C `c38c04a`
+**独立报告**: `output/playwright/ui-polish-phase-2a/PHASE-2A-REPORT.md`
+**JSON**: `output/playwright/ui-polish-phase-2a/phase-2a-report.json`
+
+### 结论
+
+| 项 | 值 |
+|----|-----|
+| 完成 | **是**（严格 2a **159/0** + 1a/1b/1c/adversarial/mvn 全绿） |
+| 后端/API/DB/权限规则 | **未改** |
+| 1B 导航 / 1C 按钮体系 | **保留** |
+| 建议提交 | **是**（待 GPT 审核） |
+| 建议 Phase 2B | **否** |
+
+### 修改文件
+
+- `src/main/resources/static/page/end/operations.html` — 权限 tab、ARIA 键盘、指标筛选、三面板布局、状态/busy/409、`opSeq` 反馈生命周期
+- `src/main/resources/static/css/admin-workspace.css` — `.ops-*` 运营分诊台样式（自页面内联迁移）
+- `tools/ui-polish-phase-2a.cjs` — 严格 Playwright（反馈残留 / 真实 loading / console 审计）
+
+### 关键能力
+
+1. 权限感知标签：待办 / 义工(volunteer) / 医疗(animal)
+2. `role=tablist/tab/tabpanel` + Arrow/Home/End
+3. 待办指标与客户端筛选（不改 API）
+4. 卡片主次操作、busy、expectedVersion、409 冲突提示
+5. 义工列表+创建侧栏（移动折叠）；报名桌面表/移动卡片
+6. 医疗新增/查询双区；可见范围中文
+7. 7 视口无水平滚动
+8. 同标签 `opSeq` + 跨标签 `feedbackEpoch`；内部刷新 `preserveFeedback` 保留成功消息
+
+### 自动化终态（端口 10100）
+
+| 命令 | 结果 |
+|------|------|
+| ui-polish-phase-2a.cjs | **159/0** |
+| ui-polish-phase-1 / 1b / 1c | 全过（1c 134/0，矩阵 90） |
+| adversarial | **851/0** |
+| mvn test | 0 |
+| git diff --check | 0 |
+
+### 端口
+
+9999 未触碰；10100 测试后已停止。
+
+### 停止
+
+不提交、不推送、不进入 Phase 2B，等待审核。
+
+### Phase 2A 验收修复轮（严格）
+
+- 消除全部 best-effort PASS；tab 键盘固定序列；tom 必须 200；jerry/anon 页面+API 双拒绝
+- 跨标签 `feedbackEpoch`/`notifyFor` + 三竞态测试
+- 义工/医疗 API 全量路由拦截（创建/状态/报名/完成/上传/staged 清理）
+- 3×7=21 视口；报名 ≥768 表 / <768 卡
+- 历史：`ui-polish-phase-2a` 126/0（端口 10099）
+
+### 状态反馈与证据补强（2026-07-30）
+
+- 错误/刷新不再整块替换已有列表（banner + inline status）
+- 历史：严格测试 134/0，截图 30；日志 `run-strict-feedback.log`
+
+### 同标签反馈 + 真实 loading + 严格控制台（2026-07-30）
+
+**三问题**（前序）：
+
+1. **同标签旧反馈残留** — `opSeq` + `beginUserOp` / `beginLoad(preserveFeedback)` / `notifyFor(token)`
+2. **真实 loading 证据** — 截图 `08`/`08b`/`12a`/`12b`/`12c`；pre-fix 隔离
+3. **控制台** — 历史曾用宽泛 400/409/500 资源白名单（已在下轮废除）
+
+历史：`ui-polish-phase-2a` 159/0（端口 10100）
+
+### 错误白名单严格化（2026-07-30 终态）
+
+**仅改** `tools/ui-polish-phase-2a.cjs`（未改 operations.html / CSS / 后端）。
+
+| 规则 | 行为 |
+|------|------|
+| 故意错误标记 | `route.fulfill` 经 `expectedErrorFulfill` 写头 `x-ui-audit-expected-error: phase2a` |
+| `intentionalErrorResponses` | 仅带该头的 4xx/5xx（本轮 **12**） |
+| `unexpectedHttpErrors` | 其余 4xx/5xx → **必须 0**（不再因 `/api/operations/**` 放行） |
+| `expectedConsoleNoise` | Failed-to-load 按 HTTP 状态与 tagged **1:1**；超出 → real |
+| `realConsoleErrors` / `pageErrors` | 任一条失败 |
+| 静态图 404 | 仅非 API 历史图片规则 |
+| 分类器自检 | 未标记 500→unexpected；标记 409→expected；`UI_AUDIT_REAL_ERROR`→real；**7/0** |
+| 删除 | 恒真 `ignoredConsole.length >= 0` |
+
+**终态回归**：
+
+| 命令 | 退出码 / 结果 |
+|------|----------------|
+| `ui-polish-phase-2a` | **0** · **168/0**（>159） |
+| Phase 1C | **0** · 134/0 |
+| adversarial | **0** · 851/0 |
+| `mvn test` | **0** · **473/0** |
+| `git diff --check` | **0** |
+
+**端口**：请求 10101，因 Windows `excludedportrange 10016–10115` 无法绑定，实际 **10116**；结束后已停；**9999 未触碰**。
+
+权威：`output/playwright/ui-polish-phase-2a/run-strict-final.log` · `PHASE-2A-REPORT.md` · `phase-2a-report.json`
+
+**停止**：不提交、不推送、不进入 Phase 2B，等待 GPT 再审核。
+
+### CSS 缓存失效修复（2026-07-30 终态）
+
+**问题**：`admin-workspace.css` 新增 `.ops-*` 约 482 行，但 `operations.html` 仍引用 `?v=20260729c`；`/css/**` 7 天缓存会导致旧用户看不到 Phase 2A 样式。
+
+**修复**（仅 `operations.html`）：
+
+```
+admin-workspace.css?v=20260729c  →  admin-workspace.css?v=20260730a
+```
+
+- `product-ui.css` / `admin-auth.js` / 图标版本：**未改**
+- 其他 14 个管理页：**未改**（本轮 CSS 均为 `.ops-*` 专用）
+
+**严格断言**：HTML 必须 `v=20260730a`、不得 `v=20260729c`；浏览器 request + performance resource 必须出现新版本；找不到 = FAIL。
+
+**终态回归**（端口 **18082**，9999 未触碰）：
+
+| 命令 | 结果 |
+|------|------|
+| `ui-polish-phase-2a` | **173/0**（≥168；含 cache-bust 断言） |
+| Phase 1C | 134/0 |
+| adversarial | 851/0 |
+| `mvn test` | 473/0 |
+| `git diff --check` | 0 |
+| 错误分类器 | intentional/expected 精确核对；unexpected/real/pageerror = 0；classifier 7/0 |
+
+权威：`output/playwright/ui-polish-phase-2a/run-strict-final.log` · `PHASE-2A-REPORT.md`
+
+**停止**：不提交、不推送、不进入 Phase 2B，等待 GPT **最终放行**。
