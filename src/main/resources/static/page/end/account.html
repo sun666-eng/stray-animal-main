@@ -12,13 +12,13 @@
       href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>"
     />
     <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c" />
-    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260729c" />
+    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260730k" />
   </head>
   <body>
     <div id="authWait" class="admin-auth-wait" role="status">
       正在验证登录状态...
     </div>
-    <div id="workspace" :class="{'is-nav-open': mobileOpen}" class="admin-shell" v-cloak @keyup.esc="closeTopLayer" @click="closeMenus">
+    <div id="workspace" :class="{'is-nav-open': mobileOpen}" class="admin-shell account-governance" v-cloak @keyup.esc="closeTopLayer" @click="closeMenus">
       <header class="ui-header admin-header" @click.stop>
     <div class="ui-header-inner">
       <a class="ui-brand" href="/page/end/index.html" aria-label="返回管理工作台">
@@ -102,7 +102,7 @@
             <p class="admin-kicker">Signed amounts</p>
             <h1 id="accountTitle">资金公示</h1>
             <p>
-              每条记录只维护款项标签、经手人、带符号金额和用途详情。正数计入收入，负数计入支出，零值会被拒绝。
+              可信财务账簿：仅允许追加与冲正，不允许覆盖或物理删除。历史记录不可编辑。历史记录不可物理删除。正数表示收入，负数表示支出；零值会被拒绝。金额保留正负号与两位小数。
             </p>
           </div>
           <div class="admin-hero-meta">
@@ -155,20 +155,39 @@
               ><strong>{{ signed(stats.balance) }}</strong>
             </div>
           </div>
-        </section>
+
+          <div v-if="!statsLoading && !statsError" class="account-label-charts" aria-label="按标签汇总比例">
+            <div class="account-chart-col">
+              <h3>收入按标签</h3>
+              <div v-if="!(stats.incomeByLabel||[]).length" class="admin-status admin-status-compact">暂无收入标签</div>
+              <div v-for="row in (stats.incomeByLabel||[]).slice(0,8)" :key="'in-'+row.name" class="account-bar-row">
+                <span class="account-bar-label">{{ row.name || '未命名' }}</span>
+                <div class="account-bar-track is-income"><div class="account-bar-fill is-income" :style="{width: barPct(row.value, stats.incomeTotal)+'%'}"></div></div>
+                <strong class="admin-signed-value is-positive">{{ signed(row.value) }}</strong>
+              </div>
+            </div>
+            <div class="account-chart-col">
+              <h3>支出按标签</h3>
+              <div v-if="!(stats.expenseByLabel||[]).length" class="admin-status admin-status-compact">暂无支出标签</div>
+              <div v-for="row in (stats.expenseByLabel||[]).slice(0,8)" :key="'ex-'+row.name" class="account-bar-row">
+                <span class="account-bar-label">{{ row.name || '未命名' }}</span>
+                <div class="account-bar-track is-expense"><div class="account-bar-fill is-expense" :style="{width: barPct(row.value, stats.expenseTotalAbs)+'%'}"></div></div>
+                <strong class="admin-signed-value is-negative">{{ signedExpense(row.value) }}</strong>
+              </div>
+            </div>
+          </div>
+          <p class="account-retention-note" role="note">仅允许追加与冲正，不允许覆盖或物理删除。历史记录不可编辑。历史记录不可物理删除。冲正会新增等额反向记录，原记录保留。</p>
+</section>
         <section class="admin-section" aria-labelledby="accountListTitle">
           <div class="admin-section-head">
             <div>
               <h2 id="accountListTitle">资金记录</h2>
               <p>搜索可匹配标签、经手人或用途详情；每次只读取当前页。</p>
             </div>
-            <button
-              class="ui-button is-primary"
-              type="button"
-              @click="openCreate"
-            >
-              新增记录
-            </button>
+            <div class="account-gov-actions">
+              <button class="ui-button is-primary" type="button" ref="createBtn" @click="openCreate($event)">新增记录</button>
+              <button class="ui-button is-ghost" type="button" @click="exportRows">导出资金记录</button>
+            </div>
           </div>
           <form
             class="ui-toolbar admin-review-toolbar"
@@ -258,12 +277,12 @@
                     </td>
                     <td>
                       <div class="admin-row-actions">
-                        <button type="button" @click="openDetail(item)">
+                        <button type="button" @click="openDetail(item, $event)">
                           详情</button
                         ><button
                           class="is-primary"
                           type="button"
-                          @click="askReverse(item)"
+                          :disabled="isReversal(item)" @click="askReverse(item, $event)"
                         >
                           冲正
                         </button>
@@ -304,13 +323,13 @@
                   <button
                     class="ui-button is-ghost"
                     type="button"
-                    @click="openDetail(item)"
+                    @click="openDetail(item, $event)"
                   >
                     查看详情</button
                   ><button
                     class="ui-button is-dark"
                     type="button"
-                    @click="askReverse(item)"
+                    :disabled="isReversal(item)" @click="askReverse(item, $event)"
                   >
                     创建冲正
                   </button>
@@ -351,9 +370,7 @@
         </section>
       </main>
       <div
-        v-if="detailItem"
-        class="admin-dialog-backdrop"
-        @click.self="closeDetail"
+        v-if="detailItem" class="admin-dialog-backdrop" @click.self="onBackdropDetail"
       >
         <section
           class="admin-dialog admin-detail-dialog"
@@ -429,7 +446,7 @@
             ><button
               class="ui-button is-dark"
               type="button"
-              @click="askReverse(detailItem);closeDetail()"
+              :disabled="isReversal(detailItem)" @click="askReverse(detailItem, $event)"
             >
               创建冲正
             </button>
@@ -437,9 +454,7 @@
         </section>
       </div>
       <div
-        v-if="editOpen"
-        class="admin-dialog-backdrop"
-        @click.self="cancelEdit"
+        v-if="editOpen" class="admin-dialog-backdrop" @click.self="onBackdropEdit"
       >
         <section
           class="admin-dialog"
@@ -449,9 +464,9 @@
         >
           <div class="admin-dialog-head">
             <div>
-              <span>{{ form.id ? '记录 #'+form.id : '新记录' }}</span>
+              <span>追加式账簿</span>
               <h2 id="accountEditTitle">
-                {{ form.id ? '编辑资金记录' : '新增资金记录' }}
+                新增资金记录
               </h2>
             </div>
             <button
@@ -466,16 +481,13 @@
             </button>
           </div>
           <form class="admin-edit-form" @submit.prevent="save">
+            <div class="admin-dialog-body">
             <div class="ui-form-field">
               <label for="accountLabel">款项标签 <small>必填</small></label
               ><input
-                id="accountLabel"
-                ref="editFirst"
-                v-model.trim="form.alabel"
-                class="ui-form-input"
-                maxlength="100"
-                required
-              />
+                id="accountLabel" ref="editFirst" v-model.trim="form.alabel" class="ui-form-input" maxlength="100"
+                :aria-invalid="String(!!fieldErrors.alabel)" :aria-describedby="fieldErrors.alabel ? 'accountLabelErr' : null" />
+              <p v-if="fieldErrors.alabel" id="accountLabelErr" class="ui-field-error" role="alert">{{ fieldErrors.alabel }}</p>
             </div>
             <div class="ui-form-field">
               <label for="accountHandler">经手人</label
@@ -493,14 +505,9 @@
             <div class="ui-form-field">
               <label for="accountValue">带符号金额 <small>必填</small></label
               ><input
-                id="accountValue"
-                v-model="form.avalue"
-                class="ui-form-input"
-                type="text"
-                inputmode="decimal"
-                pattern="^-?[0-9]+(\.[0-9]{1,2})?$"
-                required
-              />
+                id="accountValue" v-model="form.avalue" class="ui-form-input" type="text" inputmode="decimal"
+                :aria-invalid="String(!!fieldErrors.avalue)" :aria-describedby="fieldErrors.avalue ? 'accountValueErr' : null" />
+              <p v-if="fieldErrors.avalue" id="accountValueErr" class="ui-field-error" role="alert">{{ fieldErrors.avalue }}</p>
               <p class="ui-field-hint">
                 正数表示收入，负数表示支出；零值会被拒绝。金额以十进制字符串提交，系统不推断币种。
               </p>
@@ -508,10 +515,8 @@
             <div class="ui-form-field">
               <label for="accountCategory">资金分类</label>
               <select
-                id="accountCategory"
-                v-model="form.category"
-                class="ui-form-input"
-              >
+                id="accountCategory" v-model="form.category" class="ui-form-input"
+                :aria-invalid="String(!!fieldErrors.category)" :aria-describedby="fieldErrors.category ? 'accountCategoryErr' : null">
                 <option value="donation">捐赠收入</option>
                 <option value="medical">医疗</option>
                 <option value="food">食物物资</option>
@@ -520,23 +525,20 @@
                 <option value="operations">运营</option>
                 <option value="other">其他</option>
               </select>
+              <p v-if="fieldErrors.category" id="accountCategoryErr" class="ui-field-error" role="alert">{{ fieldErrors.category }}</p>
             </div>
             <div class="ui-form-field">
               <label for="accountOccurred">发生时间</label
               ><input
-                id="accountOccurred"
-                v-model="form.occurredAt"
-                class="ui-form-input"
-                type="datetime-local"
-              />
+                id="accountOccurred" v-model="form.occurredAt" class="ui-form-input" type="datetime-local"
+                :aria-invalid="String(!!fieldErrors.occurredAt)" :aria-describedby="fieldErrors.occurredAt ? 'accountOccurredErr' : null" />
+              <p v-if="fieldErrors.occurredAt" id="accountOccurredErr" class="ui-field-error" role="alert">{{ fieldErrors.occurredAt }}</p>
             </div>
             <div class="ui-form-field">
               <label for="accountBusinessType">关联业务</label
               ><select
-                id="accountBusinessType"
-                v-model="form.businessType"
-                class="ui-form-input"
-              >
+                id="accountBusinessType" v-model="form.businessType" class="ui-form-input"
+                :aria-invalid="String(!!fieldErrors.business)" :aria-describedby="fieldErrors.business ? 'accountBusinessErr' : null">
                 <option value="">不关联</option>
                 <option value="animal">动物档案</option>
                 <option value="rescue">救助事件</option>
@@ -549,36 +551,36 @@
             <div class="ui-form-field">
               <label for="accountBusinessId">业务编号</label
               ><input
-                id="accountBusinessId"
-                v-model.trim="form.businessId"
-                class="ui-form-input"
-                maxlength="96"
-                :required="!!form.businessType"
-              />
+                id="accountBusinessId" v-model.trim="form.businessId" class="ui-form-input" maxlength="96"
+                :aria-invalid="String(!!fieldErrors.business)" :aria-describedby="fieldErrors.business ? 'accountBusinessErr' : null" />
+              <p v-if="fieldErrors.business" id="accountBusinessErr" class="ui-field-error" role="alert">{{ fieldErrors.business }}</p>
             </div>
-            <div class="ui-form-field">
-              <label for="accountReceipt"
-                >票据或凭证附件 <small>选填</small></label
-              ><input
-                id="accountReceipt"
-                class="ui-form-input"
-                type="file"
-                accept="image/jpeg,image/png,image/gif,application/pdf"
-                @change="receiptFile=$event.target.files[0]||null"
-              />
-              <p class="ui-field-hint">
-                附件按资金记录私有保存，仅有资金管理权限的管理员可读取。
-              </p>
+            <div class="ui-form-field account-file-field">
+              <span class="account-file-caption">票据或凭证附件 <small>选填 · 上传后需点保存</small></span>
+              <div class="account-file-picker">
+                <input
+                  id="accountReceipt"
+                  class="account-file-input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,application/pdf"
+                  :disabled="saving"
+                  aria-label="选择票据文件"
+                  @change="onReceiptPicked"
+                />
+                <label for="accountReceipt" class="account-file-label" :class="{'is-disabled': saving}">
+                  <span class="account-file-action">{{ receiptUploading ? '正在上传…（可改选）' : '选择票据' }}</span>
+                  <span class="account-file-name">{{ receiptFileName || (stagedReceiptFlag ? '暂存已就绪' : '未选择 · JPG/PNG/GIF/PDF') }}</span>
+                </label>
+              </div>
+              <button v-if="stagedReceiptFlag || receiptFileName" class="ui-button is-ghost" type="button" :disabled="saving || receiptUploading" @click="removeReceipt">移除票据</button>
+              <p class="ui-field-hint">附件按资金记录私有保存；上传不等于保存账簿记录。</p>
             </div>
             <div class="ui-form-field">
               <label for="accountDescription">用途详情</label
               ><textarea
-                id="accountDescription"
-                v-model.trim="form.adescribe"
-                class="ui-form-textarea"
-                maxlength="355"
-                rows="5"
-              ></textarea>
+                id="accountDescription" v-model.trim="form.adescribe" class="ui-form-textarea" maxlength="355" rows="5"
+                :aria-invalid="String(!!fieldErrors.adescribe)" :aria-describedby="fieldErrors.adescribe ? 'accountDescriptionErr' : null"></textarea>
+              <p v-if="fieldErrors.adescribe" id="accountDescriptionErr" class="ui-field-error" role="alert">{{ fieldErrors.adescribe }}</p>
             </div>
             <div
               v-if="editError"
@@ -586,6 +588,7 @@
               role="alert"
             >
               {{ editError }}
+            </div>
             </div>
             <div class="admin-dialog-actions">
               <button
@@ -598,65 +601,44 @@
               ><button
                 class="ui-button is-primary"
                 type="submit"
-                :disabled="saving||!form.alabel||form.avalue===''"
+                :disabled="saving || receiptUploading" :aria-busy="(saving||receiptUploading)?'true':'false'"
               >
-                {{ saving ? '正在保存...' : '保存资金记录' }}
+                {{ receiptUploading ? '正在上传票据...' : saving ? '正在保存...' : '保存资金记录' }}
               </button>
             </div>
           </form>
         </section>
       </div>
-      <div
-        v-if="deleteItem"
-        class="admin-dialog-backdrop"
-        @click.self="cancelDelete"
-      >
-        <section
-          class="admin-dialog"
-          role="alertdialog"
-          aria-modal="true"
-          aria-labelledby="accountDeleteTitle"
-        >
+
+
+      <div v-if="reverseItem" class="admin-dialog-backdrop" @click.self="onBackdropReverse">
+        <section class="admin-dialog account-reverse-dialog" role="dialog" aria-modal="true" aria-labelledby="accountReverseTitle">
           <div class="admin-dialog-head">
-            <div>
-              <span>将影响全量汇总</span>
-              <h2 id="accountDeleteTitle">
-                删除资金记录 #{{ deleteItem.id }}？
-              </h2>
-            </div>
+            <div><span>追加反向记录</span><h2 id="accountReverseTitle">冲正资金记录 #{{ reverseItem.id }}</h2></div>
+            <button class="admin-dialog-close" type="button" :disabled="reversing" @click="cancelReverse" aria-label="关闭冲正">关闭</button>
           </div>
-          <p class="admin-dialog-copy">
-            将删除“{{ deleteItem.alabel || '未填写标签' }}”的 {{
-            signed(deleteItem.avalue) }}
-            记录。删除后全量收入、支出和结余会重新聚合。
-          </p>
-          <div
-            v-if="deleteError"
-            class="admin-inline-message is-error"
-            role="alert"
-          >
-            {{ deleteError }}
+          <p class="admin-dialog-copy">不会删除或修改原记录。系统将追加一条等额反向记录。</p>
+          <dl class="account-reverse-meta">
+            <div><dt>原标签</dt><dd>{{ reverseItem.alabel || '-' }}</dd></div>
+            <div><dt>原金额</dt><dd><strong :class="amountClass(reverseItem.avalue)">{{ signed(reverseItem.avalue) }}</strong></dd></div>
+            <div><dt>将生成反向金额</dt><dd><strong :class="amountClass(reverseAmount)">{{ signed(reverseAmount) }}</strong></dd></div>
+            <div><dt>关联业务</dt><dd>{{ businessText(reverseItem) }}</dd></div>
+          </dl>
+          <div class="ui-form-field">
+            <label for="accountReverseReason">冲正原因</label>
+            <textarea id="accountReverseReason" ref="reverseFirst" v-model.trim="reverseReason" class="ui-form-textarea" maxlength="355" rows="3" :disabled="reversing"></textarea>
+            <small>{{ (reverseReason||'').length }}/355</small>
           </div>
+          <div v-if="reverseError" id="accountReverseError" class="admin-inline-message is-error" role="alert" tabindex="-1">{{ reverseError }}</div>
           <div class="admin-dialog-actions">
-            <button
-              class="ui-button is-ghost"
-              type="button"
-              :disabled="deleting"
-              @click="cancelDelete"
-            >
-              取消</button
-            ><button
-              class="ui-button is-danger-solid"
-              type="button"
-              :disabled="deleting"
-              @click="confirmDelete"
-            >
-              {{ deleting ? '正在删除...' : '确认删除' }}
-            </button>
+            <button class="ui-button is-ghost" type="button" :disabled="reversing" @click="cancelReverse">取消</button>
+            <button class="ui-button is-primary" type="button" :disabled="reversing" @click="confirmReverse">{{ reversing ? '正在冲正...' : '确认冲正' }}</button>
           </div>
         </section>
       </div>
+
     </div>
+
     <script src="../../js/jquery.min.js"></script>
     <script src="../../js/auth-session.js?v=20260728"></script>
     <script src="../../js/admin-auth.js?v=20260729c"></script>
@@ -665,6 +647,64 @@
     <script>
       (function () {
         "use strict";
+        window.__accountWriteLocks = { save: false, reverse: false, upload: false };
+        window.__accountRetiredStages = Object.create(null);
+        function createFocusTrap() {
+          var state = { root: null, onKey: null, prevOverflow: "", onEscape: null };
+          function focusable(root) {
+            return Array.prototype.slice
+              .call(root.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'))
+              .filter(function (el) {
+                return !el.disabled && (el.offsetParent !== null || el === document.activeElement || el.getClientRects().length);
+              });
+          }
+          return {
+            activate: function (root, initial, onEscape) {
+              this.deactivate();
+              if (!root) return;
+              state.root = root;
+              state.onEscape = typeof onEscape === "function" ? onEscape : null;
+              state.prevOverflow = document.body.style.overflow;
+              document.body.style.overflow = "hidden";
+              if (!root.hasAttribute("tabindex")) root.setAttribute("tabindex", "-1");
+              state.onKey = function (e) {
+                if (!state.root) return;
+                if (e.key === "Escape" || e.keyCode === 27) {
+                  if (state.onEscape) { e.preventDefault(); e.stopPropagation(); state.onEscape(); }
+                  return;
+                }
+                if (e.key !== "Tab") return;
+                var list = focusable(state.root);
+                if (!list.length) { e.preventDefault(); state.root.focus(); return; }
+                var first = list[0], last = list[list.length - 1], active = document.activeElement;
+                if (e.shiftKey) {
+                  if (active === first || !state.root.contains(active)) { e.preventDefault(); last.focus(); }
+                } else if (active === last || !state.root.contains(active)) {
+                  e.preventDefault(); first.focus();
+                }
+              };
+              document.addEventListener("keydown", state.onKey, true);
+              setTimeout(function () {
+                var target = initial;
+                if (!target || !state.root.contains(target) || target.disabled) {
+                  var list = focusable(state.root);
+                  target = list[0] || state.root;
+                }
+                if (target && target.focus) target.focus();
+              }, 0);
+            },
+            deactivate: function () {
+              if (state.onKey) {
+                document.removeEventListener("keydown", state.onKey, true);
+                state.onKey = null;
+              }
+              state.onEscape = null;
+              document.body.style.overflow = state.prevOverflow || "";
+              state.root = null;
+            },
+            root: function () { return state.root; }
+          };
+        }
         AuthSession.bootstrap({
           requireAuth: true,
           allowCachedOnNetworkError: false,
@@ -675,264 +715,168 @@
               return;
             }
             document.getElementById("authWait").hidden = true;
+            var focusTrap = createFocusTrap();
             new Vue({
               el: "#workspace",
               data: {
                 user: authenticatedUser,
-                menuItems: AdminWorkspace.navigation(
-                  authenticatedUser.permission,
-                ),
-          menuGroups: AdminWorkspace.navigationGroups(
-                  authenticatedUser.permission,
-                ),
-          desktopNav: AdminWorkspace.desktopNavigation(
-                  authenticatedUser.permission,
-                ),
-          currentNavFlag: 'account',
-          moreOpen: false,
-                mobileOpen: false,
-                accountOpen: false,
-                search: "",
-                records: [],
-                loading: true,
-                loadError: "",
-                message: "",
-                messageType: "",
-                pageNum: 1,
-                pageSize: 12,
-                total: 0,
-                totalPages: 1,
-                statsLoading: true,
-                statsError: "",
-                stats: {
-                  incomeTotal: "0.00",
-                  expenseTotal: "0.00",
-                  balance: "0.00",
-                },
-                detailItem: null,
-                editOpen: false,
-                form: {},
-                saving: false,
-                receiptFile: null,
-                stagedReceiptFlag: "",
-                editError: "",
-                deleteItem: null,
-                deleting: false,
-                deleteError: "",
+                menuItems: AdminWorkspace.navigation(authenticatedUser.permission),
+                menuGroups: AdminWorkspace.navigationGroups(authenticatedUser.permission),
+                desktopNav: AdminWorkspace.desktopNavigation(authenticatedUser.permission),
+                currentNavFlag: "account",
+                moreOpen: false, mobileOpen: false, accountOpen: false,
+                search: "", records: [], loading: true, loadError: "", loadSeq: 0,
+                message: "", messageType: "",
+                pageNum: 1, pageSize: 12, total: 0, totalPages: 1,
+                statsLoading: true, statsError: "", statsSeq: 0,
+                stats: { incomeTotal: "0.00", expenseTotal: "0.00", expenseTotalAbs: "0.00", balance: "0.00", incomeByLabel: [], expenseByLabel: [] },
+                detailItem: null, editOpen: false, form: {}, fieldErrors: {},
+                saving: false, receiptFileName: "", stagedReceiptFlag: "",
+                receiptUploadSeq: 0, receiptUploading: false, dialogToken: 0,
+                editError: "", reverseItem: null, reverseReason: "", reverseError: "", reversing: false,
+                returnFocusStack: []
               },
               computed: {
                 pages: function () {
-                  var result = [];
-                  var start = Math.max(1, this.pageNum - 2);
-                  var end = Math.min(this.totalPages, start + 4);
+                  var result = [], start = Math.max(1, this.pageNum - 2), end = Math.min(this.totalPages, start + 4);
                   start = Math.max(1, end - 4);
-                  for (var page = start; page <= end; page += 1)
-                    result.push(page);
+                  for (var p = start; p <= end; p += 1) result.push(p);
                   return result;
                 },
+                reverseAmount: function () {
+                  if (!this.reverseItem) return "";
+                  var raw = String(this.reverseItem.avalue == null ? "" : this.reverseItem.avalue).trim();
+                  var s = DecimalMoney.sign(raw);
+                  if (s === null) return "";
+                  if (s === 0) return "0.00";
+                  if (s > 0) return "-" + raw.replace(/^\+/, "");
+                  return raw.replace(/^-/, "");
+                }
               },
               created: function () {
-                this.load(1);
-                this.loadStats();
+                var vm = this;
+                this._onDocEsc = function (e) {
+                  if (e.key !== "Escape" && e.keyCode !== 27) return;
+                  if (focusTrap.root()) return;
+                  var L = window.__accountWriteLocks || {};
+                  if (vm.saving || vm.reversing || vm.receiptUploading || L.save || L.reverse || L.upload) {
+                    e.preventDefault(); e.stopPropagation(); return;
+                  }
+                  if (vm.reverseItem || vm.editOpen || vm.detailItem) {
+                    e.preventDefault(); e.stopPropagation(); vm.closeTopLayer();
+                  }
+                };
+                document.addEventListener("keydown", this._onDocEsc, true);
+                this.load(1); this.loadStats();
               },
-              methods: {
-          closeMenus: function () { this.mobileOpen = false; this.accountOpen = false; this.moreOpen = false; },
-          toggleMore: function () { this.moreOpen = !this.moreOpen; this.accountOpen = false; this.mobileOpen = false; },
-          toggleMobile: function () { this.mobileOpen = !this.mobileOpen; this.accountOpen = false; this.moreOpen = false; },
-          toggleAccount: function () { this.accountOpen = !this.accountOpen; this.moreOpen = false; this.mobileOpen = false; },
-          isNavActive: function (flag) { return AdminWorkspace.flagsMatch(flag, this.currentNavFlag); },
-          isMoreCurrent: function () { var vm = this; var more = (this.desktopNav && this.desktopNav.more) || []; return more.some(function (item) { return AdminWorkspace.flagsMatch(item.flag, vm.currentNavFlag); }); },
-          isOverviewActive: function () { return !this.currentNavFlag; },
-
-                avatarUrl: function (flag) {
-                  return AdminWorkspace.avatarUrl(flag);
+              beforeDestroy: function () {
+                if (this._onDocEsc) document.removeEventListener("keydown", this._onDocEsc, true);
+                focusTrap.deactivate();
+              },
+              watch: {
+                editOpen: function (open) {
+                  var vm = this;
+                  if (open) {
+                    this.$nextTick(function () {
+                      var root = document.querySelector('[role="dialog"][aria-labelledby="accountEditTitle"]');
+                      focusTrap.activate(root, vm.$refs.editFirst || document.getElementById("accountLabel"), function () {
+                        if (vm.saving || vm.receiptUploading) return;
+                        vm.cancelEdit();
+                      });
+                    });
+                  } else if (!this.reverseItem && !this.detailItem) focusTrap.deactivate();
                 },
-                avatarFallback: function (event) {
-                  AdminWorkspace.avatarFallback(event);
-                },
-                logout: function () {
-                  AuthSession.logout();
-                },
-                closeTopLayer: function () { if (this.closeMenus) this.closeMenus();
-                  if (this.deleteItem) this.cancelDelete();
-                  else if (this.editOpen) this.cancelEdit();
-                  else if (this.detailItem) this.closeDetail();
-                  else {
-                    this.mobileOpen = false;
-                    this.accountOpen = false;
+                reverseItem: function (v) {
+                  var vm = this;
+                  if (v) {
+                    this.$nextTick(function () {
+                      var root = document.querySelector('[role="dialog"][aria-labelledby="accountReverseTitle"]');
+                      focusTrap.activate(root, vm.$refs.reverseFirst || document.getElementById("accountReverseReason"), function () {
+                        if (vm.reversing) return;
+                        vm.cancelReverse();
+                      });
+                    });
+                  } else if (!this.editOpen && !this.detailItem) focusTrap.deactivate();
+                  else if (this.detailItem) {
+                    this.$nextTick(function () {
+                      var root = document.querySelector('[role="dialog"][aria-labelledby="accountDetailTitle"]');
+                      focusTrap.activate(root, root && root.querySelector("button"), function () { vm.closeDetail(); });
+                    });
                   }
                 },
-                signed: function (value) {
-                  return DecimalMoney.format(value, {
-                    signed: true,
-                    currency: false,
+                detailItem: function (v) {
+                  var vm = this;
+                  if (v && !this.editOpen && !this.reverseItem) {
+                    this.$nextTick(function () {
+                      var root = document.querySelector('[role="dialog"][aria-labelledby="accountDetailTitle"]');
+                      focusTrap.activate(root, root && root.querySelector("button"), function () { vm.closeDetail(); });
+                    });
+                  } else if (!v && !this.editOpen && !this.reverseItem) focusTrap.deactivate();
+                }
+              },
+              methods: {
+                closeMenus: function () { this.mobileOpen = false; this.accountOpen = false; this.moreOpen = false; },
+                toggleMore: function () { this.moreOpen = !this.moreOpen; this.accountOpen = false; this.mobileOpen = false; },
+                toggleMobile: function () { this.mobileOpen = !this.mobileOpen; this.accountOpen = false; this.moreOpen = false; },
+                toggleAccount: function () { this.accountOpen = !this.accountOpen; this.moreOpen = false; this.mobileOpen = false; },
+                isNavActive: function (flag) { return AdminWorkspace.flagsMatch(flag, this.currentNavFlag); },
+                isMoreCurrent: function () {
+                  var vm = this, more = (this.desktopNav && this.desktopNav.more) || [];
+                  return more.some(function (item) { return AdminWorkspace.flagsMatch(item.flag, vm.currentNavFlag); });
+                },
+                isOverviewActive: function () { return !this.currentNavFlag; },
+                avatarUrl: function (flag) { return AdminWorkspace.avatarUrl(flag); },
+                avatarFallback: function (event) { AdminWorkspace.avatarFallback(event); },
+                logout: function () { AuthSession.logout(); },
+                pushReturnFocus: function (evt) {
+                  var t = evt && evt.currentTarget;
+                  if (t) this.returnFocusStack.push(t);
+                },
+                restoreReturnFocus: function () {
+                  var t = null;
+                  while (this.returnFocusStack.length) {
+                    t = this.returnFocusStack.pop();
+                    if (t && t.isConnected) break;
+                    t = null;
+                  }
+                  this.$nextTick(function () {
+                    if (t && t.focus) try { t.focus(); } catch (e) {}
                   });
+                },
+                busyWrite: function () {
+                  var L = window.__accountWriteLocks || {};
+                  return !!(this.saving || this.reversing || this.receiptUploading || L.save || L.reverse || L.upload);
+                },
+                closeTopLayer: function () {
+                  if (this.busyWrite()) return;
+                  this.closeMenus();
+                  if (this.reverseItem) this.cancelReverse();
+                  else if (this.editOpen) this.cancelEdit();
+                  else if (this.detailItem) this.closeDetail();
+                },
+                onBackdropEdit: function () { if (!this.busyWrite()) this.cancelEdit(); },
+                onBackdropReverse: function () { if (!this.busyWrite()) this.cancelReverse(); },
+                onBackdropDetail: function () { if (!this.busyWrite()) this.closeDetail(); },
+                signed: function (value) { return DecimalMoney.format(value, { signed: true, currency: false }); },
+                signedExpense: function (value) {
+                  var s = DecimalMoney.format(value, { signed: true, currency: false });
+                  if (s && s !== "-" && s.charAt(0) !== "-") return "-" + s.replace(/^\+/, "");
+                  return s;
                 },
                 amountMeaning: function (value) {
                   var sign = DecimalMoney.sign(value);
-                  return sign === 1
-                    ? "正数：计入收入"
-                    : sign === -1
-                      ? "负数：计入支出"
-                      : "零：不改变结余";
+                  return sign === 1 ? "正数：计入收入" : sign === -1 ? "负数：计入支出" : "零：不改变结余";
                 },
                 amountClass: function (value) {
                   var sign = DecimalMoney.sign(value);
-                  return sign === 1
-                    ? "is-positive"
-                    : sign === -1
-                      ? "is-negative"
-                      : "is-zero";
+                  return sign === 1 ? "is-positive" : sign === -1 ? "is-negative" : "is-zero";
                 },
-                loadStats: function () {
-                  var vm = this;
-                  vm.statsLoading = true;
-                  vm.statsError = "";
-                  $.ajax({
-                    url: "/api/account/stats/by-label",
-                    type: "GET",
-                    cache: false,
-                  })
-                    .done(function (res) {
-                      if (!res || res.code !== "0" || !res.data) {
-                        vm.statsError =
-                          (res && res.msg) || "全量汇总返回格式无效。";
-                        return;
-                      }
-                      vm.stats = {
-                        incomeTotal: String(res.data.incomeTotal || "0.00"),
-                        expenseTotal: String(res.data.expenseTotal || "0.00"),
-                        balance: String(res.data.balance || "0.00"),
-                      };
-                    })
-                    .fail(function (xhr) {
-                      vm.statsError =
-                        (xhr.responseJSON && xhr.responseJSON.msg) ||
-                        "全量汇总暂时无法读取。";
-                    })
-                    .always(function () {
-                      vm.statsLoading = false;
-                    });
-                },
-                load: function (page) {
-                  var vm = this;
-                  vm.loading = true;
-                  vm.loadError = "";
-                  $.ajax({
-                    url: "/api/account/page",
-                    type: "GET",
-                    data: {
-                      name: vm.search,
-                      pageNum: page,
-                      pageSize: vm.pageSize,
-                    },
-                    cache: false,
-                  })
-                    .done(function (res) {
-                      if (
-                        !res ||
-                        res.code !== "0" ||
-                        !res.data ||
-                        !Array.isArray(res.data.records)
-                      ) {
-                        vm.loadError =
-                          (res && res.msg) || "服务返回了无法识别的数据。";
-                        return;
-                      }
-                      vm.records = res.data.records;
-                      vm.pageNum = Number(res.data.current || page);
-                      vm.total = Number(res.data.total || 0);
-                      vm.totalPages = Math.max(
-                        1,
-                        Number(
-                          res.data.pages ||
-                            Math.ceil(vm.total / vm.pageSize) ||
-                            1,
-                        ),
-                      );
-                    })
-                    .fail(function (xhr) {
-                      vm.loadError =
-                        (xhr.responseJSON && xhr.responseJSON.msg) ||
-                        "请检查网络连接后重试。";
-                    })
-                    .always(function () {
-                      vm.loading = false;
-                    });
-                },
-                resetSearch: function () {
-                  this.search = "";
-                  this.load(1);
-                },
-                openDetail: function (item) {
-                  this.detailItem = item;
-                  this.$nextTick(function () {
-                    if (this.$refs.detailClose) this.$refs.detailClose.focus();
-                  });
-                },
-                closeDetail: function () {
-                  this.detailItem = null;
-                },
-                editFromDetail: function () {
-                  var item = this.detailItem;
-                  this.closeDetail();
-                  this.openEdit(item);
-                },
-                openCreate: function () {
-                  this.form = {
-                    id: null,
-                    alabel: "",
-                    auname: "",
-                    avalue: "",
-                    adescribe: "",
-                    category: "other",
-                    occurredAt: "",
-                    businessType: "",
-                    businessId: "",
-                  };
-                  this.editError = "";
-                  this.receiptFile = null;
-                  this.editOpen = true;
-                  this.focusEdit();
-                },
-                openEdit: function (item) {
-                  this.messageType = "error";
-                  this.message = "资金公示仅允许追加，历史记录不可编辑。";
-                },
-                focusEdit: function () {
-                  this.$nextTick(function () {
-                    if (this.$refs.editFirst) this.$refs.editFirst.focus();
-                  });
-                },
-                cancelEdit: function () {
-                  if (this.saving) return;
-                  this.editOpen = false;
-                  this.editError = "";
-                },
-                accountPayload: function (receiptFlag) {
-                  var payload = {
-                    alabel: this.form.alabel,
-                    avalue: String(this.form.avalue),
-                    adescribe: this.form.adescribe,
-                    category: this.form.category,
-                    occurredAt: this.form.occurredAt
-                      ? this.form.occurredAt.replace("T", " ") + ":00"
-                      : null,
-                    businessType: this.form.businessType || null,
-                    businessId: this.form.businessType
-                      ? this.form.businessId
-                      : null,
-                    receiptFlag: receiptFlag || null,
-                  };
-                  return payload;
-                },
-                receiptFlag: function (item) {
-                  return item && (item.receiptFlag || item.receipt_flag) || "";
-                },
+                barPct: function (value, max) { return DecimalMoney.percent(value, max); },
+                isReversal: function (item) { return !!(item && (item.reversalOf != null || item.reversal_of != null)); },
+                exportRows: function () { location.assign("/api/account/export"); },
+                receiptFlag: function (item) { return (item && (item.receiptFlag || item.receipt_flag)) || ""; },
                 fileUrl: function (flag) {
-                  return /^[a-zA-Z0-9-]{1,64}$/.test(String(flag || ""))
-                    ? "/api/files/" + encodeURIComponent(flag)
-                    : "";
+                  return /^[a-zA-Z0-9-]{1,64}$/.test(String(flag || "")) ? "/api/files/" + encodeURIComponent(flag) : "";
                 },
                 businessText: function (item) {
                   if (!item) return "未关联";
@@ -941,166 +885,342 @@
                   if (!type || !id) return "未关联";
                   return type + " #" + id;
                 },
-                retireStagedReceipt: function () {
-                  var flag = this.stagedReceiptFlag;
+                retireStageFlag: function (flag) {
+                  var v = flag == null ? "" : String(flag);
+                  if (!/^[a-zA-Z0-9-]{1,64}$/.test(v)) return;
+                  if (window.__accountRetiredStages[v]) return;
+                  window.__accountRetiredStages[v] = true;
+                  $.ajax({
+                    url: "/api/files/staged/" + encodeURIComponent(v),
+                    type: "DELETE",
+                    headers: AuthSession.getUploadHeaders ? AuthSession.getUploadHeaders() : {}
+                  });
+                },
+                loadStats: function () {
+                  var vm = this, seq = ++vm.statsSeq;
+                  vm.statsLoading = true; vm.statsError = "";
+                  $.ajax({ url: "/api/account/stats/by-label", type: "GET", cache: false })
+                    .done(function (res) {
+                      if (seq !== vm.statsSeq) return;
+                      if (!res || res.code !== "0" || !res.data) {
+                        vm.statsError = (res && res.msg) || "全量汇总返回格式无效。";
+                        vm.stats = { incomeTotal: "0.00", expenseTotal: "0.00", expenseTotalAbs: "0.00", balance: "0.00", incomeByLabel: [], expenseByLabel: [] };
+                        return;
+                      }
+                      var exp = String(res.data.expenseTotal || "0.00");
+                      vm.stats = {
+                        incomeTotal: String(res.data.incomeTotal || "0.00"),
+                        expenseTotal: exp,
+                        expenseTotalAbs: exp.replace(/^-/, "") || "0.00",
+                        balance: String(res.data.balance || "0.00"),
+                        incomeByLabel: Array.isArray(res.data.incomeByLabel) ? res.data.incomeByLabel : [],
+                        expenseByLabel: Array.isArray(res.data.expenseByLabel) ? res.data.expenseByLabel : []
+                      };
+                    })
+                    .fail(function (xhr) {
+                      if (seq !== vm.statsSeq) return;
+                      vm.statsError = (xhr.responseJSON && xhr.responseJSON.msg) || "全量汇总暂时无法读取。";
+                      vm.stats = { incomeTotal: "0.00", expenseTotal: "0.00", expenseTotalAbs: "0.00", balance: "0.00", incomeByLabel: [], expenseByLabel: [] };
+                    })
+                    .always(function () { if (seq === vm.statsSeq) vm.statsLoading = false; });
+                },
+                load: function (page, preserveFeedback) {
+                  var vm = this, seq = ++vm.loadSeq;
+                  if (!preserveFeedback) { vm.message = ""; vm.messageType = ""; }
+                  vm.loading = true; vm.loadError = "";
+                  $.ajax({
+                    url: "/api/account/page", type: "GET",
+                    data: { name: vm.search, pageNum: page, pageSize: vm.pageSize }, cache: false
+                  })
+                    .done(function (res) {
+                      if (seq !== vm.loadSeq) return;
+                      if (!res || res.code !== "0" || !res.data || !Array.isArray(res.data.records)) {
+                        vm.loadError = (res && res.msg) || "服务返回了无法识别的数据。";
+                        vm.records = []; vm.total = 0; vm.totalPages = 1;
+                        return;
+                      }
+                      vm.records = res.data.records;
+                      vm.pageNum = Number(res.data.current || page);
+                      vm.total = Number(res.data.total || 0);
+                      vm.totalPages = Math.max(1, Number(res.data.pages || 1));
+                    })
+                    .fail(function (xhr) {
+                      if (seq !== vm.loadSeq) return;
+                      vm.loadError = (xhr.responseJSON && xhr.responseJSON.msg) || "请检查网络连接后重试。";
+                      vm.records = []; vm.total = 0; vm.totalPages = 1;
+                    })
+                    .always(function () { if (seq === vm.loadSeq) vm.loading = false; });
+                },
+                resetSearch: function () { this.search = ""; this.load(1); },
+                openDetail: function (item, evt) {
+                  this.pushReturnFocus(evt);
+                  this.detailItem = item;
+                },
+                closeDetail: function () {
+                  if (this.busyWrite()) return;
+                  this.detailItem = null;
+                  this.restoreReturnFocus();
+                },
+                openCreate: function (evt) {
+                  this.pushReturnFocus(evt);
+                  this.dialogToken += 1;
+                  this.form = { alabel: "", avalue: "", adescribe: "", category: "other", occurredAt: "", businessType: "", businessId: "" };
+                  this.fieldErrors = {};
+                  this.editError = "";
+                  this.receiptFileName = "";
                   this.stagedReceiptFlag = "";
-                  if (!/^[a-zA-Z0-9-]{1,64}$/.test(String(flag || ""))) return;
-                  $.ajax({url:"/api/files/staged/"+encodeURIComponent(flag),type:"DELETE"});
+                  this.receiptUploadSeq = 0;
+                  this.receiptUploading = false;
+                  this.editOpen = true;
+                },
+                cancelEdit: function () {
+                  if (this.saving || window.__accountWriteLocks.save) return;
+                  // cancel during upload allowed: bump dialogToken so late responses cleanup
+                  this.dialogToken += 1;
+                  this.receiptUploadSeq += 1;
+                  if (this.stagedReceiptFlag) this.retireStageFlag(this.stagedReceiptFlag);
+                  this.stagedReceiptFlag = "";
+                  this.receiptFileName = "";
+                  this.receiptUploading = false;
+                  window.__accountWriteLocks.upload = false;
+                  this.editOpen = false;
+                  this.editError = "";
+                  this.fieldErrors = {};
+                  this.restoreReturnFocus();
+                },
+                onReceiptPicked: function (event) {
+                  var vm = this;
+                  var input = event.target;
+                  var file = input.files && input.files[0];
+                  if (!file) return;
+                  if (vm.saving) { input.value = ""; return; }
+                  if (["image/jpeg", "image/png", "image/gif", "application/pdf"].indexOf(file.type) < 0) {
+                    vm.editError = "请选择 JPG、PNG、GIF 或 PDF。";
+                    input.value = "";
+                    return;
+                  }
+                  var seq = ++vm.receiptUploadSeq;
+                  var token = vm.dialogToken;
+                  var prevStable = vm.stagedReceiptFlag;
+                  var prevName = vm.receiptFileName;
+                  var displayName = file.name || "已选票据";
+                  var formData = new FormData();
+                  formData.append("file", file);
+                  AuthSession.appendUploadPurpose(formData, "account");
+                  vm.editError = "";
+                  vm.receiptUploading = true;
+                  window.__accountWriteLocks.upload = true;
+                  // optimistic filename for latest choice only while in-flight
+                  vm.receiptFileName = displayName + "（上传中…）";
+                  $.ajax({
+                    url: "/api/files/upload", type: "POST", data: formData,
+                    processData: false, contentType: false,
+                    headers: AuthSession.getUploadHeaders ? AuthSession.getUploadHeaders() : {}
+                  }).done(function (res) {
+                    var flag = res && res.code === "0" && res.data && (res.data.flag || res.data);
+                    flag = /^[a-zA-Z0-9-]{1,64}$/.test(String(flag || "")) ? String(flag) : "";
+                    // dialog closed after this upload started
+                    if (token !== vm.dialogToken) {
+                      if (flag) vm.retireStageFlag(flag);
+                      return;
+                    }
+                    // stale: a newer selection superseded this request
+                    if (seq !== vm.receiptUploadSeq) {
+                      if (flag) vm.retireStageFlag(flag);
+                      return;
+                    }
+                    if (!flag) {
+                      vm.editError = (res && res.msg) || "票据上传失败。";
+                      // keep previous stable staged
+                      vm.receiptFileName = prevName;
+                      vm.stagedReceiptFlag = prevStable;
+                      return;
+                    }
+                    // success for latest: retire previous stable once
+                    if (prevStable && prevStable !== flag) vm.retireStageFlag(prevStable);
+                    vm.stagedReceiptFlag = flag;
+                    vm.receiptFileName = displayName;
+                  }).fail(function (xhr) {
+                    if (token !== vm.dialogToken) return;
+                    if (seq !== vm.receiptUploadSeq) return;
+                    vm.editError = (xhr.responseJSON && xhr.responseJSON.msg) || "票据上传失败。";
+                    // keep previous successful stable receipt
+                    vm.receiptFileName = prevName;
+                    vm.stagedReceiptFlag = prevStable;
+                  }).always(function () {
+                    if (input) input.value = "";
+                    if (seq === vm.receiptUploadSeq) {
+                      vm.receiptUploading = false;
+                      window.__accountWriteLocks.upload = false;
+                    }
+                  });
+                },
+                removeReceipt: function () {
+                  if (this.saving || this.receiptUploading) return;
+                  if (this.stagedReceiptFlag) this.retireStageFlag(this.stagedReceiptFlag);
+                  this.stagedReceiptFlag = "";
+                  this.receiptFileName = "";
+                },
+                validateAccount: function () {
+                  var f = this.form, errs = {};
+                  var label = f.alabel == null ? "" : String(f.alabel).trim();
+                  if (!label) errs.alabel = "标签不能为空。";
+                  else if (label.length > 100) errs.alabel = "标签最长 100 字符。";
+                  var raw = f.avalue == null ? "" : String(f.avalue).trim();
+                  if (!raw) errs.avalue = "金额不能为空。";
+                  else if (DecimalMoney.sign(raw) === null) errs.avalue = "请输入有效的十进制金额（最多两位小数）。";
+                  else if (DecimalMoney.sign(raw) === 0) errs.avalue = "金额不能为 0。";
+                  else {
+                    var abs = raw.replace(/^[+-]/, "");
+                    if (Number(abs) > 1000000000) errs.avalue = "金额绝对值不能超过 1000000000.00。";
+                  }
+                  var cats = ["donation", "medical", "food", "rescue", "adoption", "operations", "other"];
+                  if (f.category && cats.indexOf(f.category) < 0) errs.category = "非法分类值。";
+                  if (f.occurredAt) {
+                    var d = new Date(f.occurredAt);
+                    if (isNaN(d.getTime())) errs.occurredAt = "发生时间无效。";
+                  }
+                  var bt = f.businessType == null ? "" : String(f.businessType).trim();
+                  var bi = f.businessId == null ? "" : String(f.businessId).trim();
+                  var btypes = ["", "animal", "rescue", "adopt", "proof", "volunteer_task", "other"];
+                  if (bt && btypes.indexOf(bt) < 0) errs.business = "非法业务类型。";
+                  if ((bt && !bi) || (!bt && bi)) errs.business = "关联业务类型与业务编号须同时填写或同时留空。";
+                  if (bi && bi.length > 96) errs.business = "业务编号最长 96 字符。";
+                  if ((f.adescribe || "").length > 355) errs.adescribe = "用途详情最长 355 字符。";
+                  this.fieldErrors = errs;
+                  return !Object.keys(errs).length;
+                },
+                focusAccountError: function () {
+                  var vm = this;
+                  this.$nextTick(function () {
+                    var map = [
+                      ["alabel", "accountLabel"], ["avalue", "accountValue"], ["category", "accountCategory"],
+                      ["occurredAt", "accountOccurred"], ["business", "accountBusinessType"], ["adescribe", "accountDescription"]
+                    ];
+                    for (var i = 0; i < map.length; i++) {
+                      if (vm.fieldErrors[map[i][0]]) {
+                        var el = document.getElementById(map[i][1]);
+                        if (el && el.focus) { el.focus(); return; }
+                      }
+                    }
+                  });
+                },
+                accountPayload: function (receiptFlag) {
+                  return {
+                    alabel: this.form.alabel,
+                    avalue: String(this.form.avalue),
+                    adescribe: this.form.adescribe,
+                    category: this.form.category,
+                    occurredAt: this.form.occurredAt ? this.form.occurredAt.replace("T", " ") + ":00" : null,
+                    businessType: this.form.businessType || null,
+                    businessId: this.form.businessType ? this.form.businessId : null,
+                    receiptFlag: receiptFlag || null
+                  };
                 },
                 save: function () {
                   var vm = this;
-                  if (
-                    vm.saving ||
-                    !vm.form.alabel ||
-                    vm.form.avalue === "" ||
-                    DecimalMoney.sign(vm.form.avalue) === null
-                  )
-                    return;
-                  vm.saving = true;
+                  var L = window.__accountWriteLocks;
+                  if (vm.saving || vm.receiptUploading || L.save || L.upload) return;
                   vm.editError = "";
-                  if (vm.receiptFile) {
-                    var formData = new FormData();
-                    formData.append("file", vm.receiptFile);
-                    AuthSession.appendUploadPurpose(formData, "account");
-                    $.ajax({
-                      url: "/api/files/upload",
-                      type: "POST",
-                      data: formData,
-                      processData: false,
-                      contentType: false,
-                    })
-                      .done(function (res) {
-                        var flag = res && res.code === "0" && res.data && (res.data.flag || res.data);
-                        if (/^[a-zA-Z0-9-]{1,64}$/.test(String(flag || ""))) {
-                          vm.stagedReceiptFlag = String(flag);
-                          vm.persistAccount(vm.stagedReceiptFlag);
-                        } else {
-                          vm.editError = (res && res.msg) || "票据上传失败。";
-                          vm.saving = false;
-                        }
-                      })
-                      .fail(function (xhr) {
-                        vm.editError =
-                          (xhr.responseJSON && xhr.responseJSON.msg) ||
-                          "票据上传失败。";
-                        vm.saving = false;
-                      });
+                  if (!vm.validateAccount()) { vm.focusAccountError(); return; }
+                  L.save = true;
+                  vm.saving = true;
+                  var payload = vm.accountPayload(vm.stagedReceiptFlag || null);
+                  $.ajax({
+                    url: "/api/account", type: "POST", contentType: "application/json",
+                    data: JSON.stringify(payload)
+                  }).done(function (res) {
+                    if (!res || res.code !== "0" || res.data !== true) {
+                      // keep staged on failure; no re-upload needed for retry
+                      vm.editError = (res && res.msg) || "资金记录保存失败。";
+                      vm.focusAccountError();
+                      return;
+                    }
+                    // success: clear local staged only — do NOT staged-DELETE bound flag
+                    vm.stagedReceiptFlag = "";
+                    vm.receiptFileName = "";
+                    vm.editOpen = false;
+                    vm.load(vm.pageNum, true);
+                    vm.loadStats();
+                    vm.messageType = "success";
+                    vm.message = "资金记录已新增。";
+                    vm.restoreReturnFocus();
+                  }).fail(function (xhr) {
+                    vm.editError = (xhr.responseJSON && xhr.responseJSON.msg) || "网络异常，资金记录未保存。";
+                    vm.focusAccountError();
+                  }).always(function () {
+                    vm.saving = false;
+                    L.save = false;
+                  });
+                },
+                askReverse: function (item, evt) {
+                  if (!item || this.isReversal(item)) return;
+                  this.pushReturnFocus(evt);
+                  // if coming from detail, keep detail under reverse; close detail display only if reverse is top
+                  this.detailItem = null;
+                  this.reverseItem = item;
+                  this.reverseReason = "";
+                  this.reverseError = "";
+                },
+                cancelReverse: function () {
+                  if (this.reversing || window.__accountWriteLocks.reverse) return;
+                  this.reverseItem = null;
+                  this.reverseReason = "";
+                  this.reverseError = "";
+                  this.restoreReturnFocus();
+                },
+                confirmReverse: function () {
+                  var vm = this;
+                  var L = window.__accountWriteLocks;
+                  if (!vm.reverseItem || vm.reversing || L.reverse) return;
+                  var reason = (vm.reverseReason || "").trim();
+                  if (!reason) {
+                    vm.reverseError = "冲正原因必填。";
+                    vm.$nextTick(function () {
+                      var e = document.getElementById("accountReverseError") || document.getElementById("accountReverseReason");
+                      if (e && e.focus) e.focus();
+                    });
                     return;
                   }
-                  vm.persistAccount(null);
-                },
-                persistAccount: function (receiptFlag) {
-                  var vm = this;
+                  if (reason.length > 355) { vm.reverseError = "冲正原因最长 355 字符。"; return; }
+                  L.reverse = true;
+                  vm.reversing = true;
+                  vm.reverseError = "";
                   $.ajax({
-                    url: "/api/account",
-                    type: "POST",
-                    contentType: "application/json",
-                    data: JSON.stringify(vm.accountPayload(receiptFlag)),
-                  })
-                    .done(function (res) {
-                      if (!res || res.code !== "0" || res.data !== true) {
-                        vm.retireStagedReceipt();
-                        vm.editError = (res && res.msg) || "资金记录保存失败。";
-                        return;
-                      }
-                      var id = vm.form.id;
-                      vm.editOpen = false;
-                      vm.receiptFile = null;
-                      vm.stagedReceiptFlag = "";
-                      vm.load(vm.pageNum);
-                      vm.loadStats();
+                    url: "/api/account/" + encodeURIComponent(vm.reverseItem.id) + "/reverse",
+                    type: "POST", contentType: "application/json",
+                    data: JSON.stringify({ reason: reason })
+                  }).done(function (res) {
+                    if (res && res.code === "0") {
+                      var id = res.data;
+                      vm.reverseItem = null;
+                      vm.reverseReason = "";
                       vm.messageType = "success";
-                      vm.message = id
-                        ? "资金记录 #" + id + " 已保存。"
-                        : "资金记录已新增。";
-                    })
-                    .fail(function (xhr) {
-                      vm.retireStagedReceipt();
-                      vm.editError =
-                        (xhr.responseJSON && xhr.responseJSON.msg) ||
-                        "网络异常，资金记录未保存。";
-                    })
-                    .always(function () {
-                      vm.saving = false;
-                    });
-                },
-                askDelete: function (item) {
-                  this.messageType = "error";
-                  this.message = "资金公示仅允许追加，历史记录不可物理删除。";
-                },
-                askReverse: function (item) {
-                  var reason = window.prompt(
-                    "请输入冲正原因。系统会追加一条等额反向记录，原记录不会被删除。",
-                    "录入纠错",
-                  );
-                  if (!reason || !reason.trim()) return;
-                  var vm = this;
-                  $.ajax({
-                    url:
-                      "/api/account/" +
-                      encodeURIComponent(item.id) +
-                      "/reverse",
-                    type: "POST",
-                    contentType: "application/json",
-                    data: JSON.stringify({ reason: reason.trim() }),
-                  })
-                    .done(function (res) {
-                      if (res && res.code === "0") {
-                        vm.messageType = "success";
-                        vm.message = "已创建冲正记录 #" + res.data + "。";
-                        vm.load(1);
-                        vm.loadStats();
-                      } else {
-                        vm.messageType = "error";
-                        vm.message = (res && res.msg) || "冲正失败。";
-                      }
-                    })
-                    .fail(function (xhr) {
-                      vm.messageType = "error";
-                      vm.message =
-                        (xhr.responseJSON && xhr.responseJSON.msg) ||
-                        "冲正失败。";
-                    });
-                },
-                cancelDelete: function () {
-                  if (this.deleting) return;
-                  this.deleteItem = null;
-                  this.deleteError = "";
-                },
-                confirmDelete: function () {
-                  var vm = this;
-                  if (!vm.deleteItem || vm.deleting) return;
-                  vm.deleting = true;
-                  vm.deleteError = "";
-                  $.ajax({
-                    url: "/api/account/" + encodeURIComponent(vm.deleteItem.id),
-                    type: "DELETE",
-                  })
-                    .done(function (res) {
-                      if (!res || res.code !== "0") {
-                        vm.deleteError = (res && res.msg) || "删除失败。";
-                        return;
-                      }
-                      var id = vm.deleteItem.id;
-                      vm.deleteItem = null;
-                      vm.load(vm.pageNum);
+                      vm.message = "已创建冲正记录" + (id != null ? " #" + id : "") + "。";
+                      vm.load(1, true);
                       vm.loadStats();
-                      vm.messageType = "success";
-                      vm.message =
-                        "资金记录 #" + id + " 已删除，全量汇总已重新读取。";
-                    })
-                    .fail(function (xhr) {
-                      vm.deleteError =
-                        (xhr.responseJSON && xhr.responseJSON.msg) ||
-                        "网络异常，记录未删除。";
-                    })
-                    .always(function () {
-                      vm.deleting = false;
+                      vm.restoreReturnFocus();
+                    } else {
+                      vm.reverseError = (res && res.msg) || "冲正失败。";
+                      vm.$nextTick(function () {
+                        var e = document.getElementById("accountReverseError");
+                        if (e && e.focus) e.focus();
+                      });
+                    }
+                  }).fail(function (xhr) {
+                    vm.reverseError = (xhr.responseJSON && xhr.responseJSON.msg) || "冲正失败。";
+                    vm.$nextTick(function () {
+                      var e = document.getElementById("accountReverseError");
+                      if (e && e.focus) e.focus();
                     });
-                },
-              },
+                  }).always(function () {
+                    vm.reversing = false;
+                    L.reverse = false;
+                  });
+                }
+              }
             });
-          },
+          }
         });
       })();
     </script>

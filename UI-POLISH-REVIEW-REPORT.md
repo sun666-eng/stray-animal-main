@@ -895,3 +895,24 @@ GPT 确认焦点已过；真实 390×844 复现搜索区空白：
 权威: `output/playwright/ui-polish-phase-2f/PHASE-2F-REPORT.md` · `run-strict-final.log`
 
 **停止**: 不提交、不推送、不合并 main、不进入 Phase 2G。等待 GPT 最终封存审核。
+
+### Phase 2G：资金流水与公告治理工作台（2026-07-30）
+
+**基线**: `82e4ff060ed92d4ef89f4f85cca0f5d4e3302b0a`
+**分支**: `ui-polish/phase-2g-finance-notice-governance-20260730`
+**端口**: **18113**（dev；9999 未触碰/未重启）
+**状态**: 最终两项收口 **259/0 strict · ~16.6s**，等待 GPT **最终封存**（**未提交**）
+
+| 项 | 值 |
+|----|-----|
+| 完成 | **收口通过待封存**（2g **259/0** + 2f 139 + 2e 164 + 2d 224 + 2c 115 + 2b 234 + 2a 173 + 1c 134 + adv **851/0** + `mvn clean test` **473/0/0** + git-diff 0） |
+| 缓存 | account/notice `v=20260730k` |
+| 冲正双击 | 稳定 primary 按钮 + 同帧双 `DOM click`；POST=1；held/released；闸门 **162ms**；action timeout **0** |
+| 320 公告按钮 | `.notice-governance` 操作栏纵向堆叠；文字 Range 左右 inset ≥8px |
+| 严格门禁 | bestEffort=0 · fallback=0 · shots **14=index** · suiteDurationMs≈16580 |
+| 建议提交 | **待 GPT 最终封存审核** |
+| 提交/推送/2H | **否** |
+
+权威: `output/playwright/ui-polish-phase-2g/PHASE-2G-REPORT.md` · `phase-2g-report.json` · `run-strict-final.log` · `screenshots-index.json`
+
+**停止**: 不提交、不推送、不合并 main、不进入 Phase 2H。等待 GPT 最终封存审核。

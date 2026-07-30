@@ -3126,3 +3126,186 @@
   .user-contact-line { max-width: 100%; }
   .person-file-label { min-height: 48px; }
 }
+
+/* ——— Phase 2G: account ledger + notice desk ——— */
+.account-retention-note,
+.notice-publish-note {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-left: 3px solid #d63a1f;
+  background: #faf6f2;
+  color: #3a3936;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.account-gov-actions,
+.notice-gov-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.account-label-charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 14px;
+}
+@media (max-width: 800px) {
+  .account-label-charts { grid-template-columns: 1fr; }
+}
+.account-chart-col h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 750;
+}
+.account-bar-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(80px, 2fr) auto;
+  gap: 8px;
+  align-items: center;
+  margin: 6px 0;
+  min-width: 0;
+}
+.account-bar-label {
+  font-size: 12px;
+  color: #3a3936;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.account-bar-track {
+  height: 10px;
+  border-radius: 6px;
+  background: #efece5;
+  overflow: hidden;
+  border: 1px solid #e2ddd3;
+}
+.account-bar-fill {
+  height: 100%;
+  min-width: 0;
+  border-radius: 6px;
+}
+.account-bar-fill.is-income { background: #3d6b3a; }
+.account-bar-fill.is-expense { background: #8f2a18; }
+.account-bar-track.is-income { border-color: #c5d4b8; }
+.account-bar-track.is-expense { border-color: #e2b4ab; }
+.admin-signed-value.is-positive { color: #2f4a22; }
+.admin-signed-value.is-negative { color: #8f2a18; }
+.admin-signed-value.is-zero { color: #6b6a66; }
+.account-reverse-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid #e2ddd3;
+  border-radius: 8px;
+  background: #fcfbf8;
+}
+.account-reverse-meta dt {
+  font-size: 11px;
+  color: #6b6a66;
+  font-weight: 650;
+}
+.account-reverse-meta dd {
+  margin: 2px 0 0;
+  font-size: 13px;
+}
+.account-file-field { min-width: 0; margin-top: 8px; }
+.account-file-caption {
+  display: block;
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 650;
+}
+.account-file-picker { position: relative; width: 100%; }
+.account-file-input {
+  position: absolute;
+  width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); border: 0;
+}
+.account-file-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1.5px dashed #cfcbc2;
+  border-radius: 12px;
+  background: #f7f5f0;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+.account-file-input:focus-visible + .account-file-label,
+.account-file-label:focus-within {
+  outline: 2px solid var(--ui-accent-strong, #d63a1f);
+  outline-offset: 2px;
+}
+.account-file-label.is-disabled { opacity: .55; cursor: not-allowed; }
+.account-file-action { font-size: 13px; font-weight: 750; color: #8f2a18; }
+.account-file-name {
+  flex: 1 1 120px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: #6b6a66;
+}
+.notice-governance-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.notice-governance-metric {
+  border: 1px solid #ddd6c8;
+  border-radius: 8px;
+  background: #fbf9f4;
+  padding: 10px 12px;
+  min-width: 0;
+}
+.notice-governance-metric span {
+  display: block;
+  font-size: 12px;
+  color: #6b6a66;
+  font-weight: 650;
+}
+.notice-governance-metric strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 18px;
+  font-weight: 780;
+  color: #161615;
+}
+.notice-governance-metric small {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #8a8680;
+}
+@media (max-width: 640px) {
+  .notice-governance-metrics { grid-template-columns: 1fr; }
+  .account-file-label { min-height: 48px; }
+  .account-reverse-meta { grid-template-columns: 1fr; }
+}
+/* Notice publish desk only: stack dialog actions on very narrow phones so long save label fits */
+@media (max-width: 360px) {
+  .notice-governance .admin-edit-form > .admin-dialog-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .notice-governance .admin-edit-form > .admin-dialog-actions .ui-button {
+    width: 100%;
+    flex: 0 0 auto;
+    min-width: 0;
+    min-height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .account-bar-fill { transition: none; }
+}

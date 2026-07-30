@@ -9,13 +9,13 @@
     <title>公告管理 · 归途计划管理</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
     <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c" />
-    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260729c" />
+    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260730k" />
   </head>
   <body>
     <div id="authWait" class="admin-auth-wait" role="status">
       正在验证登录状态...
     </div>
-    <div id="workspace" :class="{'is-nav-open': mobileOpen}" class="admin-shell" v-cloak @keyup.esc="closeTopLayer" @click="closeMenus">
+    <div id="workspace" :class="{'is-nav-open': mobileOpen}" class="admin-shell notice-governance" v-cloak @keyup.esc="closeTopLayer" @click="closeMenus">
       <header class="ui-header admin-header" @click.stop>
     <div class="ui-header-inner">
       <a class="ui-brand" href="/page/end/index.html" aria-label="返回管理工作台">
@@ -99,12 +99,13 @@
             <p class="admin-kicker">Public notices</p>
             <h1 id="noticeTitle">公告管理</h1>
             <p>
-              公告只有纯文本标题和内容。新增或保存后立即对公众可见，没有草稿、预约发布日期、分类、作者或富文本
-              HTML。
+              发布编辑台：内容为纯文本，保存后立即公开。当前数据模型没有草稿、定时发布和版本冲突保护。
             </p>
           </div>
-          <div class="admin-hero-meta">
-            <span>发布方式</span><strong>保存后立即公开</strong>
+          <div class="notice-governance-metrics" aria-label="公告摘要">
+            <div class="notice-governance-metric"><span>当前页公告</span><strong>{{ pageCount }}</strong><small>仅当前页</small></div>
+            <div class="notice-governance-metric"><span>总公告数</span><strong>{{ total }}</strong><small>服务端 total</small></div>
+            <div class="notice-governance-metric"><span>发布方式</span><strong>立即公开</strong><small>无草稿/定时</small></div>
           </div>
         </section>
         <section aria-labelledby="noticeListTitle">
@@ -113,13 +114,10 @@
               <h2 id="noticeListTitle">公开公告</h2>
               <p>分页读取当前结果，搜索仅匹配公告标题。</p>
             </div>
-            <button
-              class="ui-button is-primary"
-              type="button"
-              @click="openCreate"
-            >
-              发布公告
-            </button>
+            <div class="notice-gov-actions">
+              <button class="ui-button is-primary" type="button" ref="createBtn" @click="openCreate($event)">发布公告</button>
+              <button class="ui-button is-ghost" type="button" @click="exportRows">导出公告</button>
+            </div>
           </div>
           <form
             class="ui-toolbar admin-review-toolbar"
@@ -201,12 +199,12 @@
                     <td><span class="ui-badge is-done">立即公开</span></td>
                     <td>
                       <div class="admin-row-actions">
-                        <button type="button" @click="openDetail(item)">
+                        <button type="button" @click="openDetail(item, $event)">
                           详情</button
                         ><button
                           class="is-primary"
                           type="button"
-                          @click="openEdit(item)"
+                          @click="openEdit(item, $event)"
                         >
                           编辑</button
                         ><button
@@ -242,13 +240,13 @@
                   <button
                     class="ui-button is-ghost"
                     type="button"
-                    @click="openDetail(item)"
+                    @click="openDetail(item, $event)"
                   >
                     查看详情</button
                   ><button
                     class="ui-button is-dark"
                     type="button"
-                    @click="openEdit(item)"
+                    @click="openEdit(item, $event)"
                   >
                     编辑公告
                   </button><button
@@ -295,9 +293,7 @@
         </section>
       </main>
       <div
-        v-if="detailItem"
-        class="admin-dialog-backdrop"
-        @click.self="closeDetail"
+        v-if="detailItem" class="admin-dialog-backdrop" @click.self="onBackdropDetail"
       >
         <section
           class="admin-dialog admin-detail-dialog"
@@ -336,9 +332,7 @@
         </section>
       </div>
       <div
-        v-if="editOpen"
-        class="admin-dialog-backdrop"
-        @click.self="cancelEdit"
+        v-if="editOpen" class="admin-dialog-backdrop" @click.self="onBackdropEdit"
       >
         <section
           class="admin-dialog"
@@ -356,41 +350,32 @@
             <button class="admin-dialog-close" type="button" aria-label="取消编辑公告" @click="cancelEdit" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button>
           </div>
           <form class="admin-edit-form" @submit.prevent="save">
+            <div class="admin-dialog-body">
             <div class="ui-form-field">
-              <label for="noticeFormTitle"
-                >标题 <small>纯文本，必填</small></label
-              ><input
-                id="noticeFormTitle"
-                ref="editFirst"
-                v-model.trim="form.title"
-                class="ui-form-input"
-                maxlength="255"
-                required
-              />
+              <label for="noticeTitleInput">标题 <small>纯文本，必填</small></label>
+              <input id="noticeTitleInput" ref="editFirst" v-model.trim="form.title" class="ui-form-input" maxlength="255"
+                     :aria-invalid="String(!!fieldErrors.title)" :aria-describedby="fieldErrors.title ? 'noticeTitleError' : null" />
+              <small>{{ (form.title||'').length }}/255</small>
+              <p v-if="fieldErrors.title" id="noticeTitleError" class="ui-field-error" role="alert">{{ fieldErrors.title }}</p>
             </div>
             <div class="ui-form-field">
-              <label for="noticeContent">内容 <small>纯文本，必填</small></label
-              ><textarea
-                id="noticeContent"
-                v-model.trim="form.content"
-                class="ui-form-textarea"
-                maxlength="5000"
-                rows="9"
-                required
-              ></textarea>
+              <label for="noticeContentInput">内容 <small>纯文本，必填</small></label>
+              <textarea id="noticeContentInput" v-model.trim="form.content" class="ui-form-textarea" maxlength="5000" rows="9"
+                        :aria-invalid="String(!!fieldErrors.content)" :aria-describedby="fieldErrors.content ? 'noticeContentError' : null"></textarea>
+              <small>{{ (form.content||'').length }}/5000 · 纯文本，无 HTML</small>
+              <p v-if="fieldErrors.content" id="noticeContentError" class="ui-field-error" role="alert">{{ fieldErrors.content }}</p>
             </div>
             <div class="admin-publish-note" role="note">
               <strong>立即公开</strong>
               <p>
-                此系统没有草稿或预约发布状态。确认保存后，标题和内容将立即出现在公众公告页面。
+                当前数据模型没有草稿、定时发布和版本冲突保护。确认保存后，标题和内容将立即出现在公众公告页面。
               </p>
             </div>
             <div
-              v-if="editError"
-              class="admin-inline-message is-error"
-              role="alert"
+              v-if="editError" id="noticeEditError" class="admin-inline-message is-error" role="alert" tabindex="-1"
             >
               {{ editError }}
+            </div>
             </div>
             <div class="admin-dialog-actions">
               <button
@@ -403,7 +388,7 @@
               ><button
                 class="ui-button is-primary"
                 type="submit"
-                :disabled="saving||!form.title||!form.content"
+                :disabled="saving" :aria-busy="saving?'true':'false'"
               >
                 {{ saving ? '正在保存...' : '确认保存并立即公开' }}
               </button>
@@ -412,9 +397,7 @@
         </section>
       </div>
       <div
-        v-if="deleteItem"
-        class="admin-dialog-backdrop"
-        @click.self="cancelDelete"
+        v-if="deleteItem" class="admin-dialog-backdrop" @click.self="onBackdropDelete"
       >
         <section
           class="admin-dialog"
@@ -431,12 +414,10 @@
             </div>
           </div>
           <p class="admin-dialog-copy">
-            删除不可撤销，公告 #{{ deleteItem.id }} 将不再公开显示。
+            删除后立即从公众页面消失，不可撤销。公告 #{{ deleteItem.id }}「{{ deleteItem.title || '未命名' }}」。
           </p>
           <div
-            v-if="deleteError"
-            class="admin-inline-message is-error"
-            role="alert"
+            v-if="deleteError" id="noticeDeleteError" class="admin-inline-message is-error" role="alert" tabindex="-1"
           >
             {{ deleteError }}
           </div>
@@ -460,6 +441,7 @@
         </section>
       </div>
     </div>
+
     <script src="../../js/jquery.min.js"></script>
     <script src="../../js/auth-session.js?v=20260728"></script>
     <script src="../../js/admin-auth.js?v=20260729c"></script>
@@ -467,6 +449,60 @@
     <script>
       (function () {
         "use strict";
+        window.__noticeWriteLocks = { save: false, del: false };
+        function createFocusTrap() {
+          var state = { root: null, onKey: null, prevOverflow: "", onEscape: null };
+          function focusable(root) {
+            return Array.prototype.slice
+              .call(root.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'))
+              .filter(function (el) {
+                return !el.disabled && (el.offsetParent !== null || el === document.activeElement || el.getClientRects().length);
+              });
+          }
+          return {
+            activate: function (root, initial, onEscape) {
+              this.deactivate();
+              if (!root) return;
+              state.root = root;
+              state.onEscape = typeof onEscape === "function" ? onEscape : null;
+              state.prevOverflow = document.body.style.overflow;
+              document.body.style.overflow = "hidden";
+              if (!root.hasAttribute("tabindex")) root.setAttribute("tabindex", "-1");
+              state.onKey = function (e) {
+                if (!state.root) return;
+                if (e.key === "Escape" || e.keyCode === 27) {
+                  if (state.onEscape) { e.preventDefault(); e.stopPropagation(); state.onEscape(); }
+                  return;
+                }
+                if (e.key !== "Tab") return;
+                var list = focusable(state.root);
+                if (!list.length) { e.preventDefault(); state.root.focus(); return; }
+                var first = list[0], last = list[list.length - 1], active = document.activeElement;
+                if (e.shiftKey) {
+                  if (active === first || !state.root.contains(active)) { e.preventDefault(); last.focus(); }
+                } else if (active === last || !state.root.contains(active)) {
+                  e.preventDefault(); first.focus();
+                }
+              };
+              document.addEventListener("keydown", state.onKey, true);
+              setTimeout(function () {
+                var target = initial;
+                if (!target || !state.root.contains(target) || target.disabled) {
+                  var list = focusable(state.root);
+                  target = list[0] || state.root;
+                }
+                if (target && target.focus) target.focus();
+              }, 0);
+            },
+            deactivate: function () {
+              if (state.onKey) { document.removeEventListener("keydown", state.onKey, true); state.onKey = null; }
+              state.onEscape = null;
+              document.body.style.overflow = state.prevOverflow || "";
+              state.root = null;
+            },
+            root: function () { return state.root; }
+          };
+        }
         AuthSession.bootstrap({
           requireAuth: true,
           allowCachedOnNetworkError: false,
@@ -477,254 +513,315 @@
               return;
             }
             document.getElementById("authWait").hidden = true;
+            var focusTrap = createFocusTrap();
             new Vue({
               el: "#workspace",
               data: {
                 user: authenticatedUser,
-                menuItems: AdminWorkspace.navigation(
-                  authenticatedUser.permission,
-                ),
-          menuGroups: AdminWorkspace.navigationGroups(
-                  authenticatedUser.permission,
-                ),
-          desktopNav: AdminWorkspace.desktopNavigation(
-                  authenticatedUser.permission,
-                ),
-          currentNavFlag: 'notice',
-          moreOpen: false,
-                mobileOpen: false,
-                accountOpen: false,
-                search: "",
-                records: [],
-                loading: true,
-                loadError: "",
-                message: "",
-                messageType: "",
-                pageNum: 1,
-                pageSize: 12,
-                total: 0,
-                totalPages: 1,
-                detailItem: null,
-                editOpen: false,
-                form: {},
-                saving: false,
-                editError: "",
-                deleteItem: null,
-                deleting: false,
-                deleteError: "",
+                menuItems: AdminWorkspace.navigation(authenticatedUser.permission),
+                menuGroups: AdminWorkspace.navigationGroups(authenticatedUser.permission),
+                desktopNav: AdminWorkspace.desktopNavigation(authenticatedUser.permission),
+                currentNavFlag: "notice",
+                moreOpen: false, mobileOpen: false, accountOpen: false,
+                search: "", records: [], loading: true, loadError: "", loadSeq: 0,
+                message: "", messageType: "",
+                pageNum: 1, pageSize: 12, total: 0, totalPages: 1,
+                detailItem: null, editOpen: false, form: {}, fieldErrors: {},
+                saving: false, editError: "",
+                deleteItem: null, deleting: false, deleteError: "",
+                returnFocusStack: []
               },
               computed: {
+                pageCount: function () { return (this.records || []).length; },
                 pages: function () {
-                  var result = [];
-                  var start = Math.max(1, this.pageNum - 2);
-                  var end = Math.min(this.totalPages, start + 4);
+                  var result = [], start = Math.max(1, this.pageNum - 2), end = Math.min(this.totalPages, start + 4);
                   start = Math.max(1, end - 4);
-                  for (var page = start; page <= end; page += 1)
-                    result.push(page);
+                  for (var p = start; p <= end; p += 1) result.push(p);
                   return result;
-                },
+                }
               },
               created: function () {
+                var vm = this;
+                this._onDocEsc = function (e) {
+                  if (e.key !== "Escape" && e.keyCode !== 27) return;
+                  if (focusTrap.root()) return;
+                  var L = window.__noticeWriteLocks || {};
+                  if (vm.saving || vm.deleting || L.save || L.del) { e.preventDefault(); e.stopPropagation(); return; }
+                  if (vm.deleteItem || vm.editOpen || vm.detailItem) {
+                    e.preventDefault(); e.stopPropagation(); vm.closeTopLayer();
+                  }
+                };
+                document.addEventListener("keydown", this._onDocEsc, true);
                 this.load(1);
               },
+              beforeDestroy: function () {
+                if (this._onDocEsc) document.removeEventListener("keydown", this._onDocEsc, true);
+                focusTrap.deactivate();
+              },
+              watch: {
+                editOpen: function (open) {
+                  var vm = this;
+                  if (open) {
+                    this.$nextTick(function () {
+                      var root = document.querySelector('[role="dialog"][aria-labelledby="noticeEditTitle"]');
+                      focusTrap.activate(root, vm.$refs.editFirst || document.getElementById("noticeTitleInput"), function () {
+                        if (vm.saving) return;
+                        vm.cancelEdit();
+                      });
+                    });
+                  } else if (!this.deleteItem && !this.detailItem) focusTrap.deactivate();
+                },
+                deleteItem: function (v) {
+                  var vm = this;
+                  if (v) {
+                    this.$nextTick(function () {
+                      var root = document.querySelector('[role="alertdialog"][aria-labelledby="noticeDeleteTitle"]');
+                      focusTrap.activate(root, root && root.querySelector("button.is-ghost"), function () {
+                        if (vm.deleting) return;
+                        vm.cancelDelete();
+                      });
+                    });
+                  } else if (!this.editOpen && !this.detailItem) focusTrap.deactivate();
+                },
+                detailItem: function (v) {
+                  var vm = this;
+                  if (v && !this.editOpen && !this.deleteItem) {
+                    this.$nextTick(function () {
+                      var root = document.querySelector('[role="dialog"][aria-labelledby="noticeDetailTitle"]');
+                      focusTrap.activate(root, root && root.querySelector("button"), function () { vm.closeDetail(); });
+                    });
+                  } else if (!v && !this.editOpen && !this.deleteItem) focusTrap.deactivate();
+                }
+              },
               methods: {
-          closeMenus: function () { this.mobileOpen = false; this.accountOpen = false; this.moreOpen = false; },
-          toggleMore: function () { this.moreOpen = !this.moreOpen; this.accountOpen = false; this.mobileOpen = false; },
-          toggleMobile: function () { this.mobileOpen = !this.mobileOpen; this.accountOpen = false; this.moreOpen = false; },
-          toggleAccount: function () { this.accountOpen = !this.accountOpen; this.moreOpen = false; this.mobileOpen = false; },
-          isNavActive: function (flag) { return AdminWorkspace.flagsMatch(flag, this.currentNavFlag); },
-          isMoreCurrent: function () { var vm = this; var more = (this.desktopNav && this.desktopNav.more) || []; return more.some(function (item) { return AdminWorkspace.flagsMatch(item.flag, vm.currentNavFlag); }); },
-          isOverviewActive: function () { return !this.currentNavFlag; },
-
-                avatarUrl: function (flag) {
-                  return AdminWorkspace.avatarUrl(flag);
+                closeMenus: function () { this.mobileOpen = false; this.accountOpen = false; this.moreOpen = false; },
+                toggleMore: function () { this.moreOpen = !this.moreOpen; this.accountOpen = false; this.mobileOpen = false; },
+                toggleMobile: function () { this.mobileOpen = !this.mobileOpen; this.accountOpen = false; this.moreOpen = false; },
+                toggleAccount: function () { this.accountOpen = !this.accountOpen; this.moreOpen = false; this.mobileOpen = false; },
+                isNavActive: function (flag) { return AdminWorkspace.flagsMatch(flag, this.currentNavFlag); },
+                isMoreCurrent: function () {
+                  var vm = this, more = (this.desktopNav && this.desktopNav.more) || [];
+                  return more.some(function (item) { return AdminWorkspace.flagsMatch(item.flag, vm.currentNavFlag); });
                 },
-                avatarFallback: function (event) {
-                  AdminWorkspace.avatarFallback(event);
+                isOverviewActive: function () { return !this.currentNavFlag; },
+                avatarUrl: function (flag) { return AdminWorkspace.avatarUrl(flag); },
+                avatarFallback: function (event) { AdminWorkspace.avatarFallback(event); },
+                logout: function () { AuthSession.logout(); },
+                exportRows: function () { location.assign("/api/notice/export"); },
+                pushReturnFocus: function (evt) {
+                  var t = (evt && evt.currentTarget) || document.activeElement;
+                  if (t && t.focus) this.returnFocusStack.push(t);
                 },
-                logout: function () {
-                  AuthSession.logout();
+                restoreReturnFocus: function () {
+                  var t = null;
+                  while (this.returnFocusStack.length) {
+                    t = this.returnFocusStack.pop();
+                    if (t && t.isConnected) break;
+                    t = null;
+                  }
+                  this.$nextTick(function () {
+                    if (t && t.focus) try { t.focus(); } catch (e) {}
+                  });
                 },
-                closeTopLayer: function () { if (this.closeMenus) this.closeMenus();
+                busyWrite: function () {
+                  var L = window.__noticeWriteLocks || {};
+                  return !!(this.saving || this.deleting || L.save || L.del);
+                },
+                closeTopLayer: function () {
+                  if (this.busyWrite()) return;
+                  this.closeMenus();
                   if (this.deleteItem) this.cancelDelete();
                   else if (this.editOpen) this.cancelEdit();
                   else if (this.detailItem) this.closeDetail();
-                  else {
-                    this.mobileOpen = false;
-                    this.accountOpen = false;
-                  }
                 },
-                load: function (page) {
-                  var vm = this;
-                  vm.loading = true;
-                  vm.loadError = "";
+                onBackdropEdit: function () { if (!this.busyWrite()) this.cancelEdit(); },
+                onBackdropDelete: function () { if (!this.busyWrite()) this.cancelDelete(); },
+                onBackdropDetail: function () { if (!this.busyWrite()) this.closeDetail(); },
+                load: function (page, preserveFeedback) {
+                  var vm = this, seq = ++vm.loadSeq;
+                  if (!preserveFeedback) { vm.message = ""; vm.messageType = ""; }
+                  vm.loading = true; vm.loadError = "";
                   $.ajax({
-                    url: "/api/notice/page",
-                    type: "GET",
-                    data: {
-                      name: vm.search,
-                      pageNum: page,
-                      pageSize: vm.pageSize,
-                    },
-                    cache: false,
-                  })
-                    .done(function (res) {
-                      if (
-                        !res ||
-                        res.code !== "0" ||
-                        !res.data ||
-                        !Array.isArray(res.data.records)
-                      ) {
-                        vm.loadError =
-                          (res && res.msg) || "服务返回了无法识别的数据。";
-                        return;
-                      }
-                      vm.records = res.data.records;
-                      vm.pageNum = Number(res.data.current || page);
-                      vm.total = Number(res.data.total || 0);
-                      vm.totalPages = Math.max(
-                        1,
-                        Number(
-                          res.data.pages ||
-                            Math.ceil(vm.total / vm.pageSize) ||
-                            1,
-                        ),
-                      );
-                    })
-                    .fail(function (xhr) {
-                      vm.loadError =
-                        (xhr.responseJSON && xhr.responseJSON.msg) ||
-                        "请检查网络连接后重试。";
-                    })
-                    .always(function () {
-                      vm.loading = false;
-                    });
+                    url: "/api/notice/page", type: "GET",
+                    data: { name: vm.search, pageNum: page, pageSize: vm.pageSize }, cache: false
+                  }).done(function (res) {
+                    if (seq !== vm.loadSeq) return;
+                    if (!res || res.code !== "0" || !res.data || !Array.isArray(res.data.records)) {
+                      vm.loadError = (res && res.msg) || "服务返回了无法识别的数据。";
+                      vm.records = []; vm.total = 0; vm.totalPages = 1;
+                      return;
+                    }
+                    vm.records = res.data.records;
+                    vm.pageNum = Number(res.data.current || page);
+                    vm.total = Number(res.data.total || 0);
+                    vm.totalPages = Math.max(1, Number(res.data.pages || 1));
+                  }).fail(function (xhr) {
+                    if (seq !== vm.loadSeq) return;
+                    vm.loadError = (xhr.responseJSON && xhr.responseJSON.msg) || "请检查网络连接后重试。";
+                    vm.records = []; vm.total = 0; vm.totalPages = 1;
+                  }).always(function () { if (seq === vm.loadSeq) vm.loading = false; });
                 },
-                resetSearch: function () {
-                  this.search = "";
-                  this.load(1);
-                },
-                openDetail: function (item) {
+                resetSearch: function () { this.search = ""; this.load(1); },
+                openDetail: function (item, evt) {
+                  this.pushReturnFocus(evt);
                   this.detailItem = item;
-                  this.$nextTick(function () {
-                    if (this.$refs.detailClose) this.$refs.detailClose.focus();
-                  });
                 },
                 closeDetail: function () {
+                  if (this.busyWrite()) return;
                   this.detailItem = null;
+                  this.restoreReturnFocus();
                 },
-                editFromDetail: function () {
+                editFromDetail: function (evt) {
                   var item = this.detailItem;
-                  this.closeDetail();
-                  this.openEdit(item);
+                  // keep original list trigger under detail; push edit trigger for nested return
+                  this.pushReturnFocus(evt);
+                  this.detailItem = null;
+                  this.openEdit(item, null);
                 },
-                openCreate: function () {
+                openCreate: function (evt) {
+                  this.pushReturnFocus(evt);
                   this.form = { id: null, title: "", content: "" };
+                  this.fieldErrors = {};
                   this.editError = "";
                   this.editOpen = true;
-                  this.focusEdit();
                 },
-                openEdit: function (item) {
-                  this.form = {
-                    id: item.id,
-                    title: item.title || "",
-                    content: item.content || "",
-                  };
+                openEdit: function (item, evt) {
+                  if (evt) this.pushReturnFocus(evt);
+                  this.form = { id: item.id, title: item.title || "", content: item.content || "" };
+                  this.fieldErrors = {};
                   this.editError = "";
                   this.editOpen = true;
-                  this.focusEdit();
-                },
-                focusEdit: function () {
-                  this.$nextTick(function () {
-                    if (this.$refs.editFirst) this.$refs.editFirst.focus();
-                  });
                 },
                 cancelEdit: function () {
-                  if (this.saving) return;
+                  if (this.saving || window.__noticeWriteLocks.save) return;
                   this.editOpen = false;
                   this.editError = "";
+                  this.fieldErrors = {};
+                  this.restoreReturnFocus();
+                },
+                validateNotice: function () {
+                  var errs = {};
+                  var title = (this.form.title || "").trim();
+                  var content = (this.form.content || "").trim();
+                  if (!title) errs.title = "标题必填。";
+                  else if (title.length > 255) errs.title = "标题最长 255 字符。";
+                  if (!content) errs.content = "内容必填。";
+                  this.fieldErrors = errs;
+                  return !Object.keys(errs).length;
                 },
                 noticePayload: function () {
-                  var payload = {
+                  return {
                     title: this.form.title,
-                    content: this.form.content,
+                    content: this.form.content
                   };
-                  if (this.form.id != null) payload.id = this.form.id;
-                  return payload;
+                },
+                focusNoticeError: function () {
+                  var vm = this;
+                  this.$nextTick(function () {
+                    if (vm.fieldErrors.title) {
+                      var t = document.getElementById("noticeTitleInput");
+                      if (t && t.focus) t.focus();
+                      return;
+                    }
+                    if (vm.fieldErrors.content) {
+                      var c = document.getElementById("noticeContentInput");
+                      if (c && c.focus) c.focus();
+                    }
+                  });
                 },
                 save: function () {
                   var vm = this;
-                  if (vm.saving || !vm.form.title || !vm.form.content) return;
-                  vm.saving = true;
+                  var L = window.__noticeWriteLocks;
+                  if (vm.saving || L.save) return;
                   vm.editError = "";
+                  if (!vm.validateNotice()) { vm.focusNoticeError(); return; }
+                  L.save = true;
+                  vm.saving = true;
+                  var payload = vm.noticePayload();
+                  payload.title = (payload.title || "").trim();
+                  payload.content = (payload.content || "").trim();
+                  if (vm.form.id) payload.id = vm.form.id;
                   $.ajax({
                     url: "/api/notice",
                     type: vm.form.id ? "PUT" : "POST",
                     contentType: "application/json",
-                    data: JSON.stringify(vm.noticePayload()),
-                  })
-                    .done(function (res) {
-                      if (!res || res.code !== "0" || res.data !== true) {
-                        vm.editError = (res && res.msg) || "公告保存失败。";
-                        return;
-                      }
-                      var title = vm.form.title;
-                      vm.editOpen = false;
-                      vm.load(vm.pageNum);
-                      vm.messageType = "success";
-                      vm.message = "“" + title + "”已保存并立即公开。";
-                    })
-                    .fail(function (xhr) {
-                      vm.editError =
-                        (xhr.responseJSON && xhr.responseJSON.msg) ||
-                        "网络异常，公告未保存。";
-                    })
-                    .always(function () {
-                      vm.saving = false;
+                    data: JSON.stringify(payload)
+                  }).done(function (res) {
+                    if (!res || res.code !== "0" || res.data !== true) {
+                      vm.editError = (res && res.msg) || "保存失败。";
+                      vm.$nextTick(function () {
+                        var e = document.getElementById("noticeEditError");
+                        if (e && e.focus) e.focus();
+                      });
+                      return;
+                    }
+                    vm.editOpen = false;
+                    vm.load(vm.pageNum || 1, true);
+                    vm.messageType = "success";
+                    vm.message = payload.id ? "公告已更新并立即公开。" : "公告已发布并立即公开。";
+                    vm.restoreReturnFocus();
+                  }).fail(function (xhr) {
+                    vm.editError = (xhr.responseJSON && xhr.responseJSON.msg) || "网络异常。";
+                    vm.$nextTick(function () {
+                      var e = document.getElementById("noticeEditError");
+                      if (e && e.focus) e.focus();
                     });
+                  }).always(function () {
+                    vm.saving = false;
+                    L.save = false;
+                  });
                 },
-                askDelete: function (item) {
+                askDelete: function (item, evt) {
+                  // adversarial contract uses @click="askDelete(item)"; activeElement captures trigger
+                  this.pushReturnFocus(evt || { currentTarget: document.activeElement });
                   this.deleteItem = item;
                   this.deleteError = "";
                 },
                 cancelDelete: function () {
-                  if (this.deleting) return;
+                  if (this.deleting || window.__noticeWriteLocks.del) return;
                   this.deleteItem = null;
                   this.deleteError = "";
+                  this.restoreReturnFocus();
                 },
                 confirmDelete: function () {
                   var vm = this;
-                  if (!vm.deleteItem || vm.deleting) return;
+                  var L = window.__noticeWriteLocks;
+                  if (!vm.deleteItem || vm.deleting || L.del) return;
+                  L.del = true;
                   vm.deleting = true;
                   vm.deleteError = "";
                   $.ajax({
                     url: "/api/notice/" + encodeURIComponent(vm.deleteItem.id),
-                    type: "DELETE",
-                  })
-                    .done(function (res) {
-                      if (!res || res.code !== "0" || res.data !== true) {
-                        vm.deleteError = (res && res.msg) || "删除失败。";
-                        return;
-                      }
-                      var title =
-                        vm.deleteItem.title || "公告 #" + vm.deleteItem.id;
-                      vm.deleteItem = null;
-                      vm.load(vm.pageNum);
-                      vm.messageType = "success";
-                      vm.message = "“" + title + "”已删除并从公众页面移除。";
-                    })
-                    .fail(function (xhr) {
-                      vm.deleteError =
-                        (xhr.responseJSON && xhr.responseJSON.msg) ||
-                        "网络异常，公告未删除。";
-                    })
-                    .always(function () {
-                      vm.deleting = false;
+                    type: "DELETE"
+                  }).done(function (res) {
+                    if (!res || res.code !== "0" || res.data !== true) {
+                      vm.deleteError = (res && res.msg) || "删除失败。";
+                      vm.$nextTick(function () {
+                        var e = document.getElementById("noticeDeleteError");
+                        if (e && e.focus) e.focus();
+                      });
+                      return;
+                    }
+                    var id = vm.deleteItem.id;
+                    vm.deleteItem = null;
+                    vm.load(vm.pageNum, true);
+                    vm.messageType = "success";
+                    vm.message = "公告 #" + id + " 已删除，已从公众页面移除。";
+                    vm.restoreReturnFocus();
+                  }).fail(function (xhr) {
+                    vm.deleteError = (xhr.responseJSON && xhr.responseJSON.msg) || "网络异常，记录未删除。";
+                    vm.$nextTick(function () {
+                      var e = document.getElementById("noticeDeleteError");
+                      if (e && e.focus) e.focus();
                     });
-                },
-              },
+                  }).always(function () {
+                    vm.deleting = false;
+                    L.del = false;
+                  });
+                }
+              }
             });
-          },
+          }
         });
       })();
     </script>
