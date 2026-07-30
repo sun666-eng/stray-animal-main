@@ -2,217 +2,175 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width,initial-scale=1,viewport-fit=cover"
-    />
-    <title>回访管理 · 归途计划管理</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>领养后回访 · 归途计划管理</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
     <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c" />
-    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260729c" />
+    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260730i" />
   </head>
   <body>
-    <div id="authWait" class="admin-auth-wait" role="status">
-      正在验证登录状态...
-    </div>
-    <div id="workspace" :class="{'is-nav-open': mobileOpen}" class="admin-shell" v-cloak @keyup.esc="closeTopLayer" @click="closeMenus">
+    <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
+    <div id="workspace" :class="{'is-nav-open': mobileOpen}" class="admin-shell visit-governance" v-cloak @click="closeMenus">
       <header class="ui-header admin-header" @click.stop>
-    <div class="ui-header-inner">
-      <a class="ui-brand" href="/page/end/index.html" aria-label="返回管理工作台">
-        <span class="ui-brand-mark" aria-hidden="true">爪</span>
-        <span class="ui-brand-copy"><strong>归途计划</strong><small>RESCUE WORKSPACE</small></span>
-        <span class="admin-brand-note">回访管理</span>
-      </a>
-      <nav class="ui-nav admin-desktop-nav" aria-label="管理功能">
-        <a href="/page/end/index.html" :class="{'is-active': isOverviewActive()}" :aria-current="isOverviewActive() ? 'page' : null">概览</a>
-        <a v-for="item in desktopNav.primary" :key="'desk-'+item.flag"
-           :class="{'is-active': isNavActive(item.flag)}"
-           :aria-current="isNavActive(item.flag) ? 'page' : null"
-           :href="item.href">
-          <span class="admin-nav-short">{{ item.shortLabel }}</span>
-          <span class="admin-nav-full">{{ item.label }}</span>
-        </a>
-        <div v-if="desktopNav.more && desktopNav.more.length" class="admin-nav-more">
-          <button class="admin-nav-more-trigger" type="button"
-                  :class="{'is-current': isMoreCurrent()}"
-                  :aria-expanded="String(moreOpen)"
-                  aria-controls="adminNavMoreMenu"
-                  aria-haspopup="true"
-                  @click.stop="toggleMore">
-            更多
-            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down"></use></svg>
-          </button>
-          <div id="adminNavMoreMenu" class="admin-nav-more-menu" role="menu" :hidden="!moreOpen">
-            <a v-for="item in desktopNav.more" :key="'more-'+item.flag" role="menuitem"
+        <div class="ui-header-inner">
+          <a class="ui-brand" href="/page/end/index.html" aria-label="返回管理工作台">
+            <span class="ui-brand-mark" aria-hidden="true">爪</span>
+            <span class="ui-brand-copy"><strong>归途计划</strong><small>RESCUE WORKSPACE</small></span>
+            <span class="admin-brand-note">回访管理</span>
+          </a>
+          <nav class="ui-nav admin-desktop-nav" aria-label="管理功能">
+            <a href="/page/end/index.html" :class="{'is-active': isOverviewActive()}" :aria-current="isOverviewActive() ? 'page' : null">概览</a>
+            <a v-for="item in desktopNav.primary" :key="'desk-'+item.flag"
                :class="{'is-active': isNavActive(item.flag)}"
                :aria-current="isNavActive(item.flag) ? 'page' : null"
-               :href="item.href">{{ item.label }}</a>
+               :href="item.href">
+              <span class="admin-nav-short">{{ item.shortLabel }}</span>
+              <span class="admin-nav-full">{{ item.label }}</span>
+            </a>
+            <div v-if="desktopNav.more && desktopNav.more.length" class="admin-nav-more">
+              <button class="admin-nav-more-trigger" type="button"
+                      :class="{'is-current': isMoreCurrent()}"
+                      :aria-expanded="String(moreOpen)"
+                      aria-controls="adminNavMoreMenu"
+                      aria-haspopup="true"
+                      @click.stop="toggleMore">
+                更多
+                <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down"></use></svg>
+              </button>
+              <div id="adminNavMoreMenu" class="admin-nav-more-menu" role="menu" :hidden="!moreOpen">
+                <a v-for="item in desktopNav.more" :key="'more-'+item.flag" role="menuitem"
+                   :class="{'is-active': isNavActive(item.flag)}"
+                   :aria-current="isNavActive(item.flag) ? 'page' : null"
+                   :href="item.href">{{ item.label }}</a>
+              </div>
+            </div>
+          </nav>
+          <div class="ui-header-actions">
+            <button class="ui-icon-button ui-mobile-toggle" type="button"
+                    :aria-expanded="String(mobileOpen)"
+                    aria-controls="adminMobileNav"
+                    :aria-label="mobileOpen ? '关闭管理导航' : '打开管理导航'"
+                    @click.stop="toggleMobile">
+              <span aria-hidden="true"><svg class="ui-icon ui-icon-lg" aria-hidden="true" focusable="false" v-if="mobileOpen"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg><svg class="ui-icon ui-icon-lg" aria-hidden="true" focusable="false" v-else><use href="/icons/ui-icons.svg?v=20260729c#icon-menu" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-menu"></use></svg></span>
+            </button>
+            <div class="ui-account">
+              <button class="ui-account-trigger admin-account-trigger" type="button"
+                      :aria-expanded="String(accountOpen)"
+                      aria-controls="adminAccountMenu"
+                      @click.stop="toggleAccount">
+                <img class="admin-account-photo" :src="avatarUrl(user.avatar)" alt="" @error="avatarFallback">
+                <span class="ui-account-name">{{ user.username }}</span>
+                <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down"></use></svg>
+              </button>
+              <div id="adminAccountMenu" class="ui-account-menu admin-account-menu" :hidden="!accountOpen" @click.stop>
+                <a href="/page/end/person.html">个人资料</a>
+                <a href="/page/front/index.html">用户端首页</a>
+                <button class="is-danger" type="button" @click="logout">退出登录</button>
+              </div>
+            </div>
           </div>
-        </div>
-      </nav>
-      <div class="ui-header-actions">
-        <button class="ui-icon-button ui-mobile-toggle" type="button"
-                :aria-expanded="String(mobileOpen)"
-                aria-controls="adminMobileNav"
-                :aria-label="mobileOpen ? '关闭管理导航' : '打开管理导航'"
-                @click.stop="toggleMobile">
-          <span aria-hidden="true"><svg class="ui-icon ui-icon-lg" aria-hidden="true" focusable="false" v-if="mobileOpen"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg><svg class="ui-icon ui-icon-lg" aria-hidden="true" focusable="false" v-else><use href="/icons/ui-icons.svg?v=20260729c#icon-menu" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-menu"></use></svg></span>
-        </button>
-        <div class="ui-account">
-          <button class="ui-account-trigger admin-account-trigger" type="button"
-                  :aria-expanded="String(accountOpen)"
-                  aria-controls="adminAccountMenu"
-                  @click.stop="toggleAccount">
-            <img class="admin-account-photo" :src="avatarUrl(user.avatar)" alt="" @error="avatarFallback">
-            <span class="ui-account-name">{{ user.username }}</span>
-            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down"></use></svg>
-          </button>
-          <div id="adminAccountMenu" class="ui-account-menu admin-account-menu" :hidden="!accountOpen" @click.stop>
+          <nav id="adminMobileNav" class="ui-mobile-nav admin-mobile-nav"
+               :class="{'is-open': mobileOpen}"
+               aria-label="移动端管理功能"
+               @click.stop>
+            <a class="admin-mobile-home" href="/page/end/index.html" :aria-current="isOverviewActive() ? 'page' : null">工作台概览</a>
+            <template v-for="group in menuGroups">
+              <strong :key="'g-'+group.id">{{ group.label }}</strong>
+              <a v-for="item in group.items" :key="'m-'+item.flag"
+                 :class="{'is-active': isNavActive(item.flag)}"
+                 :aria-current="isNavActive(item.flag) ? 'page' : null"
+                 :href="item.href">{{ item.label }}</a>
+            </template>
+            <strong>账户</strong>
             <a href="/page/end/person.html">个人资料</a>
             <a href="/page/front/index.html">用户端首页</a>
-            <button class="is-danger" type="button" @click="logout">退出登录</button>
-          </div>
+          </nav>
         </div>
-      </div>
-      <nav id="adminMobileNav" class="ui-mobile-nav admin-mobile-nav"
-           :class="{'is-open': mobileOpen}"
-           aria-label="移动端管理功能"
-           @click.stop>
-        <a class="admin-mobile-home" href="/page/end/index.html" :aria-current="isOverviewActive() ? 'page' : null">工作台概览</a>
-        <template v-for="group in menuGroups">
-          <strong :key="'g-'+group.id">{{ group.label }}</strong>
-          <a v-for="item in group.items" :key="'m-'+item.flag"
-             :class="{'is-active': isNavActive(item.flag)}"
-             :aria-current="isNavActive(item.flag) ? 'page' : null"
-             :href="item.href">{{ item.label }}</a>
-        </template>
-        <strong>账户</strong>
-        <a href="/page/end/person.html">个人资料</a>
-        <a href="/page/front/index.html">用户端首页</a>
-      </nav>
-    </div>
-  </header>
-  <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
+      </header>
+      <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
+
       <main class="admin-main">
-        <section class="admin-hero" aria-labelledby="visitAdminTitle">
+        <section class="admin-hero visit-governance-hero" aria-labelledby="visitAdminTitle">
           <div>
-            <p class="admin-kicker">Follow-up records</p>
-            <h1 id="visitAdminTitle">回访管理</h1>
-            <p>
-              回访只能关联已通过的领养关系。动物与饲主关系创建后不可在编辑中转移。
-            </p>
+            <p class="admin-kicker">Post-adoption follow-up</p>
+            <h1 id="visitAdminTitle">领养后回访</h1>
+            <p class="visit-governance-lead">回访必须关联已通过的领养关系。编辑时不可更换动物与饲主。健康评分 1–5 仅为运营观察，<strong>不是兽医诊断</strong>。</p>
           </div>
-          <div class="admin-hero-meta">
-            <span>当前登录账号</span><strong>{{ user.username }}</strong>
+          <div class="admin-hero-meta"><span>当前登录账号</span><strong>{{ user.username }}</strong></div>
+          <div class="visit-governance-metrics" aria-label="当前页回访摘要">
+            <div class="visit-governance-metric"><span>当前页回访</span><strong>{{ pageCount }}</strong><small>仅当前页 records</small></div>
+            <div class="visit-governance-metric is-ok"><span>当前页良好</span><strong>{{ pageGood }}</strong><small>评分 4–5 · 仅当前页</small></div>
+            <div class="visit-governance-metric is-pending"><span>当前页需关注</span><strong>{{ pageRisk }}</strong><small>评分 1–2 · 仅当前页</small></div>
+            <div class="visit-governance-metric"><span>当前页有图证</span><strong>{{ pageWithPic }}</strong><small>仅当前页</small></div>
           </div>
         </section>
+
         <section aria-labelledby="visitListTitle">
           <div class="admin-section-head">
             <div>
               <h2 id="visitListTitle">回访记录</h2>
-              <p>新增回访请从已通过的领养申请进入，避免手工伪造关系。</p>
+              <p>新增回访请从已通过的领养申请进入。导出走服务端 <code>/api/visit/export</code>，不是当前页前端生成。</p>
             </div>
-            <button
-              class="ui-button is-ghost"
-              type="button"
-              @click="exportRows"
-            ><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-download" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-download"></use></svg>导出
+            <button class="ui-button is-ghost" type="button" @click="exportRows">
+              <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-download" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-download"></use></svg>导出
             </button>
           </div>
-          <form
-            class="ui-toolbar admin-review-toolbar"
-            role="search"
-            @submit.prevent="load(1)"
-          >
-            <label class="ui-search"
-              ><span aria-hidden="true">搜索</span
-              ><span class="sr-only">按动物名称搜索</span
-              ><input
-                v-model.trim="search"
-                type="search"
-                maxlength="100"
-                placeholder="按动物名称搜索" /></label
-            ><button
-              class="ui-button is-dark"
-              type="submit"
-              :disabled="loading"
-            >
-              查询</button
-            ><button
-              v-if="search"
-              class="ui-button is-ghost"
-              type="button"
-              @click="search='';load(1)"
-            >
-              清除
-            </button>
+          <form class="ui-toolbar admin-review-toolbar" role="search" @submit.prevent="load(1)">
+            <label class="ui-search">
+              <span aria-hidden="true">⌕</span>
+              <span class="sr-only">按动物名称搜索</span>
+              <input id="visitSearch" v-model.trim="search" type="search" maxlength="100" placeholder="按动物名称搜索" />
+            </label>
+            <button class="ui-button is-dark" type="submit" :disabled="loading">查询</button>
+            <button v-if="search" class="ui-button is-ghost" type="button" @click="resetSearch">清除</button>
           </form>
-          <div
-            v-if="message"
-            class="admin-inline-message"
-            :class="{'is-error':messageType==='error','is-success':messageType==='success'}"
-            :role="messageType==='error'?'alert':'status'"
-          >
-            {{ message }}
+          <div class="admin-status-key visit-score-key" aria-label="健康评分说明">
+            <span><i class="is-done"></i>4–5 状态良好</span>
+            <span><i class="is-pending"></i>3 继续观察</span>
+            <span><i class="is-closed"></i>1–2 需要关注</span>
+            <span class="visit-score-note">评分非兽医诊断</span>
           </div>
-          <div v-if="loading" class="admin-status" role="status">
-            正在读取回访记录...
-          </div>
+
+          <div v-if="message" class="visit-governance-feedback" :class="{'is-error':messageType==='error','is-success':messageType==='success'}" :role="messageType==='error'?'alert':'status'" aria-live="polite">{{ message }}</div>
+          <div v-if="loading" class="admin-status" role="status">正在读取当前页回访记录...</div>
           <div v-else-if="loadError" class="admin-status is-error" role="alert">
-            <div>
-              <strong>回访记录暂时无法读取</strong><br />{{ loadError }}<br /><button
-                class="ui-button is-ghost"
-                type="button"
-                @click="load(pageNum)"
-              >
-                重新加载
-              </button>
+            <div><strong>回访记录暂时无法读取</strong><br />{{ loadError }}<br />
+              <button class="ui-button is-ghost" type="button" @click="load(pageNum)">重新加载</button>
             </div>
           </div>
-          <div v-else-if="!records.length" class="admin-status">
-            当前条件下没有回访记录。
-          </div>
+          <div v-else-if="!records.length" class="admin-status">当前条件下没有回访记录。</div>
           <template v-else>
-            <div
-              class="admin-record-table admin-visit-table"
-              aria-label="回访桌面列表"
-            >
+            <div class="admin-record-table admin-visit-table" aria-label="回访桌面列表">
               <table>
                 <thead>
                   <tr>
-                    <th>动物</th>
-                    <th>饲主 ID</th>
-                    <th>日期</th>
-                    <th>健康评分</th>
-                    <th>记录人</th>
-                    <th>备注</th>
-                    <th>操作</th>
+                    <th scope="col">动物与档案</th>
+                    <th scope="col">饲主编号</th>
+                    <th scope="col">回访日期</th>
+                    <th scope="col">健康评分</th>
+                    <th scope="col">记录人</th>
+                    <th scope="col">备注摘要</th>
+                    <th scope="col">操作</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="item in records" :key="item.id">
+                  <tr v-for="item in records" :key="item.id" :class="{'is-risk-row': isRiskScore(item.state)}">
                     <td>
-                      <strong>{{ item.aname||'未命名动物' }}</strong
-                      ><small>#{{ item.petId }}</small>
+                      <strong>{{ item.aname || '未命名动物' }}</strong>
+                      <small>动物 #{{ item.petId }} · 回访 #{{ item.id }}</small>
                     </td>
                     <td>#{{ item.uid }}</td>
                     <td>{{ dateText(item.vtime) }}</td>
-                    <td>{{ scoreText(item.state) }}</td>
-                    <td>{{ item.vname||'-' }}</td>
-                    <td class="admin-cell-summary">{{ item.remark||'-' }}</td>
+                    <td>
+                      <span class="ui-badge" :class="scoreBadgeClass(item.state)">{{ scoreText(item.state) }} · {{ scoreLabel(item.state) }}</span>
+                    </td>
+                    <td>{{ item.vname || '-' }}</td>
+                    <td class="admin-cell-summary">{{ remarkSummary(item.remark) }}</td>
                     <td>
                       <div class="admin-row-actions">
-                        <button
-                          class="is-primary"
-                          type="button"
-                          @click="openEdit(item)"
-                        >
-                          编辑</button
-                        ><button
-                          class="is-danger"
-                          type="button"
-                          @click="askDelete(item)"
-                        ><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-trash" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-trash"></use></svg>删除
+                        <button class="is-primary" type="button" @click="openEdit(item, $event)">编辑</button>
+                        <button class="is-danger" type="button" @click="askDelete(item, $event)">
+                          <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-trash" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-trash"></use></svg>删除
                         </button>
                       </div>
                     </td>
@@ -220,228 +178,140 @@
                 </tbody>
               </table>
             </div>
-            <div
-              class="admin-record-cards admin-visit-cards"
-              aria-label="回访移动端列表"
-            >
-              <article
-                v-for="item in records"
-                :key="'c-'+item.id"
-                class="admin-record-card"
-              >
+            <div class="admin-record-cards admin-visit-cards" aria-label="回访移动端列表">
+              <article v-for="item in records" :key="'c-'+item.id" class="admin-record-card">
                 <div class="admin-record-card-head">
                   <div>
                     <span>回访 #{{ item.id }}</span>
-                    <h3>{{ item.aname||'未命名动物' }}</h3>
-                    <p>{{ dateText(item.vtime) }} · 饲主 #{{ item.uid }}</p>
+                    <h3>{{ item.aname || '未命名动物' }}</h3>
+                    <p>{{ dateText(item.vtime) }} · 动物 #{{ item.petId }}</p>
                   </div>
-                  <span class="ui-badge is-done"
-                    >{{ scoreText(item.state) }}</span
-                  >
+                  <span class="ui-badge" :class="scoreBadgeClass(item.state)">{{ scoreText(item.state) }} · {{ scoreLabel(item.state) }}</span>
                 </div>
-                <p>{{ item.remark||'未填写备注' }}</p>
+                <p>{{ remarkSummary(item.remark) }}</p>
                 <div class="admin-card-actions">
-                  <button
-                    class="ui-button is-dark"
-                    type="button"
-                    @click="openEdit(item)"
-                  >
-                    编辑</button
-                  ><button
-                    class="ui-button is-danger"
-                    type="button"
-                    @click="askDelete(item)"
-                  ><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-trash" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-trash"></use></svg>删除
-                  </button>
+                  <button class="ui-button is-dark" type="button" @click="openEdit(item, $event)">编辑</button>
+                  <button class="ui-button is-danger" type="button" @click="askDelete(item, $event)">删除</button>
                 </div>
               </article>
-            </div></template
-          >
-          <div
-            v-if="!loading&&!loadError&&totalPages>1"
-            class="ui-pagination admin-pagination"
-          >
-            <span>第 {{ pageNum }} 页，共 {{ total }} 条</span>
+            </div>
+          </template>
+          <div v-if="!loading&&!loadError&&totalPages>1" class="ui-pagination admin-pagination">
+            <span>第 {{ pageNum }} 页，共 {{ total }} 条（服务端 total）</span>
             <div class="ui-page-buttons">
-              <button
-                type="button"
-                :disabled="pageNum===1"
-                @click="load(pageNum-1)"
-              >
-                上一页</button
-              ><button
-                v-for="page in pages"
-                :key="page"
-                type="button"
-                :class="{'is-current':page===pageNum}"
-                @click="load(page)"
-              >
-                {{ page }}</button
-              ><button
-                type="button"
-                :disabled="pageNum===totalPages"
-                @click="load(pageNum+1)"
-              >
-                下一页
-              </button>
+              <button type="button" :disabled="pageNum===1" @click="load(pageNum-1)">上一页</button>
+              <button v-for="page in pages" :key="page" type="button" :class="{'is-current':page===pageNum}" @click="load(page)">{{ page }}</button>
+              <button type="button" :disabled="pageNum===totalPages" @click="load(pageNum+1)">下一页</button>
             </div>
           </div>
         </section>
       </main>
-      <div
-        v-if="editOpen"
-        class="admin-dialog-backdrop"
-        @click.self="cancelEdit"
-      >
-        <section
-          class="admin-dialog admin-detail-dialog"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="visitEditTitle"
-        >
+
+      <div v-if="editOpen" class="admin-dialog-backdrop" @click.self="cancelEdit">
+        <section class="admin-dialog admin-detail-dialog visit-governance-dialog" role="dialog" aria-modal="true" aria-labelledby="visitEditTitle">
           <div class="admin-dialog-head">
             <div>
-              <span
-                >回访 #{{ form.id }} · 动物 #{{ form.petId }} · 饲主 #{{
-                form.uid }}</span
-              >
+              <span>回访 #{{ form.id }}</span>
               <h2 id="visitEditTitle">编辑回访记录</h2>
             </div>
-            <button class="admin-dialog-close" type="button" @click="cancelEdit" title="关闭" aria-label="关闭回访编辑"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button>
+            <button class="admin-dialog-close" type="button" :disabled="saving||uploading" @click="cancelEdit" title="关闭" aria-label="关闭回访编辑">
+              <span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span>
+              <span class="admin-dialog-close-text">关闭</span>
+            </button>
           </div>
           <form class="admin-edit-form" @submit.prevent="save">
-            <div class="admin-form-grid">
-              <div class="ui-form-field">
-                <label for="visitDate">回访日期</label
-                ><input
-                  id="visitDate"
-                  ref="editFirst"
-                  v-model="form.vtime"
-                  class="ui-form-input"
-                  type="date"
-                  required
-                />
-              </div>
-              <div class="ui-form-field">
-                <label for="visitScore">健康评分</label
-                ><select
-                  id="visitScore"
-                  v-model.number="form.state"
-                  class="ui-form-input"
-                  required
-                >
-                  <option v-for="score in [1,2,3,4,5]" :value="score">
-                    {{ score }}/5
-                  </option>
-                </select>
-              </div>
-              <div class="ui-form-field">
-                <label for="visitName">记录人姓名</label
-                ><input
-                  id="visitName"
-                  v-model.trim="form.vname"
-                  class="ui-form-input"
-                  maxlength="12"
-                  required
-                />
-              </div>
-              <div class="ui-form-field">
-                <label for="visitImage">回访图片</label
-                ><input
-                  id="visitImage"
-                  type="file"
-                  accept="image/jpeg,image/png,image/gif"
-                  :disabled="uploading"
-                  @change="selectImage"
-                /><small>仅 JPG、PNG、GIF；替换后旧文件立即失效。</small>
+            <div class="visit-form-group">
+              <h3>关联关系（只读）</h3>
+              <p class="admin-dialog-note">动物与饲主关系创建后不可在编辑中转移。</p>
+              <dl class="visit-relation-grid" aria-label="回访关联关系">
+                <div>
+                  <dt>动物编号</dt>
+                  <dd>#{{ form.petId }}</dd>
+                </div>
+                <div>
+                  <dt>饲主编号</dt>
+                  <dd>#{{ form.uid }}</dd>
+                </div>
+              </dl>
+            </div>
+            <div class="visit-form-group">
+              <h3>回访记录</h3>
+              <div class="admin-form-grid">
+                <div class="ui-form-field">
+                  <label for="visitDate">回访日期</label>
+                  <input id="visitDate" ref="editFirst" v-model="form.vtime" class="ui-form-input" type="date" required :disabled="saving||uploading" />
+                </div>
+                <div class="ui-form-field">
+                  <label for="visitScore">健康评分（1–5，非兽医诊断）</label>
+                  <select id="visitScore" v-model.number="form.state" class="ui-form-input" required :disabled="saving||uploading">
+                    <option v-for="score in [1,2,3,4,5]" :value="score">{{ score }}/5 · {{ scoreLabel(score) }}</option>
+                  </select>
+                </div>
+                <div class="ui-form-field">
+                  <label for="visitName">记录人姓名</label>
+                  <input id="visitName" v-model.trim="form.vname" class="ui-form-input" maxlength="12" required :disabled="saving||uploading" />
+                </div>
+                <div class="ui-form-field is-full">
+                  <label for="visitRemark">回访备注</label>
+                  <textarea id="visitRemark" v-model.trim="form.remark" class="ui-form-textarea" maxlength="355" rows="5" :disabled="saving||uploading"></textarea>
+                </div>
               </div>
             </div>
-            <div v-if="imageUrl(form.pic)" class="admin-upload-preview">
-              <img :src="imageUrl(form.pic)" alt="回访图片" @error="contentImageFallback" /><button
-                class="ui-button is-ghost"
-                type="button"
-                @click="form.pic=''"
-              >
-                移除图片
-              </button>
+            <div class="visit-form-group">
+              <h3>图片证据</h3>
+              <div class="ui-form-field visit-file-field">
+                <span class="visit-file-caption" id="visitImageCaption">回访图片</span>
+                <div class="visit-file-picker">
+                  <input
+                    id="visitImage"
+                    class="visit-file-input"
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif"
+                    :disabled="uploading||saving"
+                    aria-labelledby="visitImageCaption"
+                    @change="selectImage"
+                  />
+                  <label
+                    for="visitImage"
+                    class="visit-file-label"
+                    :class="{'is-disabled': uploading||saving, 'is-busy': uploading}"
+                  >
+                    <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-upload" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-upload"></use></svg>
+                    <span class="visit-file-action">{{ uploading ? '正在上传…' : '选择回访图片' }}</span>
+                    <span class="visit-file-name" id="visitFileName">{{ imageFileName || '尚未选择文件' }}</span>
+                  </label>
+                </div>
+                <small>仅 JPG、PNG、GIF。新上传成功后才会替换上一张暂存图；上传或保存失败不会清空已成功暂存的图片。</small>
+              </div>
+              <div v-if="imageUrl(form.pic)" class="admin-upload-preview" id="visitImagePreview">
+                <img :src="imageUrl(form.pic)" alt="回访图片预览" @error="contentImageFallback" />
+                <button class="ui-button is-ghost" type="button" :disabled="saving||uploading" @click="removeImage">移除图片</button>
+              </div>
             </div>
-            <div class="ui-form-field">
-              <label for="visitRemark">回访备注</label
-              ><textarea
-                id="visitRemark"
-                v-model.trim="form.remark"
-                class="ui-form-textarea"
-                maxlength="355"
-                rows="5"
-              ></textarea>
-            </div>
-            <div
-              v-if="editError"
-              class="admin-inline-message is-error"
-              role="alert"
-            >
-              {{ editError }}
-            </div>
+            <div v-if="editError" id="visitEditError" class="admin-inline-message is-error" role="alert" tabindex="-1">{{ editError }}</div>
             <div class="admin-dialog-actions">
-              <button
-                class="ui-button is-ghost"
-                type="button"
-                :disabled="saving||uploading"
-                @click="cancelEdit"
-              >
-                取消</button
-              ><button
-                class="ui-button is-primary"
-                type="submit"
-                :disabled="saving||uploading||!form.vtime||!form.state||!form.vname"
-              >
-                {{ uploading?'正在上传...':saving?'正在保存...':'保存回访' }}
+              <button class="ui-button is-ghost" type="button" :disabled="saving||uploading" @click="cancelEdit">取消</button>
+              <button class="ui-button is-primary" type="submit" :class="{'is-loading':saving||uploading}" :disabled="saving||uploading||!form.vtime||!form.state||!form.vname" :aria-busy="(saving||uploading)?'true':'false'">
+                {{ uploading ? '正在上传...' : saving ? '正在保存...' : '保存回访' }}
               </button>
             </div>
           </form>
         </section>
       </div>
-      <div
-        v-if="deleteItem"
-        class="admin-dialog-backdrop"
-        @click.self="cancelDelete"
-      >
-        <section
-          class="admin-dialog"
-          role="alertdialog"
-          aria-modal="true"
-          aria-labelledby="visitDeleteTitle"
-        >
+
+      <div v-if="deleteItem" class="admin-dialog-backdrop" @click.self="cancelDelete">
+        <section class="admin-dialog visit-governance-dialog is-danger" role="alertdialog" aria-modal="true" aria-labelledby="visitDeleteTitle">
           <div class="admin-dialog-head">
             <div>
-              <span>旧图片将立即失效</span>
+              <span>不可撤销</span>
               <h2 id="visitDeleteTitle">删除回访 #{{ deleteItem.id }}？</h2>
             </div>
           </div>
-          <p class="admin-dialog-copy">记录删除后不可恢复。</p>
-          <div
-            v-if="deleteError"
-            class="admin-inline-message is-error"
-            role="alert"
-          >
-            {{ deleteError }}
-          </div>
+          <p class="admin-dialog-copy">将删除回访 #{{ deleteItem.id }}（动物 #{{ deleteItem.petId }} · {{ deleteItem.aname || '未命名' }}）。记录删除后不可恢复，关联旧图片立即失效。</p>
+          <div v-if="deleteError" id="visitDeleteError" class="admin-inline-message is-error" role="alert" tabindex="-1">{{ deleteError }}</div>
           <div class="admin-dialog-actions">
-            <button
-              class="ui-button is-ghost"
-              type="button"
-              :disabled="deleting"
-              @click="cancelDelete"
-            >
-              取消</button
-            ><button
-              class="ui-button is-danger-solid"
-              type="button"
-              :disabled="deleting"
-              @click="confirmDelete"
-            >
-              {{ deleting?'正在删除...':'确认删除' }}
-            </button>
+            <button class="ui-button is-ghost" type="button" ref="deleteCancel" :disabled="deleting" @click="cancelDelete">取消</button>
+            <button class="ui-button is-danger-solid" type="button" :disabled="deleting" @click="confirmDelete">{{ deleting ? '正在删除...' : '确认删除' }}</button>
           </div>
         </section>
       </div>
@@ -453,6 +323,90 @@
     <script>
       (function () {
         "use strict";
+        var writeLocks = { save: false, upload: false, del: false };
+        var retiredStageFlags = Object.create(null);
+        window.__visitWriteLocks = writeLocks;
+        function createFocusTrap() {
+          var state = { root: null, onKey: null, prevOverflow: "", onEscape: null };
+          function focusable(root) {
+            return Array.prototype.slice
+              .call(
+                root.querySelectorAll(
+                  'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])',
+                ),
+              )
+              .filter(function (el) {
+                return (
+                  !el.disabled &&
+                  (el.offsetParent !== null ||
+                    el === document.activeElement ||
+                    el.getClientRects().length)
+                );
+              });
+          }
+          return {
+            activate: function (root, initial, onEscape) {
+              this.deactivate();
+              if (!root) return;
+              state.root = root;
+              state.onEscape = typeof onEscape === "function" ? onEscape : null;
+              state.prevOverflow = document.body.style.overflow;
+              document.body.style.overflow = "hidden";
+              if (!root.hasAttribute("tabindex")) root.setAttribute("tabindex", "-1");
+              state.onKey = function (e) {
+                if (!state.root) return;
+                if (e.key === "Escape" || e.keyCode === 27) {
+                  if (state.onEscape) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    state.onEscape();
+                  }
+                  return;
+                }
+                if (e.key !== "Tab") return;
+                var list = focusable(state.root);
+                if (!list.length) {
+                  e.preventDefault();
+                  state.root.focus();
+                  return;
+                }
+                var first = list[0],
+                  last = list[list.length - 1],
+                  active = document.activeElement;
+                if (e.shiftKey) {
+                  if (active === first || !state.root.contains(active)) {
+                    e.preventDefault();
+                    last.focus();
+                  }
+                } else if (active === last || !state.root.contains(active)) {
+                  e.preventDefault();
+                  first.focus();
+                }
+              };
+              document.addEventListener("keydown", state.onKey, true);
+              setTimeout(function () {
+                var target = initial;
+                if (!target || !state.root.contains(target) || target.disabled) {
+                  var list = focusable(state.root);
+                  target = list[0] || state.root;
+                }
+                if (target && target.focus) target.focus();
+              }, 0);
+            },
+            deactivate: function () {
+              if (state.onKey) {
+                document.removeEventListener("keydown", state.onKey, true);
+                state.onKey = null;
+              }
+              state.onEscape = null;
+              document.body.style.overflow = state.prevOverflow || "";
+              state.root = null;
+            },
+            root: function () {
+              return state.root;
+            },
+          };
+        }
         AuthSession.bootstrap({
           requireAuth: true,
           allowCachedOnNetworkError: false,
@@ -463,21 +417,23 @@
               return;
             }
             document.getElementById("authWait").hidden = true;
+            var focusTrap = createFocusTrap();
             new Vue({
               el: "#workspace",
               data: {
                 user: user,
                 menuItems: AdminWorkspace.navigation(user.permission),
-          menuGroups: AdminWorkspace.navigationGroups(user.permission),
-          desktopNav: AdminWorkspace.desktopNavigation(user.permission),
-          currentNavFlag: 'visit',
-          moreOpen: false,
+                menuGroups: AdminWorkspace.navigationGroups(user.permission),
+                desktopNav: AdminWorkspace.desktopNavigation(user.permission),
+                currentNavFlag: "visit",
+                moreOpen: false,
                 mobileOpen: false,
                 accountOpen: false,
                 search: "",
                 records: [],
                 loading: true,
                 loadError: "",
+                loadSeq: 0,
                 message: "",
                 messageType: "",
                 pageNum: 1,
@@ -487,12 +443,14 @@
                 editOpen: false,
                 form: {},
                 stagedFlag: "",
+                imageFileName: "",
                 saving: false,
                 uploading: false,
                 editError: "",
                 deleteItem: null,
                 deleting: false,
                 deleteError: "",
+                triggerEl: null,
               },
               computed: {
                 pages: function () {
@@ -502,19 +460,214 @@
                   for (var p = start; p <= end; p += 1) result.push(p);
                   return result;
                 },
+                pageCount: function () {
+                  return (this.records || []).length;
+                },
+                pageGood: function () {
+                  return (this.records || []).filter(function (r) {
+                    return Number(r.state) >= 4;
+                  }).length;
+                },
+                pageRisk: function () {
+                  return (this.records || []).filter(function (r) {
+                    var n = Number(r.state);
+                    return n >= 1 && n <= 2;
+                  }).length;
+                },
+                pageWithPic: function () {
+                  return (this.records || []).filter(function (r) {
+                    return !!(r.pic && String(r.pic).length);
+                  }).length;
+                },
               },
               created: function () {
+                var vm = this;
+                this._onDocEsc = function (e) {
+                  if (e.key !== "Escape" && e.keyCode !== 27) return;
+                  if (focusTrap.root()) return;
+                  if (vm.saving || vm.uploading || vm.deleting) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                  }
+                  if (vm.deleteItem || vm.editOpen) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    vm.closeTopLayer();
+                  }
+                };
+                document.addEventListener("keydown", this._onDocEsc, true);
                 this.load(1);
               },
+              beforeDestroy: function () {
+                if (this._onDocEsc) {
+                  document.removeEventListener("keydown", this._onDocEsc, true);
+                  this._onDocEsc = null;
+                }
+                focusTrap.deactivate();
+              },
+              watch: {
+                editOpen: function (open) {
+                  var vm = this;
+                  if (open) {
+                    this.$nextTick(function () {
+                      var root = document.querySelector(
+                        '[role="dialog"][aria-labelledby="visitEditTitle"]',
+                      );
+                      focusTrap.activate(
+                        root,
+                        vm.$refs.editFirst || document.getElementById("visitDate"),
+                        function () {
+                          if (vm.saving || vm.uploading) return;
+                          vm.cancelEdit();
+                        },
+                      );
+                    });
+                  } else if (!this.deleteItem) focusTrap.deactivate();
+                },
+                deleteItem: function (v) {
+                  var vm = this;
+                  if (v) {
+                    this.$nextTick(function () {
+                      var root = document.querySelector(
+                        '[role="alertdialog"][aria-labelledby="visitDeleteTitle"]',
+                      );
+                      focusTrap.activate(
+                        root,
+                        vm.$refs.deleteCancel ||
+                          (root && root.querySelector("button.is-ghost")),
+                        function () {
+                          if (vm.deleting) return;
+                          vm.cancelDelete();
+                        },
+                      );
+                    });
+                  } else if (!this.editOpen) focusTrap.deactivate();
+                },
+              },
               methods: {
-          closeMenus: function () { this.mobileOpen = false; this.accountOpen = false; this.moreOpen = false; },
-          toggleMore: function () { this.moreOpen = !this.moreOpen; this.accountOpen = false; this.mobileOpen = false; },
-          toggleMobile: function () { this.mobileOpen = !this.mobileOpen; this.accountOpen = false; this.moreOpen = false; },
-          toggleAccount: function () { this.accountOpen = !this.accountOpen; this.moreOpen = false; this.mobileOpen = false; },
-          isNavActive: function (flag) { return AdminWorkspace.flagsMatch(flag, this.currentNavFlag); },
-          isMoreCurrent: function () { var vm = this; var more = (this.desktopNav && this.desktopNav.more) || []; return more.some(function (item) { return AdminWorkspace.flagsMatch(item.flag, vm.currentNavFlag); }); },
-          isOverviewActive: function () { return !this.currentNavFlag; },
-
+                closeMenus: function () {
+                  this.mobileOpen = false;
+                  this.accountOpen = false;
+                  this.moreOpen = false;
+                },
+                toggleMore: function () {
+                  this.moreOpen = !this.moreOpen;
+                  this.accountOpen = false;
+                  this.mobileOpen = false;
+                },
+                toggleMobile: function () {
+                  this.mobileOpen = !this.mobileOpen;
+                  this.accountOpen = false;
+                  this.moreOpen = false;
+                },
+                toggleAccount: function () {
+                  this.accountOpen = !this.accountOpen;
+                  this.moreOpen = false;
+                  this.mobileOpen = false;
+                },
+                isNavActive: function (flag) {
+                  return AdminWorkspace.flagsMatch(flag, this.currentNavFlag);
+                },
+                isMoreCurrent: function () {
+                  var vm = this;
+                  var more = (this.desktopNav && this.desktopNav.more) || [];
+                  return more.some(function (item) {
+                    return AdminWorkspace.flagsMatch(item.flag, vm.currentNavFlag);
+                  });
+                },
+                isOverviewActive: function () {
+                  return !this.currentNavFlag;
+                },
+                resolveStableFocusTarget: function () {
+                  var main = document.querySelector("main") || document;
+                  var sels = [
+                    "#visitSearch",
+                    'input[type="search"]',
+                    ".admin-review-toolbar input",
+                    "h2",
+                    "h1",
+                  ];
+                  for (var i = 0; i < sels.length; i++) {
+                    var el = main.querySelector(sels[i]);
+                    if (el && el.isConnected) return el;
+                  }
+                  return null;
+                },
+                restoreTriggerFocus: function () {
+                  var t = this.triggerEl;
+                  this.triggerEl = null;
+                  var vm = this;
+                  this.$nextTick(function () {
+                    var target = t;
+                    if (
+                      !target ||
+                      !target.isConnected ||
+                      typeof target.focus !== "function"
+                    )
+                      target = vm.resolveStableFocusTarget();
+                    if (!target || typeof target.focus !== "function") return;
+                    try {
+                      if (/^H[12]$/.test(target.tagName))
+                        target.setAttribute("tabindex", "-1");
+                      target.focus();
+                    } catch (e) {
+                      /* */
+                    }
+                  });
+                },
+                focusEditError: function () {
+                  this.$nextTick(function () {
+                    var err = document.getElementById("visitEditError");
+                    if (err) {
+                      try {
+                        err.focus();
+                        return;
+                      } catch (e1) {
+                        /* */
+                      }
+                    }
+                    var root = document.querySelector(
+                      '[role="dialog"][aria-labelledby="visitEditTitle"]',
+                    );
+                    if (root) {
+                      var b = root.querySelector(
+                        "button.is-primary, input, button",
+                      );
+                      if (b)
+                        try {
+                          b.focus();
+                        } catch (e2) {
+                          /* */
+                        }
+                    }
+                  });
+                },
+                focusDeleteError: function () {
+                  this.$nextTick(function () {
+                    var err = document.getElementById("visitDeleteError");
+                    if (err) {
+                      try {
+                        err.focus();
+                        return;
+                      } catch (e1) {
+                        /* */
+                      }
+                    }
+                    var root = document.querySelector(
+                      '[role="alertdialog"][aria-labelledby="visitDeleteTitle"]',
+                    );
+                    if (root) {
+                      var b = root.querySelector("button");
+                      if (b)
+                        try {
+                          b.focus();
+                        } catch (e2) {
+                          /* */
+                        }
+                    }
+                  });
+                },
                 avatarUrl: function (flag) {
                   return AdminWorkspace.avatarUrl(flag);
                 },
@@ -528,7 +681,9 @@
                 logout: function () {
                   AuthSession.logout();
                 },
-                closeTopLayer: function () { if (this.closeMenus) this.closeMenus();
+                closeTopLayer: function () {
+                  if (this.closeMenus) this.closeMenus();
+                  if (this.saving || this.uploading || this.deleting) return;
                   if (this.deleteItem) this.cancelDelete();
                   else if (this.editOpen) this.cancelEdit();
                   else {
@@ -543,14 +698,42 @@
                   var n = Number(v);
                   return n >= 1 && n <= 5 ? n + "/5" : "未记录";
                 },
+                scoreLabel: function (v) {
+                  var n = Number(v);
+                  if (n >= 4) return "状态良好";
+                  if (n === 3) return "继续观察";
+                  if (n >= 1 && n <= 2) return "需要关注";
+                  return "未分类";
+                },
+                scoreBadgeClass: function (v) {
+                  var n = Number(v);
+                  if (n >= 4) return "is-done";
+                  if (n === 3) return "is-pending";
+                  if (n >= 1 && n <= 2) return "is-closed";
+                  return "is-waiting";
+                },
+                isRiskScore: function (v) {
+                  var n = Number(v);
+                  return n >= 1 && n <= 2;
+                },
+                remarkSummary: function (v) {
+                  var s = v == null ? "" : String(v);
+                  if (!s) return "未填写备注";
+                  return s.length > 48 ? s.slice(0, 48) + "…" : s;
+                },
                 imageUrl: function (flag) {
                   var value = flag == null ? "" : String(flag);
                   return /^[a-zA-Z0-9-]{1,64}$/.test(value)
                     ? "/api/files/" + encodeURIComponent(value)
                     : "";
                 },
-                load: function (page) {
+                load: function (page, preserveFeedback, onDone) {
                   var vm = this;
+                  var seq = ++vm.loadSeq;
+                  if (!preserveFeedback) {
+                    vm.message = "";
+                    vm.messageType = "";
+                  }
                   vm.loading = true;
                   vm.loadError = "";
                   $.ajax({
@@ -564,6 +747,7 @@
                     cache: false,
                   })
                     .done(function (res) {
+                      if (seq !== vm.loadSeq) return;
                       if (
                         !res ||
                         res.code !== "0" ||
@@ -572,6 +756,10 @@
                       ) {
                         vm.loadError =
                           (res && res.msg) || "服务返回了无法识别的数据。";
+                        // Invalid shape must not keep prior success rows or look like empty success.
+                        vm.records = [];
+                        vm.total = 0;
+                        vm.totalPages = 1;
                         return;
                       }
                       vm.records = res.data.records;
@@ -580,15 +768,31 @@
                       vm.totalPages = Math.max(1, Number(res.data.pages || 1));
                     })
                     .fail(function (xhr) {
+                      if (seq !== vm.loadSeq) return;
                       vm.loadError =
                         (xhr.responseJSON && xhr.responseJSON.msg) ||
                         "请检查网络连接后重试。";
+                      vm.records = [];
+                      vm.total = 0;
+                      vm.totalPages = 1;
                     })
                     .always(function () {
+                      if (seq !== vm.loadSeq) return;
                       vm.loading = false;
+                      if (typeof onDone === "function") {
+                        vm.$nextTick(function () {
+                          onDone();
+                        });
+                      }
                     });
                 },
-                openEdit: function (item) {
+                resetSearch: function () {
+                  this.search = "";
+                  this.load(1);
+                },
+                openEdit: function (item, evt) {
+                  this.triggerEl =
+                    (evt && evt.currentTarget) || document.activeElement;
                   this.form = {
                     id: item.id,
                     petId: item.petId,
@@ -600,24 +804,42 @@
                     pic: item.pic || "",
                   };
                   this.stagedFlag = "";
+                  this.imageFileName = "";
                   this.editError = "";
                   this.editOpen = true;
-                  this.$nextTick(function () {
-                    if (this.$refs.editFirst) this.$refs.editFirst.focus();
-                  });
                 },
                 cancelEdit: function () {
                   if (this.saving || this.uploading) return;
-                  this.retireStage(this.stagedFlag);
-                  this.stagedFlag = "";
+                  // Only retire this session's staged upload; never clear form.pic for server-owned files on cancel path beyond discard
+                  if (this.stagedFlag) {
+                    this.retireStage(this.stagedFlag);
+                    this.stagedFlag = "";
+                  }
+                  this.imageFileName = "";
                   this.editOpen = false;
+                  this.editError = "";
+                  focusTrap.deactivate();
+                  this.restoreTriggerFocus();
                 },
                 retireStage: function (flag) {
-                  if (!/^[a-zA-Z0-9-]{1,64}$/.test(String(flag || ""))) return;
+                  var key = flag == null ? "" : String(flag);
+                  if (!/^[a-zA-Z0-9-]{1,64}$/.test(key)) return false;
+                  if (retiredStageFlags[key]) return false;
+                  retiredStageFlags[key] = true;
                   $.ajax({
-                    url: "/api/files/staged/" + encodeURIComponent(flag),
+                    url: "/api/files/staged/" + encodeURIComponent(key),
                     type: "DELETE",
                   });
+                  return true;
+                },
+                removeImage: function () {
+                  if (this.saving || this.uploading) return;
+                  if (this.stagedFlag) {
+                    this.retireStage(this.stagedFlag);
+                    this.stagedFlag = "";
+                  }
+                  this.form.pic = "";
+                  this.imageFileName = "";
                 },
                 selectImage: function (event) {
                   var file = event.target.files && event.target.files[0];
@@ -625,13 +847,19 @@
                   if (!file) return;
                   if (!/^image\/(jpeg|png|gif)$/.test(file.type)) {
                     this.editError = "仅支持 JPG、PNG 或 GIF 图片。";
+                    this.focusEditError();
                     return;
                   }
                   var vm = this;
+                  if (vm.uploading || writeLocks.upload || vm.saving) return;
                   var data = new FormData();
                   data.append("file", file);
                   AuthSession.appendUploadPurpose(data, "visit");
+                  writeLocks.upload = true;
                   vm.uploading = true;
+                  vm.editError = "";
+                  // Keep previous staged/pic until new upload succeeds
+                  var previousStage = vm.stagedFlag;
                   $.ajax({
                     url: "/api/files/upload",
                     type: "POST",
@@ -646,25 +874,46 @@
                         res.code !== "0" ||
                         !/^[a-zA-Z0-9-]{1,64}$/.test(String(flag || ""))
                       ) {
+                        // Keep previous stagedFlag + form.pic + preview
                         vm.editError = (res && res.msg) || "图片上传失败。";
+                        vm.message = "";
+                        vm.messageType = "";
+                        vm.focusEditError();
                         return;
                       }
-                      vm.retireStage(vm.stagedFlag);
                       vm.stagedFlag = String(flag);
                       vm.form.pic = String(flag);
+                      vm.imageFileName = file.name || "已选择图片";
+                      if (previousStage && previousStage !== vm.stagedFlag) {
+                        vm.retireStage(previousStage);
+                      }
                     })
                     .fail(function (xhr) {
+                      // Keep previous staged image on network/upload failure
                       vm.editError =
                         (xhr.responseJSON && xhr.responseJSON.msg) ||
                         "图片上传失败。";
+                      vm.message = "";
+                      vm.messageType = "";
+                      vm.focusEditError();
                     })
                     .always(function () {
                       vm.uploading = false;
+                      writeLocks.upload = false;
                     });
                 },
                 save: function () {
                   var vm = this;
-                  if (vm.saving || vm.uploading) return;
+                  if (
+                    vm.saving ||
+                    writeLocks.save ||
+                    vm.uploading ||
+                    !vm.form.vtime ||
+                    !vm.form.state ||
+                    !vm.form.vname
+                  )
+                    return;
+                  writeLocks.save = true;
                   var payload = {
                     id: vm.form.id,
                     vtime: vm.form.vtime,
@@ -683,40 +932,63 @@
                   })
                     .done(function (res) {
                       if (!res || res.code !== "0" || res.data !== true) {
-                        vm.retireStage(vm.stagedFlag);
-                        vm.stagedFlag = "";
+                        // Keep stagedFlag + form.pic so user can retry without re-upload
                         vm.editError = (res && res.msg) || "保存失败。";
+                        vm.message = "";
+                        vm.messageType = "";
+                        vm.focusEditError();
                         return;
                       }
+                      // Server owns the file after successful save — do not retire staged
                       vm.stagedFlag = "";
+                      vm.imageFileName = "";
                       vm.editOpen = false;
+                      focusTrap.deactivate();
                       vm.messageType = "success";
                       vm.message = "回访记录已保存。";
-                      vm.load(vm.pageNum);
+                      vm.triggerEl = vm.resolveStableFocusTarget();
+                      vm.load(vm.pageNum, true, function () {
+                        vm.restoreTriggerFocus();
+                      });
                     })
                     .fail(function (xhr) {
-                      vm.retireStage(vm.stagedFlag);
-                      vm.stagedFlag = "";
+                      var st = xhr && xhr.status;
+                      // Keep stagedFlag + form.pic + preview for retry
                       vm.editError =
                         (xhr.responseJSON && xhr.responseJSON.msg) ||
-                        "网络异常，记录未保存。";
+                        (st === 409
+                          ? "保存冲突，请刷新后重试。"
+                          : st === 403
+                            ? "无权限。"
+                            : "网络异常，记录未保存。");
+                      vm.message = "";
+                      vm.messageType = "";
+                      vm.focusEditError();
                     })
                     .always(function () {
                       vm.saving = false;
+                      writeLocks.save = false;
                     });
                 },
-                askDelete: function (item) {
+                askDelete: function (item, evt) {
+                  this.triggerEl =
+                    (evt && evt.currentTarget) || document.activeElement;
                   this.deleteItem = item;
                   this.deleteError = "";
                 },
                 cancelDelete: function () {
                   if (this.deleting) return;
                   this.deleteItem = null;
+                  this.deleteError = "";
+                  focusTrap.deactivate();
+                  this.restoreTriggerFocus();
                 },
                 confirmDelete: function () {
                   var vm = this;
-                  if (!vm.deleteItem || vm.deleting) return;
+                  if (!vm.deleteItem || vm.deleting || writeLocks.del) return;
+                  writeLocks.del = true;
                   vm.deleting = true;
+                  vm.deleteError = "";
                   $.ajax({
                     url: "/api/visit/" + encodeURIComponent(vm.deleteItem.id),
                     type: "DELETE",
@@ -724,20 +996,36 @@
                     .done(function (res) {
                       if (!res || res.code !== "0" || res.data !== true) {
                         vm.deleteError = (res && res.msg) || "删除失败。";
+                        vm.focusDeleteError();
                         return;
                       }
+                      var id = vm.deleteItem.id;
                       vm.deleteItem = null;
+                      focusTrap.deactivate();
                       vm.messageType = "success";
-                      vm.message = "回访记录已删除，关联旧文件已失效。";
-                      vm.load(vm.pageNum);
+                      vm.message =
+                        "回访 #" + id + " 已删除，关联旧文件已失效。";
+                      vm.triggerEl = vm.resolveStableFocusTarget();
+                      vm.load(vm.pageNum, true, function () {
+                        vm.restoreTriggerFocus();
+                      });
                     })
                     .fail(function (xhr) {
+                      var st = xhr && xhr.status;
                       vm.deleteError =
                         (xhr.responseJSON && xhr.responseJSON.msg) ||
-                        "网络异常，记录未删除。";
+                        (st === 409
+                          ? "删除冲突，请刷新后重试。"
+                          : st === 403
+                            ? "无权限删除。"
+                            : "网络异常，记录未删除。");
+                      vm.message = "";
+                      vm.messageType = "";
+                      vm.focusDeleteError();
                     })
                     .always(function () {
                       vm.deleting = false;
+                      writeLocks.del = false;
                     });
                 },
                 exportRows: function () {

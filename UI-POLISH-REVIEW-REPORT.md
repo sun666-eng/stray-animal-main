@@ -796,3 +796,64 @@ GPT 确认焦点已过；真实 390×844 复现搜索区空白：
 | 提交/推送/2E | **否** |
 
 **停止**: 不提交、不推送、不合并 main、不进入 Phase 2E。等待 GPT 最终封存审核。
+
+### Phase 2E：义工审核与回访治理（2026-07-30）
+
+**基线**: `52b04cafd226f1588667992455493c04c74c9904`
+**分支**: `ui-polish/phase-2e-volunteer-visit-governance-20260730`
+**端口**: `18099`（未触碰 9999）
+
+| 项 | 值 |
+|----|-----|
+| 完成 | **是**（2e **106/0/0** + 2d 224/0/0 + 2c 115/0 + 2b 234/0 + 2a 173/0 + 1c 134/0 + adversarial 851/0 + mvn 473/0 + git-diff exit 0） |
+| 后端/API/权限 | **未改** |
+| 缓存 | volunteer/visit `v=20260730h` |
+| 严格模式 | bestEffort=0 fallback=0 probes=3 strictMode=true（计算得出） |
+| 建议提交 | **待 GPT 审核** |
+| 进入下一阶段 | **否** |
+| 提交/推送 | **否** |
+
+**修改**: volunteer.html / visit.html / admin-workspace.css / tools/ui-polish-phase-2e.cjs
+
+**要点**: 当前页指标、审核 radio 选中态与角色影响确认、回访关系只读与评分文案、焦点陷阱与写锁、受控 Promise 挂起探针。
+
+权威: `output/playwright/ui-polish-phase-2e/PHASE-2E-REPORT.md` · `phase-2e-report.json` · `run-strict-final.log`
+
+**停止**: 不提交、不推送、不合并 main。等待 GPT 独立审核。
+
+### Phase 2E 验收返修：暂存生命周期与上传控件（2026-07-30）
+
+**端口**: `18101` · **缓存**: `v=20260730i` · **结果**: 2e **134/0/0**（>106）
+
+| 项 | 说明 |
+|----|------|
+| 根因 | 保存失败时 `retireStage` 清空 stagedFlag，但 form.pic 仍指向已删暂存，重试 PUT 失效 |
+| 修复 | 失败保留 stagedFlag/form.pic；成功仅清本地 stagedFlag；removeImage/cancel 才删除暂存；retiredStageFlags 防重复删 |
+| UI | 自定义文件选择（中文、44px）、`.visit-relation-grid` 两列只读关系 |
+| 严格覆盖 | 上传失败保留、409 零暂存删除、409 后不重传重试成功、审核/删除 500 挂起探针等 |
+| 回归 | 2d 224 · 2c 115 · 2b 234 · 2a 173 · 1c 134 · adv 851 · mvn 473 · git-diff 0 |
+| 提交/推送 | **否** |
+
+权威: `output/playwright/ui-polish-phase-2e/PHASE-2E-REPORT.md`
+
+**停止**: 不提交、不推送、不合并 main。等待 GPT 再审。
+
+### Phase 2E 测试可信度返修：Visit 列表 + 错误分类器（2026-07-30）
+
+**端口**: `18102` · **9999**: 全程空闲 · **结果**: 2e **164/0/0**（>134）
+
+| 项 | 说明 |
+|----|------|
+| 范围 | 主改 `tools/ui-polish-phase-2e.cjs` + 报告；暴露产品缺陷后 **最小** 修 `visit.html` load 非法/失败时清空 records |
+| Visit 非法结构 | `data:null` 与 `records` 非数组：错误态、非空列表文案、无旧 GOOD、`loading=false` |
+| Visit loadSeq | 慢 `VISIT_STALE_OLD` + 快 `UI_2E_VISIT_GOOD`；hits≥2；快先完成再放慢；无 STALE；loading=false |
+| 错误分类器 | 仅 `x-ui-audit-expected-error: phase2e` 或登记 method+url+status；无 403/404/409/500 整段白名单 |
+| 分类器自测 | **13** 项通过（含未标记 500 必 unexpected、files 404 无头 unexpected、pageerror 闸门） |
+| Live 分类 | intentional=30 · unexpected=0 · resourceConsoleNoise=30 · realConsole=0 · pageErrors=0 |
+| 严格门禁 | bestEffort=0 · fallback=0 · probes=4 · screenshots 17=index |
+| 回归 | 2d 224 · 2c 115 · 2b 234 · 2a 173 · 1c 134 · adv 851 · mvn 473 · git-diff 0 |
+| 提交/推送/2F | **否** |
+
+权威: `output/playwright/ui-polish-phase-2e/PHASE-2E-REPORT.md` · `phase-2e-report.json` · `run-strict-final.log`
+
+**停止**: 不提交、不推送、不合并 main、不进入下一阶段。等待 GPT 最终封存审核。

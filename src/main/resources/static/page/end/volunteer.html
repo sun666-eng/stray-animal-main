@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>义工审核 · 归途计划管理</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
+  <title>义工申请审核 · 归途计划管理</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
   <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c">
-  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260729c">
+  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260730i">
 </head>
 <body>
 <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
-<div id="workspace" :class="{'is-nav-open': mobileOpen}" class="admin-shell" v-cloak @keyup.esc="closeTopLayer" @click="closeMenus">
+<div id="workspace" :class="{'is-nav-open': mobileOpen}" class="admin-shell volunteer-governance" v-cloak @click="closeMenus">
   <header class="ui-header admin-header" @click.stop>
     <div class="ui-header-inner">
       <a class="ui-brand" href="/page/end/index.html" aria-label="返回管理工作台">
@@ -90,54 +90,200 @@
   <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
 
   <main class="admin-main">
-    <section class="admin-hero" aria-labelledby="volunteerAdminTitle">
-      <div><p class="admin-kicker">Volunteer review</p><h1 id="volunteerAdminTitle">义工审核</h1><p>分页查看申请资料，并对审核状态作出明确决定。列表只请求当前页，不加载全量申请。</p></div>
+    <section class="admin-hero volunteer-governance-hero" aria-labelledby="volunteerAdminTitle">
+      <div>
+        <p class="admin-kicker">Volunteer review desk</p>
+        <h1 id="volunteerAdminTitle">义工申请审核</h1>
+        <p class="volunteer-governance-lead">分页审阅申请资料并作出人类最终决定。列表只请求当前页；角色影响由服务端按审核结果处理，前端不直接写角色。</p>
+      </div>
       <div class="admin-hero-meta"><span>当前登录账号</span><strong>{{ user.username }}</strong></div>
+      <div class="volunteer-governance-metrics" aria-label="当前页申请状态摘要">
+        <div class="volunteer-governance-metric"><span>当前页申请</span><strong>{{ pageCount }}</strong><small>仅当前页 records</small></div>
+        <div class="volunteer-governance-metric is-pending"><span>当前页待审核</span><strong>{{ pagePending }}</strong><small>仅当前页</small></div>
+        <div class="volunteer-governance-metric is-ok"><span>当前页已通过</span><strong>{{ pageApproved }}</strong><small>仅当前页</small></div>
+        <div class="volunteer-governance-metric is-closed"><span>当前页未通过</span><strong>{{ pageRejected }}</strong><small>仅当前页</small></div>
+      </div>
     </section>
 
     <section aria-labelledby="reviewListTitle">
-      <div class="admin-section-head"><div><h2 id="reviewListTitle">申请记录</h2><p>搜索条件对应后端的所在地模糊查询；每页最多读取 {{ pageSize }} 条。</p></div></div>
-      <form class="ui-toolbar admin-review-toolbar" role="search" @submit.prevent="load(1)"><label class="ui-search"><span aria-hidden="true">⌕</span><span class="sr-only">按所在地搜索</span><input v-model.trim="search" type="search" maxlength="120" placeholder="按所在地搜索"></label><button class="ui-button is-dark" type="submit" :disabled="loading"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-search" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-search"></use></svg>查询</button><button v-if="search" class="ui-button is-ghost" type="button" @click="resetSearch">清除</button></form>
-      <div class="admin-status-key" aria-label="审核状态说明"><span><i class="is-pending"></i>待审核</span><span><i class="is-done"></i>已通过</span><span><i class="is-closed"></i>未通过</span></div>
+      <div class="admin-section-head">
+        <div>
+          <h2 id="reviewListTitle">申请记录</h2>
+          <p>搜索条件对应后端所在地模糊查询；每页最多 {{ pageSize }} 条。服务端 total 仅用于分页，不在此页冒充全平台状态分布。</p>
+        </div>
+      </div>
+      <form class="ui-toolbar admin-review-toolbar" role="search" @submit.prevent="load(1)">
+        <label class="ui-search">
+          <span aria-hidden="true">⌕</span>
+          <span class="sr-only">按所在地搜索</span>
+          <input id="volunteerSearch" v-model.trim="search" type="search" maxlength="120" placeholder="按所在地搜索">
+        </label>
+        <button class="ui-button is-dark" type="submit" :disabled="loading"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-search" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-search"></use></svg>查询</button>
+        <button v-if="search" class="ui-button is-ghost" type="button" @click="resetSearch">清除</button>
+      </form>
+      <div class="admin-status-key" aria-label="审核状态说明">
+        <span><i class="is-pending"></i>待审核</span>
+        <span><i class="is-done"></i>已通过</span>
+        <span><i class="is-closed"></i>未通过</span>
+      </div>
 
-      <div v-if="message" class="admin-inline-message" :class="{'is-error':messageType==='error','is-success':messageType==='success'}" :role="messageType==='error'?'alert':'status'" aria-live="polite">{{ message }}</div>
+      <div v-if="message" class="volunteer-governance-feedback" :class="{'is-error':messageType==='error','is-success':messageType==='success'}" :role="messageType==='error'?'alert':'status'" aria-live="polite">{{ message }}</div>
       <div v-if="loading" class="admin-status" role="status">正在读取当前页义工申请...</div>
-      <div v-else-if="loadError" class="admin-status is-error" role="alert"><div><strong>义工申请暂时无法读取</strong><br>{{ loadError }}<br><button class="ui-button is-ghost" type="button" @click="load(pageNum)">重新加载</button></div></div>
+      <div v-else-if="loadError" class="admin-status is-error" role="alert">
+        <div><strong>义工申请暂时无法读取</strong><br>{{ loadError }}<br>
+          <button class="ui-button is-ghost" type="button" @click="load(pageNum)">重新加载</button>
+        </div>
+      </div>
       <div v-else-if="!records.length" class="admin-status">当前筛选条件下没有义工申请。</div>
       <template v-else>
         <div class="admin-volunteer-table" aria-label="义工申请桌面列表">
           <table>
-            <thead><tr><th scope="col">申请</th><th scope="col">联系方式</th><th scope="col">所在地</th><th scope="col">年龄</th><th scope="col">可参与时间</th><th scope="col">基地到访</th><th scope="col">审核状态</th><th scope="col">操作</th></tr></thead>
-            <tbody><tr v-for="item in records" :key="item.id"><td><strong>{{ item.name || '未填写姓名' }}</strong><small>#{{ item.id }} · {{ item.company || '未填写工作单位' }}</small></td><td><span>{{ item.tel || '-' }}</span><small>{{ item.email || '-' }}</small></td><td>{{ item.location || '-' }}</td><td>{{ item.age==null?'-':item.age }}</td><td>{{ spareTime(item.sparetime) }}</td><td>{{ visitText(item.isvisit) }}</td><td><span class="ui-badge" :class="badgeClass(item.vstate)">{{ stateText(item.vstate) }}</span></td><td><div class="admin-row-actions"><button type="button" @click="openDetail(item)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-eye" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-eye"></use></svg>详情</button><button type="button" class="is-primary" @click="openAudit(item)">审核</button></div></td></tr></tbody>
+            <thead>
+              <tr>
+                <th scope="col">申请人</th>
+                <th scope="col">联系方式</th>
+                <th scope="col">所在地</th>
+                <th scope="col">年龄</th>
+                <th scope="col">可参与时间</th>
+                <th scope="col">基地到访</th>
+                <th scope="col">审核状态</th>
+                <th scope="col">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in records" :key="item.id">
+                <td>
+                  <strong>{{ item.name || '未填写姓名' }}</strong>
+                  <small>#{{ item.id }} · {{ item.company || '未填写工作单位' }}</small>
+                </td>
+                <td class="volunteer-contact-cell">
+                  <span>{{ maskContact(item.tel) }}</span>
+                  <small>{{ maskContact(item.email) }}</small>
+                </td>
+                <td>{{ item.location || '-' }}</td>
+                <td>{{ item.age==null?'-':item.age }}</td>
+                <td>{{ spareTime(item.sparetime) }}</td>
+                <td>{{ visitText(item.isvisit) }}</td>
+                <td><span class="ui-badge" :class="badgeClass(item.vstate)">{{ stateText(item.vstate) }}</span></td>
+                <td>
+                  <div class="admin-row-actions">
+                    <button type="button" @click="openDetail(item, $event)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-eye" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-eye"></use></svg>详情</button>
+                    <button type="button" class="is-primary" @click="openAudit(item, $event)">审核</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
           </table>
         </div>
         <div class="admin-volunteer-cards" aria-label="义工申请移动端列表">
-          <article v-for="item in records" :key="'card-'+item.id" class="admin-volunteer-card"><div><span>申请 #{{ item.id }}</span><h3>{{ item.name || '未填写姓名' }}</h3><p>{{ item.location || '未填写所在地' }}</p></div><span class="ui-badge" :class="badgeClass(item.vstate)">{{ stateText(item.vstate) }}</span><div class="admin-card-actions"><button class="ui-button is-ghost" type="button" @click="openDetail(item)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-eye" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-eye"></use></svg>查看详情</button><button class="ui-button is-dark" type="button" @click="openAudit(item)">审核状态</button></div></article>
+          <article v-for="item in records" :key="'card-'+item.id" class="admin-volunteer-card">
+            <div class="admin-record-card-head">
+              <div>
+                <span>申请 #{{ item.id }}</span>
+                <h3>{{ item.name || '未填写姓名' }}</h3>
+                <p>{{ item.location || '未填写所在地' }} · {{ spareTime(item.sparetime) }}</p>
+              </div>
+              <span class="ui-badge" :class="badgeClass(item.vstate)">{{ stateText(item.vstate) }}</span>
+            </div>
+            <div class="admin-card-actions">
+              <button class="ui-button is-ghost" type="button" @click="openDetail(item, $event)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-eye" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-eye"></use></svg>查看详情</button>
+              <button class="ui-button is-dark" type="button" @click="openAudit(item, $event)">审核状态</button>
+            </div>
+          </article>
         </div>
       </template>
 
-      <div v-if="!loading&&!loadError&&totalPages>1" class="ui-pagination admin-pagination"><span>第 {{ pageNum }} 页，共 {{ total }} 条记录</span><div class="ui-page-buttons"><button type="button" :disabled="pageNum===1" aria-label="上一页" @click="load(pageNum-1)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-left" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-left"></use></svg><span class="sr-only">上一页</span></button><button v-for="page in pages" :key="page" type="button" :class="{'is-current':page===pageNum}" :aria-current="page===pageNum?'page':null" @click="load(page)">{{ page }}</button><button type="button" :disabled="pageNum===totalPages" aria-label="下一页" @click="load(pageNum+1)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-right" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-right"></use></svg><span class="sr-only">下一页</span></button></div></div>
+      <div v-if="!loading&&!loadError&&totalPages>1" class="ui-pagination admin-pagination">
+        <span>第 {{ pageNum }} 页，共 {{ total }} 条记录（服务端 total）</span>
+        <div class="ui-page-buttons">
+          <button type="button" :disabled="pageNum===1" aria-label="上一页" @click="load(pageNum-1)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-left" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-left"></use></svg><span class="sr-only">上一页</span></button>
+          <button v-for="page in pages" :key="page" type="button" :class="{'is-current':page===pageNum}" :aria-current="page===pageNum?'page':null" @click="load(page)">{{ page }}</button>
+          <button type="button" :disabled="pageNum===totalPages" aria-label="下一页" @click="load(pageNum+1)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-right" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-right"></use></svg><span class="sr-only">下一页</span></button>
+        </div>
+      </div>
     </section>
   </main>
 
   <div v-if="detailItem" class="admin-dialog-backdrop" @click.self="closeDetail">
-    <section class="admin-dialog admin-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
-      <div class="admin-dialog-head"><div><span>申请 #{{ detailItem.id }}</span><h2 id="detailTitle">{{ detailItem.name || '未填写姓名' }}</h2></div><button class="admin-dialog-close" ref="detailClose" type="button" aria-label="关闭申请详情" @click="closeDetail" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button></div>
-      <dl class="admin-detail-grid"><div><dt>审核状态</dt><dd><span class="ui-badge" :class="badgeClass(detailItem.vstate)">{{ stateText(detailItem.vstate) }}</span></dd></div><div><dt>年龄</dt><dd>{{ detailItem.age==null?'-':detailItem.age }}</dd></div><div><dt>联系电话</dt><dd>{{ detailItem.tel || '-' }}</dd></div><div><dt>电子邮箱</dt><dd>{{ detailItem.email || '-' }}</dd></div><div><dt>微信号</dt><dd>{{ detailItem.wechat || '-' }}</dd></div><div><dt>工作单位</dt><dd>{{ detailItem.company || '-' }}</dd></div><div><dt>现居地</dt><dd>{{ detailItem.location || '-' }}</dd></div><div><dt>可参与时间</dt><dd>{{ spareTime(detailItem.sparetime) }}</dd></div><div><dt>是否到过基地</dt><dd>{{ visitText(detailItem.isvisit) }}</dd></div></dl>
-      <div class="admin-detail-statement"><strong>能力与参与意向</strong><p>{{ detailItem.moreability || '未填写' }}</p></div>
-      <div v-if="detailItem.apic" class="admin-private-photo"><strong>本人免冠照</strong><img :src="fileUrl(detailItem.apic)" alt="申请人提交的免冠照"></div>
-      <div class="admin-dialog-actions"><button class="ui-button is-ghost" type="button" @click="closeDetail">关闭</button><button class="ui-button is-dark" type="button" @click="auditFromDetail">审核状态</button></div>
+    <section class="admin-dialog admin-detail-dialog volunteer-governance-dialog" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+      <div class="admin-dialog-head">
+        <div><span>申请 #{{ detailItem.id }}</span><h2 id="detailTitle">{{ detailItem.name || '未填写姓名' }}</h2></div>
+        <button class="admin-dialog-close" ref="detailClose" type="button" aria-label="关闭申请详情" @click="closeDetail" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button>
+      </div>
+      <div class="admin-dialog-body">
+        <div class="volunteer-detail-group">
+          <h3>身份与审核状态</h3>
+          <dl class="admin-detail-grid">
+            <div><dt>审核状态</dt><dd><span class="ui-badge" :class="badgeClass(detailItem.vstate)">{{ stateText(detailItem.vstate) }}</span></dd></div>
+            <div><dt>年龄</dt><dd>{{ detailItem.age==null?'-':detailItem.age }}</dd></div>
+          </dl>
+        </div>
+        <div class="volunteer-detail-group">
+          <h3>联系方式</h3>
+          <dl class="admin-detail-grid">
+            <div><dt>联系电话</dt><dd>{{ detailItem.tel || '-' }}</dd></div>
+            <div><dt>电子邮箱</dt><dd>{{ detailItem.email || '-' }}</dd></div>
+            <div><dt>微信号</dt><dd>{{ detailItem.wechat || '-' }}</dd></div>
+          </dl>
+        </div>
+        <div class="volunteer-detail-group">
+          <h3>所在地与工作信息</h3>
+          <dl class="admin-detail-grid">
+            <div><dt>工作单位</dt><dd>{{ detailItem.company || '-' }}</dd></div>
+            <div><dt>现居地</dt><dd>{{ detailItem.location || '-' }}</dd></div>
+          </dl>
+        </div>
+        <div class="volunteer-detail-group">
+          <h3>可参与时间与到访</h3>
+          <dl class="admin-detail-grid">
+            <div><dt>可参与时间</dt><dd>{{ spareTime(detailItem.sparetime) }}</dd></div>
+            <div><dt>是否到过基地</dt><dd>{{ visitText(detailItem.isvisit) }}</dd></div>
+          </dl>
+        </div>
+        <div class="admin-detail-statement"><strong>能力与参与意向</strong><p>{{ detailItem.moreability || '未填写' }}</p></div>
+        <div class="admin-private-photo">
+          <strong>本人免冠照</strong>
+          <img v-if="fileUrl(detailItem.apic)" :src="fileUrl(detailItem.apic)" alt="申请人提交的免冠照" @error="photoFallback">
+          <div v-else class="volunteer-governance-photo-fallback">暂无照片</div>
+        </div>
+      </div>
+      <div class="admin-dialog-actions">
+        <button class="ui-button is-ghost" type="button" @click="closeDetail">关闭</button>
+        <button class="ui-button is-dark" type="button" @click="auditFromDetail">进入审核</button>
+      </div>
     </section>
   </div>
 
   <div v-if="auditItem" class="admin-dialog-backdrop" @click.self="cancelAudit">
-    <section class="admin-dialog" role="dialog" aria-modal="true" aria-labelledby="auditTitle" aria-describedby="roleImpact">
-      <div class="admin-dialog-head"><div><span>申请 #{{ auditItem.id }}</span><h2 id="auditTitle">审核 {{ auditItem.name || '该申请' }}</h2></div><button class="admin-dialog-close" type="button" aria-label="取消审核" @click="cancelAudit" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button></div>
-      <fieldset class="admin-audit-options"><legend>选择目标状态</legend><label v-for="option in statusOptions" :key="option.value" :class="{'is-selected':auditState===option.value}"><input v-model.number="auditState" type="radio" name="auditState" :value="option.value"><span><strong>{{ option.label }}</strong><small>{{ option.note }}</small></span></label></fieldset>
-      <div id="roleImpact" class="admin-role-warning" role="note"><strong>角色影响提示</strong><p>{{ roleImpactText }}</p></div>
-      <label class="ui-checkbox admin-audit-check"><input ref="auditConfirm" v-model="impactAcknowledged" type="checkbox"> 我已核对申请资料，并理解系统将按配置处理账号角色影响。</label>
-      <div v-if="auditError" class="admin-inline-message is-error" role="alert">{{ auditError }}</div>
-      <div class="admin-dialog-actions"><button class="ui-button is-ghost" type="button" :disabled="auditSaving" @click="cancelAudit">取消</button><button class="ui-button is-primary" type="button" :disabled="auditSaving||!impactAcknowledged||auditState===Number(auditItem.vstate)" @click="confirmAudit">{{ auditSaving ? '正在保存...' : '确认变更状态' }}</button></div>
+    <section class="admin-dialog volunteer-governance-dialog" role="dialog" aria-modal="true" aria-labelledby="auditTitle" aria-describedby="roleImpact">
+      <div class="admin-dialog-head">
+        <div>
+          <span>申请 #{{ auditItem.id }} · 当前 {{ stateText(auditItem.vstate) }}</span>
+          <h2 id="auditTitle">人类最终决定 · {{ auditItem.name || '该申请' }}</h2>
+        </div>
+        <button class="admin-dialog-close" type="button" :disabled="auditSaving" aria-label="取消审核" @click="cancelAudit" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button>
+      </div>
+      <fieldset class="admin-audit-options" :disabled="auditSaving">
+        <legend>选择目标状态</legend>
+        <label v-for="option in statusOptions" :key="option.value" :class="{'is-selected':auditState===option.value}">
+          <input v-model.number="auditState" type="radio" name="auditState" :value="option.value" :disabled="auditSaving">
+          <span><strong>{{ option.label }}</strong><small>{{ option.note }}</small></span>
+        </label>
+      </fieldset>
+      <div id="roleImpact" class="admin-role-warning" role="note">
+        <strong>角色影响提示</strong>
+        <p>{{ roleImpactText }}</p>
+        <p class="admin-field-note">前端不会直接修改账号角色；角色由服务端根据审核结果处理。</p>
+      </div>
+      <label class="ui-checkbox admin-audit-check">
+        <input id="auditImpactConfirm" ref="auditConfirm" v-model="impactAcknowledged" type="checkbox" :disabled="auditSaving">
+        我已核对申请资料，并理解系统将按配置处理账号角色影响。
+      </label>
+      <div v-if="auditError" id="volunteerAuditError" class="admin-inline-message is-error" role="alert" tabindex="-1">{{ auditError }}</div>
+      <div class="admin-dialog-actions">
+        <button class="ui-button is-ghost" type="button" :disabled="auditSaving" @click="cancelAudit">取消</button>
+        <button class="ui-button is-primary" type="button" :class="{'is-loading':auditSaving}" :disabled="auditSaving||!impactAcknowledged||auditState===Number(auditItem.vstate)" :aria-busy="auditSaving?'true':'false'" @click="confirmAudit">{{ auditSaving ? '正在保存...' : '确认变更状态' }}</button>
+      </div>
     </section>
   </div>
 </div>
@@ -148,6 +294,61 @@
 <script>
 (function () {
   'use strict';
+  var writeLocks = { audit: false };
+  window.__volunteerWriteLocks = writeLocks;
+  function createFocusTrap() {
+    var state = { root: null, onKey: null, prevOverflow: '', onEscape: null };
+    function focusable(root) {
+      return Array.prototype.slice.call(root.querySelectorAll(
+        'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+      )).filter(function (el) {
+        return !el.disabled && (el.offsetParent !== null || el === document.activeElement || el.getClientRects().length);
+      });
+    }
+    return {
+      activate: function (root, initial, onEscape) {
+        this.deactivate();
+        if (!root) return;
+        state.root = root;
+        state.onEscape = typeof onEscape === 'function' ? onEscape : null;
+        state.prevOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        if (!root.hasAttribute('tabindex')) root.setAttribute('tabindex', '-1');
+        state.onKey = function (e) {
+          if (!state.root) return;
+          if (e.key === 'Escape' || e.keyCode === 27) {
+            if (state.onEscape) { e.preventDefault(); e.stopPropagation(); state.onEscape(); }
+            return;
+          }
+          if (e.key !== 'Tab') return;
+          var list = focusable(state.root);
+          if (!list.length) { e.preventDefault(); state.root.focus(); return; }
+          var first = list[0], last = list[list.length - 1], active = document.activeElement;
+          if (e.shiftKey) {
+            if (active === first || !state.root.contains(active)) { e.preventDefault(); last.focus(); }
+          } else if (active === last || !state.root.contains(active)) {
+            e.preventDefault(); first.focus();
+          }
+        };
+        document.addEventListener('keydown', state.onKey, true);
+        setTimeout(function () {
+          var target = initial;
+          if (!target || !state.root.contains(target) || target.disabled) {
+            var list = focusable(state.root);
+            target = list[0] || state.root;
+          }
+          if (target && target.focus) target.focus();
+        }, 0);
+      },
+      deactivate: function () {
+        if (state.onKey) { document.removeEventListener('keydown', state.onKey, true); state.onKey = null; }
+        state.onEscape = null;
+        document.body.style.overflow = state.prevOverflow || '';
+        state.root = null;
+      },
+      root: function () { return state.root; }
+    };
+  }
   AuthSession.bootstrap({
     requireAuth: true,
     allowCachedOnNetworkError: false,
@@ -158,6 +359,7 @@
         return;
       }
       document.getElementById('authWait').hidden = true;
+      var focusTrap = createFocusTrap();
       new Vue({
         el: '#workspace',
         data: {
@@ -173,6 +375,7 @@
           records: [],
           loading: true,
           loadError: '',
+          loadSeq: 0,
           message: '',
           messageType: '',
           pageNum: 1,
@@ -185,10 +388,24 @@
           impactAcknowledged: false,
           auditSaving: false,
           auditError: '',
-          statusOptions: [{ value: 0, label: '待审核', note: '保留在待处理状态' }, { value: 1, label: '已通过', note: '确认该申请通过审核' }, { value: 2, label: '未通过', note: '确认该申请未通过审核' }]
+          triggerEl: null,
+          statusOptions: [
+            { value: 0, label: '待审核', note: '保留在待处理状态，不改变通过结论' },
+            { value: 1, label: '已通过', note: '确认该申请通过审核' },
+            { value: 2, label: '未通过', note: '确认该申请未通过审核' }
+          ]
         },
         computed: {
-          pages: function () { var result = []; var start = Math.max(1, this.pageNum - 2); var end = Math.min(this.totalPages, start + 4); start = Math.max(1, end - 4); for (var page = start; page <= end; page += 1) result.push(page); return result; },
+          pages: function () {
+            var result = []; var start = Math.max(1, this.pageNum - 2); var end = Math.min(this.totalPages, start + 4);
+            start = Math.max(1, end - 4);
+            for (var page = start; page <= end; page += 1) result.push(page);
+            return result;
+          },
+          pageCount: function () { return (this.records || []).length; },
+          pagePending: function () { return (this.records || []).filter(function (r) { return Number(r.vstate) === 0; }).length; },
+          pageApproved: function () { return (this.records || []).filter(function (r) { return Number(r.vstate) === 1; }).length; },
+          pageRejected: function () { return (this.records || []).filter(function (r) { return Number(r.vstate) === 2; }).length; },
           roleImpactText: function () {
             if (!this.auditItem) return '';
             if (this.auditState === 1 && Number(this.auditItem.vstate) !== 1) return '确认通过后，服务端将按系统配置处理申请账号的“认证义工”角色。';
@@ -196,58 +413,221 @@
             return '这是可审计的状态调整；服务端允许在待审核、已通过和未通过之间变更，并按系统配置处理角色。';
           }
         },
-        created: function () { this.load(1); },
+        created: function () {
+          var vm = this;
+          this._onDocEsc = function (e) {
+            if (e.key !== 'Escape' && e.keyCode !== 27) return;
+            if (focusTrap.root()) return;
+            if (vm.auditSaving) { e.preventDefault(); e.stopPropagation(); return; }
+            if (vm.auditItem || vm.detailItem) { e.preventDefault(); e.stopPropagation(); vm.closeTopLayer(); }
+          };
+          document.addEventListener('keydown', this._onDocEsc, true);
+          this.load(1);
+        },
+        beforeDestroy: function () {
+          if (this._onDocEsc) { document.removeEventListener('keydown', this._onDocEsc, true); this._onDocEsc = null; }
+          focusTrap.deactivate();
+        },
+        watch: {
+          detailItem: function (v) {
+            var vm = this;
+            if (v) {
+              this.$nextTick(function () {
+                var root = document.querySelector('[role="dialog"][aria-labelledby="detailTitle"]');
+                focusTrap.activate(root, vm.$refs.detailClose || (root && root.querySelector('button')), function () {
+                  if (vm.auditSaving) return;
+                  vm.closeDetail();
+                });
+              });
+            } else if (!this.auditItem) focusTrap.deactivate();
+          },
+          auditItem: function (v) {
+            var vm = this;
+            if (v) {
+              this.$nextTick(function () {
+                var root = document.querySelector('[role="dialog"][aria-labelledby="auditTitle"]');
+                var initial = document.querySelector('input[name="auditState"]:checked') || vm.$refs.auditConfirm || (root && root.querySelector('input,button'));
+                focusTrap.activate(root, initial, function () {
+                  if (vm.auditSaving) return;
+                  vm.cancelAudit();
+                });
+              });
+            } else if (!this.detailItem) focusTrap.deactivate();
+          }
+        },
         methods: {
           closeMenus: function () { this.mobileOpen = false; this.accountOpen = false; this.moreOpen = false; },
           toggleMore: function () { this.moreOpen = !this.moreOpen; this.accountOpen = false; this.mobileOpen = false; },
           toggleMobile: function () { this.mobileOpen = !this.mobileOpen; this.accountOpen = false; this.moreOpen = false; },
           toggleAccount: function () { this.accountOpen = !this.accountOpen; this.moreOpen = false; this.mobileOpen = false; },
           isNavActive: function (flag) { return AdminWorkspace.flagsMatch(flag, this.currentNavFlag); },
-          isMoreCurrent: function () { var vm = this; var more = (this.desktopNav && this.desktopNav.more) || []; return more.some(function (item) { return AdminWorkspace.flagsMatch(item.flag, vm.currentNavFlag); }); },
+          isMoreCurrent: function () {
+            var vm = this; var more = (this.desktopNav && this.desktopNav.more) || [];
+            return more.some(function (item) { return AdminWorkspace.flagsMatch(item.flag, vm.currentNavFlag); });
+          },
           isOverviewActive: function () { return !this.currentNavFlag; },
-
+          resolveStableFocusTarget: function () {
+            var main = document.querySelector('main') || document;
+            var sels = ['#volunteerSearch', 'input[type="search"]', '.admin-review-toolbar input', 'h2', 'h1'];
+            for (var i = 0; i < sels.length; i++) {
+              var el = main.querySelector(sels[i]);
+              if (el && el.isConnected) return el;
+            }
+            return null;
+          },
+          restoreTriggerFocus: function () {
+            var t = this.triggerEl; this.triggerEl = null; var vm = this;
+            this.$nextTick(function () {
+              var target = t;
+              if (!target || !target.isConnected || typeof target.focus !== 'function') target = vm.resolveStableFocusTarget();
+              if (!target || typeof target.focus !== 'function') return;
+              try {
+                if (/^H[12]$/.test(target.tagName)) target.setAttribute('tabindex', '-1');
+                target.focus();
+              } catch (e) { /* */ }
+            });
+          },
+          focusAuditError: function () {
+            this.$nextTick(function () {
+              var err = document.getElementById('volunteerAuditError');
+              if (err) { try { err.focus(); return; } catch (e1) { /* */ } }
+              var root = document.querySelector('[role="dialog"][aria-labelledby="auditTitle"]');
+              if (root) {
+                var b = root.querySelector('button.is-primary, input, button');
+                if (b) try { b.focus(); } catch (e2) { /* */ }
+              }
+            });
+          },
           avatarUrl: function (flag) { return AdminWorkspace.avatarUrl(flag); },
           avatarFallback: function (event) { AdminWorkspace.avatarFallback(event); },
+          photoFallback: function (e) {
+            e.target.onerror = null;
+            e.target.style.display = 'none';
+            var p = e.target.parentNode;
+            if (p && !p.querySelector('.volunteer-governance-photo-fallback')) {
+              var d = document.createElement('div');
+              d.className = 'volunteer-governance-photo-fallback';
+              d.textContent = '照片暂不可用';
+              p.appendChild(d);
+            }
+          },
           logout: function () { AuthSession.logout(); },
-          closeTopLayer: function () { if (this.closeMenus) this.closeMenus();  if (this.auditItem) this.cancelAudit(); else if (this.detailItem) this.closeDetail(); else { this.mobileOpen = false; this.accountOpen = false; } },
-          load: function (page) {
+          closeTopLayer: function () {
+            if (this.closeMenus) this.closeMenus();
+            if (this.auditSaving) return;
+            if (this.auditItem) this.cancelAudit();
+            else if (this.detailItem) this.closeDetail();
+            else { this.mobileOpen = false; this.accountOpen = false; }
+          },
+          load: function (page, preserveFeedback, onDone) {
             var vm = this;
+            var seq = ++vm.loadSeq;
+            if (!preserveFeedback) { vm.message = ''; vm.messageType = ''; }
             vm.loading = true;
             vm.loadError = '';
-            vm.message = '';
-            $.ajax({ url: '/api/volunteer/page', type: 'GET', data: { name: vm.search, pageNum: page, pageSize: vm.pageSize }, cache: false }).done(function (res) {
-              if (!res || res.code !== '0' || !res.data) { vm.loadError = (res && res.msg) || '服务返回了无法识别的数据。'; return; }
+            $.ajax({
+              url: '/api/volunteer/page', type: 'GET',
+              data: { name: vm.search, pageNum: page, pageSize: vm.pageSize },
+              cache: false
+            }).done(function (res) {
+              if (seq !== vm.loadSeq) return;
+              if (!res || res.code !== '0' || !res.data) {
+                vm.loadError = (res && res.msg) || '服务返回了无法识别的数据。';
+                return;
+              }
               vm.records = Array.isArray(res.data.records) ? res.data.records : [];
               vm.pageNum = Number(res.data.current || page);
               vm.total = Number(res.data.total || 0);
               vm.totalPages = Math.max(1, Number(res.data.pages || Math.ceil(vm.total / vm.pageSize) || 1));
-            }).fail(function (xhr) { vm.loadError = (xhr.responseJSON && xhr.responseJSON.msg) || '请检查网络连接后重试。'; }).always(function () { vm.loading = false; });
+            }).fail(function (xhr) {
+              if (seq !== vm.loadSeq) return;
+              vm.loadError = (xhr.responseJSON && xhr.responseJSON.msg) || '请检查网络连接后重试。';
+            }).always(function () {
+              if (seq !== vm.loadSeq) return;
+              vm.loading = false;
+              if (typeof onDone === 'function') vm.$nextTick(function () { onDone(); });
+            });
           },
           resetSearch: function () { this.search = ''; this.load(1); },
           stateText: function (value) { return { 0: '待审核', 1: '已通过', 2: '未通过' }[Number(value)] || '状态未知'; },
           badgeClass: function (value) { return Number(value) === 0 ? 'is-pending' : Number(value) === 1 ? 'is-done' : 'is-closed'; },
           spareTime: function (value) { return { 1: '周末为主', 2: '工作日晚上', 3: '工作日白天', 4: '时间较灵活' }[Number(value)] || '-'; },
           visitText: function (value) { return Number(value) === 1 ? '到过' : Number(value) === 0 ? '未到过' : '-'; },
-          fileUrl: function (flag) { return '/api/files/' + encodeURIComponent(flag); },
-          openDetail: function (item) { this.detailItem = item; this.$nextTick(function () { if (this.$refs.detailClose) this.$refs.detailClose.focus(); }); },
-          closeDetail: function () { this.detailItem = null; },
-          openAudit: function (item) { this.auditItem = item; this.auditState = Number(item.vstate); this.impactAcknowledged = false; this.auditError = ''; this.$nextTick(function () { if (this.$refs.auditConfirm) this.$refs.auditConfirm.focus(); }); },
-          auditFromDetail: function () { var item = this.detailItem; this.closeDetail(); this.openAudit(item); },
-          cancelAudit: function () { if (this.auditSaving) return; this.auditItem = null; this.auditError = ''; this.impactAcknowledged = false; },
+          fileUrl: function (flag) {
+            var value = flag == null ? '' : String(flag);
+            return /^[a-zA-Z0-9-]{1,64}$/.test(value) ? '/api/files/' + encodeURIComponent(value) : '';
+          },
+          maskContact: function (value) {
+            var s = value == null ? '' : String(value);
+            if (!s) return '-';
+            if (s.length <= 4) return '····';
+            return s.slice(0, 2) + '····' + s.slice(-2);
+          },
+          openDetail: function (item, evt) {
+            this.triggerEl = (evt && evt.currentTarget) || document.activeElement;
+            this.detailItem = item;
+          },
+          closeDetail: function () {
+            this.detailItem = null;
+            focusTrap.deactivate();
+            this.restoreTriggerFocus();
+          },
+          openAudit: function (item, evt) {
+            if (evt) this.triggerEl = (evt && evt.currentTarget) || document.activeElement;
+            this.auditItem = item;
+            this.auditState = Number(item.vstate);
+            this.impactAcknowledged = false;
+            this.auditError = '';
+          },
+          auditFromDetail: function () {
+            var item = this.detailItem;
+            var t = this.triggerEl;
+            this.detailItem = null;
+            this.triggerEl = t;
+            this.openAudit(item);
+          },
+          cancelAudit: function () {
+            if (this.auditSaving) return;
+            this.auditItem = null;
+            this.auditError = '';
+            this.impactAcknowledged = false;
+            focusTrap.deactivate();
+            this.restoreTriggerFocus();
+          },
           confirmAudit: function () {
             var vm = this;
-            if (!vm.auditItem || !vm.impactAcknowledged || vm.auditState === Number(vm.auditItem.vstate) || vm.auditSaving) return;
+            if (!vm.auditItem || !vm.impactAcknowledged || vm.auditState === Number(vm.auditItem.vstate) || vm.auditSaving || writeLocks.audit) return;
+            writeLocks.audit = true;
             vm.auditSaving = true;
             vm.auditError = '';
-            $.ajax({ url: '/api/volunteer/' + encodeURIComponent(vm.auditItem.id) + '/state/' + encodeURIComponent(vm.auditState), type: 'PUT' }).done(function (res) {
-              if (!res || res.code !== '0' || res.data !== true) { vm.auditError = (res && res.msg) || '审核状态保存失败。'; return; }
+            $.ajax({
+              url: '/api/volunteer/' + encodeURIComponent(vm.auditItem.id) + '/state/' + encodeURIComponent(vm.auditState),
+              type: 'PUT'
+            }).done(function (res) {
+              if (!res || res.code !== '0' || res.data !== true) {
+                vm.auditError = (res && res.msg) || '审核状态保存失败。';
+                vm.focusAuditError();
+                return;
+              }
               var successMessage = '申请 #' + vm.auditItem.id + ' 已更新为“' + vm.stateText(vm.auditState) + '”。';
               vm.auditItem = null;
+              focusTrap.deactivate();
               vm.impactAcknowledged = false;
-              vm.load(vm.pageNum);
               vm.messageType = 'success';
               vm.message = successMessage;
-            }).fail(function (xhr) { vm.auditError = (xhr.responseJSON && xhr.responseJSON.msg) || '网络异常，审核状态未保存。'; }).always(function () { vm.auditSaving = false; });
+              vm.triggerEl = vm.resolveStableFocusTarget();
+              vm.load(vm.pageNum, true, function () { vm.restoreTriggerFocus(); });
+            }).fail(function (xhr) {
+              var st = xhr && xhr.status;
+              vm.auditError = (xhr.responseJSON && xhr.responseJSON.msg) ||
+                (st === 409 ? '状态冲突，请刷新后重试。' : st === 403 ? '无权限。' : st >= 500 ? '服务异常。' : '网络异常，审核状态未保存。');
+              vm.message = '';
+              vm.messageType = '';
+              vm.focusAuditError();
+            }).always(function () {
+              vm.auditSaving = false;
+              writeLocks.audit = false;
+            });
           }
         }
       });

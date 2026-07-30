@@ -2503,3 +2503,341 @@
     width: 100%;
   }
 }
+
+/* ========== Phase 2E: volunteer + visit governance ========== */
+.volunteer-governance-hero,
+.visit-governance-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(160px, 0.4fr);
+  gap: 16px 24px;
+  align-items: start;
+}
+.volunteer-governance-lead,
+.visit-governance-lead {
+  max-width: 720px;
+  margin: 14px 0 0;
+  color: var(--ui-muted, #6b6a66);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.volunteer-governance-metrics,
+.visit-governance-metrics {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 4px;
+}
+.volunteer-governance-metric,
+.visit-governance-metric {
+  padding: 12px 14px;
+  border: 1px solid var(--ui-line, #e4e2dc);
+  border-radius: 12px;
+  background: #fcfbf8;
+}
+.volunteer-governance-metric span,
+.visit-governance-metric span {
+  display: block;
+  color: var(--ui-muted, #6b6a66);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .04em;
+}
+.volunteer-governance-metric strong,
+.visit-governance-metric strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 22px;
+  letter-spacing: -.03em;
+}
+.volunteer-governance-metric small,
+.visit-governance-metric small {
+  display: block;
+  margin-top: 4px;
+  color: var(--ui-muted, #6b6a66);
+  font-size: 10px;
+}
+.volunteer-governance-metric.is-pending strong,
+.visit-governance-metric.is-pending strong { color: #b7791f; }
+.volunteer-governance-metric.is-ok strong,
+.visit-governance-metric.is-ok strong { color: #3d6b55; }
+.volunteer-governance-metric.is-closed strong,
+.visit-governance-metric.is-closed strong { color: #8a4b42; }
+.volunteer-governance-feedback,
+.visit-governance-feedback {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--ui-line, #e4e2dc);
+  background: #fff;
+}
+.volunteer-governance-feedback.is-success,
+.visit-governance-feedback.is-success {
+  border-color: #c5ddd0;
+  background: #eef7f1;
+  color: #2f6b4f;
+}
+.volunteer-governance-feedback.is-error,
+.visit-governance-feedback.is-error {
+  border-color: #e8c4bc;
+  background: #fdf1ee;
+  color: #a33;
+}
+.volunteer-contact-cell span,
+.volunteer-contact-cell small {
+  display: block;
+  max-width: 12em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ui-muted, #6b6a66);
+  font-size: 12px;
+}
+.volunteer-detail-group,
+.visit-form-group {
+  margin: 0 0 14px;
+  padding: 12px 14px 8px;
+  border: 1px solid var(--ui-line, #e4e2dc);
+  border-radius: 12px;
+  background: #fcfbf8;
+}
+.volunteer-detail-group h3,
+.visit-form-group h3 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: #5c5a55;
+  letter-spacing: .03em;
+}
+.volunteer-governance-photo-fallback {
+  display: grid;
+  place-items: center;
+  min-height: 120px;
+  color: var(--ui-muted, #6b6a66);
+  background: #f4f3ef;
+  border-radius: 8px;
+  font-size: 13px;
+}
+.admin-audit-options {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 12px;
+  border: 1px solid var(--ui-line, #e4e2dc);
+  border-radius: 14px;
+  background: #f4f3ef;
+}
+.admin-audit-options legend {
+  padding: 0 6px;
+  font-size: 13px;
+  font-weight: 750;
+  color: #3a3936;
+}
+.admin-audit-options label {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1.5px solid #d5d2ca;
+  border-radius: 10px;
+  background: #fffefb;
+  cursor: pointer;
+  transition: border-color .12s ease, background .12s ease, color .12s ease;
+}
+.admin-audit-options label.is-selected,
+.admin-audit-options label:has(input:checked) {
+  border-color: var(--ui-accent-strong, #d63a1f);
+  background: #fdeee9;
+  color: #8f2a18;
+  box-shadow: inset 0 0 0 1px rgba(214, 58, 31, 0.18);
+}
+.admin-audit-options label:hover:not(:has(input:disabled)) {
+  border-color: #b8b4aa;
+}
+.admin-audit-options input[type="radio"] {
+  margin-top: 3px;
+  flex: 0 0 auto;
+}
+.admin-audit-options label span {
+  display: grid;
+  gap: 2px;
+}
+.admin-audit-options label strong { font-size: 14px; }
+.admin-audit-options label small {
+  color: var(--ui-muted, #6b6a66);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.admin-audit-options:disabled label,
+.admin-audit-options label:has(input:disabled) {
+  opacity: .6;
+  cursor: not-allowed;
+}
+.admin-role-warning {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px dashed #e2c4a8;
+  background: #fff8f0;
+  color: #6b4a28;
+}
+.admin-role-warning strong { display: block; margin-bottom: 4px; }
+.admin-role-warning p { margin: 0 0 6px; font-size: 13px; line-height: 1.55; }
+.admin-field-note { color: var(--ui-muted, #6b6a66); font-size: 12px !important; }
+.admin-audit-check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  min-height: 44px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--ui-line, #e4e2dc);
+  border-radius: 10px;
+  background: #fff;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.admin-volunteer-card .admin-card-actions .ui-button,
+.admin-visit-cards .admin-card-actions .ui-button {
+  min-height: 44px;
+}
+.admin-visit-table .is-risk-row td:first-child strong::after {
+  content: " · 需关注";
+  color: #a33;
+  font-size: 11px;
+  font-weight: 650;
+}
+.visit-score-key .visit-score-note {
+  color: var(--ui-muted, #6b6a66);
+  font-size: 11px;
+}
+.admin-cell-summary {
+  max-width: 16em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 960px) {
+  .volunteer-governance-hero,
+  .visit-governance-hero { grid-template-columns: 1fr; }
+  .volunteer-governance-metrics,
+  .visit-governance-metrics { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px) {
+  .volunteer-governance-metrics,
+  .visit-governance-metrics { grid-template-columns: 1fr 1fr; }
+  .admin-cell-summary { max-width: 10em; }
+}
+
+/* Phase 2E repair: visit relation grid + custom file picker */
+.visit-relation-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 0;
+  min-width: 0;
+}
+.visit-relation-grid > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 72px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--ui-line, #e4e2dc);
+  border-radius: 10px;
+  background: #fffefb;
+  box-sizing: border-box;
+}
+.visit-relation-grid dt {
+  margin: 0 0 4px;
+  color: var(--ui-muted, #6b6a66);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .03em;
+}
+.visit-relation-grid dd {
+  margin: 0;
+  color: var(--ui-ink, #111211);
+  font-size: 15px;
+  font-weight: 700;
+}
+.visit-file-field { min-width: 0; }
+.visit-file-caption {
+  display: block;
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 650;
+  color: #3a3936;
+}
+.visit-file-picker {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+.visit-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.visit-file-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1.5px dashed #cfcbc2;
+  border-radius: 12px;
+  background: #f7f5f0;
+  color: var(--ui-ink, #111211);
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: border-color .12s ease, background .12s ease, box-shadow .12s ease;
+}
+.visit-file-label:hover:not(.is-disabled) {
+  border-color: #b8b4aa;
+  background: #faf8f3;
+}
+.visit-file-input:focus-visible + .visit-file-label,
+.visit-file-label:focus-within {
+  outline: 2px solid var(--ui-accent-strong, #d63a1f);
+  outline-offset: 2px;
+  border-color: var(--ui-accent-strong, #d63a1f);
+}
+.visit-file-label.is-disabled {
+  opacity: .55;
+  cursor: not-allowed;
+  background: #f0efeb;
+}
+.visit-file-label.is-busy {
+  border-style: solid;
+  border-color: #c5b9a8;
+}
+.visit-file-action {
+  font-size: 13px;
+  font-weight: 750;
+  color: #8f2a18;
+}
+.visit-file-name {
+  flex: 1 1 120px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ui-muted, #6b6a66);
+  font-size: 12px;
+}
+@media (max-width: 640px) {
+  .visit-relation-grid { grid-template-columns: 1fr; }
+  .visit-file-label { min-height: 48px; }
+}
