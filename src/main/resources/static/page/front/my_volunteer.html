@@ -5,34 +5,165 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="查看当前账号的义工申请与真实审核状态">
   <title>我的义工申请 · 归途计划</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-  <link rel="stylesheet" href="../../css/product-ui.css?v=20260731a">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
+  <link rel="stylesheet" href="../../css/product-ui.css?v=20260731e">
 </head>
 <body>
 <div id="authWait" class="ui-auth-wait" role="status">正在验证登录状态...</div>
-<div id="app" v-cloak @keyup.esc="closeMenus">
+<div id="app" v-cloak @keyup.esc="onEscape">
   <front-site-header :user="user"></front-site-header>
 
-  <main class="ui-container ui-workspace"><div class="ui-workspace-grid">
-    <nav class="ui-side-nav" aria-label="个人业务导航"><strong>我的行动</strong><a href="./my_adopt.html">领养申请</a><a href="./my_visit.html">回访记录</a><a class="is-active" href="./my_volunteer.html" aria-current="page">义工申请</a><a href="./my_rescue.html">救助记录</a></nav>
+  <main class="ui-container ui-workspace ui-volunteer-mine-page"><div class="ui-workspace-grid">
+    <nav class="ui-side-nav" aria-label="个人业务导航">
+      <strong>我的行动</strong>
+      <a href="./my_adopt.html">领养申请</a>
+      <a href="./my_visit.html">回访记录</a>
+      <a class="is-active" href="./my_volunteer.html" aria-current="page">义工申请</a>
+      <a href="./my_rescue.html">救助记录</a>
+    </nav>
     <section aria-labelledby="mineTitle">
-      <div class="ui-panel-head"><div><p class="ui-eyebrow">MY APPLICATIONS</p><h1 id="mineTitle" class="ui-workspace-title">我的义工申请</h1><p>这里只显示服务端按当前登录账号归属查询的记录。</p></div><div class="ui-form-actions"><a class="ui-button is-ghost" href="./volunteer_tasks.html">查看义工任务</a><a class="ui-button is-primary" href="./volunteer_apply.html">提交新申请</a></div></div>
-      <div class="ui-status-key" aria-label="审核状态说明"><span><i class="is-pending"></i>待审核</span><span><i class="is-done"></i>已通过</span><span><i class="is-closed"></i>未通过</span></div>
+      <div class="ui-panel-head">
+        <div>
+          <p class="ui-eyebrow">MY APPLICATIONS</p>
+          <h1 id="mineTitle" class="ui-workspace-title">我的义工申请</h1>
+          <p>这里只显示服务端按当前登录会话归属查询的记录，不会拼接本地用户编号。</p>
+        </div>
+        <div class="ui-form-actions">
+          <a class="ui-button is-ghost" href="./volunteer_tasks.html" data-volunteer-tasks-link>查看义工任务</a>
+          <a class="ui-button is-primary" href="./volunteer_apply.html" data-volunteer-apply-cta>提交新申请</a>
+        </div>
+      </div>
+      <div class="ui-status-key" aria-label="审核状态说明">
+        <span><i class="is-pending"></i>待审核</span>
+        <span><i class="is-done"></i>已通过</span>
+        <span><i class="is-closed"></i>未通过</span>
+        <span><i class="is-neutral"></i>状态未知</span>
+      </div>
 
-      <div v-if="loading" class="ui-state" role="status"><div><span class="ui-state-mark ui-skeleton"></span><h2>正在加载申请记录</h2><p>正在向服务端确认当前账号的申请。</p></div></div>
-      <div v-else-if="error" class="ui-state" role="alert"><div><span class="ui-state-mark">!</span><h2>申请记录暂时无法加载</h2><p>{{ error }}</p><button class="ui-button is-dark" type="button" @click="load(pageNum)">重新加载</button></div></div>
-      <div v-else-if="records.length===0" class="ui-state"><div><span class="ui-state-mark">＋</span><h2>还没有义工申请</h2><p>如果你愿意参与救助，请先提交一份真实的联系与参与信息。</p><a class="ui-button is-primary" href="./volunteer_apply.html">填写义工申请</a></div></div>
-      <div v-else class="ui-volunteer-records">
-        <article v-for="item in records" :key="item.id" class="ui-volunteer-record-card">
-          <div class="ui-volunteer-record-head"><div><span class="ui-record-id">申请 #{{ item.id }}</span><h2>{{ item.name || '未填写姓名' }}</h2></div><span class="ui-badge" :class="badgeClass(item.vstate)">{{ stateText(item.vstate) }}</span></div>
-          <dl class="ui-volunteer-facts"><div><dt>现居地</dt><dd>{{ item.location || '-' }}</dd></div><div><dt>可参与时间</dt><dd>{{ spareTime(item.sparetime) }}</dd></div><div><dt>是否到过基地</dt><dd>{{ visitText(item.isvisit) }}</dd></div><div><dt>联系电话</dt><dd>{{ item.tel || '-' }}</dd></div><div><dt>电子邮箱</dt><dd>{{ item.email || '-' }}</dd></div><div><dt>微信号</dt><dd>{{ item.wechat || '-' }}</dd></div></dl>
-          <div class="ui-volunteer-statement"><strong>能力与参与意向</strong><p>{{ item.moreability || '未填写' }}</p></div>
-          <div v-if="Number(item.vstate)===0" class="ui-form-actions"><button class="ui-button is-ghost" type="button" :disabled="withdrawing===item.id" @click="withdraw(item)">{{ withdrawing===item.id ? '正在撤回…' : '撤回申请' }}</button></div>
+      <div v-if="actionError" class="ui-form-alert" role="alert">{{ actionError }}</div>
+      <div v-if="loading" class="ui-form-alert" role="status" aria-live="polite">正在加载申请记录…</div>
+
+      <div v-if="error" class="ui-state" role="alert">
+        <div>
+          <span class="ui-state-mark">!</span>
+          <h2>申请记录暂时无法加载</h2>
+          <p>{{ error }}</p>
+          <button class="ui-button is-dark" type="button" @click="load(pageNum)">重新加载</button>
+        </div>
+      </div>
+      <div v-else-if="!records.length && !loading" class="ui-state">
+        <div>
+          <span class="ui-state-mark">＋</span>
+          <h2>还没有义工申请</h2>
+          <p>如果你愿意参与救助，请先提交一份真实的联系与参与信息。</p>
+          <a class="ui-button is-primary" href="./volunteer_apply.html">填写义工申请</a>
+        </div>
+      </div>
+      <div v-else-if="records.length" class="ui-volunteer-records" :aria-busy="loading ? 'true' : 'false'">
+        <article v-for="item in records" :key="item.id" class="ui-volunteer-record-card" :data-volunteer-id="canonicalId(item.id)">
+          <div class="ui-volunteer-record-head">
+            <div>
+              <span class="ui-record-id">申请 #{{ canonicalId(item.id) || '—' }}</span>
+              <h2>{{ item.name || '未填写姓名' }}</h2>
+            </div>
+            <span class="ui-badge" :class="badgeClass(item.vstate)">{{ stateText(item.vstate) }}</span>
+          </div>
+          <dl class="ui-volunteer-facts">
+            <div><dt>现居地</dt><dd>{{ item.location || '-' }}</dd></div>
+            <div><dt>可参与时间</dt><dd>{{ spareTime(item.sparetime) }}</dd></div>
+            <div><dt>是否到过基地</dt><dd>{{ visitText(item.isvisit) }}</dd></div>
+            <div><dt>联系电话</dt><dd>{{ item.tel || '-' }}</dd></div>
+            <div><dt>电子邮箱</dt><dd>{{ item.email || '-' }}</dd></div>
+            <div><dt>微信号</dt><dd>{{ item.wechat || '-' }}</dd></div>
+            <div><dt>工作单位</dt><dd>{{ item.company || '-' }}</dd></div>
+            <div v-if="safeFileUrl(item.apic)"><dt>免冠照</dt><dd><a :href="safeFileUrl(item.apic)" target="_blank" rel="noopener">查看附件</a></dd></div>
+          </dl>
+          <div class="ui-volunteer-statement">
+            <strong>能力与参与意向</strong>
+            <p>{{ item.moreability || '未填写' }}</p>
+          </div>
+          <div class="ui-form-actions ui-volunteer-card-actions">
+            <button class="ui-button is-ghost" type="button" data-volunteer-detail :data-volunteer-id="canonicalId(item.id)" @click="openDetail(item, $event)">查看详情</button>
+            <button
+              v-if="canWithdraw(item)"
+              class="ui-button is-danger"
+              type="button"
+              data-volunteer-withdraw
+              :data-volunteer-id="canonicalId(item.id)"
+              :disabled="!!writeBusy"
+              @click="confirmWithdraw(item, $event)"
+            >{{ writeBusy === canonicalId(item.id) ? '正在撤回…' : '撤回申请' }}</button>
+            <span v-else-if="Number(item.vstate)===1" class="ui-field-hint">已通过申请不可自行删除；请前往义工任务参与服务。</span>
+          </div>
         </article>
       </div>
-      <div v-if="!loading&&!error&&totalPages>1" class="ui-pagination"><span>第 {{ pageNum }} 页，共 {{ total }} 条记录</span><div class="ui-page-buttons"><button type="button" :disabled="pageNum===1" aria-label="上一页" @click="load(pageNum-1)">‹</button><button v-for="page in pages" :key="page" type="button" :class="{'is-current':page===pageNum}" :aria-current="page===pageNum?'page':null" @click="load(page)">{{ page }}</button><button type="button" :disabled="pageNum===totalPages" aria-label="下一页" @click="load(pageNum+1)">›</button></div></div>
+
+      <!-- Keep pagination mounted during load so users can switch pages (latest-wins). -->
+      <div v-if="!error&&totalPages>1" class="ui-pagination">
+        <span>第 {{ pageNum }} 页，共 {{ total }} 条记录{{ loading ? ' · 更新中' : '' }}</span>
+        <div class="ui-page-buttons">
+          <button type="button" :disabled="pageNum===1" aria-label="上一页" @click="load(pageNum-1)">‹</button>
+          <button v-for="page in pages" :key="page" type="button" :class="{'is-current':page===pageNum}" :aria-current="page===pageNum?'page':null" @click="load(page)">{{ page }}</button>
+          <button type="button" :disabled="pageNum===totalPages" aria-label="下一页" @click="load(pageNum+1)">›</button>
+        </div>
+      </div>
     </section>
   </div></main>
+
+  <div v-if="detailItem" class="ui-dialog-backdrop" role="presentation" @click.self="closeDetail">
+    <section
+      ref="detailDialog"
+      class="ui-dialog ui-volunteer-detail-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="volunteerDetailTitle"
+      tabindex="-1"
+      @keydown.tab="trapDetailFocus"
+    >
+      <div class="ui-dialog-head">
+        <div>
+          <span>APPLICATION DETAIL</span>
+          <h2 id="volunteerDetailTitle">义工申请 #{{ canonicalId(detailItem.id) }}</h2>
+        </div>
+        <button type="button" @click="closeDetail">关闭</button>
+      </div>
+      <div class="ui-dialog-body">
+        <p><strong>状态：</strong>{{ stateText(detailItem.vstate) }}</p>
+        <p><strong>姓名：</strong>{{ detailItem.name || '—' }}</p>
+        <p><strong>现居地：</strong>{{ detailItem.location || '—' }}</p>
+        <p><strong>工作单位：</strong>{{ detailItem.company || '—' }}</p>
+        <p><strong>能力与参与意向：</strong>{{ detailItem.moreability || '—' }}</p>
+      </div>
+    </section>
+  </div>
+
+  <div v-if="confirmItem" class="ui-dialog-backdrop" role="presentation" @click.self="cancelConfirm">
+    <section
+      ref="confirmDialog"
+      class="ui-dialog"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="volunteerConfirmTitle"
+      tabindex="-1"
+      @keydown.tab="trapConfirmFocus"
+    >
+      <div class="ui-dialog-head">
+        <div>
+          <span>CONFIRM</span>
+          <h2 id="volunteerConfirmTitle">撤回这份义工申请？</h2>
+        </div>
+      </div>
+      <div class="ui-dialog-body">
+        <p>申请 #{{ canonicalId(confirmItem.id) }} 将被删除。已通过申请不可撤回；此操作不可恢复。</p>
+      </div>
+      <div class="ui-dialog-actions">
+        <button class="ui-button is-ghost" type="button" :disabled="!!writeBusy" @click="cancelConfirm">取消</button>
+        <button class="ui-button is-danger" type="button" :disabled="!!writeBusy" @click="executeWithdraw">
+          {{ writeBusy ? '正在撤回…' : '确认撤回' }}
+        </button>
+      </div>
+    </section>
+  </div>
 
   <front-site-footer></front-site-footer>
 </div>
@@ -44,6 +175,21 @@
 <script>
 (function () {
   'use strict';
+
+  function canonicalId(value) {
+    var normalized = value == null ? '' : String(value).trim();
+    return /^[1-9][0-9]{0,18}$/.test(normalized) ? normalized : '';
+  }
+  function exactSuccess(res) {
+    return !!(res && res.code === '0' && res.data === true);
+  }
+  function errorMessage(xhr, fallback) {
+    return (xhr && xhr.responseJSON && xhr.responseJSON.msg) || fallback;
+  }
+  function validFlag(value) {
+    return /^[a-zA-Z0-9-]{1,64}$/.test(String(value || ''));
+  }
+
   AuthSession.bootstrap({
     requireAuth: true,
     allowCachedOnNetworkError: false,
@@ -52,42 +198,265 @@
       document.getElementById('authWait').hidden = true;
       new Vue({
         el: '#app',
-        data: { user: authenticatedUser, records: [], loading: true, error: '', pageNum: 1, pageSize: 8, total: 0, totalPages: 1, mobileOpen: false, accountOpen: false, withdrawing: null },
-        computed: {
-          userInitial: function () { return this.user.username ? this.user.username.slice(0, 1).toUpperCase() : 'U'; },
-          pages: function () { var result = []; var start = Math.max(1, this.pageNum - 2); var end = Math.min(this.totalPages, start + 4); start = Math.max(1, end - 4); for (var page = start; page <= end; page += 1) result.push(page); return result; }
+        data: {
+          user: authenticatedUser,
+          records: [],
+          loading: true,
+          error: '',
+          actionError: '',
+          pageNum: 1,
+          pageSize: 8,
+          total: 0,
+          totalPages: 1,
+          listRequest: null,
+          listSeq: 0,
+          writeBusy: '',
+          detailItem: null,
+          detailTrigger: null,
+          confirmItem: null,
+          confirmTrigger: null,
+          focusAfterDeleteId: '',
+          focusAfterDeleteIndex: -1
         },
-        created: function () { this.load(1); },
+        computed: {
+          pages: function () {
+            var result = [];
+            var start = Math.max(1, this.pageNum - 2);
+            var end = Math.min(this.totalPages, start + 4);
+            start = Math.max(1, end - 4);
+            for (var page = start; page <= end; page += 1) result.push(page);
+            return result;
+          }
+        },
+        created: function () {
+          this.load(1);
+          document.addEventListener('keydown', this.onDocumentKey);
+        },
+        beforeDestroy: function () {
+          if (this.listRequest) this.listRequest.abort();
+          document.removeEventListener('keydown', this.onDocumentKey);
+          document.body.classList.remove('ui-modal-open');
+        },
         methods: {
-          closeMenus: function () { this.mobileOpen = false; this.accountOpen = false; },
-          logout: function () { AuthSession.logout(); },
-          withdraw: function (item) {
-            var vm = this;
-            if (vm.withdrawing) return;
-            vm.withdrawing = item.id;
-            $.ajax({ url: '/api/volunteer/' + encodeURIComponent(item.id), type: 'DELETE' }).done(function (res) {
-              if (res && res.code === '0') { vm.load(vm.pageNum); return; }
-              vm.error = (res && res.msg) || '撤回失败，请稍后重试。';
+          canonicalId: canonicalId,
+          load: function (requestedPage) {
+            var page = Math.max(1, Number(requestedPage) || 1);
+            if (this.listRequest) this.listRequest.abort();
+            var view = this;
+            var seq = ++view.listSeq;
+            view.loading = true;
+            view.error = '';
+            view.actionError = '';
+            // Session-owned mine endpoint only — never append uid/username/phone/email.
+            view.listRequest = $.ajax({
+              url: '/api/volunteer/mine',
+              type: 'GET',
+              data: { pageNum: page, pageSize: view.pageSize },
+              cache: false
+            }).done(function (res) {
+              if (seq !== view.listSeq) return;
+              if (!res || res.code !== '0' || !res.data || !Array.isArray(res.data.records)) {
+                view.clearList();
+                view.error = (res && res.msg) || '服务返回了无法识别的数据。';
+                return;
+              }
+              view.records = res.data.records;
+              view.pageNum = Math.max(1, Number(res.data.current || page));
+              view.total = Math.max(0, Number(res.data.total || 0));
+              view.totalPages = Math.max(1, Number(res.data.pages || Math.ceil(view.total / view.pageSize) || 1));
+            }).fail(function (xhr, statusText) {
+              if (seq !== view.listSeq || statusText === 'abort') return;
+              // Fail closed: never keep old list as if it were the new page.
+              view.clearList();
+              view.error = errorMessage(xhr, '请检查网络连接后重试。');
+            }).always(function () {
+              if (seq !== view.listSeq) return;
+              view.listRequest = null;
+              view.loading = false;
+              if (view.focusAfterDeleteId) {
+                var deletedId = view.focusAfterDeleteId;
+                var deletedIndex = view.focusAfterDeleteIndex;
+                view.focusAfterDeleteId = '';
+                view.focusAfterDeleteIndex = -1;
+                view.restoreFocusAfterDelete(deletedId, deletedIndex);
+              }
+            });
+          },
+          restoreFocusAfterDelete: function (deletedId, deletedIndex) {
+            var view = this;
+            view.$nextTick(function () {
+              function focusEl(el) {
+                if (el && el.focus) {
+                  try { el.focus(); return true; } catch (e) {}
+                }
+                return false;
+              }
+              var cards = Array.prototype.slice.call(document.querySelectorAll('.ui-volunteer-record-card[data-volunteer-id]'));
+              var nextCard = null;
+              var prevCard = null;
+              if (deletedIndex >= 0 && cards.length) {
+                if (deletedIndex < cards.length) nextCard = cards[deletedIndex];
+                if (deletedIndex - 1 >= 0) prevCard = cards[deletedIndex - 1];
+                else if (!nextCard && cards.length) prevCard = cards[cards.length - 1];
+              } else if (cards.length) {
+                nextCard = cards[0];
+              }
+              var target = null;
+              if (nextCard) target = nextCard.querySelector('[data-volunteer-detail]');
+              if (!target && prevCard) target = prevCard.querySelector('[data-volunteer-detail]');
+              if (!target) target = document.querySelector('[data-volunteer-apply-cta]');
+              if (!target) target = document.getElementById('mineTitle');
+              if (!focusEl(target) && document.body && document.body.setAttribute) {
+                // Last resort: keep focus out of body by focusing main landmark.
+                var main = document.querySelector('main');
+                if (main) {
+                  if (!main.hasAttribute('tabindex')) main.setAttribute('tabindex', '-1');
+                  focusEl(main);
+                }
+              }
+            });
+          },
+          clearList: function () {
+            this.records = [];
+            this.total = 0;
+            this.totalPages = 1;
+          },
+          stateText: function (value) {
+            return { 0: '待审核', 1: '已通过', 2: '未通过' }[Number(value)] || '状态未知';
+          },
+          badgeClass: function (value) {
+            var state = Number(value);
+            return state === 0 ? 'is-pending'
+              : state === 1 ? 'is-done'
+              : state === 2 ? 'is-closed'
+              : 'is-neutral';
+          },
+          spareTime: function (value) {
+            return { 1: '周末为主', 2: '工作日晚上', 3: '工作日白天', 4: '时间较灵活' }[Number(value)] || '未填写';
+          },
+          visitText: function (value) {
+            return Number(value) === 1 ? '到过' : Number(value) === 0 ? '未到过' : '未填写';
+          },
+          canWithdraw: function (item) {
+            // Backend: non-managers cannot delete approved applications.
+            return Number(item && item.vstate) === 0 || Number(item && item.vstate) === 2;
+          },
+          safeFileUrl: function (flag) {
+            return validFlag(flag) ? '/api/files/' + encodeURIComponent(String(flag)) : '';
+          },
+          openDetail: function (item, event) {
+            if (!canonicalId(item && item.id)) return;
+            this.detailTrigger = event && event.currentTarget ? event.currentTarget : null;
+            this.detailItem = item;
+            document.body.classList.add('ui-modal-open');
+            this.$nextTick(function () {
+              if (this.$refs.detailDialog) this.$refs.detailDialog.focus();
+            });
+          },
+          closeDetail: function () {
+            if (!this.detailItem) return;
+            var trigger = this.detailTrigger;
+            this.detailItem = null;
+            this.detailTrigger = null;
+            if (!this.confirmItem) document.body.classList.remove('ui-modal-open');
+            this.$nextTick(function () {
+              if (trigger && document.contains(trigger) && trigger.focus) trigger.focus();
+            });
+          },
+          confirmWithdraw: function (item, event) {
+            if (this.writeBusy || !this.canWithdraw(item) || !canonicalId(item && item.id)) return;
+            this.confirmTrigger = event && event.currentTarget ? event.currentTarget : null;
+            this.confirmItem = item;
+            document.body.classList.add('ui-modal-open');
+            this.$nextTick(function () {
+              if (this.$refs.confirmDialog) this.$refs.confirmDialog.focus();
+            });
+          },
+          cancelConfirm: function () {
+            if (this.writeBusy) return;
+            var trigger = this.confirmTrigger;
+            this.confirmItem = null;
+            this.confirmTrigger = null;
+            if (!this.detailItem) document.body.classList.remove('ui-modal-open');
+            this.$nextTick(function () {
+              if (trigger && document.contains(trigger) && trigger.focus) trigger.focus();
+            });
+          },
+          executeWithdraw: function () {
+            if (this.writeBusy || !this.confirmItem) return;
+            var id = canonicalId(this.confirmItem.id);
+            if (!id) {
+              this.actionError = '申请编号无效，无法撤回。';
+              return;
+            }
+            var view = this;
+            var idsBefore = (view.records || []).map(function (row) { return canonicalId(row.id); });
+            var deletedIndex = idsBefore.indexOf(id);
+            view.writeBusy = id;
+            view.actionError = '';
+            // Single DELETE; false/409/500 must not remove the card.
+            $.ajax({
+              url: '/api/volunteer/' + encodeURIComponent(id),
+              type: 'DELETE'
+            }).done(function (res) {
+              if (!exactSuccess(res)) {
+                // data=false must not surface generic "成功" from Result.success(false).
+                if (res && res.data === false) {
+                  view.actionError = '撤回未成功，记录仍保留在列表中。';
+                } else {
+                  view.actionError = (res && res.msg) || '撤回失败，记录仍保留在列表中。';
+                }
+                // Keep dialog open; user can cancel to restore original button focus.
+                return;
+              }
+              view.confirmItem = null;
+              view.confirmTrigger = null;
+              if (!view.detailItem) document.body.classList.remove('ui-modal-open');
+              // Original withdraw button is gone after successful delete — focus after list refresh.
+              view.focusAfterDeleteId = id;
+              view.focusAfterDeleteIndex = deletedIndex;
+              view.load(view.pageNum);
             }).fail(function (xhr) {
-              vm.error = (xhr.responseJSON && xhr.responseJSON.msg) || '撤回失败，请稍后重试。';
-            }).always(function () { vm.withdrawing = null; });
+              view.actionError = errorMessage(xhr, '撤回失败，记录仍保留在列表中。');
+            }).always(function () {
+              view.writeBusy = '';
+            });
           },
-          load: function (page) {
-            var vm = this;
-            vm.loading = true;
-            vm.error = '';
-            $.ajax({ url: '/api/volunteer/mine', type: 'GET', data: { pageNum: page, pageSize: vm.pageSize }, cache: false }).done(function (res) {
-              if (!res || res.code !== '0' || !res.data) { vm.error = (res && res.msg) || '服务返回了无法识别的数据。'; return; }
-              vm.records = Array.isArray(res.data.records) ? res.data.records : [];
-              vm.pageNum = Number(res.data.current || page);
-              vm.total = Number(res.data.total || 0);
-              vm.totalPages = Math.max(1, Number(res.data.pages || Math.ceil(vm.total / vm.pageSize) || 1));
-            }).fail(function (xhr) { vm.error = (xhr.responseJSON && xhr.responseJSON.msg) || '请检查网络连接后重试。'; }).always(function () { vm.loading = false; });
+          onEscape: function () {
+            if (this.confirmItem && !this.writeBusy) this.cancelConfirm();
+            else if (this.detailItem) this.closeDetail();
           },
-          stateText: function (value) { return { 0: '待审核', 1: '已通过', 2: '未通过' }[Number(value)] || '状态未知'; },
-          badgeClass: function (value) { return Number(value) === 0 ? 'is-pending' : Number(value) === 1 ? 'is-done' : 'is-closed'; },
-          spareTime: function (value) { return { 1: '周末为主', 2: '工作日晚上', 3: '工作日白天', 4: '时间较灵活' }[Number(value)] || '未填写'; },
-          visitText: function (value) { return Number(value) === 1 ? '到过' : Number(value) === 0 ? '未到过' : '未填写'; }
+          onDocumentKey: function (event) {
+            if (event.key === 'Escape') this.onEscape();
+          },
+          trapDetailFocus: function (event) {
+            this.trapFocus(event, this.$refs.detailDialog);
+          },
+          trapConfirmFocus: function (event) {
+            this.trapFocus(event, this.$refs.confirmDialog);
+          },
+          trapFocus: function (event, dialog) {
+            if (!dialog || event.key !== 'Tab') return;
+            var focusable = Array.prototype.slice.call(dialog.querySelectorAll(
+              'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+            )).filter(function (element) {
+              return element.offsetWidth > 0 || element.offsetHeight > 0;
+            });
+            if (!focusable.length) {
+              event.preventDefault();
+              dialog.focus();
+              return;
+            }
+            var first = focusable[0];
+            var last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+              event.preventDefault();
+              last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+              event.preventDefault();
+              first.focus();
+            }
+          }
         }
       });
     }

@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="提交义工申请，参与流浪动物救助">
   <title>义工申请 · 归途计划</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-  <link rel="stylesheet" href="../../css/product-ui.css?v=20260731a">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
+  <link rel="stylesheet" href="../../css/product-ui.css?v=20260731e">
 </head>
 <body>
 <div id="authWait" class="ui-auth-wait" role="status">正在验证登录状态...</div>
@@ -18,34 +18,126 @@
       <div class="ui-volunteer-intro-copy">
         <p class="ui-eyebrow">VOLUNTEER APPLICATION</p>
         <h1 id="applyTitle">把愿意伸出的手，交给真正需要它的地方。</h1>
-        <p>请如实填写可联系信息、所在地和可参与时间。提交后由工作人员审核，进度可在“我的义工申请”中查看。</p>
+        <p>姓名、电话与邮箱来自账号资料；其余可编辑字段由你如实填写。提交后由工作人员审核，进度在“我的义工申请”中查看。审核通过后，才能在“义工任务”中报名参与现场服务。页面不会估计审核耗时。</p>
       </div>
       <aside class="ui-volunteer-note" aria-label="申请说明">
         <span aria-hidden="true">01</span>
         <strong>提交申请</strong>
-        <p>照片为可选项。申请状态由工作人员审核，页面不会代替审核结果作任何承诺。</p>
+        <p>免冠照为可选项。已有待审核或已通过申请时不能重复提交。照片上传成功只表示暂存成功，业务保存失败会复用原 flag。</p>
         <a href="./my_volunteer.html">查看已有申请 →</a>
       </aside>
     </section>
 
     <section class="ui-panel ui-volunteer-form-panel" aria-labelledby="formTitle">
-      <div class="ui-panel-head"><div><h2 id="formTitle">申请资料</h2><p>标有“必填”的项目需要完整填写。当前登录账号：{{ user.username }}</p></div><span v-if="existingCount>0" class="ui-badge is-pending">已有 {{ existingCount }} 条申请</span></div>
-      <form novalidate @submit.prevent="submit">
-        <div class="ui-form-grid">
-          <div class="ui-form-field"><label for="volunteerName">姓名 <small>账号资料，只读</small></label><input id="volunteerName" ref="name" class="ui-form-input" type="text" :value="user.username || ''" autocomplete="name" readonly :aria-invalid="String(!!errors.name)" :aria-describedby="errors.name?'nameError':null"><p v-if="errors.name" id="nameError" class="ui-field-error">{{ errors.name }} <a href="/page/end/person.html">前往个人资料更新</a></p></div>
-          <div class="ui-form-field"><label for="volunteerAge">年龄 <small>必填，16 至 100 岁</small></label><input id="volunteerAge" ref="age" v-model.number="form.age" class="ui-form-input" type="number" min="16" max="100" inputmode="numeric" :aria-invalid="String(!!errors.age)" :aria-describedby="errors.age?'ageError':null"><p v-if="errors.age" id="ageError" class="ui-field-error">{{ errors.age }}</p></div>
-          <div class="ui-form-field"><label for="volunteerTel">联系电话 <small>账号资料，只读</small></label><input id="volunteerTel" ref="tel" class="ui-form-input" type="tel" :value="user.phone || ''" autocomplete="tel" readonly :aria-invalid="String(!!errors.tel)" :aria-describedby="errors.tel?'telError':null"><p v-if="errors.tel" id="telError" class="ui-field-error">{{ errors.tel }} <a href="/page/end/person.html">前往个人资料更新</a></p></div>
-          <div class="ui-form-field"><label for="volunteerEmail">电子邮箱 <small>账号资料，只读</small></label><input id="volunteerEmail" ref="email" class="ui-form-input" type="email" :value="user.email || ''" autocomplete="email" readonly :aria-invalid="String(!!errors.email)" :aria-describedby="errors.email?'emailError':null"><p v-if="errors.email" id="emailError" class="ui-field-error">{{ errors.email }} <a href="/page/end/person.html">前往个人资料更新</a></p></div>
-          <div class="ui-form-field"><label for="volunteerWechat">微信号 <small>必填</small></label><input id="volunteerWechat" ref="wechat" v-model.trim="form.wechat" class="ui-form-input" type="text" maxlength="80" autocomplete="off" :aria-invalid="String(!!errors.wechat)" :aria-describedby="errors.wechat?'wechatError':null"><p v-if="errors.wechat" id="wechatError" class="ui-field-error">{{ errors.wechat }}</p></div>
-          <div class="ui-form-field"><label for="volunteerCompany">工作单位 <small>必填</small></label><input id="volunteerCompany" ref="company" v-model.trim="form.company" class="ui-form-input" type="text" maxlength="120" autocomplete="organization" :aria-invalid="String(!!errors.company)" :aria-describedby="errors.company?'companyError':null"><p v-if="errors.company" id="companyError" class="ui-field-error">{{ errors.company }}</p></div>
-          <div class="ui-form-field"><label for="volunteerLocation">现居地 <small>必填</small></label><input id="volunteerLocation" ref="location" v-model.trim="form.location" class="ui-form-input" type="text" maxlength="120" autocomplete="address-level2" :aria-invalid="String(!!errors.location)" :aria-describedby="errors.location?'locationError':null"><p v-if="errors.location" id="locationError" class="ui-field-error">{{ errors.location }}</p></div>
-          <div class="ui-form-field"><label for="volunteerTime">可参与时间 <small>必填</small></label><select id="volunteerTime" ref="sparetime" v-model.number="form.sparetime" class="ui-form-input" :aria-invalid="String(!!errors.sparetime)" :aria-describedby="errors.sparetime?'timeError':null"><option :value="null" disabled>请选择</option><option :value="1">周末为主</option><option :value="2">工作日晚上</option><option :value="3">工作日白天</option><option :value="4">时间较灵活</option></select><p v-if="errors.sparetime" id="timeError" class="ui-field-error">{{ errors.sparetime }}</p></div>
-          <fieldset class="ui-form-field is-full ui-fieldset"><legend>是否到过基地 <small>必填</small></legend><div class="ui-radio-row"><label class="ui-radio-card"><input ref="isvisit" v-model.number="form.isvisit" type="radio" :value="1"> 到过</label><label class="ui-radio-card"><input v-model.number="form.isvisit" type="radio" :value="0"> 未到过</label></div><p v-if="errors.isvisit" class="ui-field-error">{{ errors.isvisit }}</p></fieldset>
-          <div class="ui-form-field is-full"><label for="volunteerAbility">能力与参与意向 <small>必填</small></label><textarea id="volunteerAbility" ref="moreability" v-model.trim="form.moreability" class="ui-form-textarea" maxlength="255" rows="5" placeholder="例如：可参与基地劳动、临时安置、摄影或交通支持" :aria-invalid="String(!!errors.moreability)" :aria-describedby="errors.moreability?'abilityError':null"></textarea><p v-if="errors.moreability" id="abilityError" class="ui-field-error">{{ errors.moreability }}</p><p class="ui-field-hint">{{ form.moreability.length }}/255</p></div>
-          <div class="ui-form-field is-full"><label for="volunteerPhoto">本人免冠照 <small>选填，JPG/PNG/GIF，最大 10 MB</small></label><div class="ui-upload-box"><div class="ui-upload-placeholder" aria-hidden="true">{{ photoFile ? '已选' : '照片' }}</div><div><input id="volunteerPhoto" ref="photo" type="file" accept="image/jpeg,image/png,image/gif" @change="selectPhoto"><p v-if="photoFile" class="ui-field-hint">{{ photoFile.name }} · {{ fileSize(photoFile.size) }}</p><p v-if="errors.photo" class="ui-field-error">{{ errors.photo }}</p></div></div></div>
+      <div class="ui-panel-head">
+        <div>
+          <h2 id="formTitle">申请资料</h2>
+          <p>标有“必填”的项目需要完整填写。当前登录账号：{{ user.username }}</p>
         </div>
-        <div v-if="feedback" class="ui-form-alert" :class="{'is-success':success}" :role="success?'status':'alert'" aria-live="polite">{{ feedback }}</div>
-        <div class="ui-form-actions"><button class="ui-button is-primary" type="submit" :disabled="submitting">{{ submitting ? '正在提交...' : '提交义工申请' }}</button><a class="ui-button is-ghost" href="./my_volunteer.html">查看我的申请</a></div>
+        <span v-if="gateLoading" class="ui-badge is-pending">正在确认申请状态…</span>
+        <span v-else-if="gateError" class="ui-badge is-closed">申请状态未知</span>
+        <span v-else-if="blocked" class="ui-badge is-pending">{{ blockReason }}</span>
+      </div>
+
+      <div v-if="gateError" class="ui-form-alert" role="alert">
+        {{ gateError }} 在确认现有申请前，不能假设“尚未申请”。
+        <button class="ui-button is-dark" type="button" @click="loadGate">重新检查</button>
+      </div>
+      <div v-else-if="blocked" class="ui-form-alert" role="status">
+        {{ blockMessage }}
+        <a class="ui-button is-primary" href="./my_volunteer.html">查看我的义工申请</a>
+      </div>
+
+      <form novalidate @submit.prevent="submit" :aria-disabled="blocked || gateLoading || gateError ? 'true' : 'false'">
+        <fieldset :disabled="blocked || gateLoading || !!gateError || submitting" class="ui-volunteer-fieldset">
+          <div class="ui-form-grid">
+            <div class="ui-form-field">
+              <label for="volunteerName">姓名 <small>账号资料，只读</small></label>
+              <input id="volunteerName" ref="name" class="ui-form-input" type="text" :value="user.username || ''" autocomplete="name" readonly :aria-invalid="String(!!errors.name)" :aria-describedby="errors.name?'nameError':null">
+              <p v-if="errors.name" id="nameError" class="ui-field-error">{{ errors.name }} <a href="/page/end/person.html">前往个人资料更新</a></p>
+            </div>
+            <div class="ui-form-field">
+              <label for="volunteerAge">年龄 <small>必填，16 至 100 岁</small></label>
+              <input id="volunteerAge" ref="age" v-model.number="form.age" class="ui-form-input" type="number" min="16" max="100" inputmode="numeric" :aria-invalid="String(!!errors.age)" :aria-describedby="errors.age?'ageError':null">
+              <p v-if="errors.age" id="ageError" class="ui-field-error">{{ errors.age }}</p>
+            </div>
+            <div class="ui-form-field">
+              <label for="volunteerTel">联系电话 <small>账号资料，只读</small></label>
+              <input id="volunteerTel" ref="tel" class="ui-form-input" type="tel" :value="user.phone || ''" autocomplete="tel" readonly :aria-invalid="String(!!errors.tel)" :aria-describedby="errors.tel?'telError':null">
+              <p v-if="errors.tel" id="telError" class="ui-field-error">{{ errors.tel }} <a href="/page/end/person.html">前往个人资料更新</a></p>
+            </div>
+            <div class="ui-form-field">
+              <label for="volunteerEmail">电子邮箱 <small>账号资料，只读</small></label>
+              <input id="volunteerEmail" ref="email" class="ui-form-input" type="email" :value="user.email || ''" autocomplete="email" readonly :aria-invalid="String(!!errors.email)" :aria-describedby="errors.email?'emailError':null">
+              <p v-if="errors.email" id="emailError" class="ui-field-error">{{ errors.email }} <a href="/page/end/person.html">前往个人资料更新</a></p>
+            </div>
+            <div class="ui-form-field">
+              <label for="volunteerWechat">微信号 <small>必填，最多 50 字</small></label>
+              <input id="volunteerWechat" ref="wechat" v-model.trim="form.wechat" class="ui-form-input" type="text" maxlength="50" autocomplete="off" :aria-invalid="String(!!errors.wechat)" :aria-describedby="errors.wechat?'wechatError':null">
+              <p v-if="errors.wechat" id="wechatError" class="ui-field-error">{{ errors.wechat }}</p>
+            </div>
+            <div class="ui-form-field">
+              <label for="volunteerCompany">工作单位 <small>必填，最多 255 字</small></label>
+              <input id="volunteerCompany" ref="company" v-model.trim="form.company" class="ui-form-input" type="text" maxlength="255" autocomplete="organization" :aria-invalid="String(!!errors.company)" :aria-describedby="errors.company?'companyError':null">
+              <p v-if="errors.company" id="companyError" class="ui-field-error">{{ errors.company }}</p>
+            </div>
+            <div class="ui-form-field">
+              <label for="volunteerLocation">现居地 <small>必填，最多 255 字</small></label>
+              <input id="volunteerLocation" ref="location" v-model.trim="form.location" class="ui-form-input" type="text" maxlength="255" autocomplete="address-level2" :aria-invalid="String(!!errors.location)" :aria-describedby="errors.location?'locationError':null">
+              <p v-if="errors.location" id="locationError" class="ui-field-error">{{ errors.location }}</p>
+            </div>
+            <div class="ui-form-field">
+              <label for="volunteerTime">可参与时间 <small>必填</small></label>
+              <select id="volunteerTime" ref="sparetime" v-model.number="form.sparetime" class="ui-form-input" :aria-invalid="String(!!errors.sparetime)" :aria-describedby="errors.sparetime?'timeError':null">
+                <option :value="null" disabled>请选择</option>
+                <option :value="1">周末为主</option>
+                <option :value="2">工作日晚上</option>
+                <option :value="3">工作日白天</option>
+                <option :value="4">时间较灵活</option>
+              </select>
+              <p v-if="errors.sparetime" id="timeError" class="ui-field-error">{{ errors.sparetime }}</p>
+            </div>
+            <fieldset class="ui-form-field is-full ui-fieldset">
+              <legend>是否到过基地 <small>必填</small></legend>
+              <div class="ui-radio-row">
+                <label class="ui-radio-card"><input ref="isvisit" v-model.number="form.isvisit" type="radio" :value="1"> 到过</label>
+                <label class="ui-radio-card"><input v-model.number="form.isvisit" type="radio" :value="0"> 未到过</label>
+              </div>
+              <p v-if="errors.isvisit" class="ui-field-error">{{ errors.isvisit }}</p>
+            </fieldset>
+            <div class="ui-form-field is-full">
+              <label for="volunteerAbility">能力与参与意向 <small>必填，最多 255 字</small></label>
+              <textarea id="volunteerAbility" ref="moreability" v-model.trim="form.moreability" class="ui-form-textarea" maxlength="255" rows="5" placeholder="例如：可参与基地劳动、临时安置、摄影或交通支持" :aria-invalid="String(!!errors.moreability)" :aria-describedby="errors.moreability?'abilityError':null"></textarea>
+              <p v-if="errors.moreability" id="abilityError" class="ui-field-error">{{ errors.moreability }}</p>
+              <p class="ui-field-hint">{{ form.moreability.length }}/255</p>
+            </div>
+            <div class="ui-form-field is-full">
+              <label for="volunteerPhoto">本人免冠照 <small>选填，JPG/PNG/GIF，最大 10 MB</small></label>
+              <div class="ui-upload-box ui-volunteer-upload-box" :class="{'has-stage':!!stagedFlag}">
+                <div class="ui-upload-placeholder" aria-hidden="true">{{ photoFile || stagedFlag ? '已选' : '照片' }}</div>
+                <div>
+                  <input id="volunteerPhoto" ref="photo" class="ui-file-input" type="file" accept="image/jpeg,image/png,image/gif" @change="selectPhoto">
+                  <div class="ui-upload-actions">
+                    <label class="ui-button is-ghost" for="volunteerPhoto">{{ photoFile || stagedFlag ? '更换照片' : '选择照片' }}</label>
+                    <button v-if="photoFile || stagedFlag" class="ui-button is-text" type="button" @click="clearPhoto">清除</button>
+                  </div>
+                  <strong>{{ photoFile ? photoFile.name : stagedFlag ? '已暂存的免冠照' : '尚未选择照片' }}</strong>
+                  <p v-if="photoFile" class="ui-field-hint">{{ fileSize(photoFile.size) }}</p>
+                  <span v-if="stagedFlag" class="ui-stage-note">上传已完成，申请尚未保存；再次提交不会重复上传。</span>
+                  <p v-if="errors.photo" class="ui-field-error">{{ errors.photo }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+
+        <div v-if="feedback" ref="formFeedback" class="ui-form-alert" :class="{'is-success':success}" :role="success?'status':'alert'" tabindex="-1" aria-live="polite">{{ feedback }}</div>
+        <div class="ui-form-actions">
+          <button class="ui-button is-primary" type="submit" :disabled="submitting || blocked || gateLoading || !!gateError">
+            {{ submitting ? submitLabel : stagedFlag ? '重试保存义工申请' : '提交义工申请' }}
+          </button>
+          <a class="ui-button is-ghost" href="./my_volunteer.html">查看我的申请</a>
+        </div>
       </form>
     </section>
   </main>
@@ -60,6 +152,17 @@
 <script>
 (function () {
   'use strict';
+
+  function validFlag(value) {
+    return /^[a-zA-Z0-9-]{1,64}$/.test(String(value || ''));
+  }
+  function exactSuccess(res) {
+    return !!(res && res.code === '0' && res.data === true);
+  }
+  function errorMessage(xhr, fallback) {
+    return (xhr && xhr.responseJSON && xhr.responseJSON.msg) || fallback;
+  }
+
   AuthSession.bootstrap({
     requireAuth: true,
     allowCachedOnNetworkError: false,
@@ -72,43 +175,137 @@
           user: authenticatedUser,
           mobileOpen: false,
           accountOpen: false,
-          existingCount: 0,
+          gateLoading: true,
+          gateError: '',
+          blocked: false,
+          blockReason: '',
+          blockMessage: '',
+          activeRecords: [],
           submitting: false,
           success: false,
           feedback: '',
+          submitLabel: '正在提交…',
           photoFile: null,
+          stagedFlag: '',
+          retiredFlags: {},
           errors: {},
           form: { age: null, wechat: '', company: '', location: '', sparetime: null, isvisit: null, moreability: '' }
         },
-        computed: { userInitial: function () { return this.user.username ? this.user.username.slice(0, 1).toUpperCase() : 'U'; } },
-        created: function () { this.loadExistingCount(); },
+        created: function () {
+          this.loadGate();
+          window.addEventListener('pagehide', this.cleanupPageStage);
+        },
+        beforeDestroy: function () {
+          window.removeEventListener('pagehide', this.cleanupPageStage);
+        },
         methods: {
           closeMenus: function () { this.mobileOpen = false; this.accountOpen = false; },
           logout: function () { AuthSession.logout(); },
-          loadExistingCount: function () {
+          fileSize: function (bytes) {
+            return bytes < 1024 * 1024
+              ? Math.max(1, Math.ceil(bytes / 1024)) + ' KB'
+              : (bytes / 1024 / 1024).toFixed(1) + ' MB';
+          },
+          loadGate: function () {
             var vm = this;
-            $.ajax({ url: '/api/volunteer/mine', type: 'GET', data: { pageNum: 1, pageSize: 1 }, cache: false }).done(function (res) {
-              if (res && res.code === '0' && res.data) vm.existingCount = Number(res.data.total || 0);
+            vm.gateLoading = true;
+            vm.gateError = '';
+            vm.blocked = false;
+            vm.blockReason = '';
+            vm.blockMessage = '';
+            vm.activeRecords = [];
+            // Session-owned only: never send uid/username/phone/email as ownership selectors.
+            $.ajax({
+              url: '/api/volunteer/mine',
+              type: 'GET',
+              data: { pageNum: 1, pageSize: 20 },
+              cache: false
+            }).done(function (res) {
+              if (!res || res.code !== '0' || !res.data || !Array.isArray(res.data.records)) {
+                vm.gateError = (res && res.msg) || '无法确认现有义工申请状态。';
+                return;
+              }
+              var active = res.data.records.filter(function (row) {
+                var state = Number(row && row.vstate);
+                return state === 0 || state === 1;
+              });
+              vm.activeRecords = active;
+              if (active.length) {
+                vm.blocked = true;
+                var hasPending = active.some(function (row) { return Number(row.vstate) === 0; });
+                var hasApproved = active.some(function (row) { return Number(row.vstate) === 1; });
+                if (hasApproved) {
+                  vm.blockReason = '已有已通过申请';
+                  vm.blockMessage = '你已有审核通过的义工申请，不能重复提交。请前往“我的义工申请”或“义工任务”继续参与。';
+                } else if (hasPending) {
+                  vm.blockReason = '已有待审核申请';
+                  vm.blockMessage = '你已有待审核的义工申请，请等待审核结果，不要重复提交。';
+                } else {
+                  vm.blockReason = '不可重复提交';
+                  vm.blockMessage = '当前存在有效义工申请，请先查看已有记录。';
+                }
+              }
+            }).fail(function (xhr) {
+              // Failure must not be treated as “no applications”.
+              vm.gateError = errorMessage(xhr, '申请状态查询失败，请稍后重试。');
+            }).always(function () {
+              vm.gateLoading = false;
             });
           },
           selectPhoto: function (event) {
-            var file = event.target.files && event.target.files[0];
-            this.errors = Object.assign({}, this.errors, { photo: '' });
+            var next = event.target.files && event.target.files[0] ? event.target.files[0] : null;
+            if (this.stagedFlag) {
+              this.retireStage(this.stagedFlag, false);
+              this.stagedFlag = '';
+            }
             this.photoFile = null;
-            if (!file) return;
-            if (!/\.(jpe?g|png|gif)$/i.test(file.name) || ['image/jpeg', 'image/png', 'image/gif'].indexOf(file.type) < 0) {
+            this.errors = Object.assign({}, this.errors, { photo: '' });
+            this.feedback = '';
+            if (!next) return;
+            if (!/^image\/(jpeg|png|gif)$/.test(next.type || '')
+                || !/\.(jpe?g|png|gif)$/i.test(next.name || '')) {
               this.errors = Object.assign({}, this.errors, { photo: '请选择 JPG、PNG 或 GIF 图片。' });
               event.target.value = '';
               return;
             }
-            if (file.size > 10 * 1024 * 1024) {
+            if (next.size > 10 * 1024 * 1024) {
               this.errors = Object.assign({}, this.errors, { photo: '照片不能超过 10 MB。' });
               event.target.value = '';
               return;
             }
-            this.photoFile = file;
+            this.photoFile = next;
           },
-          fileSize: function (bytes) { return bytes < 1024 * 1024 ? Math.ceil(bytes / 1024) + ' KB' : (bytes / 1024 / 1024).toFixed(1) + ' MB'; },
+          clearPhoto: function () {
+            if (this.submitting) return;
+            if (this.stagedFlag) this.retireStage(this.stagedFlag, false);
+            this.stagedFlag = '';
+            this.photoFile = null;
+            if (this.$refs.photo) this.$refs.photo.value = '';
+            this.errors = Object.assign({}, this.errors, { photo: '' });
+          },
+          retireStage: function (flag, keepalive) {
+            var clean = String(flag || '');
+            if (!validFlag(clean) || this.retiredFlags[clean]) return;
+            this.$set(this.retiredFlags, clean, true);
+            if (keepalive && window.fetch) {
+              try {
+                window.fetch('/api/files/staged/' + encodeURIComponent(clean), {
+                  method: 'DELETE',
+                  credentials: 'same-origin',
+                  keepalive: true,
+                  headers: { 'X-CSRF-Token': AuthSession.getCsrfToken() || '' }
+                }).catch(function () {});
+              } catch (ignore) {}
+              return;
+            }
+            $.ajax({
+              url: '/api/files/staged/' + encodeURIComponent(clean),
+              type: 'DELETE'
+            });
+          },
+          cleanupPageStage: function () {
+            if (this.stagedFlag) this.retireStage(this.stagedFlag, true);
+          },
           validate: function () {
             var errors = {};
             var age = Number(this.form.age);
@@ -116,24 +313,29 @@
             if (!this.user.username || !String(this.user.username).trim()) errors.name = '账号姓名无效，请先更新个人资料。';
             if (!Number.isInteger(age) || age < 16 || age > 100) errors.age = '请输入 16 至 100 之间的整数。';
             if (!/^1[3-9]\d{9}$/.test(String(this.user.phone || ''))) errors.tel = '账号联系电话必须为 11 位中国大陆手机号。';
-            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(this.user.email || ''))) errors.email = '账号电子邮箱格式不正确。';
-            if (!this.form.wechat) errors.wechat = '请填写微信号。';
-            if (!this.form.company) errors.company = '请填写工作单位。';
-            if (!this.form.location) errors.location = '请填写现居地。';
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(this.user.email || ''))) {
+              errors.email = '账号电子邮箱格式不正确。';
+            }
+            if (!this.form.wechat || this.form.wechat.length > 50) errors.wechat = '请填写微信号（不超过 50 字）。';
+            if (!this.form.company || this.form.company.length > 255) errors.company = '请填写工作单位（不超过 255 字）。';
+            if (!this.form.location || this.form.location.length > 255) errors.location = '请填写现居地（不超过 255 字）。';
             if (!Number.isInteger(days) || days < 1 || days > 4) errors.sparetime = '请选择可参与时间。';
             if (this.form.isvisit !== 0 && this.form.isvisit !== 1) errors.isvisit = '请选择是否到过基地。';
-            if (!this.form.moreability) errors.moreability = '请填写能力与参与意向。';
+            if (!this.form.moreability || this.form.moreability.length > 255) errors.moreability = '请填写能力与参与意向（不超过 255 字）。';
             this.errors = errors;
             if (Object.keys(errors).length) {
               this.feedback = '请检查标出的申请信息。';
               this.success = false;
               var first = Object.keys(errors)[0];
-              this.$nextTick(function () { if (this.$refs[first] && this.$refs[first].focus) this.$refs[first].focus(); });
+              this.$nextTick(function () {
+                if (this.$refs[first] && this.$refs[first].focus) this.$refs[first].focus();
+              });
               return false;
             }
             return true;
           },
           mutablePayload: function (photoFlag) {
+            // Only editable business fields. Server binds uid/name/tel/email/vstate.
             var payload = {
               age: Number(this.form.age),
               wechat: this.form.wechat,
@@ -143,36 +345,91 @@
               isvisit: Number(this.form.isvisit),
               moreability: this.form.moreability
             };
-            if (photoFlag) payload.apic = photoFlag;
+            if (validFlag(photoFlag)) payload.apic = String(photoFlag);
             return payload;
           },
           uploadPhoto: function () {
+            if (this.stagedFlag) return $.Deferred().resolve(this.stagedFlag).promise();
             if (!this.photoFile) return $.Deferred().resolve('').promise();
-            var formData = new FormData();
-            formData.append('file', this.photoFile);
-            AuthSession.appendUploadPurpose(formData, 'volunteer');
-            return $.ajax({ url: '/api/files/upload', type: 'POST', data: formData, processData: false, contentType: false }).then(function (res) {
-              var flag = res && res.code === '0' && res.data && (res.data.flag || res.data);
-              if (!flag) return $.Deferred().reject({ responseJSON: { msg: (res && res.msg) || '照片上传失败。' } }).promise();
-              return flag;
+            var page = this;
+            page.submitLabel = '正在安全上传…';
+            var upload = new FormData();
+            upload.append('file', page.photoFile);
+            AuthSession.appendUploadPurpose(upload, 'volunteer');
+            return $.ajax({
+              url: '/api/files/upload',
+              type: 'POST',
+              data: upload,
+              processData: false,
+              contentType: false
+            }).then(function (res) {
+              var flag = res && res.code === '0' && res.data
+                ? (res.data.flag || res.data)
+                : '';
+              if (!validFlag(flag)) {
+                return $.Deferred().reject({
+                  responseJSON: { msg: (res && res.msg) || '照片上传结果无效。' }
+                }).promise();
+              }
+              // Re-acquiring a flag after a prior retire must allow a future cleanup again.
+              var clean = String(flag);
+              if (page.retiredFlags && page.retiredFlags[clean]) {
+                if (page.$delete) page.$delete(page.retiredFlags, clean);
+                else delete page.retiredFlags[clean];
+              }
+              page.stagedFlag = clean;
+              return page.stagedFlag;
             });
           },
           submit: function () {
-            if (this.submitting || !this.validate()) return;
-            var vm = this;
-            vm.submitting = true;
-            vm.feedback = '';
-            vm.uploadPhoto().then(function (photoFlag) {
-              return $.ajax({ url: '/api/volunteer', type: 'POST', contentType: 'application/json', data: JSON.stringify(vm.mutablePayload(photoFlag)) });
+            if (this.submitting || this.blocked || this.gateLoading || this.gateError || !this.validate()) return;
+            var page = this;
+            page.submitting = true;
+            page.success = false;
+            page.feedback = '';
+            page.submitLabel = page.stagedFlag ? '正在保存申请…' : '正在准备提交…';
+            page.uploadPhoto().then(function (photoFlag) {
+              page.submitLabel = '正在保存申请…';
+              return $.ajax({
+                url: '/api/volunteer',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(page.mutablePayload(photoFlag))
+              });
             }).done(function (res) {
-              if (!res || res.code !== '0' || res.data !== true) { vm.feedback = (res && res.msg) || '申请提交失败，请稍后重试。'; return; }
-              vm.success = true;
-              vm.feedback = '义工申请已提交，正在前往申请记录。';
-              window.setTimeout(function () { window.location.href = './my_volunteer.html'; }, 900);
+              if (!exactSuccess(res)) {
+                // data=false must never surface the generic "成功" msg from Result.success(false).
+                page.success = false;
+                if (res && res.data === false) {
+                  page.feedback = '申请提交未成功，填写内容与已上传照片均已保留。';
+                } else {
+                  page.feedback = (res && res.msg) || '申请提交失败，填写内容与已上传照片均已保留。';
+                }
+                page.focusFeedback();
+                return;
+              }
+              // Business save success: do not delete the bound staged file.
+              page.stagedFlag = '';
+              page.photoFile = null;
+              if (page.$refs.photo) page.$refs.photo.value = '';
+              page.success = true;
+              page.feedback = '义工申请已提交，正在前往申请记录。';
+              window.setTimeout(function () {
+                window.location.href = './my_volunteer.html';
+              }, 900);
             }).fail(function (xhr) {
-              vm.success = false;
-              vm.feedback = (xhr.responseJSON && xhr.responseJSON.msg) || '网络异常，申请未能提交。';
-            }).always(function () { vm.submitting = false; });
+              page.success = false;
+              page.feedback = errorMessage(xhr, '网络异常，申请未能提交；填写内容与已上传照片均已保留。');
+              page.focusFeedback();
+            }).always(function () {
+              page.submitting = false;
+              page.submitLabel = '正在提交…';
+            });
+          },
+          focusFeedback: function () {
+            this.$nextTick(function () {
+              if (this.$refs.formFeedback && this.$refs.formFeedback.focus) this.$refs.formFeedback.focus();
+            });
           }
         }
       });

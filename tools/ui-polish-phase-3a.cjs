@@ -32,7 +32,12 @@ const ADOPTION_PAGES = new Set([
 const RESCUE_NOTIFICATION_PAGES = new Set([
   'rescue_apply.html', 'my_rescue.html', 'notifications.html'
 ]);
+// Phase 3E volunteer service loop pages (cache stamp only; shell/workspace stay 20260731a).
+const VOLUNTEER_SERVICE_PAGES = new Set([
+  'volunteer_apply.html', 'my_volunteer.html', 'volunteer_tasks.html'
+]);
 function expectedProductCache(file) {
+  if (VOLUNTEER_SERVICE_PAGES.has(file)) return '20260731e';
   if (RESCUE_NOTIFICATION_PAGES.has(file)) return '20260731d';
   if (ADOPTION_PAGES.has(file)) return '20260731c';
   return PUBLIC_PAGES.has(file) ? '20260731b' : '20260731a';

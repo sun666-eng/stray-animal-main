@@ -1065,48 +1065,66 @@ GPT 确认焦点已过；真实 390×844 复现搜索区空白：
 
 **封存**: 已提交并推送到 `origin/ui-polish/phase-3c-user-adoption-workflow-20260731`，未合并 main。
 
-### Phase 3D：用户救助与站内通知闭环（2026-07-31）
+### Phase 3D：用户救助与站内通知闭环（2026-07-31 · 已封存）
 
 **基线**: `ef80d887cf28f2030439d65e0b9f8d1f4bf4b97b`（Phase 3C 封存）
 
 **分支**: `ui-polish/phase-3d-user-rescue-notifications-20260731`
 
-**测试端口**: `18123`（dev 专用；收口后精确释放；不占用 9999）
+**封存提交**: `055b1e9e2ab4602a0fddd1763fab82b56016729a` — `ui: complete user rescue and notification workflow`
 
-**状态**: 实现、自检、视觉复核与全量回归通过，**未提交、未推送、未进入 Phase 3E**
+**状态**: **已提交并推送**至 origin；未合并 main
 
 | 项 | 值 |
 |----|-----|
-| 页面范围 | 正式救助申请、我的救助、站内通知，共 3 个用户闭环页面 |
-| 视觉方向 | 沿用暖白纸张、墨黑层级和朱红主操作；正式工单与公共交流在结构和文案上明确分离 |
-| 缓存 | 3 页 `product-ui.css?v=20260731d`；共享 shell/workspace 仍为 `v=20260731a` |
-| Phase 3D | **242 / 0 / 0** strict；3×5 = **15/15** 页面矩阵；截图 **6** |
-| 运行时探针 | **12**；best-effort=0 · fallback=0 · skipped=0 |
-| 写入隔离 | 夹具受控写请求 19；真实业务写请求 **0** |
-| 错误门禁 | console error=0 · pageerror=0 · 未登记 HTTP=0 · requestfailed=0 |
-| 新阶段回归 | Phase 3C **333/0** · Phase 3B **507/0** · Phase 3A **1227/0** |
-| 旧阶段回归 | 2H 131 · 2G 259 · 2F 139 · 2E 164 · 2D 224 · 2C 115 · 2B 234 · 2A 173 · 1C 134，全部 0 fail |
-| 总门禁 | adversarial **853/0** · Maven **473/0/0** · git diff --check 0 |
+| Phase 3D | **242 / 0 / 0** · 15/15 · shots 6 · probes 12 · fixture 19 · real 0 |
+| 全量回归（封存时） | 3C–1C 全绿 · adversarial **853/0** · Maven **473/0/0** |
+
+权威: `output/playwright/ui-polish-phase-3d/PHASE-3D-REPORT.md`
+
+### Phase 3E：用户义工申请、任务与服务参与闭环（2026-07-31 · 已封存）
+
+**基线**: `055b1e9e2ab4602a0fddd1763fab82b56016729a`（Phase 3D 封存）
+
+**分支**: `ui-polish/phase-3e-user-volunteer-service-20260731`
+
+**封存提交**: `8865eb16f0966b797bfda7f0d34cb565d84bfc7b` — `ui: complete user volunteer apply and task workflow`
+
+**测试端口**: `18127` 全量回归 · `18128` abort 账本补丁复验（dev；精确释放；不操作 9999）
+
+**状态**: **已提交并推送**至 origin；**未合并 main**
+
+| 项 | 值 |
+|----|-----|
+| 页面范围 | 义工申请、我的义工申请、义工任务，共 3 个用户闭环页面 |
+| 缓存 | 三页 `product-ui.css?v=20260731e`；shell/workspace 仍为 `v=20260731a` |
+| Phase 3E（最终） | **139 / 0 / 0** strict；矩阵 **15/15**；截图 **8**；probes **31**（门槛 ≥27） |
+| best-effort / fallback / skipped | **0 / 0 / 0** |
+| 写入隔离 | fixture **27** · real **0** |
+| evaluate | usage **32** · lifecycle **1** · readonly **31**（全经 wrapper） |
+| abort registry | requestFailed **2** · registered **2** · consumed **2** · unused **0** · unregistered **0** |
+| abort 键 | method + pathname + 业务 query（去 `_`）· 单次消费 · 可序列化 · 无 RegExp |
+| 新阶段回归 | 3D **242** · 3C **333** · 3B **507** · 3A **1227/0** |
+| 旧阶段回归 | 2H 131 · 2G 259 · 2F 139 · 2E 164 · 2D 224 · 2C 115 · 2B 234 · 2A 173 · 1C 134 |
+| 总门禁 | adversarial **853/0** · Maven **473/0/0** · git diff --check **0** |
+| P0/P1/P2/P3 | **0/0/0/0** |
 
 **产品修改**:
 
-- 正式救助工单加入字段级验证、精确 Boolean、双击写锁、409/422/500 输入保留，以及图片“上传暂存—业务绑定”的完整生命周期；替换、重置与离页只清理一次，保存成功不误删已绑定文件。
-- 公共聊天室明确为所有登录用户共享的一般交流区，不冒充工单或私人客服；使用 HTTP 持久化、可见页轮询、请求代次与中止，规范化 DTO、十进制字符串 ID 去重排序并限制为最近 100 条。
-- “我的救助”使用 session-owned 分页、latest-wins 与失败清旧数据；状态只映射后端真实 0–3，详情弹窗支持 Tab 闭环、Esc、遮罩关闭与触发点焦点恢复。
-- 站内通知将消息列表与未读计数拆成独立 loading/error/seq/abort；单条与全部已读必须精确返回 `true`，失败不假读、不跳页；业务跳转只允许同源固定页面和规范参数。
-- 手机端当前业务导航项前置可见；补齐真正的 visually-hidden 文件输入样式，消除浏览器原生英文控件外露。
-- 本阶段没有修改后端、API、数据库或权限规则；真实服务验证全部只读。
+- 申请页：session-owned 门禁；pending/approved 阻止重复；`/mine` 失败不假设无申请；暂存照片复用与清理；`data===true` 精确成功；`data===false` 不用「成功」文案。
+- 我的申请：latest-wins、失败清旧、确认撤回写锁、false/409/500 不摘卡；取消/Esc 恢复原 `data-volunteer-withdraw`；**成功 DELETE 后**焦点落到邻卡 `data-volunteer-detail` / 申请 CTA / 标题，永不 body。
+- 任务页：开放/我的参与（`data-tab-*`）；报名仅 note；成功只接受规范字符串 signup id；撤回 a11y dialog + 精确 true；false 保留状态；取消恢复原 `data-withdraw-task`；**成功后**焦点同卡动作 → 我的参与 tab → status，永不已删按钮。
+- CSS 限定在 3E 页面根类；未改后端/API/DB/权限。
 
-**对抗性自检与返修**:
+**测试契约调整（未削弱安全目标）**:
 
-1. 首轮测试暴露夹具生成了非法分钟值，导致合法 DTO 被前端正确拒绝；修正夹具后验证发送失败保留、重试成功和单次渲染。
-2. 通知成功标记后卡片会移除 `.is-unread`，旧测试使用动态类定位导致假失败；改用稳定标题定位并继续验证写请求恰好一次。
-3. 逐张复核 1440/390 截图，发现 `.ui-visually-hidden` 只有类名没有 CSS，已补齐并加入静态断言。
-4. Phase 3A 的旧共享顶栏断言误伤内容区语义 `<header>`；改为检查 `main` 外壳边界，仍禁止手写重复站点顶栏/页脚。
-5. 通用对抗契约从旧局部变量/函数名升级为等价安全语义；仍逐项验证精确 Boolean、最小 payload、flag 白名单、轮询取消、规范 ID、去重排序和上限。
-6. 最终 P0/P1/P2/P3 均为 0。
+1. `frontend-adversarial-check.ps1`：upload 变量名、mine pageSize、company 文案前缀等与产品对齐的等价语义。
+2. `ui-polish-phase-3a.cjs`：三页 product-ui 缓存映射到 `20260731e`。
+3. 新建 `tools/ui-polish-phase-3e.cjs`：真实 Playwright 交互、abort 消费账本、evaluate 生命周期记账、焦点 desktop+390、probe18/22/23 收紧。
+4. **abort 账本补丁**：登记键改为精确 `pathname` + 去 `_` 业务 query；匹配要求 `!consumed` 与键全等；一登记项只消费一次；`requestFailedAudit.length===2` 与 unregistered===0；隔离自测（已消费再匹配 / pageNum·mine 错配）不污染真实账本；删除旧 `reg-summary.json`，权威仍为 `reg-summary-phases.json`。
 
-权威报告: `output/playwright/ui-polish-phase-3d/PHASE-3D-REPORT.md` ·
-`phase-3d-report.json` · `run-strict-final.log` · `screenshots-index.json`
+权威（本地产物，`.gitignore`）: `output/playwright/ui-polish-phase-3e/PHASE-3E-REPORT.md` ·
+`phase-3e-report.json` · `run-strict-final.log` · `screenshots-index.json` ·
+`reg-summary-phases.json`
 
-**停止**: 不提交、不推送、不合并 main、不进入 Phase 3E。等待用户确认。
+**下一步**: 以本分支封存提交为基线开 Phase 3F（提示词见 `output/playwright/ui-polish-phase-3e/PHASE-3F-PROMPT.md`）。不合并 main。

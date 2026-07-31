@@ -416,12 +416,30 @@ foreach ($volunteerPage in @(
 )) {
     Assert-True ($volunteerPage.Html -match 'AuthSession\.bootstrap\s*\(\s*\{\s*requireAuth\s*:\s*true[\s\S]*?allowCachedOnNetworkError\s*:\s*false') "$($volunteerPage.Name): authoritative bootstrap fails closed before Vue mount"
 }
-Assert-True ($volunteerApplyHtml -match "formData\.append\('file',\s*this\.photoFile\)" -and $volunteerApplyHtml -match "appendUploadPurpose\(formData,\s*'volunteer'\)") "volunteer apply: optional photo uses the volunteer upload purpose"
+# Phase 3E equivalent: FormData variable may be formData or upload; purpose remains volunteer.
+Assert-True (
+    ($volunteerApplyHtml -match "append\('file'," -and $volunteerApplyHtml -match "appendUploadPurpose\((formData|upload),\s*'volunteer'\)") -and
+    $volunteerApplyHtml -match "url:\s*'/api/files/upload'"
+) "volunteer apply: optional photo uses the volunteer upload purpose"
 Assert-True ($volunteerApplyHtml -match "url:\s*'/api/volunteer'[\s\S]*?type:\s*'POST'" -and $volunteerPayloadMatch.Success -and $volunteerPayload -match '\b(age|wechat|company|location|sparetime|isvisit|moreability)\s*:' -and $volunteerPayload -notmatch '\b(id|uid|username|name|tel|email|vstate|state)\s*:') "volunteer apply: payload excludes authoritative account identity and server-owned status"
 Assert-True ($volunteerApplyHtml -match 'id="volunteerName"[^>]*readonly' -and $volunteerApplyHtml -match 'id="volunteerTel"[^>]*readonly' -and $volunteerApplyHtml -match 'id="volunteerEmail"[^>]*readonly' -and $volunteerApplyHtml -match '\^1\[3-9\]\\d\{9\}\$' -and $volunteerApplyHtml -match '前往个人资料更新') "volunteer apply: authoritative identity is read-only with backend-matching phone guidance"
-Assert-True ($volunteerApplyHtml -match 'for="volunteerCompany">工作单位\s*<small>必填</small>' -and $volunteerApplyHtml -match "errors\.company\s*=\s*'请填写工作单位") "volunteer apply: company is visibly and programmatically required"
-Assert-True ($volunteerApplyHtml -match "url:\s*'/api/volunteer/mine'[\s\S]*?data:\s*\{\s*pageNum:\s*1,\s*pageSize:\s*1\s*\}" -and $volunteerApplyHtml -notmatch '\b(username|phone|email)\s*:\s*this\.user') "volunteer apply: existing count relies on session-owned mine endpoint"
-Assert-True ($myVolunteerHtml -match "url:\s*'/api/volunteer/mine'[\s\S]*?data:\s*\{\s*pageNum:\s*page,\s*pageSize:\s*vm\.pageSize\s*\}" -and $myVolunteerHtml -notmatch '\b(username|phone|email|uid)\s*:\s*(this|vm)\.user') "my volunteer: pagination has no cached identity filter"
+Assert-True (
+    $volunteerApplyHtml -match 'for="volunteerCompany">工作单位\s*<small>必填' -and
+    $volunteerApplyHtml -match "errors\.company\s*=\s*'请填写工作单位"
+) "volunteer apply: company is visibly and programmatically required"
+# Gate/existing-application check must use session-owned /mine without identity selectors.
+Assert-True (
+    $volunteerApplyHtml -match "url:\s*'/api/volunteer/mine'" -and
+    $volunteerApplyHtml -match "pageNum:\s*1" -and
+    $volunteerApplyHtml -match "pageSize:\s*(1|20)" -and
+    $volunteerApplyHtml -notmatch '\b(username|phone|email)\s*:\s*this\.user'
+) "volunteer apply: existing count relies on session-owned mine endpoint"
+Assert-True (
+    $myVolunteerHtml -match "url:\s*'/api/volunteer/mine'" -and
+    $myVolunteerHtml -match "pageNum:\s*page" -and
+    $myVolunteerHtml -match "pageSize:\s*(vm|view)\.pageSize" -and
+    $myVolunteerHtml -notmatch '\b(username|phone|email|uid)\s*:\s*(this|vm|view)\.user'
+) "my volunteer: pagination has no cached identity filter"
 Assert-True ($myVolunteerHtml -match "\{\s*0:\s*'待审核',\s*1:\s*'已通过',\s*2:\s*'未通过'\s*\}" -and $myVolunteerHtml -match 'ui-volunteer-record-card') "my volunteer: actual states and responsive records are explicit"
 Assert-True ($adminVolunteerHtml -match "hasFlag\(authenticatedUser,\s*'volunteer'\)" -and $adminVolunteerHtml -match 'AdminWorkspace\.navigation\(authenticatedUser\.permission\)' -and $adminVolunteerHtml -notmatch 'permission\.path|item\.path') "admin volunteer: fixed route map and client permission gate complement the server page gate"
 Assert-True ($adminVolunteerHtml -match "url:\s*'/api/volunteer/page'[\s\S]*?pageSize:\s*vm\.pageSize" -and $adminVolunteerHtml -match 'pageSize:\s*12' -and $adminVolunteerHtml -notmatch '/api/volunteer["'']\s*,\s*type:\s*["'']GET') "admin volunteer: only bounded management pagination is read"

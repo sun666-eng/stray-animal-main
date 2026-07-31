@@ -1,294 +1,503 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width,initial-scale=1,viewport-fit=cover"
-    />
-    <title>义工任务 · 归途计划</title>
-    <link rel="stylesheet" href="../../css/product-ui.css?v=20260731a" />
-    <style>
-      [v-cloak] {
-        display: none;
-      }
-      .task-hero {
-        padding: 64px 0 32px;
-      }
-      .task-hero h1 {
-        font-size: clamp(38px, 6vw, 72px);
-        margin: 6px 0;
-      }
-      .task-tabs {
-        display: flex;
-        gap: 8px;
-        margin: 20px 0 30px;
-      }
-      .task-tabs button {
-        border: 1px solid #ddd8d1;
-        background: #fff;
-        border-radius: 99px;
-        padding: 11px 18px;
-        font-weight: 700;
-      }
-      .task-tabs .active {
-        background: #111;
-        color: #fff;
-      }
-      .task-grid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 18px;
-      }
-      .task-card {
-        border: 1px solid #e4e0da;
-        border-radius: 24px;
-        padding: 24px;
-        background: #fff;
-      }
-      .task-card h2 {
-        font-size: 24px;
-        margin: 12px 0;
-      }
-      .task-card p {
-        color: #74746f;
-        line-height: 1.65;
-      }
-      .task-meta {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        font-size: 13px;
-      }
-      .task-tag {
-        background: #f1f0ed;
-        border-radius: 99px;
-        padding: 6px 10px;
-      }
-      .task-actions {
-        display: flex;
-        gap: 9px;
-        margin-top: 20px;
-      }
-      .task-note {
-        width: 100%;
-        padding: 11px;
-        border: 1px solid #ddd8d1;
-        border-radius: 12px;
-        margin-top: 14px;
-      }
-      .task-state {
-        padding: 60px;
-        text-align: center;
-        border: 1px dashed #d9d5ce;
-        border-radius: 24px;
-        color: #777;
-      }
-      .task-message {
-        padding: 14px 18px;
-        background: #eef8f2;
-        color: #26714c;
-        border-radius: 12px;
-        margin-bottom: 20px;
-      }
-      .task-message.error {
-        background: #fff0ed;
-        color: #b92d1c;
-      }
-      @media (max-width: 900px) {
-        .task-grid {
-          grid-template-columns: 1fr;
-        }
-        .task-hero {
-          padding-top: 35px;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <div id="app" v-cloak>
-      <front-site-header :user="user"></front-site-header>
-      <main class="ui-container">
-        <section class="task-hero">
-          <p class="ui-eyebrow">VOLUNTEER MISSIONS</p>
-          <h1>一起把善意落到现场</h1>
-          <p>
-            只有审核通过的义工可以报名。报名后需等待管理员确认，完成服务后会形成可追溯的服务记录。
-          </p>
-        </section>
-        <div class="task-tabs">
-          <button :class="{active:!mine}" @click="mine=false;load()">
-            开放任务</button
-          ><button :class="{active:mine}" @click="mine=true;load()">
-            我的报名
-          </button>
-        </div>
-        <div v-if="message" class="task-message" :class="{error:messageError}">
-          {{message}}
-        </div>
-        <div v-if="loading" class="task-state">正在读取任务...</div>
-        <div v-else-if="!tasks.length" class="task-state">
-          {{mine?'你还没有报名任务。':'当前没有开放的义工任务。'}}
-        </div>
-        <div v-else class="task-grid">
-          <article v-for="item in tasks" :key="item.id" class="task-card">
-            <div class="task-meta">
-              <span class="task-tag">{{taskState(item.status)}}</span
-              ><span class="task-tag"
-                >{{item.signup_count}} / {{item.capacity}} 人</span
-              >
-            </div>
-            <h2>{{item.title}}</h2>
-            <p>{{item.description||'任务说明待补充。'}}</p>
-            <p>
-              <strong>{{item.location||'地点待定'}}</strong
-              ><br />{{time(item.start_at)}} — {{time(item.end_at)}}
-            </p>
-            <template v-if="item.signup_id"
-              ><p>
-                <strong>报名状态：{{signupState(item.signup_status)}}</strong>
-              </p>
-              <div
-                v-if="[0,1].includes(Number(item.signup_status))"
-                class="task-actions"
-              >
-                <button class="ui-button is-ghost" @click="withdraw(item)">
-                  撤回报名
-                </button>
-              </div></template
-            ><template v-else
-              ><input
-                v-model.trim="notes[item.id]"
-                class="task-note"
-                maxlength="500"
-                placeholder="补充可参与时间或技能（选填）"
-              />
-              <div class="task-actions">
-                <button class="ui-button is-primary" @click="signup(item)">
-                  报名任务
-                </button>
-              </div></template
-            >
-          </article>
-        </div>
-    </main><front-site-footer></front-site-footer>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="浏览开放义工任务、报名与撤回参与">
+  <title>义工任务 · 归途计划</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
+  <link rel="stylesheet" href="../../css/product-ui.css?v=20260731e">
+</head>
+<body>
+<div id="authWait" class="ui-auth-wait" role="status">正在验证登录状态...</div>
+<div id="app" v-cloak @keyup.esc="onEscape">
+  <front-site-header :user="user"></front-site-header>
+
+  <main class="ui-container ui-volunteer-tasks-page">
+    <section class="ui-volunteer-tasks-hero" aria-labelledby="tasksTitle">
+      <p class="ui-eyebrow">VOLUNTEER MISSIONS</p>
+      <h1 id="tasksTitle">一起把善意落到现场</h1>
+      <p>只有审核通过的义工可以报名。报名后需等待管理员确认；完成服务后由管理员登记可追溯的服务记录。你不能自行修改审核或服务状态。</p>
+      <div class="ui-form-actions">
+        <a class="ui-button is-ghost" href="./my_volunteer.html">我的义工申请</a>
+        <a class="ui-button is-ghost" href="./volunteer_apply.html">提交义工申请</a>
+      </div>
+    </section>
+
+    <div class="ui-volunteer-task-tabs" role="tablist" aria-label="任务视图">
+      <button type="button" role="tab" data-tab-open :aria-selected="String(!mine)" :class="{active:!mine}" :disabled="!!writeBusy" @click="switchTab(false)">开放任务</button>
+      <button type="button" role="tab" data-tab-mine :aria-selected="String(!!mine)" :class="{active:mine}" :disabled="!!writeBusy" @click="switchTab(true)">我的参与</button>
     </div>
-    <script src="../../js/jquery.min.js"></script>
-    <script src="../../js/auth-session.js?v=20260728"></script>
-    <script src="../../js/vue.min.js"></script>
+
+    <div v-if="message" class="ui-form-alert" data-tasks-status :class="{'is-success':!messageError}" :role="messageError?'alert':'status'" aria-live="polite">{{ message }}</div>
+
+    <div v-if="loading" class="ui-state" role="status">
+      <div><span class="ui-state-mark ui-skeleton"></span><h2>正在读取任务</h2><p>正在向服务端确认开放任务或你的参与记录。</p></div>
+    </div>
+    <div v-else-if="error" class="ui-state" role="alert">
+      <div>
+        <span class="ui-state-mark">!</span>
+        <h2>任务暂时无法加载</h2>
+        <p>{{ error }}</p>
+        <button class="ui-button is-dark" type="button" @click="load">重新加载</button>
+      </div>
+    </div>
+    <div v-else-if="!tasks.length" class="ui-state">
+      <div>
+        <span class="ui-state-mark">＋</span>
+        <h2>{{ mine ? '还没有参与记录' : '当前没有开放任务' }}</h2>
+        <p>{{ mine ? '通过审核后，可在“开放任务”中报名。' : '请稍后再来，或先确认义工申请是否已通过。' }}</p>
+      </div>
+    </div>
+    <div v-else class="ui-volunteer-task-grid">
+      <article
+        v-for="item in tasks"
+        :key="canonicalId(item.id)"
+        class="ui-volunteer-task-card"
+        :data-task-id="canonicalId(item.id)"
+        :data-signup-status="item.signup_status == null ? '' : String(item.signup_status)"
+      >
+        <div class="ui-volunteer-task-meta">
+          <span class="ui-badge" :class="taskBadge(item.status)">{{ taskState(item.status) }}</span>
+          <span class="ui-task-capacity">{{ countText(item.signup_count) }} / {{ countText(item.capacity) }} 人</span>
+        </div>
+        <h2>{{ item.title || '未命名任务' }}</h2>
+        <p class="ui-volunteer-task-desc">{{ item.description || '任务说明待补充。' }}</p>
+        <p class="ui-volunteer-task-place">
+          <strong>{{ item.location || '地点待定' }}</strong><br>
+          {{ time(item.start_at) }} — {{ time(item.end_at) }}
+        </p>
+
+        <template v-if="hasActiveSignup(item)">
+          <p class="ui-volunteer-signup-state">
+            <strong>报名状态：{{ signupState(item.signup_status) }}</strong>
+            <span v-if="item.signup_note"> · {{ item.signup_note }}</span>
+          </p>
+          <div v-if="canWithdraw(item)" class="ui-form-actions">
+            <button
+              class="ui-button is-ghost"
+              type="button"
+              :disabled="!!writeBusy"
+              :data-withdraw-task="canonicalId(item.id)"
+              @click="openWithdraw(item, $event)"
+            >{{ writeBusy === withdrawKey(item) ? '正在撤回…' : '撤回报名' }}</button>
+          </div>
+          <p v-else-if="statusCode(item.signup_status)===2" class="ui-field-hint">服务已完成，记录由管理员确认，不可自行撤回。</p>
+          <p v-else-if="statusCode(item.signup_status)===4" class="ui-field-hint">报名未通过。如任务仍开放，可再次填写备注报名。</p>
+        </template>
+        <template v-else>
+          <label class="ui-sr-only" :for="'task-note-'+canonicalId(item.id)">报名备注</label>
+          <input
+            :id="'task-note-'+canonicalId(item.id)"
+            v-model.trim="notes[canonicalId(item.id)]"
+            class="ui-form-input ui-volunteer-task-note"
+            maxlength="500"
+            :disabled="!!writeBusy || statusCode(item.status)!==1"
+            placeholder="补充可参与时间或技能（选填，最多 500 字）"
+          >
+          <div class="ui-form-actions">
+            <button
+              class="ui-button is-primary"
+              type="button"
+              :disabled="!!writeBusy || statusCode(item.status)!==1"
+              :data-signup-task="canonicalId(item.id)"
+              @click="signup(item)"
+            >{{ writeBusy === signupKey(item) ? '正在报名…' : '报名任务' }}</button>
+          </div>
+        </template>
+      </article>
+    </div>
+  </main>
+
+  <div v-if="withdrawItem" class="ui-dialog-backdrop" role="presentation" @click.self="cancelWithdraw">
+    <section
+      ref="withdrawDialog"
+      class="ui-dialog ui-volunteer-withdraw-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="taskWithdrawTitle"
+      aria-describedby="taskWithdrawDesc"
+      tabindex="-1"
+      @keydown.tab="trapWithdrawFocus"
+    >
+      <div class="ui-dialog-head">
+        <div>
+          <span>CONFIRM WITHDRAW</span>
+          <h2 id="taskWithdrawTitle">撤回这次任务报名？</h2>
+        </div>
+      </div>
+      <div class="ui-dialog-body">
+        <p id="taskWithdrawDesc">
+          任务「{{ withdrawItem.title || ('#' + canonicalId(withdrawItem.id)) }}」的报名将被撤回。
+          任务开始后将无法自行撤回；确认后才会向服务端发送请求。
+        </p>
+      </div>
+      <div class="ui-dialog-actions">
+        <button class="ui-button is-ghost" type="button" :disabled="!!writeBusy" @click="cancelWithdraw">取消</button>
+        <button
+          class="ui-button is-danger"
+          type="button"
+          data-confirm-withdraw
+          :disabled="!!writeBusy"
+          @click="confirmWithdraw"
+        >{{ writeBusy ? '正在撤回…' : '确认撤回' }}</button>
+      </div>
+    </section>
+  </div>
+
+  <front-site-footer></front-site-footer>
+</div>
+<script src="../../js/jquery.min.js"></script>
+<script src="../../js/vue.min.js"></script>
 <script src="../../js/user-workspace.js?v=20260731a"></script>
 <script src="../../js/front-shell.js?v=20260731a"></script>
-    <script>
-      (function () {
-        AuthSession.bootstrap({
-          requireAuth: true,
-          onDone: function (ok, user) {
-            if (!ok || !user) return;
-            new Vue({
-              el: "#app",
-              data: {
-                user: user,
-                mine: false,
-                tasks: [],
-                notes: {},
-                loading: true,
-                message: "",
-                messageError: false,
-              },
-              created: function () {
-                this.load();
-              },
-              methods: {
-                load: function () {
-                  var vm = this;
-                  vm.loading = true;
-                  vm.message = "";
-                  $.ajax({
-                    url: "/api/operations/volunteer-tasks",
-                    data: { mine: vm.mine },
-                  })
-                    .done(function (r) {
-                      if (r.code === "0") vm.tasks = r.data || [];
-                      else vm.say(r.msg, true);
-                    })
-                    .fail(function (x) {
-                      vm.say(
-                        (x.responseJSON && x.responseJSON.msg) ||
-                          "任务加载失败",
-                        true,
-                      );
-                    })
-                    .always(function () {
-                      vm.loading = false;
-                    });
-                },
-                signup: function (item) {
-                  var vm = this;
-                  $.ajax({
-                    url:
-                      "/api/operations/volunteer-tasks/" + item.id + "/signup",
-                    type: "POST",
-                    contentType: "application/json",
-                    data: JSON.stringify({ note: vm.notes[item.id] || "" }),
-                  })
-                    .done(function (r) {
-                      if (r.code === "0") {
-                        vm.say("报名已提交，等待管理员确认。");
-                        vm.load();
-                      } else vm.say(r.msg, true);
-                    })
-                    .fail(function (x) {
-                      vm.say(
-                        (x.responseJSON && x.responseJSON.msg) || "报名失败",
-                        true,
-                      );
-                    });
-                },
-                withdraw: function (item) {
-                  if (!confirm("确认撤回这次报名？")) return;
-                  var vm = this;
-                  $.ajax({
-                    url:
-                      "/api/operations/volunteer-tasks/" + item.id + "/signup",
-                    type: "DELETE",
-                  })
-                    .done(function (r) {
-                      if (r.code === "0") {
-                        vm.say("报名已撤回。");
-                        vm.load();
-                      } else vm.say(r.msg, true);
-                    })
-                    .fail(function (x) {
-                      vm.say(
-                        (x.responseJSON && x.responseJSON.msg) || "撤回失败",
-                        true,
-                      );
-                    });
-                },
-                say: function (t, e) {
-                  this.message = t;
-                  this.messageError = !!e;
-                },
-                taskState: function (v) {
-                  return (
-                    ["草稿", "招募中", "已关闭", "已取消"][Number(v)] || "未知"
-                  );
-                },
-                signupState: function (v) {
-                  return (
-                    ["待确认", "已指派", "已完成", "已撤回", "未通过"][
-                      Number(v)
-                    ] || "未知"
-                  );
-                },
-                time: function (v) {
-                  return v ? String(v).replace("T", " ").slice(0, 16) : "-";
-                },
-              },
+<script src="../../js/auth-session.js?v=20260728"></script>
+<script>
+(function () {
+  'use strict';
+
+  function canonicalId(value) {
+    var normalized = value == null ? '' : String(value).trim();
+    return /^[1-9][0-9]{0,18}$/.test(normalized) ? normalized : '';
+  }
+  function errorMessage(xhr, fallback) {
+    return (xhr && xhr.responseJSON && xhr.responseJSON.msg) || fallback;
+  }
+  function signupSuccess(res) {
+    if (!res || res.code !== '0' || res.data == null || res.data === false || res.data === true) return false;
+    if (typeof res.data === 'object') return false;
+    return canonicalId(res.data) !== '';
+  }
+  function statusCode(value) {
+    var n = parseInt(String(value == null ? '' : value).trim(), 10);
+    return (n === 0 || n > 0) && String(n) === String(value).trim() ? n : NaN;
+  }
+  function exactBoolSuccess(res) {
+    return !!(res && res.code === '0' && res.data === true);
+  }
+
+  AuthSession.bootstrap({
+    requireAuth: true,
+    allowCachedOnNetworkError: false,
+    onDone: function (ok, authenticatedUser) {
+      if (!ok || !authenticatedUser) return;
+      document.getElementById('authWait').hidden = true;
+      new Vue({
+        el: '#app',
+        data: {
+          user: authenticatedUser,
+          mine: false,
+          tasks: [],
+          notes: {},
+          loading: true,
+          error: '',
+          message: '',
+          messageError: false,
+          listRequest: null,
+          listSeq: 0,
+          writeBusy: '',
+          withdrawItem: null,
+          withdrawTrigger: null,
+          focusAfterWithdrawTaskId: '',
+          focusAfterWithdrawMessage: '',
+          mobileOpen: false,
+          accountOpen: false
+        },
+        created: function () {
+          this.load();
+          document.addEventListener('keydown', this.onDocumentKey);
+        },
+        beforeDestroy: function () {
+          if (this.listRequest) this.listRequest.abort();
+          document.removeEventListener('keydown', this.onDocumentKey);
+          document.body.classList.remove('ui-modal-open');
+        },
+        methods: {
+          canonicalId: canonicalId,
+          statusCode: statusCode,
+          countText: function (value) {
+            if (value == null || value === '') return '0';
+            var text = String(value).trim();
+            return /^[0-9]{1,18}$/.test(text) ? text : '0';
+          },
+          closeMenus: function () { this.mobileOpen = false; this.accountOpen = false; },
+          logout: function () { AuthSession.logout(); },
+          switchTab: function (mine) {
+            if (this.writeBusy || this.mine === mine) return;
+            this.mine = !!mine;
+            this.load();
+          },
+          load: function () {
+            if (this.listRequest) this.listRequest.abort();
+            var view = this;
+            var seq = ++view.listSeq;
+            var mine = view.mine;
+            view.loading = true;
+            view.error = '';
+            view.message = '';
+            view.listRequest = $.ajax({
+              url: '/api/operations/volunteer-tasks',
+              type: 'GET',
+              data: { mine: mine ? 'true' : 'false' },
+              cache: false
+            }).done(function (res) {
+              if (seq !== view.listSeq) return;
+              if (!res || res.code !== '0' || !Array.isArray(res.data)) {
+                view.clearTasks();
+                view.error = (res && res.msg) || '服务返回了无法识别的任务数据。';
+                return;
+              }
+              view.tasks = res.data.filter(function (row) {
+                return !!canonicalId(row && row.id);
+              }).map(function (row) {
+                var copy = Object.assign({}, row);
+                copy.id = canonicalId(row.id);
+                if (row.signup_id != null && row.signup_id !== '') {
+                  copy.signup_id = canonicalId(row.signup_id) || String(row.signup_id);
+                }
+                return copy;
+              });
+            }).fail(function (xhr, statusText) {
+              if (seq !== view.listSeq || statusText === 'abort') return;
+              view.clearTasks();
+              view.error = errorMessage(xhr, '任务加载失败，请稍后重试。');
+            }).always(function () {
+              if (seq !== view.listSeq) return;
+              view.listRequest = null;
+              view.loading = false;
+              if (view.focusAfterWithdrawTaskId) {
+                var focusTaskId = view.focusAfterWithdrawTaskId;
+                var focusMsg = view.focusAfterWithdrawMessage;
+                view.focusAfterWithdrawTaskId = '';
+                view.focusAfterWithdrawMessage = '';
+                view.restoreFocusAfterWithdraw(focusTaskId, focusMsg);
+              }
             });
           },
-        });
-      })();
-    </script>
-  </body>
+          restoreFocusAfterWithdraw: function (taskId, preferredMessage) {
+            var view = this;
+            // load() clears message; restore success copy before choosing focus target
+            // so [data-tasks-status] exists when card/tab fallthrough needs it.
+            if (preferredMessage && !view.message) {
+              view.message = preferredMessage;
+              view.messageError = false;
+            }
+            view.$nextTick(function () {
+              function focusEl(el) {
+                if (el && el.focus) {
+                  try { el.focus(); return true; } catch (e) {}
+                }
+                return false;
+              }
+              // 1) Same-card remaining action (signup / other withdraw) — never the deleted trigger.
+              var card = taskId
+                ? document.querySelector('.ui-volunteer-task-card[data-task-id="' + taskId + '"]')
+                : null;
+              var target = null;
+              if (card) {
+                target = card.querySelector('[data-signup-task], [data-withdraw-task], .ui-form-actions button, input.ui-volunteer-task-note');
+              }
+              // 2) 我的参与 tab (stable data-* selector)
+              if (!target) target = document.querySelector('[data-tab-mine]');
+              // 3) Success / status alert
+              if (!target) {
+                var status = document.querySelector('[data-tasks-status]');
+                if (status) {
+                  if (!status.hasAttribute('tabindex')) status.setAttribute('tabindex', '-1');
+                  target = status;
+                }
+              }
+              // 4) Page title — never body
+              if (!target) target = document.getElementById('tasksTitle');
+              if (!focusEl(target)) {
+                var main = document.querySelector('main');
+                if (main) {
+                  if (!main.hasAttribute('tabindex')) main.setAttribute('tabindex', '-1');
+                  focusEl(main);
+                }
+              }
+            });
+          },
+          clearTasks: function () {
+            this.tasks = [];
+          },
+          hasActiveSignup: function (item) {
+            if (!item || item.signup_id == null || item.signup_id === '') return false;
+            var status = statusCode(item.signup_status);
+            return status === 0 || status === 1 || status === 2;
+          },
+          canWithdraw: function (item) {
+            var status = statusCode(item && item.signup_status);
+            return status === 0 || status === 1;
+          },
+          signupKey: function (item) {
+            return 'signup:' + canonicalId(item && item.id);
+          },
+          withdrawKey: function (item) {
+            return 'withdraw:' + canonicalId(item && item.id);
+          },
+          signup: function (item) {
+            if (this.writeBusy) return;
+            var taskId = canonicalId(item && item.id);
+            if (!taskId) {
+              this.say('任务编号无效，无法报名。', true);
+              return;
+            }
+            if (statusCode(item.status) !== 1) {
+              this.say('该任务当前不可报名。', true);
+              return;
+            }
+            var view = this;
+            var key = view.signupKey(item);
+            view.writeBusy = key;
+            view.message = '';
+            var note = String(view.notes[taskId] || '').trim();
+            if (note.length > 500) note = note.slice(0, 500);
+            var body = {};
+            if (note) body.note = note;
+            $.ajax({
+              url: '/api/operations/volunteer-tasks/' + encodeURIComponent(taskId) + '/signup',
+              type: 'POST',
+              contentType: 'application/json',
+              data: JSON.stringify(body)
+            }).done(function (res) {
+              if (!signupSuccess(res)) {
+                view.say((res && res.msg) || '报名失败，请稍后重试。', true);
+                return;
+              }
+              view.say('报名已提交，等待管理员确认。', false);
+              view.load();
+            }).fail(function (xhr) {
+              view.say(errorMessage(xhr, '报名失败，请稍后重试。'), true);
+            }).always(function () {
+              if (view.writeBusy === key) view.writeBusy = '';
+            });
+          },
+          openWithdraw: function (item, event) {
+            if (this.writeBusy || !this.canWithdraw(item) || !canonicalId(item && item.id)) return;
+            this.withdrawTrigger = event && event.currentTarget ? event.currentTarget : null;
+            this.withdrawItem = item;
+            document.body.classList.add('ui-modal-open');
+            this.$nextTick(function () {
+              var dialog = this.$refs.withdrawDialog;
+              if (dialog && dialog.focus) dialog.focus();
+            });
+          },
+          cancelWithdraw: function () {
+            if (this.writeBusy) return;
+            var trigger = this.withdrawTrigger;
+            this.withdrawItem = null;
+            this.withdrawTrigger = null;
+            document.body.classList.remove('ui-modal-open');
+            this.$nextTick(function () {
+              if (trigger && document.contains(trigger) && trigger.focus) trigger.focus();
+            });
+          },
+          confirmWithdraw: function () {
+            if (this.writeBusy || !this.withdrawItem) return;
+            var taskId = canonicalId(this.withdrawItem.id);
+            if (!taskId) {
+              this.say('任务编号无效，无法撤回。', true);
+              return;
+            }
+            var view = this;
+            var key = view.withdrawKey(view.withdrawItem);
+            // Keep trigger only for cancel/fail restore; success path must not focus deleted button.
+            view.writeBusy = key;
+            view.message = '';
+            $.ajax({
+              url: '/api/operations/volunteer-tasks/' + encodeURIComponent(taskId) + '/signup',
+              type: 'DELETE'
+            }).done(function (res) {
+              if (!exactBoolSuccess(res)) {
+                // false/409/500-style body: dialog stays open; cancel restores original withdraw button.
+                if (res && res.data === false) {
+                  view.say('撤回未成功，报名状态未改变。', true);
+                } else {
+                  view.say((res && res.msg) || '撤回失败，报名状态未改变。', true);
+                }
+                return;
+              }
+              view.withdrawItem = null;
+              view.withdrawTrigger = null;
+              document.body.classList.remove('ui-modal-open');
+              // Original withdraw control is gone after success — focus after list refresh.
+              view.focusAfterWithdrawTaskId = taskId;
+              view.focusAfterWithdrawMessage = '报名已撤回。';
+              view.say('报名已撤回。', false);
+              view.load();
+            }).fail(function (xhr) {
+              // Keep current records and notes; dialog stays open so user can retry or cancel
+              // (cancel restores original withdraw button focus).
+              view.say(errorMessage(xhr, '撤回失败，请稍后重试。'), true);
+            }).always(function () {
+              if (view.writeBusy === key) view.writeBusy = '';
+            });
+          },
+          onEscape: function () {
+            if (this.withdrawItem) {
+              if (this.writeBusy) return;
+              this.cancelWithdraw();
+              return;
+            }
+            this.closeMenus();
+          },
+          onDocumentKey: function (event) {
+            if (event.key === 'Escape') this.onEscape();
+          },
+          trapWithdrawFocus: function (event) {
+            var dialog = this.$refs.withdrawDialog;
+            if (!dialog || event.key !== 'Tab') return;
+            var focusable = Array.prototype.slice.call(dialog.querySelectorAll(
+              'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+            )).filter(function (el) {
+              return el.offsetWidth > 0 || el.offsetHeight > 0;
+            });
+            if (!focusable.length) {
+              event.preventDefault();
+              dialog.focus();
+              return;
+            }
+            var first = focusable[0];
+            var last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+              event.preventDefault();
+              last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+              event.preventDefault();
+              first.focus();
+            }
+          },
+          say: function (text, isError) {
+            this.message = text;
+            this.messageError = !!isError;
+          },
+          taskState: function (value) {
+            var state = statusCode(value);
+            return ['草稿', '招募中', '已关闭', '已取消'][state] || '状态未知';
+          },
+          taskBadge: function (value) {
+            var state = statusCode(value);
+            return state === 1 ? 'is-pending'
+              : state === 2 ? 'is-done'
+              : state === 3 ? 'is-closed'
+              : 'is-neutral';
+          },
+          signupState: function (value) {
+            var state = statusCode(value);
+            return ['待确认', '已指派', '已完成', '已撤回', '未通过'][state] || '状态未知';
+          },
+          time: function (value) {
+            if (!value) return '—';
+            var date = new Date(String(value).replace(' ', 'T'));
+            if (isNaN(date.getTime())) return String(value).replace('T', ' ').slice(0, 16);
+            return date.toLocaleString('zh-CN', { hour12: false });
+          }
+        }
+      });
+    }
+  });
+})();
+</script>
+</body>
 </html>

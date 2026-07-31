@@ -451,6 +451,147 @@ img { display: block; max-width: 100%; }
 .ui-volunteer-facts dd { margin: 0; overflow-wrap: anywhere; font-size: 13px; font-weight: 650; }
 .ui-volunteer-statement strong { font-size: 12px; }
 .ui-volunteer-statement p { margin: 7px 0 0; color: var(--ui-muted); font-size: 13px; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
+/* Phase 3E scoped styles — only under 3E page roots */
+.ui-volunteer-page .ui-volunteer-fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+.ui-volunteer-page .ui-volunteer-fieldset:disabled { opacity: .72; }
+.ui-volunteer-page .ui-volunteer-upload-box { align-items: start; }
+.ui-volunteer-page .ui-volunteer-upload-box.has-stage { border-color: #9ec9ad; background: #f4faf6; }
+.ui-volunteer-page .ui-upload-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
+.ui-volunteer-page .ui-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.ui-volunteer-mine-page .ui-status-key i.is-neutral { background: #a4a6a1; }
+.ui-volunteer-mine-page .ui-badge.is-neutral { color: #5f635c; background: #eceee8; }
+.ui-volunteer-mine-page .ui-volunteer-card-actions { margin-top: 16px; flex-wrap: wrap; }
+.ui-volunteer-mine-page .ui-volunteer-detail-dialog { width: min(560px, 100%); }
+body.ui-modal-open { overflow: hidden; }
+
+.ui-volunteer-tasks-page { padding: 58px 0 90px; }
+.ui-volunteer-tasks-page .ui-volunteer-tasks-hero { max-width: 860px; margin-bottom: 28px; }
+.ui-volunteer-tasks-page .ui-volunteer-tasks-hero h1 {
+  margin: 0;
+  font-size: clamp(42px, 6vw, 72px);
+  line-height: .98;
+  letter-spacing: -.065em;
+}
+.ui-volunteer-tasks-page .ui-volunteer-tasks-hero > p {
+  max-width: 720px;
+  margin: 18px 0 22px;
+  color: var(--ui-muted);
+  font-size: 15px;
+  line-height: 1.85;
+}
+.ui-volunteer-tasks-page .ui-volunteer-task-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 24px;
+}
+.ui-volunteer-tasks-page .ui-volunteer-task-tabs button {
+  min-height: 44px;
+  padding: 11px 18px;
+  border: 1px solid var(--ui-line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ui-ink);
+  font-weight: 700;
+  cursor: pointer;
+}
+.ui-volunteer-tasks-page .ui-volunteer-task-tabs button.active {
+  background: var(--ui-ink);
+  border-color: var(--ui-ink);
+  color: #fff;
+}
+.ui-volunteer-tasks-page .ui-volunteer-task-tabs button:disabled { opacity: .55; cursor: not-allowed; }
+.ui-volunteer-tasks-page .ui-volunteer-task-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.ui-volunteer-tasks-page .ui-volunteer-task-card {
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid var(--ui-line);
+  border-radius: 18px;
+  background: var(--ui-surface);
+}
+.ui-volunteer-tasks-page .ui-volunteer-task-card h2 {
+  margin: 12px 0 8px;
+  font-size: 24px;
+  letter-spacing: -.04em;
+  overflow-wrap: anywhere;
+}
+.ui-volunteer-tasks-page .ui-volunteer-task-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.ui-volunteer-tasks-page .ui-task-capacity {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--ui-soft);
+  color: var(--ui-muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+.ui-volunteer-tasks-page .ui-volunteer-task-desc,
+.ui-volunteer-tasks-page .ui-volunteer-task-place,
+.ui-volunteer-tasks-page .ui-volunteer-signup-state {
+  color: var(--ui-muted);
+  font-size: 14px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.ui-volunteer-tasks-page .ui-volunteer-task-place strong,
+.ui-volunteer-tasks-page .ui-volunteer-signup-state strong { color: var(--ui-ink); }
+.ui-volunteer-tasks-page .ui-volunteer-task-note { margin: 14px 0 0; }
+.ui-volunteer-tasks-page .ui-volunteer-task-card .ui-form-actions { margin-top: 16px; }
+.ui-volunteer-tasks-page .ui-badge.is-neutral { color: #5f635c; background: #eceee8; }
+.ui-volunteer-tasks-page .ui-volunteer-withdraw-dialog { width: min(520px, 100%); }
+.ui-volunteer-tasks-page .ui-dialog-actions .ui-button { min-height: 44px; }
+
+@media (max-width: 980px) {
+  .ui-volunteer-tasks-page .ui-volunteer-task-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .ui-volunteer-tasks-page { padding: 40px 0 70px; }
+  .ui-volunteer-tasks-page .ui-volunteer-task-grid { grid-template-columns: 1fr; }
+  .ui-volunteer-tasks-page .ui-volunteer-tasks-hero h1 { font-size: 42px; }
+  .ui-volunteer-mine-page .ui-volunteer-card-actions .ui-button { min-height: 44px; }
+  .ui-volunteer-page .ui-form-actions .ui-button { min-height: 44px; }
+}
+@media (max-width: 390px) {
+  .ui-volunteer-tasks-page .ui-volunteer-task-card { padding: 18px; }
+  .ui-volunteer-tasks-page .ui-volunteer-tasks-hero h1 { font-size: 36px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-volunteer-page *,
+  .ui-volunteer-mine-page *,
+  .ui-volunteer-tasks-page *,
+  .ui-volunteer-page *::before,
+  .ui-volunteer-mine-page *::before,
+  .ui-volunteer-tasks-page *::before,
+  .ui-volunteer-page *::after,
+  .ui-volunteer-mine-page *::after,
+  .ui-volunteer-tasks-page *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
 
 .ui-rescue-page { padding: 58px 0 88px; }
 .ui-rescue-intro { display: grid; grid-template-columns: minmax(0,1fr) minmax(250px,.42fr); gap: 48px; align-items: end; margin-bottom: 34px; }
