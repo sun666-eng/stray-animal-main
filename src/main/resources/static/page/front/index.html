@@ -6,59 +6,12 @@
     <meta name="description" content="归途计划流浪动物领养、救助与透明公示平台">
     <title>归途计划 · 让每个生命都被认真对待</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-    <link rel="stylesheet" href="../../css/product-ui.css?v=20260728">
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260731a">
 </head>
 <body>
 <div id="app" v-cloak>
     <a class="sr-only" href="#main-content">跳到主要内容</a>
-    <header class="ui-header">
-        <div class="ui-header-inner">
-            <a class="ui-brand" href="./index.html" aria-label="归途计划首页"><span class="ui-brand-mark" aria-hidden="true">♡</span><span class="ui-brand-copy"><strong>归途计划</strong><small>PAWS ON THE WAY HOME</small></span></a>
-            <nav class="ui-nav" aria-label="主导航">
-                <a class="is-active" href="./index.html" aria-current="page">首页</a>
-                <a href="./animal_browse.html">等待一个家</a>
-                <a href="./notice_list.html">救助动态</a>
-                <a href="./account_public.html">透明公示</a>
-            </nav>
-            <div class="ui-header-actions">
-                <button class="ui-icon-button ui-mobile-toggle" type="button" aria-controls="homeMobileNav" :aria-expanded="String(mobileOpen)" :aria-label="mobileOpen?'关闭主导航':'打开主导航'" @click="mobileOpen=!mobileOpen">☰</button>
-                <div class="ui-account">
-                    <button class="ui-account-trigger" type="button" :aria-expanded="String(accountOpen)" @click.stop="accountOpen=!accountOpen">
-                        <span class="ui-avatar">{{ userInitial }}</span>
-                        <span class="ui-account-name">{{ user ? user.username : '登录' }}</span>
-                    </button>
-                    <div v-if="accountOpen" class="ui-account-menu" @click.stop>
-                        <template v-if="user">
-                            <a href="./my_adopt.html">我的领养</a>
-                            <a href="./notifications.html">消息通知</a>
-                            <a href="./my_rescue.html">我的救助</a>
-                            <a href="./my_volunteer.html">我的义工</a>
-                            <a href="/page/end/person.html">个人资料</a>
-                            <a v-if="isAdmin" href="/page/end/index.html">管理工作台</a>
-                            <button class="is-danger" type="button" @click="logout">退出登录</button>
-                        </template>
-                        <template v-else>
-                            <a href="./login.html">登录账户</a>
-                            <a href="./register.html">创建账户</a>
-                        </template>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <nav id="homeMobileNav" class="ui-mobile-nav" :class="{'is-open':mobileOpen}" aria-label="移动端导航">
-            <a href="./index.html" aria-current="page">首页</a>
-            <a href="./animal_browse.html">等待一个家</a>
-            <a href="./notice_list.html">救助动态</a>
-            <a href="./rescue_apply.html">发起救助</a>
-            <a href="./account_public.html">透明公示</a>
-            <template v-if="user">
-                <a href="./my_adopt.html">我的领养</a>
-                <a href="./notifications.html">消息通知</a>
-                <a href="./my_rescue.html">我的救助</a>
-                <a href="/page/end/person.html">个人资料</a>
-            </template>
-        </nav>
-    </header>
+    <front-site-header :user="user"></front-site-header>
 
     <main id="main-content">
         <section class="ui-container ui-home-hero">
@@ -116,12 +69,13 @@
         <section class="ui-home-section"><div class="ui-container"><div class="ui-section-head"><div><p class="ui-eyebrow">HOW IT WORKS</p><h2>一份善意，四步抵达</h2><p>流程说明用于帮助理解平台协作方式，不代表具体请求的处理时限。</p></div></div><div class="ui-process-grid"><article v-for="step in steps" :key="step.number" class="ui-process-card"><span class="ui-eyebrow">STEP {{ step.number }}</span><strong>{{ step.title }}</strong><p>{{ step.description }}</p></article></div></div></section>
     </main>
 
-    <footer class="ui-site-footer"><div class="ui-container ui-footer-inner"><div class="ui-footer-copy"><strong>归途计划</strong><span>© 2026 · 让每一次善意都有回音</span></div><nav class="ui-footer-nav" aria-label="页脚导航"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a href="./notice_list.html">救助动态</a><a href="./rescue_apply.html">发起救助</a><a href="./account_public.html">透明公示</a></nav></div></footer>
+    <front-site-footer></front-site-footer>
 </div>
 <script src="../../js/jquery.min.js"></script>
 <script src="../../js/vue.min.js"></script>
+<script src="../../js/user-workspace.js?v=20260731a"></script>
+<script src="../../js/front-shell.js?v=20260731a"></script>
 <script src="../../js/auth-session.js?v=20260728"></script>
-<script src="../../js/user-workspace.js?v=20260728"></script>
 <script>
 new Vue({
   el: '#app',

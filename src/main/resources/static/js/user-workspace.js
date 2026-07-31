@@ -17,6 +17,37 @@
     'volunteer', 'account', 'notice', 'help', 'rescue'
   ]);
 
+  var PUBLIC_NAVIGATION = Object.freeze([
+    Object.freeze({ id: 'home', label: '首页', href: '/page/front/index.html' }),
+    Object.freeze({ id: 'browse', label: '等待一个家', href: '/page/front/animal_browse.html' }),
+    Object.freeze({ id: 'notice', label: '救助动态', href: '/page/front/notice_list.html' }),
+    Object.freeze({ id: 'account', label: '透明公示', href: '/page/front/account_public.html' })
+  ]);
+
+  var FRONT_ACCOUNT_GROUPS = Object.freeze([
+    Object.freeze({
+      id: 'actions',
+      label: '我的行动',
+      items: Object.freeze([
+        Object.freeze({ id: 'my_adopt', label: '我的领养', href: '/page/front/my_adopt.html' }),
+        Object.freeze({ id: 'notifications', label: '消息通知', href: '/page/front/notifications.html' }),
+        Object.freeze({ id: 'my_rescue', label: '我的救助', href: '/page/front/my_rescue.html' }),
+        Object.freeze({ id: 'my_volunteer', label: '我的义工', href: '/page/front/my_volunteer.html' }),
+        Object.freeze({ id: 'my_visit', label: '回访记录', href: '/page/front/my_visit.html' }),
+        Object.freeze({ id: 'volunteer_tasks', label: '义工任务', href: '/page/front/volunteer_tasks.html' })
+      ])
+    }),
+    Object.freeze({
+      id: 'tools',
+      label: '工具与账户',
+      items: Object.freeze([
+        Object.freeze({ id: 'pet_care', label: '照顾知识助手', href: '/page/front/pet_care.html' }),
+        Object.freeze({ id: 'favorites', label: '我的收藏', href: '/page/front/favorites.html' }),
+        Object.freeze({ id: 'profile', label: '个人资料', href: '/page/end/person.html' })
+      ])
+    })
+  ]);
+
   var SERVICE_GROUPS = Object.freeze([
     Object.freeze({
       id: 'action', label: '快速行动', hint: '从这里开始一次帮助', style: 'action',
@@ -81,13 +112,35 @@
     return SERVICE_GROUPS.slice();
   }
 
+  function publicNavigation() {
+    return PUBLIC_NAVIGATION.slice();
+  }
+
+  function frontAccountGroups() {
+    return FRONT_ACCOUNT_GROUPS.slice();
+  }
+
+  function frontPageFlag(pathname) {
+    var file = String(pathname || '').split('/').pop().split('?')[0].toLowerCase();
+    if (!file || file === 'index.html') return 'home';
+    if (/^(animal_browse|animal_detail|adopt_apply|adopt_proof|my_adopt|favorites)\.html$/.test(file)) return 'browse';
+    if (/^(notice_list|notice_detail)\.html$/.test(file)) return 'notice';
+    if (file === 'account_public.html') return 'account';
+    return file.replace(/\.html$/, '');
+  }
+
   global.UserWorkspace = Object.freeze({
     ADMIN_FLAGS: ADMIN_FLAGS,
+    PUBLIC_NAVIGATION: PUBLIC_NAVIGATION,
+    FRONT_ACCOUNT_GROUPS: FRONT_ACCOUNT_GROUPS,
     USER_SERVICES: USER_SERVICES,
     SERVICE_GROUPS: SERVICE_GROUPS,
     hasAdminAccess: hasAdminAccess,
     defaultHome: defaultHome,
     services: services,
-    serviceGroups: serviceGroups
+    serviceGroups: serviceGroups,
+    publicNavigation: publicNavigation,
+    frontAccountGroups: frontAccountGroups,
+    frontPageFlag: frontPageFlag
   });
 })(typeof window !== 'undefined' ? window : this);

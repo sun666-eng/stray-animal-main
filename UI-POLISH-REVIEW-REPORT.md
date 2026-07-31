@@ -936,3 +936,44 @@ GPT 确认焦点已过；真实 390×844 复现搜索区空白：
 权威: `output/playwright/ui-polish-phase-2h/PHASE-2H-REPORT.md` · `phase-2h-report.json` · `run-strict-final.log` · `screenshots-index.json`
 
 **停止**: 不提交、不推送、不合并 main、不进入 Phase 3。等待 GPT 再次独立审核。
+
+### Phase 3A：用户端全局导航、账户入口与移动壳（2026-07-31）
+
+**基线**: `456b47b712044c51f43e5d29da8985a9b32ca738`（Phase 2H 封存）
+
+**分支**: `ui-polish/phase-3a-front-navigation-shell-20260731`
+
+**测试端口**: `18120`（dev；收口后精确释放）
+
+**状态**: 自检与对抗回归通过，**未提交、未推送、未进入 Phase 3B**
+
+| 项 | 值 |
+|----|-----|
+| 页面范围 | 18 个用户端页面，共享 `front-site-header` / `front-site-footer` |
+| 信息架构 | 公共主导航 4 项；账户菜单分“我的行动 / 工具与账户”；管理入口按权限出现 |
+| 移动壳 | 分组抽屉、遮罩、body 锁、焦点圈、Esc、焦点恢复、弹层互斥、320px 无横溢 |
+| 缓存 | `product-ui.css` / `user-workspace.js` / `front-shell.js` 均为 `v=20260731a` |
+| Phase 3A | **1227 / 0 / 0** strict；18×5 = **90/90** 页面矩阵；截图 **21** |
+| 身份矩阵 | anonymous 登录/注册；jerry 无管理入口；admin 有且仅有 1 个管理工作台入口 |
+| 错误门禁 | pageerror=0 · 未登记 HTTP=0 · requestfailed=0 · 页面业务写请求=0 |
+| 旧阶段回归 | 2H 131 · 2G 259 · 2F 139 · 2E 164 · 2D 224 · 2C 115 · 2B 234 · 2A 173 · 1C 134，全部 0 fail |
+| 总门禁 | adversarial **853/0** · Maven **473/0/0** · git diff --check 0 |
+
+**产品修改**:
+
+- 新增 `src/main/resources/static/js/front-shell.js`，集中维护公共导航、账户菜单、移动抽屉和页脚。
+- `user-workspace.js` 新增公共导航与账户信息架构；管理员入口继续使用权限数组判断，不按用户名判断。
+- 18 个页面只保留共享组件挂载点；登录/注册页保持在本阶段范围之外。
+- `favorites.html` 补齐响应式用户状态，使共享账户入口能正确显示当前账号。
+- 对抗检查由“每页内嵌导航”升级为“逐页挂载 + 共享组件契约”，门禁没有删除。
+
+**自检返修**:
+
+1. 精确登记领养前置查询“无既有申请”的单一路径 404，其他 404 仍失败。
+2. 遮罩点击在 768px 外露区验证；390px 全屏抽屉使用关闭按钮与 Esc。
+3. 稳定截图时序，并补齐打开的桌面账户菜单和管理员权限入口证据。
+
+权威报告: `output/playwright/ui-polish-phase-3a/PHASE-3A-REPORT.md` ·
+`phase-3a-report.json` · `run-strict-final.log` · `screenshots-index.json`
+
+**停止**: 不提交、不推送、不合并 main、不进入 Phase 3B。等待用户确认。

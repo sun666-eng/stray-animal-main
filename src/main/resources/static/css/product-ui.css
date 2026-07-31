@@ -923,3 +923,178 @@ img { display: block; max-width: 100%; }
 
 @media (max-width: 900px) { .ui-action-grid { grid-template-columns: 1fr; } .ui-record-grid { grid-template-columns: 1fr; } }
 .ui-workflow-timeline{margin-top:16px;padding:14px 16px;border-left:3px solid var(--ui-accent,#df361d);background:#f7f5f1;border-radius:0 12px 12px 0}.ui-workflow-timeline ol{list-style:none;margin:0;padding:0;display:grid;gap:12px}.ui-workflow-timeline li{display:grid;gap:3px;position:relative;padding-left:16px}.ui-workflow-timeline li:before{content:"";position:absolute;left:0;top:.55em;width:7px;height:7px;border-radius:50%;background:#df361d}.ui-workflow-timeline li span{color:var(--ui-muted,#76766f);font-size:13px;line-height:1.55}.ui-notification-count{display:inline-flex;min-width:20px;height:20px;padding:0 6px;align-items:center;justify-content:center;border-radius:999px;background:#df361d;color:#fff;font-size:11px;font-weight:800}.ui-notification-list{display:grid;gap:12px}.ui-notification-card{display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:14px;align-items:start;padding:20px;border:1px solid var(--ui-line,#dfddd7);border-radius:18px;background:#fff}.ui-notification-card.is-unread{border-color:#df361d;background:#fff9f6}.ui-notification-dot{width:9px;height:9px;margin-top:7px;border-radius:50%;background:#d7d5cf}.ui-notification-card.is-unread .ui-notification-dot{background:#df361d}.ui-notification-copy{display:grid;gap:6px}.ui-notification-copy p{margin:0;color:var(--ui-muted,#76766f);line-height:1.6}.ui-notification-meta{font-size:12px;color:var(--ui-muted,#76766f)}
+
+/* ===== Phase 3A · 用户端共享导航壳（2026-07-31）===== */
+.ui-front-shell-root { display: contents; }
+.ui-front-header {
+  background: linear-gradient(180deg, #fffefb 0%, #fbfaf6 100%);
+  backdrop-filter: none;
+  box-shadow: 0 1px 0 rgba(17,18,17,.025);
+}
+.ui-front-desktop-nav { margin-left: auto; }
+.ui-front-desktop-nav a.is-active::after { background: var(--ui-accent-strong); }
+.ui-front-mobile-toggle { display: none; }
+.ui-front-account .ui-account-trigger {
+  transition: border-color .14s ease, background-color .14s ease, box-shadow .14s ease;
+}
+.ui-front-account .ui-account-trigger:hover,
+.ui-front-account .ui-account-trigger[aria-expanded="true"] {
+  border-color: #bfc0bb;
+  background: #faf9f5;
+}
+.ui-front-account-menu {
+  top: calc(100% + 10px);
+  width: 304px;
+  max-height: min(680px, calc(100vh - 104px));
+  padding: 10px;
+  overflow-y: auto;
+  border-radius: 17px;
+  background: #fffefb;
+  box-shadow: 0 24px 60px rgba(17,18,17,.14);
+}
+.ui-front-account-group { display: grid; gap: 2px; padding: 5px 0 9px; }
+.ui-front-account-group + .ui-front-account-group { border-top: 1px solid var(--ui-line); padding-top: 12px; }
+.ui-front-account-group > strong {
+  padding: 3px 11px 6px;
+  color: #8a4a3c;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+.ui-front-account-menu a,
+.ui-front-account-menu button {
+  min-height: 44px;
+  gap: 9px;
+  font-size: 13px;
+  font-weight: 620;
+}
+.ui-front-account-menu a.is-active { color: var(--ui-accent-strong); background: #fff1ec; }
+.ui-front-account-admin a::after {
+  content: "ADMIN";
+  margin-left: auto;
+  color: var(--ui-muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .1em;
+}
+.ui-front-account-separator { height: 1px; margin: 2px 7px 5px; background: var(--ui-line); }
+.ui-front-auth-actions { display: flex; align-items: center; gap: 3px; }
+.ui-front-auth-actions .ui-button { min-height: 44px; padding-inline: 15px; }
+body.ui-front-drawer-open { overflow: hidden; }
+.ui-front-drawer-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: rgba(17,18,17,.48);
+}
+.ui-front-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 120;
+  width: min(430px, 92vw);
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  color: var(--ui-ink);
+  background: #fffefb;
+  border-left: 1px solid rgba(17,18,17,.12);
+  box-shadow: -28px 0 70px rgba(17,18,17,.18);
+  overflow: hidden;
+}
+.ui-front-drawer-head {
+  min-height: 86px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 17px 20px;
+  border-bottom: 1px solid var(--ui-line);
+}
+.ui-front-drawer-head > div { display: grid; gap: 4px; }
+.ui-front-drawer-head span {
+  color: var(--ui-accent-strong);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .18em;
+}
+.ui-front-drawer-head strong { font-size: 20px; letter-spacing: -.025em; }
+.ui-front-drawer-body { flex: 1 1 auto; padding: 7px 20px 24px; overflow-y: auto; overscroll-behavior: contain; }
+.ui-front-drawer-group { padding: 18px 0 13px; }
+.ui-front-drawer-group + .ui-front-drawer-group { border-top: 1px solid var(--ui-line); }
+.ui-front-drawer-group > strong {
+  display: block;
+  margin-bottom: 7px;
+  color: #8a4a3c;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .13em;
+}
+.ui-front-drawer-group nav { display: grid; gap: 2px; }
+.ui-front-drawer-group a {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 12px;
+  border-radius: 11px;
+  color: var(--ui-ink);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 660;
+}
+.ui-front-drawer-group a:hover,
+.ui-front-drawer-group a:focus-visible { background: #f4f2ec; }
+.ui-front-drawer-group a.is-active { color: var(--ui-accent-strong); background: #fff1ec; }
+.ui-front-drawer-group a span { color: #9a9b96; }
+.ui-front-drawer-auth { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; padding-top: 22px; }
+.ui-front-drawer-logout {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin: 0 20px 18px;
+  border: 1px solid #efcbc7;
+  border-radius: 13px;
+  color: var(--ui-danger);
+  background: #fff;
+  font-size: 14px;
+  font-weight: 720;
+}
+.ui-front-drawer-logout:hover { background: #fff5f4; }
+.ui-front-footer { background: #fffefb; }
+.ui-front-footer .ui-footer-nav a:hover,
+.ui-front-footer .ui-footer-nav a:focus-visible { color: var(--ui-accent-strong); }
+
+@media (max-width: 960px) {
+  .ui-front-desktop-nav { display: none; }
+  .ui-front-mobile-toggle { display: grid; }
+}
+
+@media (max-width: 640px) {
+  .ui-front-header .ui-header-inner { gap: 9px; }
+  .ui-front-header .ui-header-actions { gap: 6px; }
+  .ui-front-auth-actions { gap: 0; }
+  .ui-front-auth-actions .ui-button { padding-inline: 10px; font-size: 13px; }
+  .ui-front-account .ui-account-trigger { min-width: 44px; min-height: 44px; padding: 4px; justify-content: center; }
+  .ui-front-account .ui-account-trigger > .ui-icon { display: none; }
+  .ui-front-drawer { width: min(430px, 100vw); }
+  .ui-front-drawer-head,
+  .ui-front-drawer-body { padding-inline: 16px; }
+  .ui-front-drawer-logout { margin-inline: 16px; }
+}
+
+@media (max-width: 350px) {
+  .ui-front-auth-actions .is-text { display: none; }
+  .ui-front-drawer-group a { padding-inline: 9px; }
+}
+
+@media (forced-colors: active) {
+  .ui-front-drawer-scrim { background: CanvasText; opacity: .45; }
+  .ui-front-account-menu,
+  .ui-front-drawer { border: 1px solid CanvasText; }
+}

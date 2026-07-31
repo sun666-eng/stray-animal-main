@@ -7,7 +7,7 @@
       content="width=device-width,initial-scale=1,viewport-fit=cover"
     />
     <title>义工任务 · 归途计划</title>
-    <link rel="stylesheet" href="../../css/product-ui.css?v=20260728c" />
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260731a" />
     <style>
       [v-cloak] {
         display: none;
@@ -107,16 +107,7 @@
   </head>
   <body>
     <div id="app" v-cloak>
-      <header class="ui-header">
-        <div class="ui-header-inner">
-          <a class="ui-wordmark" href="./index.html">归途计划</a>
-          <nav class="ui-nav">
-            <a href="./animal_browse.html">等待一个家</a
-            ><a href="./my_volunteer.html">我的义工</a
-            ><a href="./notifications.html">通知</a>
-          </nav>
-        </div>
-      </header>
+      <front-site-header :user="user"></front-site-header>
       <main class="ui-container">
         <section class="task-hero">
           <p class="ui-eyebrow">VOLUNTEER MISSIONS</p>
@@ -180,11 +171,13 @@
             >
           </article>
         </div>
-    </main><footer class="ui-site-footer"><div class="ui-container ui-footer-inner"><div class="ui-footer-copy"><strong>归途计划</strong><span>© 2026 · 让每一次善意都有回音</span></div><nav class="ui-footer-nav"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a href="./notifications.html">通知中心</a></nav></div></footer>
+    </main><front-site-footer></front-site-footer>
     </div>
     <script src="../../js/jquery.min.js"></script>
     <script src="../../js/auth-session.js?v=20260728"></script>
     <script src="../../js/vue.min.js"></script>
+<script src="../../js/user-workspace.js?v=20260731a"></script>
+<script src="../../js/front-shell.js?v=20260731a"></script>
     <script>
       (function () {
         AuthSession.bootstrap({

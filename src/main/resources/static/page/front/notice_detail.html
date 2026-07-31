@@ -6,19 +6,21 @@
     <meta name="description" content="阅读归途计划公开公告详情">
     <title>公告详情 · 归途计划</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-    <link rel="stylesheet" href="../../css/product-ui.css?v=20260728">
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260731a">
 </head>
 <body>
 <div id="app" v-cloak>
-    <header class="ui-header"><div class="ui-header-inner"><a class="ui-brand" href="./index.html"><span class="ui-brand-mark">♡</span><span class="ui-brand-copy"><strong>归途计划</strong><small>PAWS ON THE WAY HOME</small></span></a><nav class="ui-nav" aria-label="主导航"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a class="is-active" href="./notice_list.html">救助动态</a><a href="./account_public.html">透明公示</a></nav><div class="ui-header-actions"><button class="ui-icon-button ui-mobile-toggle" type="button" aria-label="切换导航" @click="mobileOpen=!mobileOpen">☰</button><a class="ui-account-trigger" :href="user?'./index.html':'./login.html'"><span class="ui-avatar">{{ userInitial }}</span><span class="ui-account-name">{{ user?user.username:'登录' }}</span></a></div></div><nav class="ui-mobile-nav" :class="{'is-open':mobileOpen}"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a href="./notice_list.html">救助动态</a><a href="./account_public.html">透明公示</a></nav></header>
+    <front-site-header :user="user"></front-site-header>
     <main>
         <div v-if="loading" class="ui-article"><div class="ui-skeleton ui-skeleton-line short"></div><div class="ui-skeleton ui-skeleton-line"></div><div class="ui-skeleton ui-skeleton-line"></div></div>
         <div v-else-if="error || !notice" class="ui-container"><div class="ui-state" role="alert" style="margin:70px 0"><div><span class="ui-state-mark">!</span><h2>没有找到公告内容</h2><p>{{ error || '公告可能已经下线或不存在。' }}</p><a class="ui-button is-dark" href="./notice_list.html">返回公告中心</a></div></div></div>
         <article v-else class="ui-article"><div class="ui-breadcrumb"><a href="./notice_list.html" style="color:inherit;text-decoration:none">救助动态</a><span>/</span><strong>公告详情</strong></div><span class="ui-badge is-done">公开公告</span><h1>{{ notice.title || '未命名公告' }}</h1><p class="ui-article-meta">归途计划公开信息 · 公告编号 #{{ notice.id }}</p><div class="ui-article-body">{{ notice.content || '暂无内容' }}</div><div class="ui-detail-actions"><a class="ui-button is-dark" href="./notice_list.html">返回公告中心</a><a class="ui-button is-ghost" href="./animal_browse.html">浏览待领养动物</a></div></article>
     </main>
-    <footer class="ui-site-footer"><div class="ui-container ui-footer-inner"><div class="ui-footer-copy"><strong>归途计划</strong><span>© 2026 · 让每一次善意都有回音</span></div><nav class="ui-footer-nav" aria-label="页脚导航"><a href="./index.html">首页</a><a href="./animal_browse.html">等待一个家</a><a href="./notice_list.html">救助动态</a><a href="./rescue_apply.html">发起救助</a><a href="./account_public.html">透明公示</a></nav></div></footer>
+    <front-site-footer></front-site-footer>
 </div>
-<script src="../../js/jquery.min.js"></script><script src="../../js/vue.min.js"></script><script src="../../js/auth-session.js?v=20260728"></script>
+<script src="../../js/jquery.min.js"></script><script src="../../js/vue.min.js"></script>
+<script src="../../js/user-workspace.js?v=20260731a"></script>
+<script src="../../js/front-shell.js?v=20260731a"></script><script src="../../js/auth-session.js?v=20260728"></script>
 <script>
 new Vue({
   el:'#app',data:{user:null,notice:null,loading:true,error:'',mobileOpen:false},
