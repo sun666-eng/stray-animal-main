@@ -6,16 +6,16 @@
     <meta name="description" content="浏览正在等待领养的流浪动物">
     <title>等待一个家 · 归途计划</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-    <link rel="stylesheet" href="../../css/product-ui.css?v=20260731a">
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260731b">
 </head>
-<body class="ui-animal-catalog-page">
+<body class="ui-animal-catalog-page ui-public-discovery-page">
 <div id="app" v-cloak>
     <front-site-header :user="user"></front-site-header>
 
-    <main class="ui-animal-catalog-main">
+    <main class="ui-animal-catalog-main ui-public-catalog">
         <section class="ui-page-head">
             <div class="ui-container">
-                <div class="ui-breadcrumb"><span>首页</span><span>/</span><strong>等待一个家</strong></div>
+                <div class="ui-breadcrumb"><a href="./index.html">首页</a><span>/</span><strong>等待一个家</strong></div>
                 <div class="ui-page-head-row">
                     <div>
                         <h1>和未来的家人，<span class="ui-catalog-title-tail">先见一面</span></h1>
@@ -27,11 +27,11 @@
         </section>
 
         <section class="ui-container ui-animal-catalog">
-            <form class="ui-toolbar" role="search" @submit.prevent="loadAnimals(1)">
+            <form class="ui-toolbar ui-public-toolbar" role="search" @submit.prevent="loadAnimals(1)">
                 <label class="ui-search">
                     <span aria-hidden="true">⌕</span>
                     <span class="sr-only">搜索动物</span>
-                    <input v-model.trim="query" type="search" maxlength="100" placeholder="搜索名字、品种或性格" autocomplete="off">
+                    <input v-model.trim="query" type="search" maxlength="100" placeholder="搜索名字、品种或性格" autocomplete="off" enterkeyhint="search">
                 </label>
                 <label class="sr-only" for="animalType">动物类型</label>
                 <select id="animalType" v-model="typeFilter" class="ui-select" @change="loadAnimals(1)">
@@ -42,12 +42,13 @@
                 <button class="ui-button is-dark" type="submit">搜索</button>
             </form>
 
-            <div class="ui-filter-row" aria-label="快捷筛选">
-                <button class="ui-filter-chip" :class="{ 'is-active': typeFilter === '' }" type="button" @click="setType('')">全部</button>
-                <button class="ui-filter-chip" :class="{ 'is-active': typeFilter === '猫' }" type="button" @click="setType('猫')">猫咪</button>
-                <button class="ui-filter-chip" :class="{ 'is-active': typeFilter === '犬类' }" type="button" @click="setType('犬类')">狗狗</button>
+            <div class="ui-filter-row" role="group" aria-label="快捷筛选">
+                <button class="ui-filter-chip" :class="{ 'is-active': typeFilter === '' }" :aria-pressed="String(typeFilter === '')" type="button" @click="setType('')">全部</button>
+                <button class="ui-filter-chip" :class="{ 'is-active': typeFilter === '猫' }" :aria-pressed="String(typeFilter === '猫')" type="button" @click="setType('猫')">猫咪</button>
+                <button class="ui-filter-chip" :class="{ 'is-active': typeFilter === '犬类' }" :aria-pressed="String(typeFilter === '犬类')" type="button" @click="setType('犬类')">狗狗</button>
                 <button v-if="query || typeFilter" class="ui-filter-chip" type="button" @click="resetFilters">清除筛选</button>
             </div>
+            <p v-if="!loading && !error && animals.length" class="ui-result-summary" aria-live="polite">当前显示第 {{ pageNum }} 页，共 {{ total }} 份公开档案。</p>
 
             <div v-if="loading" class="ui-card-grid" aria-label="正在加载动物列表">
                 <article v-for="index in 6" :key="index" class="ui-animal-card ui-skeleton-card" aria-hidden="true">
@@ -65,7 +66,7 @@
                 <div><span class="ui-state-mark" aria-hidden="true">⌕</span><h2>没有找到匹配的动物</h2><p>换一个关键词或清除筛选后再看看。</p><button class="ui-button is-ghost" type="button" @click="resetFilters">清除筛选</button></div>
             </div>
 
-            <div v-else class="ui-card-grid" aria-live="polite">
+            <div v-else class="ui-card-grid" aria-live="polite" :aria-busy="String(loading)">
                 <article v-for="item in animals" :key="item.id" class="ui-animal-card">
                     <a class="ui-card-media" :href="detailUrl(item.id)" :aria-label="`查看${displayName(item)}的详情`">
                         <img :src="resolveImage(item.tpic)" :alt="`${displayName(item)}的照片`" loading="lazy" decoding="async" @error="handleImageError">
@@ -87,7 +88,7 @@
                 <span>第 {{ pageNum }} 页，共 {{ total }} 条记录</span>
                 <div class="ui-page-buttons">
                     <button type="button" :disabled="pageNum === 1" aria-label="上一页" @click="loadAnimals(pageNum - 1)">‹</button>
-                    <button v-for="page in pageList" :key="page" type="button" :class="{ 'is-current': page === pageNum }" @click="loadAnimals(page)">{{ page }}</button>
+                    <button v-for="page in pageList" :key="page" type="button" :class="{ 'is-current': page === pageNum }" :aria-current="page === pageNum ? 'page' : null" :aria-label="`第 ${page} 页`" @click="loadAnimals(page)">{{ page }}</button>
                     <button type="button" :disabled="pageNum === totalPages" aria-label="下一页" @click="loadAnimals(pageNum + 1)">›</button>
                 </div>
             </div>

@@ -209,7 +209,8 @@ async function visitPage(context, file, viewport, role, ids) {
   const prefix = `visit-${safeName(file)}-${viewport.name}-${role}`;
   assert(`${prefix}-navigation`, !navigationError, navigationError || page.url());
   if (!navigationError) {
-    const state = await page.evaluate(() => {
+    const expectedProductCache = PUBLIC_PAGES.has(file) ? '20260731b' : '20260731a';
+    const state = await page.evaluate((productCacheVersion) => {
       const header = document.querySelector('.ui-front-header');
       const footer = document.querySelector('.ui-front-footer');
       const desktopNav = document.querySelector('.ui-front-desktop-nav');
@@ -226,13 +227,13 @@ async function visitPage(context, file, viewport, role, ids) {
         scrollWidth: document.documentElement.scrollWidth,
         clientWidth: document.documentElement.clientWidth,
         headerInside: !!rect && rect.left >= -1 && rect.right <= innerWidth + 1,
-        productCache: cssResources.some((url) => /product-ui\.css\?v=20260731a/.test(url)),
+        productCache: cssResources.some((url) => url.includes(`product-ui.css?v=${productCacheVersion}`)),
         shellCache: cssResources.some((url) => /front-shell\.js\?v=20260731a/.test(url)),
         workspaceCache: cssResources.some((url) => /user-workspace\.js\?v=20260731a/.test(url)),
         unresolved: document.querySelectorAll('front-site-header, front-site-footer').length,
         mainCount: document.querySelectorAll('main').length
       };
-    });
+    }, expectedProductCache);
     assert(`${prefix}-shell-singleton`, state.headerCount === 1 && state.footerCount === 1, JSON.stringify(state));
     assert(`${prefix}-compiled`, state.unresolved === 0, `unresolved=${state.unresolved}`);
     assert(`${prefix}-cache`, state.productCache && state.shellCache && state.workspaceCache, JSON.stringify(state));
@@ -275,7 +276,8 @@ async function staticAudit() {
     const prefix = `static-${safeName(file)}`;
     assert(`${prefix}-header`, (html.match(/<front-site-header\b/g) || []).length === 1 && !/<header\b/i.test(html), 'shared header');
     assert(`${prefix}-footer`, (html.match(/<front-site-footer\b/g) || []).length === 1 && !/<footer\b/i.test(html), 'shared footer');
-    assert(`${prefix}-css-cache`, /product-ui\.css\?v=20260731a/.test(html), '20260731a');
+    const expectedProductCache = PUBLIC_PAGES.has(file) ? '20260731b' : '20260731a';
+    assert(`${prefix}-css-cache`, new RegExp(`product-ui\\.css\\?v=${expectedProductCache}`).test(html), expectedProductCache);
     assert(`${prefix}-workspace-cache`, (html.match(/user-workspace\.js\?v=20260731a/g) || []).length === 1, 'workspace');
     assert(`${prefix}-shell-cache`, (html.match(/front-shell\.js\?v=20260731a/g) || []).length === 1, 'shell');
     assert(`${prefix}-user-binding`, /<front-site-header\s+:user="user"/.test(html) && /\buser\s*:/.test(html), 'reactive user');

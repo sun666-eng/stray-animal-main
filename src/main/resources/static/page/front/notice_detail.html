@@ -6,15 +6,15 @@
     <meta name="description" content="阅读归途计划公开公告详情">
     <title>公告详情 · 归途计划</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-    <link rel="stylesheet" href="../../css/product-ui.css?v=20260731a">
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260731b">
 </head>
-<body>
+<body class="ui-public-discovery-page ui-public-notice-detail-page">
 <div id="app" v-cloak>
     <front-site-header :user="user"></front-site-header>
-    <main>
+    <main class="ui-public-notice-detail">
         <div v-if="loading" class="ui-article"><div class="ui-skeleton ui-skeleton-line short"></div><div class="ui-skeleton ui-skeleton-line"></div><div class="ui-skeleton ui-skeleton-line"></div></div>
-        <div v-else-if="error || !notice" class="ui-container"><div class="ui-state" role="alert" style="margin:70px 0"><div><span class="ui-state-mark">!</span><h2>没有找到公告内容</h2><p>{{ error || '公告可能已经下线或不存在。' }}</p><a class="ui-button is-dark" href="./notice_list.html">返回公告中心</a></div></div></div>
-        <article v-else class="ui-article"><div class="ui-breadcrumb"><a href="./notice_list.html" style="color:inherit;text-decoration:none">救助动态</a><span>/</span><strong>公告详情</strong></div><span class="ui-badge is-done">公开公告</span><h1>{{ notice.title || '未命名公告' }}</h1><p class="ui-article-meta">归途计划公开信息 · 公告编号 #{{ notice.id }}</p><div class="ui-article-body">{{ notice.content || '暂无内容' }}</div><div class="ui-detail-actions"><a class="ui-button is-dark" href="./notice_list.html">返回公告中心</a><a class="ui-button is-ghost" href="./animal_browse.html">浏览待领养动物</a></div></article>
+        <div v-else-if="error || !notice" class="ui-container"><div class="ui-state ui-public-detail-state" role="alert"><div><span class="ui-state-mark">!</span><h2>没有找到公告内容</h2><p>{{ error || '公告可能已经下线或不存在。' }}</p><div class="ui-state-actions"><button v-if="noticeId" class="ui-button is-dark" type="button" @click="load">重新加载</button><a class="ui-button is-ghost" href="./notice_list.html">返回公告中心</a></div></div></div></div>
+        <article v-else class="ui-article" aria-labelledby="noticeTitle"><div class="ui-breadcrumb"><a href="./notice_list.html">救助动态</a><span>/</span><strong>公告详情</strong></div><p class="ui-article-kicker">PUBLIC NOTICE · #{{ notice.id }}</p><span class="ui-badge is-done">公开公告</span><h1 id="noticeTitle" :class="{ 'is-long-title': (notice.title || '').length > 40 }">{{ notice.title || '未命名公告' }}</h1><p class="ui-article-meta">归途计划公开信息 · 公告编号 #{{ notice.id }}</p><div class="ui-article-body">{{ notice.content || '暂无内容' }}</div><div class="ui-detail-actions"><a class="ui-button is-dark" href="./notice_list.html">返回公告中心</a><a class="ui-button is-ghost" href="./animal_browse.html">浏览待领养动物</a></div></article>
     </main>
     <front-site-footer></front-site-footer>
 </div>
@@ -23,10 +23,59 @@
 <script src="../../js/front-shell.js?v=20260731a"></script><script src="../../js/auth-session.js?v=20260728"></script>
 <script>
 new Vue({
-  el:'#app',data:{user:null,notice:null,loading:true,error:'',mobileOpen:false},
-  computed:{userInitial(){return this.user&&this.user.username?this.user.username.slice(0,1).toUpperCase():'↗';}},
-  mounted(){const start=()=>{this.user=window.AuthSession?AuthSession.getUser():null;this.load();};if(window.AuthSession)AuthSession.bootstrap({requireAuth:false,onDone:start});else start();},
-  methods:{load(){const id=new URLSearchParams(location.search).get('id');if(!id){this.loading=false;this.error='缺少公告编号。';return;}$.ajax({url:'/api/notice/'+encodeURIComponent(id),type:'GET'}).done(res=>{if(res&&res.code==='0'&&res.data)this.notice=res.data;else this.error=(res&&res.msg)||'公告不存在。';}).fail(()=>{this.error='网络连接异常，请稍后重试。';}).always(()=>{this.loading=false;});}}
+  el: '#app',
+  data: { user: null, notice: null, noticeId: '', loading: true, error: '', mobileOpen: false },
+  computed: {
+    userInitial() { return this.user && this.user.username ? this.user.username.slice(0, 1).toUpperCase() : '↗'; }
+  },
+  created() {
+    this._noticeGeneration = 0;
+    this._noticeRequest = null;
+  },
+  mounted() {
+    const start = () => {
+      this.user = window.AuthSession ? AuthSession.getUser() : null;
+      this.load();
+    };
+    if (window.AuthSession) AuthSession.bootstrap({ requireAuth: false, onDone: start }); else start();
+  },
+  beforeDestroy() {
+    if (this._noticeRequest && this._noticeRequest.readyState !== 4) this._noticeRequest.abort();
+  },
+  methods: {
+    load() {
+      const rawId = String(new URLSearchParams(location.search).get('id') || '').trim();
+      this.noticeId = /^[1-9]\d{0,18}$/.test(rawId) ? rawId : '';
+      if (!this.noticeId) {
+        this.loading = false;
+        this.notice = null;
+        this.error = rawId ? '公告编号格式不正确。' : '缺少公告编号。';
+        return;
+      }
+      const generation = ++this._noticeGeneration;
+      if (this._noticeRequest && this._noticeRequest.readyState !== 4) this._noticeRequest.abort();
+      this.loading = true;
+      this.error = '';
+      this.notice = null;
+      this._noticeRequest = $.ajax({ url: '/api/notice/' + encodeURIComponent(this.noticeId), type: 'GET' })
+        .done(res => {
+          if (generation !== this._noticeGeneration) return;
+          if (res && res.code === '0' && res.data) {
+            this.notice = res.data;
+            document.title = `${this.notice.title || '未命名公告'} · 归途计划`;
+          } else this.error = (res && res.msg) || '公告不存在。';
+        })
+        .fail((xhr, status) => {
+          if (generation !== this._noticeGeneration || status === 'abort') return;
+          this.error = (xhr.responseJSON && xhr.responseJSON.msg) || '网络连接异常，请稍后重试。';
+        })
+        .always(() => {
+          if (generation !== this._noticeGeneration) return;
+          this.loading = false;
+          this._noticeRequest = null;
+        });
+    }
+  }
 });
 </script>
 </body>

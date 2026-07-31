@@ -9,13 +9,13 @@
       rel="icon"
       href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>"
     />
-    <link rel="stylesheet" href="../../css/product-ui.css?v=20260731a" />
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260731b" />
   </head>
-  <body>
+  <body class="ui-public-discovery-page ui-public-animal-detail-page">
     <div id="app" v-cloak>
       <front-site-header :user="user"></front-site-header>
 
-      <main class="ui-container">
+      <main class="ui-container ui-public-animal-detail">
         <div v-if="loading" class="ui-detail" aria-label="正在加载动物详情">
           <div class="ui-detail-photo ui-skeleton"></div>
           <div class="ui-detail-copy">
@@ -26,17 +26,17 @@
         </div>
         <div
           v-else-if="error || !animal"
-          class="ui-state"
           role="alert"
-          style="margin: 70px 0"
+          class="ui-state ui-public-detail-state"
         >
           <div>
             <span class="ui-state-mark" aria-hidden="true">!</span>
             <h2>没有找到这只动物</h2>
             <p>{{ error || '记录可能已经下线或不存在。' }}</p>
-            <a class="ui-button is-dark" href="./animal_browse.html"
-              >返回动物列表</a
-            >
+            <div class="ui-state-actions">
+              <button v-if="detailId" class="ui-button is-dark" type="button" @click="loadDetail">重新加载</button>
+              <a class="ui-button is-ghost" href="./animal_browse.html">返回动物列表</a>
+            </div>
           </div>
         </div>
         <article v-else class="ui-detail">
@@ -44,7 +44,6 @@
             <div class="ui-breadcrumb">
               <a
                 href="./animal_browse.html"
-                style="color: inherit; text-decoration: none"
                 >等待一个家</a
               ><span>/</span><strong>{{ displayName }}</strong>
             </div>
@@ -61,7 +60,8 @@
             <span class="ui-badge" :class="statusClass"
               >{{ formatState(animal.tstate) }}</span
             >
-            <h1>{{ displayName }}</h1>
+            <p class="ui-profile-kicker">ANIMAL PROFILE · #{{ animal.id }}</p>
+            <h1 :class="{ 'is-long-title': displayName.length > 12 }">{{ displayName }}</h1>
             <p class="ui-detail-lead">
               {{ animal.tdescribe ||
               '这只动物的详细故事正在补充中。你可以先了解它的基础资料，再决定是否提交领养申请。'
@@ -84,8 +84,8 @@
               </div>
             </div>
             <div class="ui-callout">
-              <strong>领养前请确认</strong
-              ><br />家庭成员意见一致，具备长期稳定照护能力，并愿意配合必要的领养回访。
+              <strong>{{ canAdopt ? '领养前请确认' : '当前状态说明' }}</strong
+              ><br />{{ statusExplanation }}
             </div>
             <div class="ui-detail-actions">
               <a v-if="canAdopt" class="ui-button is-primary" :href="adoptUrl"
@@ -116,17 +116,17 @@
         </article>
         <section
           v-if="!loading&&animal"
-          style="
-            margin: 34px 0 70px;
-            padding: 28px;
-            border: 1px solid #e4e0da;
-            border-radius: 24px;
-          "
+          class="ui-public-health-record"
+          aria-labelledby="healthRecordTitle"
         >
           <p class="ui-eyebrow">HEALTH RECORD</p>
-          <h2 style="font-size: 30px; margin: 8px 0 18px">健康与医疗记录</h2>
-          <p v-if="medicalLoading">正在读取医疗档案...</p>
-          <p v-else-if="!medical.length" style="color: #777">
+          <h2 id="healthRecordTitle">健康与医疗记录</h2>
+          <p v-if="medicalLoading" class="ui-muted-copy" role="status">正在读取医疗档案…</p>
+          <div v-else-if="medicalError" class="ui-inline-status is-error" role="status">
+            <span>{{ medicalError }}</span>
+            <button type="button" @click="loadMedical">重试</button>
+          </div>
+          <p v-else-if="!medical.length" class="ui-muted-copy">
             暂无对当前访客公开的医疗记录。
           </p>
           <div v-else class="ui-facts">
@@ -135,20 +135,14 @@
                 >{{ medicalType(item.record_type) }} · {{
                 String(item.occurred_at||'').slice(0,10) }}</span
               ><strong>{{ item.title }}</strong
-              ><small
-                style="
-                  display: block;
-                  margin-top: 8px;
-                  color: #777;
-                  line-height: 1.5;
-                "
-                >{{ item.content||'无补充说明' }}</small
+              ><small class="ui-medical-note">{{ item.content||'无补充说明' }}</small
               >
             </div>
           </div>
         </section>
       </main>
       <front-site-footer></front-site-footer>
+      <div class="ui-toast" :class="{ 'is-show': toast }" role="status" aria-live="polite">{{ toast }}</div>
     </div>
 
     <script src="../../js/jquery.min.js"></script>
@@ -170,6 +164,9 @@
           favoriteBusy: false,
           medical: [],
           medicalLoading: false,
+          medicalError: "",
+          detailId: "",
+          toast: "",
         },
         computed: {
           userInitial() {
@@ -198,6 +195,22 @@
                 ? "is-pending"
                 : "is-done";
           },
+          statusExplanation() {
+            if (!this.animal) return "";
+            const state = Number(this.animal.tstate);
+            if (state === 0 || state === 1) {
+              return "家庭成员意见一致，具备长期稳定照护能力，并愿意配合必要的领养回访。";
+            }
+            if (state === 2) return "这只动物已经完成领养，当前不再接受新的领养申请。";
+            if (state === 3) return "这只动物暂时停止接受领养申请，恢复开放后会更新状态。";
+            return "当前档案状态暂不支持提交领养申请。";
+          },
+        },
+        created() {
+          this._detailGeneration = 0;
+          this._detailRequest = null;
+          this._medicalGeneration = 0;
+          this._medicalRequest = null;
         },
         mounted() {
           const start = () => {
@@ -208,42 +221,75 @@
             AuthSession.bootstrap({ requireAuth: false, onDone: start });
           else start();
         },
+        beforeDestroy() {
+          if (this._detailRequest && this._detailRequest.readyState !== 4) this._detailRequest.abort();
+          if (this._medicalRequest && this._medicalRequest.readyState !== 4) this._medicalRequest.abort();
+          clearTimeout(this.toastTimer);
+        },
         methods: {
           loadDetail() {
-            const id = new URLSearchParams(location.search).get("id");
-            if (!id) {
+            const id = String(new URLSearchParams(location.search).get("id") || "").trim();
+            this.detailId = /^[1-9]\d{0,18}$/.test(id) ? id : "";
+            if (!this.detailId) {
               this.loading = false;
-              this.error = "缺少动物编号。";
+              this.animal = null;
+              this.error = id ? "动物编号格式不正确。" : "缺少动物编号。";
               return;
             }
-            $.ajax({
-              url: `/api/animal/${encodeURIComponent(id)}`,
+            const generation = ++this._detailGeneration;
+            if (this._detailRequest && this._detailRequest.readyState !== 4) this._detailRequest.abort();
+            this.loading = true;
+            this.error = "";
+            this.animal = null;
+            this.medical = [];
+            this.medicalError = "";
+            this._detailRequest = $.ajax({
+              url: `/api/animal/${encodeURIComponent(this.detailId)}`,
               type: "GET",
             })
               .done((res) => {
+                if (generation !== this._detailGeneration) return;
                 if (res && res.code === "0" && res.data) {
                   this.animal = res.data;
+                  document.title = `${this.displayName} · 动物详情 · 归途计划`;
                   this.loadMedical();
                   if (this.user) this.loadFavorite();
                 } else this.error = (res && res.msg) || "记录不存在。";
               })
-              .fail(() => {
-                this.error = "网络连接异常，请稍后重试。";
+              .fail((xhr, status) => {
+                if (generation !== this._detailGeneration || status === "abort") return;
+                this.error = (xhr.responseJSON && xhr.responseJSON.msg) || "网络连接异常，请稍后重试。";
               })
               .always(() => {
+                if (generation !== this._detailGeneration) return;
                 this.loading = false;
+                this._detailRequest = null;
               });
           },
           loadMedical() {
+            if (!this.animal || !this.animal.id) return;
+            const generation = ++this._medicalGeneration;
+            if (this._medicalRequest && this._medicalRequest.readyState !== 4) this._medicalRequest.abort();
             this.medicalLoading = true;
-            $.get(
-              `/api/operations/animals/${encodeURIComponent(this.animal.id)}/medical`,
-            )
+            this.medicalError = "";
+            this._medicalRequest = $.get(`/api/operations/animals/${encodeURIComponent(this.animal.id)}/medical`)
               .done((res) => {
+                if (generation !== this._medicalGeneration) return;
                 if (res && res.code === "0") this.medical = res.data || [];
+                else {
+                  this.medical = [];
+                  this.medicalError = (res && res.msg) || "医疗档案暂时无法读取。";
+                }
+              })
+              .fail((xhr, status) => {
+                if (generation !== this._medicalGeneration || status === "abort") return;
+                this.medical = [];
+                this.medicalError = "医疗档案暂时无法读取。";
               })
               .always(() => {
+                if (generation !== this._medicalGeneration) return;
                 this.medicalLoading = false;
+                this._medicalRequest = null;
               });
           },
           loadFavorite() {
@@ -261,7 +307,13 @@
               type: this.favorite ? "DELETE" : "POST",
             })
               .done((res) => {
-                if (res && res.code === "0") this.favorite = !this.favorite;
+                if (res && res.code === "0") {
+                  this.favorite = !this.favorite;
+                  this.showToast(this.favorite ? "已加入收藏" : "已取消收藏");
+                } else this.showToast((res && res.msg) || "收藏操作未完成");
+              })
+              .fail(() => {
+                this.showToast("收藏操作未完成，请稍后重试");
               })
               .always(() => {
                 this.favoriteBusy = false;
@@ -302,6 +354,11 @@
           handleImageError(event) {
             event.target.onerror = null;
             event.target.src = "/prototype-assets/editorial-02.svg";
+          },
+          showToast(message) {
+            this.toast = message;
+            clearTimeout(this.toastTimer);
+            this.toastTimer = setTimeout(() => { this.toast = ""; }, 2400);
           },
         },
       });

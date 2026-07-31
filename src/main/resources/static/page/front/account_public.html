@@ -6,21 +6,24 @@
     <meta name="description" content="查看归途计划公开资金收支与用途">
     <title>透明公示 · 归途计划</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-    <link rel="stylesheet" href="../../css/product-ui.css?v=20260731a">
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260731b">
 </head>
-<body>
+<body class="ui-public-discovery-page ui-public-ledger-page">
 <div id="app" v-cloak>
     <front-site-header :user="user"></front-site-header>
-    <main>
-        <section class="ui-page-head"><div class="ui-container"><div class="ui-breadcrumb"><span>首页</span><span>/</span><strong>透明公示</strong></div><div class="ui-page-head-row"><div><h1>每一份善意，都有清晰去向</h1><p>公开展示资金收入、支出和当前结余。页面不展示经手人、内部编号或其他敏感字段。</p></div><span class="ui-badge is-waiting">公开数据</span></div></div></section>
+    <main class="ui-public-ledger">
+        <section class="ui-page-head"><div class="ui-container"><div class="ui-breadcrumb"><a href="./index.html">首页</a><span>/</span><strong>透明公示</strong></div><div class="ui-page-head-row"><div><h1>每一份善意，都有清晰去向</h1><p>公开展示资金收入、支出和当前结余。页面不展示经手人、内部编号或其他敏感字段。</p></div><span class="ui-badge is-waiting">公开数据</span></div></div></section>
         <section class="ui-container ui-public-section">
-            <div class="ui-summary-grid"><div class="ui-summary-card"><span>累计收入</span><strong class="ui-money-income">{{ formatMoney(incomeTotal, false, false) }}</strong></div><div class="ui-summary-card"><span>累计支出</span><strong class="ui-money-expense">{{ formatMoney(expenseTotal, false, true) }}</strong></div><div class="ui-summary-card"><span>当前结余</span><strong>{{ formatMoney(balance, true, false) }}</strong></div></div>
-            <form class="ui-toolbar" role="search" @submit.prevent="loadAccounts(1)"><label class="ui-search"><span>⌕</span><span class="sr-only">搜索资金公示</span><input v-model.trim="query" type="search" placeholder="搜索款项名称或用途" autocomplete="off"></label><button class="ui-button is-dark" type="submit">搜索</button><button v-if="query" class="ui-button is-ghost" type="button" @click="resetQuery">清除</button></form>
+            <div class="ui-summary-grid" :aria-busy="String(loading)" aria-live="polite"><div class="ui-summary-card"><span>累计收入</span><strong class="ui-money-income">{{ loading || error ? '—' : formatMoney(incomeTotal, false, false) }}</strong><small>所有公开收入合计</small></div><div class="ui-summary-card"><span>累计支出</span><strong class="ui-money-expense">{{ loading || error ? '—' : formatMoney(expenseTotal, false, true) }}</strong><small>所有公开支出绝对值</small></div><div class="ui-summary-card"><span>当前结余</span><strong>{{ loading || error ? '—' : formatMoney(balance, true, false) }}</strong><small>累计收入与支出的净额</small></div></div>
+            <div class="ui-ledger-note"><strong>公开口径</strong><span>金额由服务端按全部公开记录聚合；列表搜索只影响下方明细，不改变总览口径。</span></div>
+            <form class="ui-toolbar ui-public-toolbar" role="search" @submit.prevent="loadAccounts(1)"><label class="ui-search"><span aria-hidden="true">⌕</span><span class="sr-only">搜索资金公示</span><input v-model.trim="query" type="search" maxlength="100" placeholder="搜索款项名称或用途" autocomplete="off" enterkeyhint="search"></label><button class="ui-button is-dark" type="submit">搜索</button><button v-if="query" class="ui-button is-ghost" type="button" @click="resetQuery">清除</button></form>
             <div v-if="loading" class="ui-state" aria-label="正在加载资金公示"><div><span class="ui-state-mark ui-skeleton"></span><h2>正在读取最新公示</h2><p>收入、支出与结余正在同步。</p></div></div>
             <div v-else-if="error" class="ui-state" role="alert"><div><span class="ui-state-mark">!</span><h2>资金公示暂时无法加载</h2><p>{{ error }}</p><button class="ui-button is-dark" type="button" @click="loadAccounts(pageNum)">重新加载</button></div></div>
             <div v-else-if="records.length===0" class="ui-state"><div><span class="ui-state-mark">¥</span><h2>暂无匹配的公示记录</h2><p>调整搜索条件后再试。</p><button class="ui-button is-ghost" type="button" @click="resetQuery">清除搜索</button></div></div>
-            <div v-else class="ui-public-table" style="margin-top:20px"><table><thead><tr><th>款项名称</th><th>金额</th><th>用途说明</th></tr></thead><tbody><tr v-for="(item,index) in records" :key="index"><td><strong>{{ item.alabel || '-' }}</strong></td><td><strong :class="decimalSign(item.avalue)>=0?'ui-money-income':'ui-money-expense'">{{ formatMoney(item.avalue, true, false) }}</strong></td><td>{{ item.adescribe || '-' }}</td></tr></tbody></table></div>
-            <div v-if="!loading&&!error&&totalPages>1" class="ui-pagination" style="padding-top:20px"><span>第 {{ pageNum }} 页，共 {{ total }} 条记录</span><div class="ui-page-buttons"><button type="button" :disabled="pageNum===1" @click="loadAccounts(pageNum-1)">‹</button><button v-for="page in pageList" :key="page" type="button" :class="{'is-current':page===pageNum}" @click="loadAccounts(page)">{{ page }}</button><button type="button" :disabled="pageNum===totalPages" @click="loadAccounts(pageNum+1)">›</button></div></div>
+            <p v-if="!loading&&!error&&records.length" class="ui-result-summary" aria-live="polite">当前显示第 {{ pageNum }} 页，共 {{ total }} 条公开明细。</p>
+            <div v-if="!loading&&!error&&records.length" class="ui-public-table ui-ledger-table"><table><caption class="sr-only">公开资金收支明细</caption><thead><tr><th scope="col">款项名称</th><th scope="col">发生时间</th><th scope="col">分类</th><th scope="col">金额</th><th scope="col">用途说明</th></tr></thead><tbody><tr v-for="(item,index) in records" :key="recordKey(item,index)"><td><strong>{{ item.alabel || '未命名款项' }}</strong></td><td>{{ formatDate(item.occurredAt) }}</td><td>{{ item.category || '未分类' }}</td><td><strong :class="decimalSign(item.avalue)>=0?'ui-money-income':'ui-money-expense'">{{ formatMoney(item.avalue, true, false) }}</strong></td><td>{{ item.adescribe || '暂无用途说明' }}</td></tr></tbody></table></div>
+            <div v-if="!loading&&!error&&records.length" class="ui-ledger-cards" aria-label="公开资金收支明细"><article v-for="(item,index) in records" :key="'card-'+recordKey(item,index)" class="ui-ledger-card"><div><span>{{ item.category || '未分类' }}</span><time>{{ formatDate(item.occurredAt) }}</time></div><h2>{{ item.alabel || '未命名款项' }}</h2><strong :class="decimalSign(item.avalue)>=0?'ui-money-income':'ui-money-expense'">{{ formatMoney(item.avalue, true, false) }}</strong><p>{{ item.adescribe || '暂无用途说明' }}</p></article></div>
+            <div v-if="!loading&&!error&&totalPages>1" class="ui-pagination ui-ledger-pagination"><span>第 {{ pageNum }} 页，共 {{ total }} 条记录</span><div class="ui-page-buttons"><button type="button" :disabled="pageNum===1" aria-label="上一页" @click="loadAccounts(pageNum-1)">‹</button><button v-for="page in pageList" :key="page" type="button" :class="{'is-current':page===pageNum}" :aria-current="page===pageNum?'page':null" :aria-label="`第 ${page} 页`" @click="loadAccounts(page)">{{ page }}</button><button type="button" :disabled="pageNum===totalPages" aria-label="下一页" @click="loadAccounts(pageNum+1)">›</button></div></div>
         </section>
     </main>
     <front-site-footer></front-site-footer>
@@ -30,14 +33,108 @@
 <script src="../../js/front-shell.js?v=20260731a"></script><script src="../../js/auth-session.js?v=20260728"></script><script src="../../js/decimal-money.js?v=20260728"></script>
 <script>
 new Vue({
-  el:'#app',data:{user:null,records:[],query:'',loading:true,error:'',pageNum:1,pageSize:10,total:0,totalPages:1,incomeTotal:0,expenseTotal:0,balance:0,mobileOpen:false},
-  computed:{userInitial(){return this.user&&this.user.username?this.user.username.slice(0,1).toUpperCase():'↗';},pageList(){const pages=[];let start=Math.max(1,this.pageNum-2);const end=Math.min(this.totalPages,start+4);start=Math.max(1,end-4);for(let page=start;page<=end;page+=1)pages.push(page);return pages;}},
-  mounted(){const start=()=>{this.user=window.AuthSession?AuthSession.getUser():null;this.loadAccounts(1);};if(window.AuthSession)AuthSession.bootstrap({requireAuth:false,onDone:start});else start();},
-  methods:{
-    loadAccounts(page){this.loading=true;this.error='';this.pageNum=page;$.ajax({url:'/api/account/public',type:'GET',cache:false,data:{name:this.query,pageNum:page,pageSize:this.pageSize,_:Date.now()}}).done(res=>{if(res&&res.code==='0'&&res.data){this.records=res.data.records||[];this.total=Number(res.data.total||0);this.totalPages=Math.max(1,Number(res.data.pages||1));this.incomeTotal=String(res.data.incomeTotal||'0.00');this.expenseTotal=String(res.data.expenseTotal||'0.00');this.balance=String(res.data.balance||'0.00');}else this.error=(res&&res.msg)||'服务返回了无法识别的数据';}).fail(()=>{this.error='请检查网络连接后重试。';}).always(()=>{this.loading=false;});},
-    resetQuery(){this.query='';this.loadAccounts(1);},
-    decimalSign(value){const result=DecimalMoney.sign(value);return result===null?0:result;},
-    formatMoney(value,signed,absolute){return DecimalMoney.format(value,{signed:signed,absolute:absolute});}
+  el: '#app',
+  data: {
+    user: null,
+    records: [],
+    query: '',
+    loading: true,
+    error: '',
+    pageNum: 1,
+    pageSize: 10,
+    total: 0,
+    totalPages: 1,
+    incomeTotal: '0.00',
+    expenseTotal: '0.00',
+    balance: '0.00',
+    mobileOpen: false
+  },
+  computed: {
+    userInitial() { return this.user && this.user.username ? this.user.username.slice(0, 1).toUpperCase() : '↗'; },
+    pageList() {
+      const pages = [];
+      let start = Math.max(1, this.pageNum - 2);
+      const end = Math.min(this.totalPages, start + 4);
+      start = Math.max(1, end - 4);
+      for (let page = start; page <= end; page += 1) pages.push(page);
+      return pages;
+    }
+  },
+  created() {
+    this._accountGeneration = 0;
+    this._accountRequest = null;
+  },
+  mounted() {
+    const start = () => {
+      this.user = window.AuthSession ? AuthSession.getUser() : null;
+      this.loadAccounts(1);
+    };
+    if (window.AuthSession) AuthSession.bootstrap({ requireAuth: false, onDone: start }); else start();
+  },
+  beforeDestroy() {
+    if (this._accountRequest && this._accountRequest.readyState !== 4) this._accountRequest.abort();
+  },
+  methods: {
+    loadAccounts(page) {
+      const generation = ++this._accountGeneration;
+      if (this._accountRequest && this._accountRequest.readyState !== 4) this._accountRequest.abort();
+      this.loading = true;
+      this.error = '';
+      this.pageNum = Math.max(1, Number(page) || 1);
+      this._accountRequest = $.ajax({
+        url: '/api/account/public',
+        type: 'GET',
+        cache: false,
+        data: { name: this.query, pageNum: this.pageNum, pageSize: this.pageSize, _: Date.now() }
+      }).done(res => {
+        if (generation !== this._accountGeneration) return;
+        if (res && res.code === '0' && res.data) {
+          this.records = res.data.records || [];
+          this.total = Number(res.data.total || 0);
+          this.totalPages = Math.max(1, Number(res.data.pages || 1));
+          this.pageNum = Math.min(this.pageNum, this.totalPages);
+          this.incomeTotal = String(res.data.incomeTotal || '0.00');
+          this.expenseTotal = String(res.data.expenseTotal || '0.00');
+          this.balance = String(res.data.balance || '0.00');
+        } else {
+          this.clearPublicData();
+          this.error = (res && res.msg) || '服务返回了无法识别的数据';
+        }
+      }).fail((xhr, status) => {
+        if (generation !== this._accountGeneration || status === 'abort') return;
+        this.clearPublicData();
+        this.error = (xhr.responseJSON && xhr.responseJSON.msg) || '请检查网络连接后重试。';
+      }).always(() => {
+        if (generation !== this._accountGeneration) return;
+        this.loading = false;
+        this._accountRequest = null;
+      });
+    },
+    clearPublicData() {
+      this.records = [];
+      this.total = 0;
+      this.totalPages = 1;
+      this.incomeTotal = '0.00';
+      this.expenseTotal = '0.00';
+      this.balance = '0.00';
+    },
+    resetQuery() { this.query = ''; this.loadAccounts(1); },
+    decimalSign(value) {
+      const result = DecimalMoney.sign(value);
+      return result === null ? 0 : result;
+    },
+    formatMoney(value, signed, absolute) {
+      return DecimalMoney.format(value, { signed: signed, absolute: absolute });
+    },
+    formatDate(value) {
+      if (!value) return '时间未记录';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '时间未记录';
+      return new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+    },
+    recordKey(item, index) {
+      return [item.alabel || '', item.occurredAt || '', item.avalue || '', index].join('|');
+    }
   }
 });
 </script>
