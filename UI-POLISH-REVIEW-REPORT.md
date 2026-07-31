@@ -1088,7 +1088,7 @@ GPT 确认焦点已过；真实 390×844 复现搜索区空白：
 
 **分支**: `ui-polish/phase-3e-user-volunteer-service-20260731`
 
-**封存提交**: `8865eb16f0966b797bfda7f0d34cb565d84bfc7b` — `ui: complete user volunteer apply and task workflow`
+**封存提交**: `07394318976d5917ae4b9a2b1d0065f55800460a` — `ui: complete user volunteer apply and task workflow`
 
 **测试端口**: `18127` 全量回归 · `18128` abort 账本补丁复验（dev；精确释放；不操作 9999）
 
