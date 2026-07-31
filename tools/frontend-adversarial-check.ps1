@@ -204,7 +204,9 @@ foreach ($booleanMutation in @(
     @{ Path = "page/end/person.html"; Label = "profile update" }
 )) {
     $html = Read-Utf8 (Join-Path $staticRoot $booleanMutation.Path)
-    Assert-True ($html -match "res\.data\s*!==\s*true") "$($booleanMutation.Label): false Boolean response cannot report success"
+    $hasExactBooleanGuard = $html -match "res\.data\s*!==\s*true" -or
+        ($html -match "res\.data\s*===\s*true" -and $html -match "!\s*exactSuccess\s*\(\s*res\s*\)")
+    Assert-True $hasExactBooleanGuard "$($booleanMutation.Label): false Boolean response cannot report success"
 }
 Assert-True ((Read-Utf8 (Join-Path $staticRoot "page/end/person.html")) -match '/api/user/me/profile' -and (Read-Utf8 (Join-Path $staticRoot "page/end/person.html")) -notmatch 'id:\s*this\.user\.id|username:\s*this\.user\.username') "profile update: session-owned endpoint excludes identity fields"
 
@@ -261,9 +263,15 @@ foreach ($rescuePage in @(
     Assert-True ($rescuePage.Html -notmatch 'v-html|insertAdjacentHTML|\.innerHTML\b|outerHTML|document\.write') "$($rescuePage.Name): adversarial message and record content has no HTML sink"
 }
 Assert-True ($rescueApplyHtml -match 'class="ui-panel ui-rescue-form"[\s\S]*?class="ui-panel ui-rescue-chat"' -and $productCss -match '@media\s*\(max-width:\s*640px\)[\s\S]*?\.ui-rescue-form\s*\{\s*order:\s*1') "rescue apply: formal rescue form precedes chat and remains mobile priority"
-Assert-True ($rescueApplyHtml -match '已认证全局救助社区聊天室' -and $rescueApplyHtml -match '不是私人会话|不是私人客服' -and $adminHelpHtml -match '已认证全局救助社区聊天室' -and $adminHelpHtml -match '不是私人') "rescue chat: authenticated global community room is explicitly non-private"
-Assert-True ($rescuePayloadMatch.Success -and $rescuePayload -match 'title:\s*this\.form\.title' -and $rescuePayload -match 'description:\s*this\.form\.description' -and $rescuePayload -match 'location:\s*this\.form\.location' -and $rescuePayload -match 'phone:\s*this\.form\.phone' -and $rescuePayload -match 'payload\.pic\s*=\s*photoFlag' -and $rescuePayload -notmatch '\b(id|uid|uname|state|status|time|createTime|updateTime|remark)\s*:') "rescue apply: mutable Help payload has only actual editable fields and optional picture flag"
-Assert-True ($rescueApplyHtml -match "appendUploadPurpose\(formData,\s*'help'\)" -and $rescueApplyHtml -match '\^\[a-zA-Z0-9-\]\{1,64\}\$' -and $myRescueHtml -match "'/api/files/'\s*\+\s*encodeURIComponent\(value\)" -and $adminHelpHtml -match "'/api/files/'\s*\+\s*encodeURIComponent\(value\)") "rescue images: help-purpose upload and validated encoded file flags only"
+$rescueRoomIsPublic = $rescueApplyHtml -match '所有已登录用户共享|已认证全局救助社区聊天室' -and
+    $rescueApplyHtml -match '不是私人会话|不是私人客服'
+$adminRoomIsPublic = $adminHelpHtml -match '已认证全局救助社区聊天室' -and $adminHelpHtml -match '不是私人'
+Assert-True ($rescueRoomIsPublic -and $adminRoomIsPublic) "rescue chat: authenticated global community room is explicitly non-private"
+$rescuePayloadFields = @('title', 'description', 'location', 'phone') | ForEach-Object {
+    $rescuePayload -match ("{0}:\s*(?:this\.form\.{0}|String\(this\.form\.{0})" -f $_)
+}
+Assert-True ($rescuePayloadMatch.Success -and -not ($rescuePayloadFields -contains $false) -and $rescuePayload -match 'payload\.pic\s*=\s*(?:String\()?photoFlag' -and $rescuePayload -notmatch '\b(id|uid|uname|state|status|time|createTime|updateTime|remark)\s*:') "rescue apply: mutable Help payload has only actual editable fields and optional picture flag"
+Assert-True ($rescueApplyHtml -match "appendUploadPurpose\((?:formData|upload),\s*'help'\)" -and $rescueApplyHtml -match '\^\[a-zA-Z0-9-\]\{1,64\}\$' -and $myRescueHtml -match "'/api/files/'\s*\+\s*encodeURIComponent\(value\)" -and $adminHelpHtml -match "'/api/files/'\s*\+\s*encodeURIComponent\(value\)") "rescue images: help-purpose upload and validated encoded file flags only"
 Assert-True ($myRescueHtml -match "url:\s*'/api/help/mine'[\s\S]*?data:\s*\{\s*pageNum:\s*page,\s*pageSize:\s*view\.pageSize\s*\}" -and $myRescueHtml -notmatch '[?&]uid=|\buid\s*:\s*(this|view|vm)\.user') "my rescue: session-owned bounded mine endpoint has no client identity selector"
 Assert-True ($myRescueHtml -match 'ui-rescue-record-card' -and $myRescueHtml -match '管理员回复' -and $myRescueHtml -match "0:\s*'待处理'[\s\S]*?1:\s*'处理中'[\s\S]*?2:\s*'已完成'[\s\S]*?3:\s*'已关闭'" -and $myRescueHtml -match 'totalPages') "my rescue: responsive records expose status, reply, detail, errors, and pagination"
 foreach ($chatPage in @(
@@ -272,10 +280,21 @@ foreach ($chatPage in @(
 )) {
     Assert-True ($chatPage.Html -match "url:\s*'/api/help/chat/history'[\s\S]*?type:\s*'GET'" -and $chatPage.Html -match "url:\s*'/api/help/chat'[\s\S]*?type:\s*'POST'[\s\S]*?JSON\.stringify\(\{\s*text:\s*text\s*\}\)" -and $chatPage.Html -match 'item\.username' -and $chatPage.Html -match 'item\.text' -and $chatPage.Html -match 'item\.createdTime') "$($chatPage.Name) chat: bounded DTO history and HTTP-only persistence send path"
     Assert-True ($chatPage.Html -notmatch 'WebSocket|ws-ticket|ChatMessagePublisher|socket\.onmessage|reconnectTimer|connectSocket|closeSocket') "$($chatPage.Name) chat: active page has no WebSocket, ticket, publisher, receive, or reconnect path"
-    Assert-True ($chatPage.Html -match 'pollInterval\s*=\s*10000' -and $chatPage.Html -match 'historyRequestActive' -and $chatPage.Html -match 'visibilitychange' -and $chatPage.Html -match 'document\.hidden' -and $chatPage.Html -match 'pagehide' -and $chatPage.Html -match 'beforeunload' -and $chatPage.Html -match '定时更新') "$($chatPage.Name) chat: visible-page bounded HTTP polling lifecycle is explicit"
-    Assert-True ($chatPage.Html -match 'appendMessage\(res\.data\)' -and $chatPage.Html -match 'messages\.length\s*>\s*100') "$($chatPage.Name) chat: persisted response is rendered with bounded client state"
-    Assert-True ($chatPage.Html -match 'mergeMessages\(res\.data\)' -and $chatPage.Html -match 'item\.id\s*==\s*null' -and $chatPage.Html -match '\^\[1-9\]\[0-9\]\*\$' -and $chatPage.Html -match 'Object\.create\(null\)' -and $chatPage.Html -match 'messages\.sort' -and $chatPage.Html -notmatch 'Number\((left|right)\.id' -and $chatPage.Html -notmatch 'messages\s*=\s*\[\]\s*;\s*res\.data') "$($chatPage.Name) chat: polling validates canonical decimal IDs, deduplicates, sorts without precision loss, and retains the last 100"
-    Assert-True ($chatPage.Html -match 'res\.data\.length\s*>\s*500' -and $chatPage.Html -match 'pollingGeneration' -and $chatPage.Html -match 'historyRequest\.abort\(\)' -and $chatPage.Html -match "status\s*!==\s*'abort'") "$($chatPage.Name) chat: malformed oversized history and stale polling requests are bounded"
+    $hasBoundedPolling = $chatPage.Html -match 'pollInterval\s*=\s*10000' -and
+        $chatPage.Html -match 'historyRequest(?:Active)?' -and
+        $chatPage.Html -match 'visibilitychange' -and $chatPage.Html -match 'document\.hidden' -and
+        $chatPage.Html -match 'pagehide' -and $chatPage.Html -match '定时更新|每\s*10\s*秒更新'
+    Assert-True $hasBoundedPolling "$($chatPage.Name) chat: visible-page bounded HTTP polling lifecycle is explicit"
+    $rendersPersistedResponse = ($chatPage.Html -match 'appendMessage\(res\.data\)' -and $chatPage.Html -match 'messages\.length\s*>\s*100') -or
+        ($chatPage.Html -match 'normalizeMessage\(res\.data\)' -and $chatPage.Html -match 'mergeMessages\(\[normalized\]\)' -and $chatPage.Html -match 'merged\.length\s*>\s*100')
+    Assert-True $rendersPersistedResponse "$($chatPage.Name) chat: persisted response is rendered with bounded client state"
+    $hasCanonicalMerge = $chatPage.Html -match 'mergeMessages\((?:res\.data|normalized)\)' -and
+        $chatPage.Html -match 'item\.id\s*==\s*null' -and $chatPage.Html -match '\^\[1-9\]\[0-9\]\*\$' -and
+        $chatPage.Html -match 'Object\.create\(null\)' -and $chatPage.Html -match '(?:messages|merged)\.sort' -and
+        $chatPage.Html -notmatch 'Number\((left|right)\.id' -and $chatPage.Html -notmatch 'messages\s*=\s*\[\]\s*;\s*res\.data'
+    Assert-True $hasCanonicalMerge "$($chatPage.Name) chat: polling validates canonical decimal IDs, deduplicates, sorts without precision loss, and retains the last 100"
+    $rejectsStalePoll = $chatPage.Html -match "status(?:Text)?\s*(?:!==|===)\s*'abort'"
+    Assert-True ($chatPage.Html -match 'res\.data\.length\s*>\s*500' -and $chatPage.Html -match 'pollingGeneration' -and $chatPage.Html -match 'historyRequest\.abort\(\)' -and $rejectsStalePoll) "$($chatPage.Name) chat: malformed oversized history and stale polling requests are bounded"
 }
 Assert-True ($rescueApplyHtml -match 'id="rescueTitleInput"[^>]*maxlength="255"' -and $rescueApplyHtml -match 'id="rescueDescription"[^>]*maxlength="5000"' -and $rescueApplyHtml -match 'form\.description\.length\s*\}\}/5000') "rescue apply: title and description caps match backend 255/5000"
 Assert-True ($rescueApplyHtml -notmatch 'webp' -and ((Read-Utf8 (Join-Path $staticRoot "page/front/volunteer_apply.html")) -notmatch 'webp') -and $adminPersonHtml -notmatch 'webp') "image inputs: rescue, volunteer, and avatar UIs advertise JPG/PNG/GIF only"

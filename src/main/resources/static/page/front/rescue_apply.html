@@ -3,59 +3,191 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="提交正式动物救助请求，并加入已认证用户的全局救助社区聊天室">
+  <meta name="description" content="提交正式动物救助请求，并在已认证用户共享的救助社区交流">
   <title>发起救助 · 归途计划</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-  <link rel="stylesheet" href="../../css/product-ui.css?v=20260731a">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
+  <link rel="stylesheet" href="../../css/product-ui.css?v=20260731d">
 </head>
-<body>
+<body class="ui-user-rescue-page ui-rescue-apply-page">
 <div id="authWait" class="ui-auth-wait" role="status">正在验证登录状态...</div>
-<div id="app" v-cloak @keyup.esc="closeMenus">
+<div id="app" v-cloak>
   <front-site-header :user="user"></front-site-header>
 
   <main class="ui-container ui-rescue-page">
     <section class="ui-rescue-intro" aria-labelledby="rescueTitle">
-      <div><p class="ui-eyebrow">FORMAL RESCUE REQUEST</p><h1 id="rescueTitle">先把现场信息，交给能行动的人。</h1><p>正式救助表单是本页的首要入口。请提供准确位置、动物现状和可联系号码；生命危险时请同时联系附近动物医院。</p></div>
-      <aside class="ui-rescue-priority"><strong>紧急情况优先处理</strong><span>社区聊天室是所有已登录用户共享的全局公共房间，不是私人客服，也不代替正式工单。</span></aside>
+      <div>
+        <p class="ui-eyebrow">FORMAL RESCUE REQUEST</p>
+        <h1 id="rescueTitle">先记录现场，<br>再交给能行动的人。</h1>
+        <p>正式工单决定后续处理。请提供准确位置、动物现状和可联系号码；生命危险时请同时联系附近动物医院。</p>
+      </div>
+      <aside class="ui-rescue-priority">
+        <span class="ui-rescue-priority-index">01 · ACTION FIRST</span>
+        <strong>紧急情况优先联系线下救援</strong>
+        <span>公共聊天室只用于一般交流，不是私人客服，也不能代替正式救助工单。</span>
+      </aside>
     </section>
 
     <div class="ui-rescue-layout">
       <section class="ui-panel ui-rescue-form" aria-labelledby="formTitle">
-        <div class="ui-panel-head"><div><h2 id="formTitle">正式救助表单</h2><p>服务端以当前会话确定提交人。页面只提交可编辑的现场信息。</p></div><a class="ui-button is-ghost" href="./my_rescue.html">查看处理进度</a></div>
-        <div v-if="submitted" class="ui-rescue-success" role="status" aria-live="polite"><h2>救助请求已提交</h2><p>工作人员回复和状态变化会显示在“我的救助”中。</p><div class="ui-form-actions"><a class="ui-button is-dark" href="./my_rescue.html">查看我的救助</a><button class="ui-button is-ghost" type="button" @click="resetForm">继续提交</button></div></div>
-        <form v-else novalidate @submit.prevent="submitRescue">
-          <div class="ui-inline-alert">请勿为了拍摄靠近有攻击性或处于应激状态的动物。现场照片为选填，单张最大 10 MB。</div>
-          <div class="ui-form-grid">
-            <div class="ui-form-field is-full"><label for="rescueTitleInput">求助标题 <small>必填，最多 255 字</small></label><input id="rescueTitleInput" ref="title" v-model.trim="form.title" class="ui-form-input" type="text" maxlength="255" placeholder="例如：社区入口发现无法站立的橘猫" :aria-invalid="String(!!errors.title)" :aria-describedby="errors.title?'titleError':null"><p v-if="errors.title" id="titleError" class="ui-field-error">{{ errors.title }}</p></div>
-            <div class="ui-form-field is-full"><label for="rescueDescription">动物与现场情况 <small>必填，最多 5000 字</small></label><textarea id="rescueDescription" ref="description" v-model.trim="form.description" class="ui-form-textarea" maxlength="5000" rows="6" placeholder="描述动物种类、体型、毛色、伤情、活动能力及周边风险" :aria-invalid="String(!!errors.description)" :aria-describedby="errors.description?'descriptionError':null"></textarea><p v-if="errors.description" id="descriptionError" class="ui-field-error">{{ errors.description }}</p><p class="ui-field-hint">{{ form.description.length }}/5000</p></div>
-            <div class="ui-form-field"><label for="rescueLocation">发现地点 <small>必填</small></label><input id="rescueLocation" ref="location" v-model.trim="form.location" class="ui-form-input" type="text" maxlength="255" autocomplete="street-address" placeholder="街道、门牌及易识别地标" :aria-invalid="String(!!errors.location)" :aria-describedby="errors.location?'locationError':null"><p v-if="errors.location" id="locationError" class="ui-field-error">{{ errors.location }}</p></div>
-            <div class="ui-form-field"><label for="rescuePhone">联系电话 <small>选填</small></label><input id="rescuePhone" ref="phone" v-model.trim="form.phone" class="ui-form-input" type="tel" maxlength="20" autocomplete="tel" placeholder="便于救助人员联系现场" :aria-invalid="String(!!errors.phone)" :aria-describedby="errors.phone?'phoneError':null"><p v-if="errors.phone" id="phoneError" class="ui-field-error">{{ errors.phone }}</p></div>
-            <div class="ui-form-field is-full"><label for="rescuePhoto">现场照片 <small>选填，JPG/PNG/GIF</small></label><div class="ui-upload-box"><img v-if="previewUrl" class="ui-rescue-upload-preview" :src="previewUrl" alt="待上传现场照片预览"><div v-else class="ui-rescue-upload-empty" aria-hidden="true">暂无照片</div><div><input id="rescuePhoto" ref="photo" type="file" accept="image/jpeg,image/png,image/gif" @change="selectPhoto"><p v-if="photoFile" class="ui-field-hint">{{ photoFile.name }} · {{ fileSize(photoFile.size) }}</p><p v-if="errors.photo" class="ui-field-error">{{ errors.photo }}</p></div></div></div>
+        <div class="ui-panel-head ui-rescue-section-head">
+          <div>
+            <p class="ui-eyebrow">OFFICIAL INTAKE</p>
+            <h2 id="formTitle">正式救助工单</h2>
+            <p>账号身份由服务端会话确认；这里只填写工作人员真正需要的现场信息。</p>
           </div>
-          <div v-if="formFeedback" class="ui-form-alert" role="alert" aria-live="polite">{{ formFeedback }}</div>
-          <div class="ui-form-actions"><button class="ui-button is-primary" type="submit" :disabled="submitting">{{ submitting ? '正在提交...' : '提交正式救助请求' }}</button><button class="ui-button is-ghost" type="button" :disabled="submitting" @click="resetForm">清空表单</button></div>
+          <a class="ui-button is-ghost" href="./my_rescue.html">查看处理进度</a>
+        </div>
+
+        <div v-if="submitted" class="ui-rescue-success" role="status" aria-live="polite">
+          <span class="ui-rescue-success-mark" aria-hidden="true">✓</span>
+          <div>
+            <h2>救助请求已进入处理队列</h2>
+            <p>工作人员的回复、处理状态和最终结论会显示在“我的救助”与站内通知中。</p>
+            <div class="ui-form-actions">
+              <a class="ui-button is-dark" href="./my_rescue.html">查看我的救助</a>
+              <button class="ui-button is-ghost" type="button" @click="resetAfterSuccess">继续提交</button>
+            </div>
+          </div>
+        </div>
+
+        <form v-else class="ui-rescue-intake-form" novalidate @submit.prevent="submitRescue">
+          <div class="ui-inline-alert" role="note">
+            <strong>先保证自身安全。</strong>
+            <span>请勿为了拍摄靠近有攻击性或处于应激状态的动物。现场照片为选填，单张最大 10 MB。</span>
+          </div>
+
+          <div class="ui-form-grid">
+            <div class="ui-form-field is-full">
+              <label for="rescueTitleInput">求助标题 <small>必填 · 最多 255 字</small></label>
+              <input id="rescueTitleInput" ref="title" v-model.trim="form.title" class="ui-form-input"
+                     type="text" maxlength="255" placeholder="例如：社区入口发现无法站立的橘猫"
+                     :aria-invalid="String(!!errors.title)" :aria-describedby="errors.title?'titleError':null">
+              <p v-if="errors.title" id="titleError" class="ui-field-error">{{ errors.title }}</p>
+            </div>
+
+            <div class="ui-form-field is-full">
+              <label for="rescueDescription">动物与现场情况 <small>必填 · {{ form.description.length }}/5000</small></label>
+              <textarea id="rescueDescription" ref="description" v-model.trim="form.description"
+                        class="ui-form-textarea" maxlength="5000" rows="7"
+                        placeholder="描述动物种类、体型、毛色、伤情、活动能力及周边风险"
+                        :aria-invalid="String(!!errors.description)"
+                        :aria-describedby="errors.description?'descriptionError':null"></textarea>
+              <p v-if="errors.description" id="descriptionError" class="ui-field-error">{{ errors.description }}</p>
+            </div>
+
+            <div class="ui-form-field">
+              <label for="rescueLocation">发现地点 <small>必填 · 最多 255 字</small></label>
+              <input id="rescueLocation" ref="location" v-model.trim="form.location" class="ui-form-input"
+                     type="text" maxlength="255" autocomplete="street-address"
+                     placeholder="街道、门牌及易识别地标"
+                     :aria-invalid="String(!!errors.location)"
+                     :aria-describedby="errors.location?'locationError':null">
+              <p v-if="errors.location" id="locationError" class="ui-field-error">{{ errors.location }}</p>
+            </div>
+
+            <div class="ui-form-field">
+              <label for="rescuePhone">联系电话 <small>选填 · 最多 20 字符</small></label>
+              <input id="rescuePhone" ref="phone" v-model.trim="form.phone" class="ui-form-input"
+                     type="tel" maxlength="20" autocomplete="tel" placeholder="便于救助人员联系现场"
+                     :aria-invalid="String(!!errors.phone)" :aria-describedby="errors.phone?'phoneError':null">
+              <p v-if="errors.phone" id="phoneError" class="ui-field-error">{{ errors.phone }}</p>
+            </div>
+
+            <div class="ui-form-field is-full">
+              <label for="rescuePhoto">现场照片 <small>选填 · JPG / PNG / GIF · 最大 10 MB</small></label>
+              <div class="ui-upload-box ui-rescue-upload-box" :class="{'has-stage':!!stagedFlag}">
+                <img v-if="previewUrl" class="ui-rescue-upload-preview" :src="previewUrl" alt="待上传现场照片预览">
+                <div v-else class="ui-rescue-upload-empty" aria-hidden="true">现场<br>照片</div>
+                <div class="ui-rescue-upload-copy">
+                  <input id="rescuePhoto" ref="photo" class="ui-visually-hidden" type="file"
+                         accept="image/jpeg,image/png,image/gif" @change="selectPhoto">
+                  <div class="ui-rescue-upload-actions">
+                    <label class="ui-button is-ghost" for="rescuePhoto">{{ photoFile || stagedFlag ? '更换图片' : '选择图片' }}</label>
+                    <button v-if="photoFile || stagedFlag" class="ui-button is-text" type="button"
+                            :disabled="submitting" @click="clearPhoto">取消选择</button>
+                  </div>
+                  <strong>{{ photoFile ? photoFile.name : stagedFlag ? '已暂存的现场照片' : '尚未选择照片' }}</strong>
+                  <p v-if="photoFile">{{ fileSize(photoFile.size) }} · 图片仅供有权限的工作人员查看</p>
+                  <p v-else>可不上传；请勿提交与救助无关或包含多余隐私的照片。</p>
+                  <span v-if="stagedFlag" class="ui-stage-note">上传已完成，工单尚未保存；再次提交不会重复上传。</span>
+                </div>
+              </div>
+              <p v-if="errors.photo" id="photoError" class="ui-field-error">{{ errors.photo }}</p>
+            </div>
+          </div>
+
+          <div v-if="formFeedback" class="ui-form-alert" role="alert" aria-live="assertive" tabindex="-1"
+               ref="formFeedback">{{ formFeedback }}</div>
+
+          <div class="ui-form-actions ui-rescue-form-actions">
+            <button id="rescueSubmit" class="ui-button is-primary" type="submit" :disabled="submitting">
+              {{ submitting ? submitLabel : stagedFlag ? '重试保存救助工单' : '提交正式救助请求' }}
+            </button>
+            <button class="ui-button is-ghost" type="button" :disabled="submitting" @click="resetForm">清空表单</button>
+          </div>
         </form>
       </section>
 
       <section class="ui-panel ui-rescue-chat" aria-labelledby="communityTitle">
-        <div class="ui-rescue-chat-head"><div><h2 id="communityTitle">已认证全局救助社区聊天室</h2><p>所有已登录用户共享，消息会持久保存；这不是私人会话。</p></div><span class="ui-connection" :class="connectionClass" aria-live="polite">{{ connectionText }}</span></div>
-        <div class="ui-chat-notice" role="note">请勿发布不必要的个人信息。正式救助、位置和联系电话应提交到左侧表单，由工单流程处理。</div>
+        <div class="ui-rescue-chat-head">
+          <div>
+            <p class="ui-eyebrow">PUBLIC COMMUNITY ROOM</p>
+            <h2 id="communityTitle">救助社区公共交流</h2>
+            <p>所有已登录用户共享并持久保存；不是工单处理区，也不是私人会话。</p>
+          </div>
+          <span class="ui-connection" :class="connectionClass" aria-live="polite">{{ connectionText }}</span>
+        </div>
+
+        <div class="ui-chat-notice" role="note">
+          不要在这里发布精确住址、电话号码等个人信息。正式位置和联系方式请填写到左侧工单。
+        </div>
+
+        <div v-if="historyError && messages.length" class="ui-chat-stale" role="alert">
+          <span>{{ historyError }}</span>
+          <button type="button" @click="loadHistory">重试更新</button>
+        </div>
+
         <div ref="chatBox" class="ui-chat-messages" aria-live="polite" aria-relevant="additions text">
           <div v-if="historyLoading" class="ui-chat-empty" role="status">正在读取最近的社区消息...</div>
-          <div v-else-if="historyError&&!messages.length" class="ui-chat-empty"><div>{{ historyError }}<br><button class="ui-button is-ghost" type="button" @click="loadHistory">重新加载</button></div></div>
-          <div v-else-if="!messages.length" class="ui-chat-empty">最近还没有社区消息。<br>你可以提出不包含隐私的一般救助问题。</div>
-          <article v-for="message in messages" :key="message.key" class="ui-chat-message" :class="{'is-self':isSelf(message)}">
+          <div v-else-if="historyError && !messages.length" class="ui-chat-empty is-error" role="alert">
+            <div>{{ historyError }}<br><button type="button" @click="loadHistory">重新加载</button></div>
+          </div>
+          <div v-else-if="!messages.length" class="ui-chat-empty">
+            最近还没有社区消息。<br>你可以提出不包含隐私的一般救助问题。
+          </div>
+          <article v-for="message in messages" :key="message.key" class="ui-chat-message"
+                   :class="{'is-self':isSelf(message)}">
             <span class="ui-chat-avatar" aria-hidden="true">{{ messageInitial(message) }}</span>
-            <div class="ui-chat-copy"><div class="ui-chat-meta"><strong>{{ message.username || '社区成员' }}</strong><time>{{ formatTime(message.createdTime) }}</time></div><div class="ui-chat-bubble">{{ message.text }}</div></div>
+            <div class="ui-chat-copy">
+              <div class="ui-chat-meta">
+                <strong>{{ message.username || '社区成员' }}</strong>
+                <time>{{ formatTime(message.createdTime) }}</time>
+              </div>
+              <div class="ui-chat-bubble">{{ message.text }}</div>
+            </div>
           </article>
         </div>
-        <form class="ui-chat-compose" @submit.prevent="sendChat"><label for="communityMessage">发送到全局公共房间</label><div class="ui-chat-compose-row"><textarea id="communityMessage" v-model.trim="chatText" class="ui-form-textarea" maxlength="500" rows="2" placeholder="输入一般救助交流内容（最多500字）" :disabled="chatSending"></textarea><button class="ui-button is-dark" type="submit" :disabled="chatSending||!chatText">{{ chatSending ? '发送中' : '发送' }}</button></div><p class="ui-chat-feedback" :class="{'is-error':chatError}" aria-live="polite">{{ chatError || '消息通过 HTTP 保存，页面可见时每 10 秒定时更新。' }}</p></form>
+
+        <form class="ui-chat-compose" @submit.prevent="sendChat">
+          <label for="communityMessage">发送到所有登录用户可见的公共房间</label>
+          <div class="ui-chat-compose-row">
+            <textarea id="communityMessage" v-model.trim="chatText" class="ui-form-textarea"
+                      maxlength="500" rows="2" placeholder="输入一般救助交流内容（最多 500 字）"
+                      :disabled="chatSending"></textarea>
+            <button id="communitySend" class="ui-button is-dark" type="submit"
+                    :disabled="chatSending || !chatText">{{ chatSending ? '发送中…' : '发送' }}</button>
+          </div>
+          <p class="ui-chat-feedback" :class="{'is-error':chatError}" aria-live="polite">
+            {{ chatError || '页面可见时每 10 秒更新；离开页面后停止轮询。' }}
+          </p>
+        </form>
       </section>
     </div>
   </main>
 
   <front-site-footer></front-site-footer>
 </div>
+
 <script src="../../js/jquery.min.js"></script>
 <script src="../../js/vue.min.js"></script>
 <script src="../../js/user-workspace.js?v=20260731a"></script>
@@ -64,34 +196,57 @@
 <script>
 (function () {
   'use strict';
+
   var pollTimer = null;
   var historyRequest = null;
+  var historySeq = 0;
   var pollingGeneration = 0;
   var pollingStopped = false;
   var pollInterval = 10000;
+
+  function validFlag(value) {
+    return /^[a-zA-Z0-9-]{1,64}$/.test(String(value || ''));
+  }
+
+  function exactSuccess(res) {
+    return !!res && res.code === '0' && res.data === true;
+  }
+
+  function errorMessage(xhr, fallback) {
+    return xhr && xhr.responseJSON && xhr.responseJSON.msg
+      ? String(xhr.responseJSON.msg)
+      : fallback;
+  }
+
   AuthSession.bootstrap({
     requireAuth: true,
     allowCachedOnNetworkError: false,
     onDone: function (ok, authenticatedUser) {
       if (!ok || !authenticatedUser) return;
       document.getElementById('authWait').hidden = true;
+
       var vm = new Vue({
         el: '#app',
         data: {
           user: authenticatedUser,
-          mobileOpen: false,
-          accountOpen: false,
-          form: { title: '', description: '', location: '', phone: authenticatedUser.phone || '' },
+          form: {
+            title: '',
+            description: '',
+            location: '',
+            phone: authenticatedUser.phone || ''
+          },
           errors: {},
           photoFile: null,
           previewUrl: '',
+          stagedFlag: '',
+          retiredFlags: {},
           submitting: false,
           submitted: false,
           formFeedback: '',
+          submitLabel: '正在提交…',
           messages: [],
           historyLoading: true,
           connectionState: 'connecting',
-          historyRequestActive: false,
           historyError: '',
           chatText: '',
           chatSending: false,
@@ -99,70 +254,145 @@
         },
         computed: {
           connectionClass: function () {
-            return this.connectionState === 'connected' ? 'is-connected'
-                 : this.connectionState === 'error' ? 'is-error' : 'is-connecting';
+            return this.connectionState === 'connected'
+              ? 'is-connected'
+              : this.connectionState === 'error' ? 'is-error' : 'is-connecting';
           },
           connectionText: function () {
-            return this.connectionState === 'connected' ? '每 10 秒更新'
-                 : this.connectionState === 'error' ? '连接异常' : '更新中…';
-          },
-          userInitial: function () { return this.user.username ? this.user.username.slice(0, 1).toUpperCase() : 'U'; }
+            return this.connectionState === 'connected'
+              ? '每 10 秒更新'
+              : this.connectionState === 'error' ? '更新异常' : '正在连接';
+          }
         },
-        created: function () { this.startPolling(); },
-        beforeDestroy: function () { this.stopPolling(); },
+        created: function () {
+          this.startPolling();
+          window.addEventListener('pagehide', this.cleanupPageStage);
+        },
+        beforeDestroy: function () {
+          this.stopPolling();
+          this.cleanupPreview();
+          window.removeEventListener('pagehide', this.cleanupPageStage);
+        },
         methods: {
-          closeMenus: function () { this.mobileOpen = false; this.accountOpen = false; },
-          logout: function () { this.stopPolling(); AuthSession.logout(); },
-          fileSize: function (bytes) { return bytes < 1024 * 1024 ? Math.ceil(bytes / 1024) + ' KB' : (bytes / 1024 / 1024).toFixed(1) + ' MB'; },
+          fileSize: function (bytes) {
+            return bytes < 1024 * 1024
+              ? Math.max(1, Math.ceil(bytes / 1024)) + ' KB'
+              : (bytes / 1024 / 1024).toFixed(1) + ' MB';
+          },
           selectPhoto: function (event) {
-            var file = event.target.files && event.target.files[0];
-            if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
-            this.previewUrl = '';
+            var next = event.target.files && event.target.files[0] ? event.target.files[0] : null;
+            if (this.stagedFlag) {
+              this.retireStage(this.stagedFlag, false);
+              this.stagedFlag = '';
+            }
+            this.cleanupPreview();
             this.photoFile = null;
             this.errors = Object.assign({}, this.errors, { photo: '' });
-            if (!file) return;
-            if (!/\.(jpe?g|png|gif)$/i.test(file.name) || ['image/jpeg', 'image/png', 'image/gif'].indexOf(file.type) < 0) {
+            this.formFeedback = '';
+            if (!next) return;
+            if (!/^image\/(jpeg|png|gif)$/.test(next.type || '')
+                || !/\.(jpe?g|png|gif)$/i.test(next.name || '')) {
               this.errors = Object.assign({}, this.errors, { photo: '请选择 JPG、PNG 或 GIF 图片。' });
               event.target.value = '';
               return;
             }
-            if (file.size > 10 * 1024 * 1024) {
+            if (next.size > 10 * 1024 * 1024) {
               this.errors = Object.assign({}, this.errors, { photo: '现场照片不能超过 10 MB。' });
               event.target.value = '';
               return;
             }
-            this.photoFile = file;
-            this.previewUrl = URL.createObjectURL(file);
+            this.photoFile = next;
+            this.previewUrl = URL.createObjectURL(next);
+          },
+          clearPhoto: function () {
+            if (this.submitting) return;
+            if (this.stagedFlag) this.retireStage(this.stagedFlag, false);
+            this.stagedFlag = '';
+            this.photoFile = null;
+            this.cleanupPreview();
+            if (this.$refs.photo) this.$refs.photo.value = '';
+            this.errors = Object.assign({}, this.errors, { photo: '' });
+            this.formFeedback = '';
+          },
+          cleanupPreview: function () {
+            if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
+            this.previewUrl = '';
+          },
+          retireStage: function (flag, keepalive) {
+            var clean = String(flag || '');
+            if (!validFlag(clean) || this.retiredFlags[clean]) return;
+            this.$set(this.retiredFlags, clean, true);
+            if (keepalive && window.fetch) {
+              try {
+                window.fetch('/api/files/staged/' + encodeURIComponent(clean), {
+                  method: 'DELETE',
+                  credentials: 'same-origin',
+                  keepalive: true,
+                  headers: { 'X-CSRF-Token': AuthSession.getCsrfToken() || '' }
+                }).catch(function () {});
+              } catch (ignore) {}
+              return;
+            }
+            $.ajax({
+              url: '/api/files/staged/' + encodeURIComponent(clean),
+              type: 'DELETE'
+            });
+          },
+          cleanupPageStage: function () {
+            if (this.stagedFlag) this.retireStage(this.stagedFlag, true);
           },
           validate: function () {
             var errors = {};
             if (!this.form.title) errors.title = '请填写求助标题。';
             if (!this.form.description) errors.description = '请描述动物与现场情况。';
             if (!this.form.location) errors.location = '请填写发现地点。';
-            if (this.form.phone && !/^[0-9+()\s-]{6,20}$/.test(this.form.phone)) errors.phone = '联系电话须为6至20位，只能包含数字、空格、加号、括号或连字符。';
-            this.errors = errors;
-            if (Object.keys(errors).length) {
-              this.formFeedback = '请检查标出的救助信息。';
-              var first = Object.keys(errors)[0];
-              this.$nextTick(function () { if (this.$refs[first] && this.$refs[first].focus) this.$refs[first].focus(); });
-              return false;
+            if (this.form.phone && !/^[0-9+()\s-]{6,20}$/.test(this.form.phone)) {
+              errors.phone = '联系电话须为 6 至 20 位，只能包含数字、空格、加号、括号或连字符。';
             }
-            return true;
+            this.errors = errors;
+            if (!Object.keys(errors).length) return true;
+            this.formFeedback = '请检查标出的救助信息。';
+            var first = Object.keys(errors)[0];
+            this.$nextTick(function () {
+              if (this.$refs[first] && this.$refs[first].focus) this.$refs[first].focus();
+            });
+            return false;
           },
           uploadPhoto: function () {
+            if (this.stagedFlag) return $.Deferred().resolve(this.stagedFlag).promise();
             if (!this.photoFile) return $.Deferred().resolve('').promise();
-            var formData = new FormData();
-            formData.append('file', this.photoFile);
-            AuthSession.appendUploadPurpose(formData, 'help');
-            return $.ajax({ url: '/api/files/upload', type: 'POST', data: formData, processData: false, contentType: false }).then(function (res) {
-              var flag = res && res.code === '0' && res.data && (res.data.flag || res.data);
-              if (!flag || !/^[a-zA-Z0-9-]{1,64}$/.test(String(flag))) return $.Deferred().reject({ responseJSON: { msg: (res && res.msg) || '照片上传结果无效。' } }).promise();
-              return String(flag);
+            var page = this;
+            page.submitLabel = '正在安全上传…';
+            var upload = new FormData();
+            upload.append('file', page.photoFile);
+            AuthSession.appendUploadPurpose(upload, 'help');
+            return $.ajax({
+              url: '/api/files/upload',
+              type: 'POST',
+              data: upload,
+              processData: false,
+              contentType: false
+            }).then(function (res) {
+              var flag = res && res.code === '0' && res.data
+                ? (res.data.flag || res.data)
+                : '';
+              if (!validFlag(flag)) {
+                return $.Deferred().reject({
+                  responseJSON: { msg: (res && res.msg) || '照片上传结果无效。' }
+                }).promise();
+              }
+              page.stagedFlag = String(flag);
+              return page.stagedFlag;
             });
           },
           mutablePayload: function (photoFlag) {
-            var payload = { title: this.form.title, description: this.form.description, location: this.form.location, phone: this.form.phone };
-            if (photoFlag) payload.pic = photoFlag;
+            var payload = {
+              title: String(this.form.title || '').trim(),
+              description: String(this.form.description || '').trim(),
+              location: String(this.form.location || '').trim(),
+              phone: String(this.form.phone || '').trim()
+            };
+            if (validFlag(photoFlag)) payload.pic = String(photoFlag);
             return payload;
           },
           submitRescue: function () {
@@ -170,22 +400,61 @@
             var page = this;
             page.submitting = true;
             page.formFeedback = '';
+            page.submitLabel = page.stagedFlag ? '正在保存工单…' : '正在准备提交…';
             page.uploadPhoto().then(function (photoFlag) {
-              return $.ajax({ url: '/api/help', type: 'POST', contentType: 'application/json', data: JSON.stringify(page.mutablePayload(photoFlag)) });
+              page.submitLabel = '正在保存工单…';
+              return $.ajax({
+                url: '/api/help',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(page.mutablePayload(photoFlag))
+              });
             }).done(function (res) {
-              if (!res || res.code !== '0' || res.data !== true) { page.formFeedback = (res && res.msg) || '救助请求提交失败。'; return; }
+              if (!exactSuccess(res)) {
+                page.formFeedback = (res && res.msg) || '救助请求提交失败，填写内容和已上传照片均已保留。';
+                page.focusFeedback();
+                return;
+              }
+              page.stagedFlag = '';
+              page.photoFile = null;
+              page.cleanupPreview();
+              if (page.$refs.photo) page.$refs.photo.value = '';
               page.submitted = true;
-            }).fail(function (xhr) { page.formFeedback = (xhr.responseJSON && xhr.responseJSON.msg) || '网络异常，救助请求未能提交。'; }).always(function () { page.submitting = false; });
+            }).fail(function (xhr) {
+              page.formFeedback = errorMessage(xhr, '网络异常，救助请求未能提交；填写内容和已上传照片均已保留。');
+              page.focusFeedback();
+            }).always(function () {
+              page.submitting = false;
+              page.submitLabel = '正在提交…';
+            });
+          },
+          focusFeedback: function () {
+            this.$nextTick(function () {
+              if (this.$refs.formFeedback) this.$refs.formFeedback.focus();
+            });
           },
           resetForm: function () {
-            if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
-            this.form = { title: '', description: '', location: '', phone: this.user.phone || '' };
+            if (this.submitting) return;
+            if (this.stagedFlag) this.retireStage(this.stagedFlag, false);
+            this.stagedFlag = '';
+            this.form = {
+              title: '',
+              description: '',
+              location: '',
+              phone: this.user.phone || ''
+            };
             this.errors = {};
             this.photoFile = null;
-            this.previewUrl = '';
+            this.cleanupPreview();
             this.formFeedback = '';
-            this.submitted = false;
             if (this.$refs.photo) this.$refs.photo.value = '';
+            this.$nextTick(function () {
+              if (this.$refs.title) this.$refs.title.focus();
+            });
+          },
+          resetAfterSuccess: function () {
+            this.submitted = false;
+            this.resetForm();
           },
           normalizeMessage: function (item) {
             if (!item || typeof item !== 'object' || item.id == null) return null;
@@ -193,14 +462,21 @@
             var username = typeof item.username === 'string' ? item.username : '';
             var text = typeof item.text === 'string' ? item.text : '';
             var createdTime = typeof item.createdTime === 'string' ? item.createdTime : '';
-            if (!/^[1-9][0-9]*$/.test(id) || !text.trim() || text.length > 500 || username.length > 255 || !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(createdTime)) return null;
+            if (!/^[1-9][0-9]*$/.test(id)
+                || !text.trim()
+                || text.length > 500
+                || username.length > 255
+                || !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(createdTime)) return null;
             var time = new Date(createdTime.replace(' ', 'T')).getTime();
             if (!isFinite(time)) return null;
-            return { key: 'id-' + id, id: id, username: username, text: text, createdTime: createdTime, sortTime: time };
-          },
-          appendMessage: function (item) {
-            this.mergeMessages([item]);
-            this.scrollChat();
+            return {
+              key: 'id-' + id,
+              id: id,
+              username: username,
+              text: text,
+              createdTime: createdTime,
+              sortTime: time
+            };
           },
           mergeMessages: function (items) {
             var page = this;
@@ -208,64 +484,148 @@
             var merged = [];
             page.messages.concat(items.slice(0, 500)).forEach(function (item) {
               var normalized = page.normalizeMessage(item);
-              if (!normalized) return;
-              if (!byId[normalized.id]) { byId[normalized.id] = normalized; merged.push(normalized); }
+              if (!normalized || byId[normalized.id]) return;
+              byId[normalized.id] = normalized;
+              merged.push(normalized);
             });
-            page.messages.splice.apply(page.messages, [0, page.messages.length].concat(merged));
-            page.sortAndTrimMessages();
-          },
-          sortAndTrimMessages: function () {
-            this.messages.sort(function (left, right) {
-              var leftTime = left.sortTime;
-              var rightTime = right.sortTime;
-              if (leftTime !== rightTime) return leftTime - rightTime;
+            merged.sort(function (left, right) {
+              if (left.sortTime !== right.sortTime) return left.sortTime - right.sortTime;
               if (left.id.length !== right.id.length) return left.id.length - right.id.length;
               return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
             });
-            if (this.messages.length > 100) this.messages.splice(0, this.messages.length - 100);
+            if (merged.length > 100) merged.splice(0, merged.length - 100);
+            page.messages.splice.apply(page.messages, [0, page.messages.length].concat(merged));
           },
           loadHistory: function () {
             var page = this;
-            if (page.historyRequestActive) return;
+            if (pollingStopped || document.hidden) return;
             if (pollTimer) window.clearTimeout(pollTimer);
             pollTimer = null;
-            page.historyRequestActive = true;
+            if (historyRequest) historyRequest.abort();
             var generation = pollingGeneration;
+            var seq = ++historySeq;
             page.historyLoading = !page.messages.length;
             page.historyError = '';
-            historyRequest = $.ajax({ url: '/api/help/chat/history', type: 'GET', cache: false }).done(function (res) {
-              if (generation !== pollingGeneration) return;
-              if (!res || res.code !== '0' || !Array.isArray(res.data) || res.data.length > 500) { page.historyError = (res && res.msg) || '社区消息返回格式无效。'; return; }
-              page.mergeMessages(res.data);
+            page.connectionState = 'connecting';
+            historyRequest = $.ajax({
+              url: '/api/help/chat/history',
+              type: 'GET',
+              cache: false
+            }).done(function (res) {
+              if (generation !== pollingGeneration || seq !== historySeq) return;
+              if (!res || res.code !== '0' || !Array.isArray(res.data) || res.data.length > 500) {
+                page.messages = [];
+                page.historyError = (res && res.msg) || '社区消息返回格式无效。';
+                page.connectionState = 'error';
+                return;
+              }
+              var normalized = res.data.map(page.normalizeMessage).filter(Boolean);
+              if (normalized.length !== res.data.length) {
+                page.messages = [];
+                page.historyError = '社区消息包含无法识别的数据，已停止展示。';
+                page.connectionState = 'error';
+                return;
+              }
+              page.mergeMessages(normalized);
               page.connectionState = 'connected';
-            }).fail(function (xhr, status) { if (generation === pollingGeneration && status !== 'abort') page.historyError = (xhr.responseJSON && xhr.responseJSON.msg) || '最近社区消息暂时无法读取。'; page.connectionState = 'error'; }).always(function () { if (generation !== pollingGeneration) return; historyRequest = null; page.historyRequestActive = false; page.historyLoading = false; page.schedulePoll(); });
+            }).fail(function (xhr, statusText) {
+              if (generation !== pollingGeneration || seq !== historySeq || statusText === 'abort') return;
+              page.historyError = errorMessage(xhr, '最近社区消息暂时无法读取。');
+              page.connectionState = 'error';
+            }).always(function () {
+              if (generation !== pollingGeneration || seq !== historySeq) return;
+              historyRequest = null;
+              page.historyLoading = false;
+              page.schedulePoll();
+            });
           },
           sendChat: function () {
-            if (this.chatSending || !this.chatText) return;
+            var text = String(this.chatText || '').trim().slice(0, 500);
+            if (this.chatSending || !text) return;
             var page = this;
-            var text = page.chatText.slice(0, 500);
             page.chatSending = true;
             page.chatError = '';
-            $.ajax({ url: '/api/help/chat', type: 'POST', contentType: 'application/json', data: JSON.stringify({ text: text }) }).done(function (res) {
-              if (!res || res.code !== '0' || !res.data) { page.chatError = (res && res.msg) || '消息未能保存。'; return; }
-              page.appendMessage(res.data);
+            $.ajax({
+              url: '/api/help/chat',
+              type: 'POST',
+              contentType: 'application/json',
+              data: JSON.stringify({ text: text })
+            }).done(function (res) {
+              var normalized = res && res.code === '0' ? page.normalizeMessage(res.data) : null;
+              if (!normalized) {
+                page.chatError = (res && res.msg) || '消息保存结果无法识别，输入内容已保留。';
+                return;
+              }
+              page.mergeMessages([normalized]);
               page.chatText = '';
-            }).fail(function (xhr) { page.chatError = (xhr.responseJSON && xhr.responseJSON.msg) || '网络异常，消息未能保存。'; }).always(function () { page.chatSending = false; });
+              page.scrollChat();
+            }).fail(function (xhr) {
+              page.chatError = errorMessage(xhr, '网络异常，消息未能保存；输入内容已保留。');
+            }).always(function () {
+              page.chatSending = false;
+            });
           },
-          schedulePoll: function () { var page = this; if (pollingStopped || document.hidden) return; pollTimer = window.setTimeout(function () { page.loadHistory(); }, pollInterval); },
-          startPolling: function () { pollingStopped = false; if (!document.hidden) this.loadHistory(); },
-          pausePolling: function () { if (pollTimer) window.clearTimeout(pollTimer); pollTimer = null; },
-          stopPolling: function () { pollingStopped = true; pollingGeneration += 1; this.pausePolling(); if (historyRequest) historyRequest.abort(); historyRequest = null; this.historyRequestActive = false; this.historyLoading = false; },
-          isSelf: function (message) { return message.username === this.user.username; },
-          messageInitial: function (message) { return message.username ? String(message.username).slice(0, 1).toUpperCase() : 'U'; },
-          formatTime: function (value) { if (!value) return ''; var date = new Date(typeof value === 'string' ? value.replace(' ', 'T') : value); return isNaN(date.getTime()) ? String(value) : date.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }); },
-          scrollChat: function () { this.$nextTick(function () { if (this.$refs.chatBox) this.$refs.chatBox.scrollTop = this.$refs.chatBox.scrollHeight; }); }
+          schedulePoll: function () {
+            var page = this;
+            if (pollingStopped || document.hidden) return;
+            if (pollTimer) window.clearTimeout(pollTimer);
+            pollTimer = window.setTimeout(function () {
+              page.loadHistory();
+            }, pollInterval);
+          },
+          startPolling: function () {
+            pollingStopped = false;
+            pollingGeneration += 1;
+            if (!document.hidden) this.loadHistory();
+          },
+          suspendPolling: function () {
+            pollingGeneration += 1;
+            if (pollTimer) window.clearTimeout(pollTimer);
+            pollTimer = null;
+            if (historyRequest) historyRequest.abort();
+            historyRequest = null;
+            this.historyLoading = false;
+          },
+          stopPolling: function () {
+            pollingStopped = true;
+            this.suspendPolling();
+          },
+          isSelf: function (message) {
+            return message.username === this.user.username;
+          },
+          messageInitial: function (message) {
+            return message.username ? String(message.username).slice(0, 1).toUpperCase() : 'U';
+          },
+          formatTime: function (value) {
+            if (!value) return '';
+            var date = new Date(String(value).replace(' ', 'T'));
+            return isNaN(date.getTime())
+              ? String(value)
+              : date.toLocaleString('zh-CN', {
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+          },
+          scrollChat: function () {
+            this.$nextTick(function () {
+              if (this.$refs.chatBox) this.$refs.chatBox.scrollTop = this.$refs.chatBox.scrollHeight;
+            });
+          }
         }
       });
-      document.addEventListener('visibilitychange', function () { if (document.hidden) vm.pausePolling(); else vm.startPolling(); });
-      window.addEventListener('pagehide', function () { vm.stopPolling(); });
-      window.addEventListener('beforeunload', function () { vm.stopPolling(); }, { once: true });
-      window.addEventListener('pageshow', function () { vm.startPolling(); });
+
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden) vm.suspendPolling();
+        else vm.startPolling();
+      });
+      window.addEventListener('pagehide', function () {
+        vm.stopPolling();
+      });
+      window.addEventListener('pageshow', function () {
+        vm.startPolling();
+      });
     }
   });
 })();

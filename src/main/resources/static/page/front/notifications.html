@@ -1,27 +1,397 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="查看领养、救助、凭证和回访的站内消息"><title>消息通知 · 归途计划</title><link rel="stylesheet" href="../../css/product-ui.css?v=20260731a"></head>
-<body>
-<div id="authWait" class="ui-state" role="status"><div><span class="ui-state-mark ui-skeleton"></span><h2>正在验证登录状态</h2></div></div>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="查看领养、救助、材料和志愿服务的站内状态通知">
+  <title>消息通知 · 归途计划</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
+  <link rel="stylesheet" href="../../css/product-ui.css?v=20260731d">
+</head>
+<body class="ui-user-rescue-page ui-notifications-page">
+<div id="authWait" class="ui-auth-wait" role="status">正在验证登录状态...</div>
 <div id="app" v-cloak>
   <front-site-header :user="user"></front-site-header>
-  <main class="ui-container ui-workspace"><div class="ui-workspace-grid">
-    <nav class="ui-side-nav" aria-label="个人业务导航"><strong>我的行动</strong><a href="./my_adopt.html">领养申请</a><a class="is-active" href="./notifications.html">消息通知 <span v-if="unread" class="ui-notification-count">{{ unread>99?'99+':unread }}</span></a><a href="./my_visit.html">回访记录</a><a href="./my_volunteer.html">志愿服务</a><a href="./my_rescue.html">救助记录</a></nav>
-    <section><div class="ui-panel-head"><div><p class="ui-eyebrow">YOUR ACTIONS · IN ONE PLACE</p><h1 style="margin:0 0 8px;font-size:38px;letter-spacing:-.05em">消息通知</h1><p>审核、材料、救助和回访状态变化都会在这里留下可追溯提醒。</p></div><button v-if="unread" class="ui-button is-ghost" type="button" :disabled="markingAll" @click="markAll">{{ markingAll?'正在处理…':'全部标为已读' }}</button></div>
-      <div class="ui-toolbar"><label style="display:flex;align-items:center;gap:10px"><input type="checkbox" v-model="unreadOnly" @change="load(1)">只看未读</label><span>共 {{ total }} 条消息</span></div>
-      <div v-if="loading" class="ui-state"><div><span class="ui-state-mark ui-skeleton"></span><h2>正在加载消息</h2></div></div>
-      <div v-else-if="error" class="ui-state" role="alert"><div><span class="ui-state-mark">!</span><h2>消息暂时无法加载</h2><p>{{ error }}</p><button class="ui-button is-dark" @click="load(pageNum)">重新加载</button></div></div>
-      <div v-else-if="items.length===0" class="ui-state"><div><span class="ui-state-mark">✓</span><h2>{{ unreadOnly?'没有未读消息':'暂时没有消息' }}</h2><p>新的业务进度会自动出现在这里。</p></div></div>
-      <div v-else class="ui-notification-list"><article v-for="item in items" :key="item.id" class="ui-notification-card" :class="{'is-unread':Number(item.readFlag)===0}"><span class="ui-notification-dot" aria-hidden="true"></span><div class="ui-notification-copy"><strong>{{ item.title || '状态更新' }}</strong><p>{{ item.summary || '业务状态已更新' }}</p><span class="ui-notification-meta">{{ item.createdAt }}</span></div><button class="ui-button is-ghost" type="button" @click="open(item)">查看</button></article></div>
-      <div v-if="pages>1" class="ui-pagination"><span>第 {{ pageNum }} 页</span><div class="ui-page-buttons"><button :disabled="pageNum<=1" @click="load(pageNum-1)">‹</button><button :disabled="pageNum>=pages" @click="load(pageNum+1)">›</button></div></div>
-    </section>
-  </div></main>
+
+  <main class="ui-container ui-workspace ui-notification-workspace">
+    <div class="ui-workspace-grid">
+      <nav class="ui-side-nav" aria-label="个人业务导航">
+        <strong>我的行动</strong>
+        <a href="./my_adopt.html">领养申请</a>
+        <a class="is-active" href="./notifications.html" aria-current="page">
+          消息通知
+          <span v-if="unread!==null && unread>0" class="ui-notification-count">{{ unread>99?'99+':unread }}</span>
+        </a>
+        <a href="./my_rescue.html">救助记录</a>
+        <a href="./my_visit.html">回访记录</a>
+        <a href="./my_volunteer.html">志愿服务</a>
+      </nav>
+
+      <section class="ui-notification-main" aria-labelledby="notificationTitle">
+        <header class="ui-notification-head">
+          <div>
+            <p class="ui-eyebrow">TRACEABLE UPDATES</p>
+            <h1 id="notificationTitle">消息通知</h1>
+            <p>领养、材料、救助和志愿服务的真实状态变化，按时间留在同一个收件箱。</p>
+          </div>
+          <div class="ui-notification-counter" :class="{'has-error':!!countError}">
+            <span>未读消息</span>
+            <strong v-if="countLoading">…</strong>
+            <strong v-else-if="unread!==null">{{ unread>999?'999+':unread }}</strong>
+            <strong v-else>—</strong>
+            <button v-if="countError" type="button" @click="loadUnreadCount">重试统计</button>
+          </div>
+        </header>
+
+        <div class="ui-notification-toolbar">
+          <label class="ui-notification-filter" for="unreadOnly">
+            <input id="unreadOnly" type="checkbox" v-model="unreadOnly" @change="load(1)">
+            <span aria-hidden="true"></span>
+            <strong>只看未读</strong>
+          </label>
+          <div class="ui-notification-toolbar-meta">
+            <span v-if="!loading && !error">共 {{ total }} 条消息</span>
+            <button v-if="unread!==null && unread>0" id="markAllNotifications"
+                    class="ui-button is-ghost" type="button" :disabled="markingAll" @click="markAll">
+              {{ markingAll ? '正在标记…' : '全部标为已读' }}
+            </button>
+          </div>
+        </div>
+
+        <div v-if="actionError" ref="actionError" class="ui-form-alert ui-notification-action-error"
+             role="alert" aria-live="assertive" tabindex="-1">{{ actionError }}</div>
+
+        <div v-if="loading" class="ui-state" role="status">
+          <div><span class="ui-state-mark ui-skeleton"></span><h2>正在加载消息</h2><p>正在按当前账号读取站内通知。</p></div>
+        </div>
+        <div v-else-if="error" class="ui-state" role="alert">
+          <div>
+            <span class="ui-state-mark">!</span>
+            <h2>消息暂时无法加载</h2>
+            <p>{{ error }}</p>
+            <button class="ui-button is-dark" type="button" @click="load(pageNum)">重新加载</button>
+          </div>
+        </div>
+        <div v-else-if="items.length===0" class="ui-state">
+          <div>
+            <span class="ui-state-mark">✓</span>
+            <h2>{{ unreadOnly ? '没有未读消息' : '暂时没有消息' }}</h2>
+            <p>{{ unreadOnly ? '当前消息均已处理，你可以取消筛选查看历史。' : '新的业务进度会自动出现在这里。' }}</p>
+          </div>
+        </div>
+
+        <div v-else class="ui-notification-list">
+          <article v-for="item in items" :key="String(item.id)" class="ui-notification-card"
+                   :class="{'is-unread':Number(item.readFlag)===0}">
+            <div class="ui-notification-rail" aria-hidden="true">
+              <span></span>
+              <i></i>
+            </div>
+            <div class="ui-notification-copy">
+              <div class="ui-notification-card-top">
+                <span class="ui-notification-type">{{ typeLabel(item.type) }}</span>
+                <time>{{ formatTime(item.createdAt) || '时间未记录' }}</time>
+              </div>
+              <h2>{{ item.title || '状态更新' }}</h2>
+              <p>{{ item.summary || '业务状态已更新，请打开对应页面查看。' }}</p>
+              <span class="ui-notification-read-state">{{ Number(item.readFlag)===0 ? '未读' : '已读' }}</span>
+            </div>
+            <div class="ui-notification-actions">
+              <button class="ui-button" :class="Number(item.readFlag)===0?'is-primary':'is-ghost'"
+                      type="button" :disabled="!!readLocks[String(item.id)]"
+                      @click="openNotification(item)">
+                {{ readLocks[String(item.id)] ? '处理中…' : safeTargetUrl(item.targetUrl) ? '查看进度' : Number(item.readFlag)===0 ? '标为已读' : '已处理' }}
+              </button>
+            </div>
+          </article>
+        </div>
+
+        <div v-if="!loading && !error && pages>1" class="ui-pagination">
+          <span>第 {{ pageNum }} 页，共 {{ total }} 条消息</span>
+          <div class="ui-page-buttons">
+            <button type="button" :disabled="pageNum<=1" @click="load(pageNum-1)">上一页</button>
+            <button v-for="page in pageNumbers" :key="page" type="button"
+                    :class="{'is-current':page===pageNum}"
+                    :aria-current="page===pageNum?'page':null" @click="load(page)">{{ page }}</button>
+            <button type="button" :disabled="pageNum>=pages" @click="load(pageNum+1)">下一页</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
   <front-site-footer></front-site-footer>
 </div>
-<script src="../../js/jquery.min.js"></script><script src="../../js/vue.min.js"></script>
+
+<script src="../../js/jquery.min.js"></script>
+<script src="../../js/vue.min.js"></script>
 <script src="../../js/user-workspace.js?v=20260731a"></script>
-<script src="../../js/front-shell.js?v=20260731a"></script><script src="../../js/auth-session.js?v=20260729"></script>
+<script src="../../js/front-shell.js?v=20260731a"></script>
+<script src="../../js/auth-session.js?v=20260729"></script>
 <script>
-AuthSession.bootstrap({requireAuth:true,allowCachedOnNetworkError:false,onDone:function(ok,user){if(!ok||!user)return;document.getElementById('authWait').hidden=true;new Vue({el:'#app',data:{user:user,items:[],loading:true,error:'',pageNum:1,pageSize:20,total:0,pages:1,unread:0,unreadOnly:false,markingAll:false},computed:{userInitial(){return this.user.username?this.user.username.slice(0,1).toUpperCase():'U';}},created(){this.refreshCount();this.load(1);},methods:{refreshCount(){$.get('/api/notifications/unread-count').done(res=>{if(res&&res.code==='0')this.unread=Number(res.data||0);});},load(page){this.loading=true;this.error='';this.pageNum=page;$.ajax({url:'/api/notifications',type:'GET',data:{pageNum:page,pageSize:this.pageSize,unreadOnly:this.unreadOnly}}).done(res=>{if(res&&res.code==='0'&&res.data){this.items=res.data.records||[];this.total=Number(res.data.total||0);this.pages=Math.max(1,Number(res.data.pages||1));}else this.error=(res&&res.msg)||'消息加载失败';}).fail(xhr=>{this.error=(xhr.responseJSON&&xhr.responseJSON.msg)||'消息加载失败，请稍后重试。';}).always(()=>{this.loading=false;});},open(item){var go=()=>{if(item.targetUrl&&String(item.targetUrl).startsWith('/page/'))location.assign(item.targetUrl);};if(Number(item.readFlag)===1){go();return;}$.ajax({url:'/api/notifications/'+encodeURIComponent(item.id)+'/read',type:'PUT'}).always(go);},markAll(){this.markingAll=true;$.ajax({url:'/api/notifications/read-all',type:'PUT'}).done(res=>{if(res&&res.code==='0'){this.unread=0;this.load(1);}}).always(()=>{this.markingAll=false;});}}});}});
+(function () {
+  'use strict';
+
+  var ALLOWED_TARGETS = Object.freeze({
+    '/page/front/my_adopt.html': 'none',
+    '/page/front/my_rescue.html': 'none',
+    '/page/front/volunteer_tasks.html': 'none',
+    '/page/front/adopt_proof.html': 'aid'
+  });
+
+  function canonicalId(value) {
+    var text = String(value == null ? '' : value);
+    return /^[1-9][0-9]*$/.test(text) ? text : '';
+  }
+
+  function exactSuccess(res) {
+    return !!res && res.code === '0' && res.data === true;
+  }
+
+  function errorMessage(xhr, fallback) {
+    return xhr && xhr.responseJSON && xhr.responseJSON.msg
+      ? String(xhr.responseJSON.msg)
+      : fallback;
+  }
+
+  AuthSession.bootstrap({
+    requireAuth: true,
+    allowCachedOnNetworkError: false,
+    onDone: function (ok, authenticatedUser) {
+      if (!ok || !authenticatedUser) return;
+      document.getElementById('authWait').hidden = true;
+
+      new Vue({
+        el: '#app',
+        data: {
+          user: authenticatedUser,
+          items: [],
+          loading: true,
+          error: '',
+          pageNum: 1,
+          pageSize: 20,
+          total: 0,
+          pages: 1,
+          unread: null,
+          countLoading: true,
+          countError: '',
+          unreadOnly: false,
+          markingAll: false,
+          readLocks: {},
+          actionError: '',
+          listRequest: null,
+          countRequest: null,
+          listSeq: 0,
+          countSeq: 0
+        },
+        computed: {
+          pageNumbers: function () {
+            var result = [];
+            var start = Math.max(1, this.pageNum - 2);
+            var end = Math.min(this.pages, start + 4);
+            start = Math.max(1, end - 4);
+            for (var page = start; page <= end; page += 1) result.push(page);
+            return result;
+          }
+        },
+        created: function () {
+          this.loadUnreadCount();
+          this.load(1);
+        },
+        beforeDestroy: function () {
+          if (this.listRequest) this.listRequest.abort();
+          if (this.countRequest) this.countRequest.abort();
+        },
+        methods: {
+          loadUnreadCount: function () {
+            if (this.countRequest) this.countRequest.abort();
+            var view = this;
+            var seq = ++view.countSeq;
+            view.countLoading = true;
+            view.countError = '';
+            view.countRequest = $.ajax({
+              url: '/api/notifications/unread-count',
+              type: 'GET',
+              cache: false
+            }).done(function (res) {
+              if (seq !== view.countSeq) return;
+              var value = res && res.code === '0' ? Number(res.data) : NaN;
+              if (!Number.isSafeInteger(value) || value < 0) {
+                view.unread = null;
+                view.countError = (res && res.msg) || '未读统计返回格式无效。';
+                return;
+              }
+              view.unread = value;
+            }).fail(function (xhr, statusText) {
+              if (seq !== view.countSeq || statusText === 'abort') return;
+              view.unread = null;
+              view.countError = errorMessage(xhr, '未读统计暂时无法获取。');
+            }).always(function () {
+              if (seq !== view.countSeq) return;
+              view.countRequest = null;
+              view.countLoading = false;
+            });
+          },
+          load: function (requestedPage) {
+            var page = Math.max(1, Number(requestedPage) || 1);
+            if (this.listRequest) this.listRequest.abort();
+            var view = this;
+            var seq = ++view.listSeq;
+            view.loading = true;
+            view.error = '';
+            view.actionError = '';
+            view.listRequest = $.ajax({
+              url: '/api/notifications',
+              type: 'GET',
+              data: {
+                pageNum: page,
+                pageSize: view.pageSize,
+                unreadOnly: view.unreadOnly
+              },
+              cache: false
+            }).done(function (res) {
+              if (seq !== view.listSeq) return;
+              if (!res || res.code !== '0' || !res.data || !Array.isArray(res.data.records)) {
+                view.clearList();
+                view.error = (res && res.msg) || '消息返回格式无法识别。';
+                return;
+              }
+              view.items = res.data.records;
+              view.pageNum = Math.max(1, Number(res.data.current || page));
+              view.total = Math.max(0, Number(res.data.total || 0));
+              view.pages = Math.max(1, Number(res.data.pages || 1));
+            }).fail(function (xhr, statusText) {
+              if (seq !== view.listSeq || statusText === 'abort') return;
+              view.clearList();
+              view.error = errorMessage(xhr, '消息加载失败，请稍后重试。');
+            }).always(function () {
+              if (seq !== view.listSeq) return;
+              view.listRequest = null;
+              view.loading = false;
+            });
+          },
+          clearList: function () {
+            this.items = [];
+            this.total = 0;
+            this.pages = 1;
+          },
+          typeLabel: function (value) {
+            return {
+              adopt: '领养进度',
+              proof: '材料审核',
+              help: '救助进度',
+              volunteer_task: '志愿服务'
+            }[String(value || '')] || '业务更新';
+          },
+          formatTime: function (value) {
+            if (!value) return '';
+            var date = new Date(String(value).replace(' ', 'T'));
+            return isNaN(date.getTime()) ? String(value) : date.toLocaleString('zh-CN');
+          },
+          safeTargetUrl: function (value) {
+            var raw = String(value || '');
+            if (!raw || raw.indexOf('\\') >= 0 || raw.indexOf('#') >= 0 || raw.indexOf('%') >= 0
+                || !raw.startsWith('/') || raw.startsWith('//')) return '';
+            var parsed;
+            try {
+              parsed = new URL(raw, window.location.origin);
+            } catch (ignore) {
+              return '';
+            }
+            if (parsed.origin !== window.location.origin
+                || parsed.username
+                || parsed.password
+                || !Object.prototype.hasOwnProperty.call(ALLOWED_TARGETS, parsed.pathname)) return '';
+            var queryRule = ALLOWED_TARGETS[parsed.pathname];
+            if (queryRule === 'none') {
+              return parsed.search ? '' : parsed.pathname;
+            }
+            if (queryRule === 'aid') {
+              var keys = [];
+              parsed.searchParams.forEach(function (_, key) { keys.push(key); });
+              var aid = canonicalId(parsed.searchParams.get('aid'));
+              if (keys.length !== 1 || keys[0] !== 'aid' || !aid) return '';
+              return parsed.pathname + '?aid=' + encodeURIComponent(aid);
+            }
+            return '';
+          },
+          openNotification: function (item) {
+            var id = canonicalId(item && item.id);
+            if (!id) {
+              this.showActionError('通知编号无效，无法处理。');
+              return;
+            }
+            var target = this.safeTargetUrl(item.targetUrl);
+            if (Number(item.readFlag) === 1) {
+              if (target) window.location.assign(target);
+              else this.showActionError('该通知没有可安全打开的业务页面。');
+              return;
+            }
+            if (this.readLocks[id]) return;
+            var view = this;
+            view.$set(view.readLocks, id, true);
+            view.actionError = '';
+            $.ajax({
+              url: '/api/notifications/' + encodeURIComponent(id) + '/read',
+              type: 'PUT'
+            }).done(function (res) {
+              if (!exactSuccess(res)) {
+                view.showActionError((res && res.msg) || '通知未能标记为已读。');
+                return;
+              }
+              view.$set(item, 'readFlag', 1);
+              if (view.unread !== null && view.unread > 0) view.unread -= 1;
+              if (view.unreadOnly) {
+                view.items = view.items.filter(function (row) {
+                  return canonicalId(row.id) !== id;
+                });
+                view.total = Math.max(0, view.total - 1);
+              }
+              if (target) window.location.assign(target);
+            }).fail(function (xhr) {
+              view.showActionError(errorMessage(xhr, '通知未能标记为已读，请重试。'));
+            }).always(function () {
+              view.$delete(view.readLocks, id);
+            });
+          },
+          markAll: function () {
+            if (this.markingAll || this.unread === null || this.unread <= 0) return;
+            var view = this;
+            view.markingAll = true;
+            view.actionError = '';
+            $.ajax({
+              url: '/api/notifications/read-all',
+              type: 'PUT'
+            }).done(function (res) {
+              if (!exactSuccess(res)) {
+                view.showActionError((res && res.msg) || '全部标记未能完成。');
+                return;
+              }
+              view.unread = 0;
+              if (view.unreadOnly) {
+                view.clearList();
+              } else {
+                view.items.forEach(function (item) {
+                  view.$set(item, 'readFlag', 1);
+                });
+              }
+            }).fail(function (xhr) {
+              view.showActionError(errorMessage(xhr, '全部标记未能完成，请重试。'));
+            }).always(function () {
+              view.markingAll = false;
+            });
+          },
+          showActionError: function (message) {
+            this.actionError = String(message || '操作未完成。');
+            this.$nextTick(function () {
+              if (this.$refs.actionError) this.$refs.actionError.focus();
+            });
+          }
+        }
+      });
+    }
+  });
+})();
 </script>
-</body></html>
+</body>
+</html>

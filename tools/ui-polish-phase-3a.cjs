@@ -29,7 +29,11 @@ const PUBLIC_PAGES = new Set([
 const ADOPTION_PAGES = new Set([
   'adopt_apply.html', 'adopt_proof.html', 'my_adopt.html', 'my_visit.html'
 ]);
+const RESCUE_NOTIFICATION_PAGES = new Set([
+  'rescue_apply.html', 'my_rescue.html', 'notifications.html'
+]);
 function expectedProductCache(file) {
+  if (RESCUE_NOTIFICATION_PAGES.has(file)) return '20260731d';
   if (ADOPTION_PAGES.has(file)) return '20260731c';
   return PUBLIC_PAGES.has(file) ? '20260731b' : '20260731a';
 }
@@ -281,8 +285,14 @@ async function staticAudit() {
   for (const file of PAGES) {
     const html = fs.readFileSync(path.join(frontDir, file), 'utf8');
     const prefix = `static-${safeName(file)}`;
-    assert(`${prefix}-header`, (html.match(/<front-site-header\b/g) || []).length === 1 && !/<header\b/i.test(html), 'shared header');
-    assert(`${prefix}-footer`, (html.match(/<front-site-footer\b/g) || []).length === 1 && !/<footer\b/i.test(html), 'shared footer');
+    const beforeMain = html.split(/<main\b/i)[0];
+    const afterMain = html.split(/<\/main>/i).slice(1).join('</main>');
+    assert(`${prefix}-header`,
+      (html.match(/<front-site-header\b/g) || []).length === 1 && !/<header\b/i.test(beforeMain),
+      'shared header before main; semantic content headers allowed inside main');
+    assert(`${prefix}-footer`,
+      (html.match(/<front-site-footer\b/g) || []).length === 1 && !/<footer\b/i.test(afterMain),
+      'shared footer after main');
     const productCacheVersion = expectedProductCache(file);
     assert(`${prefix}-css-cache`, new RegExp(`product-ui\\.css\\?v=${productCacheVersion}`).test(html), productCacheVersion);
     assert(`${prefix}-workspace-cache`, (html.match(/user-workspace\.js\?v=20260731a/g) || []).length === 1, 'workspace');
