@@ -901,18 +901,38 @@ GPT 确认焦点已过；真实 390×844 复现搜索区空白：
 **基线**: `82e4ff060ed92d4ef89f4f85cca0f5d4e3302b0a`
 **分支**: `ui-polish/phase-2g-finance-notice-governance-20260730`
 **端口**: **18113**（dev；9999 未触碰/未重启）
-**状态**: 最终两项收口 **259/0 strict · ~16.6s**，等待 GPT **最终封存**（**未提交**）
+**状态**: **已封存** · 提交 `c1b6853c506417ba516344195eb2a577bd8f5031`
 
 | 项 | 值 |
 |----|-----|
-| 完成 | **收口通过待封存**（2g **259/0** + 2f 139 + 2e 164 + 2d 224 + 2c 115 + 2b 234 + 2a 173 + 1c 134 + adv **851/0** + `mvn clean test` **473/0/0** + git-diff 0） |
+| 完成 | **已封存推送**（2g **259/0** + 全量回归 + adv **851/0** + mvn **473/0/0**） |
 | 缓存 | account/notice `v=20260730k` |
-| 冲正双击 | 稳定 primary 按钮 + 同帧双 `DOM click`；POST=1；held/released；闸门 **162ms**；action timeout **0** |
-| 320 公告按钮 | `.notice-governance` 操作栏纵向堆叠；文字 Range 左右 inset ≥8px |
-| 严格门禁 | bestEffort=0 · fallback=0 · shots **14=index** · suiteDurationMs≈16580 |
-| 建议提交 | **待 GPT 最终封存审核** |
-| 提交/推送/2H | **否** |
+| 冲正双击 | 稳定 primary + 同帧双 DOM click；闸门 **162ms** |
+| 320 公告按钮 | `.notice-governance` 操作栏纵向堆叠 |
 
-权威: `output/playwright/ui-polish-phase-2g/PHASE-2G-REPORT.md` · `phase-2g-report.json` · `run-strict-final.log` · `screenshots-index.json`
+权威: `output/playwright/ui-polish-phase-2g/PHASE-2G-REPORT.md`
 
-**停止**: 不提交、不推送、不合并 main、不进入 Phase 2H。等待 GPT 最终封存审核。
+### Phase 2H：管理工作台与 AI 管理助手（2026-07-31 · 最后一轮验收返修）
+
+**基线**: `c1b6853c506417ba516344195eb2a577bd8f5031`
+**分支**: `ui-polish/phase-2h-dashboard-agent-workspace-20260731`
+**端口**: **18119**（dev；结束后已释放）
+**状态**: 最后一轮验收返修后专项 **131/0 strict**，等待 GPT 再审（**未提交**）
+
+| 项 | 值 |
+|----|-----|
+| 完成 | **验收返修待审**（2h **131/0** + 2g 259 + 2f–1c 全绿 + adv **851/0** + mvn **473/0/0** + git-diff 0） |
+| 缓存 | index/admin_agent `v=20260731a` |
+| P1（本轮） | **测试连接失败立即撤销 connected/ok**（`applyConfigTestFailure`）；服务商 401 走 app 502 路径；app 401 不混谈；`configSeq` 保护 status 刷新；锁可靠释放 |
+| P1（既有） | 新对话 latest-wins；配置 save/test/clear 互斥；受控确认零请求；统计结构校验；金额转分柱比例 |
+| 测试补齐 | 真实按钮：成功 / 502 provider-reject / 500 / 双击 hold；互斥保留；ask abort+504；嵌套 clear 焦点 |
+| requestCountAudit | success=1 · provider502=1 · 500=1 · double=1 · mutex testPosts=0 · ask abort/504=1 |
+| 截图 | **24** 张含 `24-agent-provider-reject-failed`（失败状态+错误+非已连接） |
+| 角色矩阵 | jerry 隔离；tom 入口过滤；logout→login + me 非 2xx |
+| 严格门禁 | bestEffort=0 · fallback=0 · GET requestfailed 计入 · probes=9 |
+| 建议封存 | **是（待 GPT 独立再审通过后人工提交）** |
+| 提交/推送/Phase 3 | **否** |
+
+权威: `output/playwright/ui-polish-phase-2h/PHASE-2H-REPORT.md` · `phase-2h-report.json` · `run-strict-final.log` · `screenshots-index.json`
+
+**停止**: 不提交、不推送、不合并 main、不进入 Phase 3。等待 GPT 再次独立审核。

@@ -7,11 +7,11 @@
   <title>AI 管理助手 · 归途计划管理</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
   <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c">
-  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260729c">
+  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260731a">
 </head>
 <body>
 <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
-<div id="workspace" :class="{'is-nav-open': mobileOpen}" class="admin-shell" v-cloak @keyup.esc="closeLayers" @click="closeMenus">
+<div id="workspace" :class="{'is-nav-open': mobileOpen}" class="admin-shell agent-workspace" v-cloak @keyup.esc="closeLayers" @click="closeMenus">
   <header class="ui-header admin-header" @click.stop>
     <div class="ui-header-inner">
       <a class="ui-brand" href="/page/end/index.html" aria-label="返回管理工作台">
@@ -95,12 +95,12 @@
       <div>
         <p class="admin-kicker">ADMIN OPERATIONS AGENT</p>
         <h1 id="agentTitle">AI 管理助手</h1>
-        <p>从当前账号获准查看的数据中汇总待办、检查资料并生成审核建议。3C 受控自动审核仅由超级管理员手动运行，绝不自动驳回。</p>
+        <p>从当前账号获准查看的数据中汇总待办、检查资料并生成审核建议。受控自动审核仅由超级管理员手动运行，绝不自动驳回。</p>
       </div>
       <div class="admin-agent-hero-actions">
         <span class="admin-agent-state" :class="statusClass"><i aria-hidden="true"></i>{{ statusLabel }}</span>
-        <button v-if="status.canConfigure" class="ui-button is-ghost admin-agent-automation-open" type="button" @click="openAutomation"><span aria-hidden="true">◎</span> 受控自动审核</button>
-        <button v-if="status.canConfigure" class="ui-button is-dark" type="button" @click="openConfig">配置平台模型</button>
+        <button v-if="status.canConfigure" class="ui-button is-ghost admin-agent-automation-open" type="button" @click="openAutomation($event)"><span aria-hidden="true">◎</span> 受控自动审核</button>
+        <button v-if="status.canConfigure" class="ui-button is-dark" type="button" @click="openConfig($event)">配置平台模型</button>
       </div>
     </section>
 
@@ -115,10 +115,10 @@
     </section>
 
     <section class="admin-agent-layout" aria-label="管理员 AI 工作区">
-      <aside class="admin-agent-history" :class="{'is-open':historyOpen}" aria-label="个人会话历史">
+      <aside id="agentHistoryPanel" class="admin-agent-history" :class="{'is-open':historyOpen}" aria-label="个人会话历史">
         <div class="admin-agent-history-head">
           <div><span>CONVERSATIONS</span><strong>我的管理会话</strong></div>
-          <button class="admin-agent-mobile-close" type="button" aria-label="关闭会话列表" @click="historyOpen=false">×</button>
+          <button class="admin-agent-mobile-close" type="button" aria-label="关闭会话列表" @click="closeHistory()">×</button>
         </div>
         <button class="admin-agent-new" type="button" @click="newConversation"><span aria-hidden="true">＋</span> 新对话</button>
         <div v-if="historyLoading" class="admin-agent-history-empty">正在读取会话…</div>
@@ -129,8 +129,8 @@
               <strong>{{ item.title || '未命名会话' }}</strong><span>{{ item.preview || '暂无摘要' }}</span><small>{{ timeLabel(item.updatedAt) }} · {{ item.turnCount }} 轮</small>
             </button>
             <div class="admin-agent-history-actions">
-              <button type="button" @click="renameConversation(item)" aria-label="修改会话标题">改名</button>
-              <button class="is-danger" type="button" @click="deleteConversation(item)" aria-label="删除会话"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-trash" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-trash"></use></svg>删除</button>
+              <button type="button" @click="openRename(item, $event)" aria-label="修改会话标题">改名</button>
+              <button class="is-danger" type="button" @click="openDelete(item, $event)" aria-label="删除会话"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-trash" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-trash"></use></svg>删除</button>
             </div>
           </article>
         </div>
@@ -139,7 +139,7 @@
 
       <section class="admin-agent-chat" aria-labelledby="conversationTitle">
         <header class="admin-agent-chat-head">
-          <button class="admin-agent-history-toggle" type="button" @click="historyOpen=true" aria-label="打开会话列表">☰</button>
+          <button class="admin-agent-history-toggle" type="button" @click="openHistory($event)" :aria-expanded="String(historyOpen)" aria-controls="agentHistoryPanel" aria-label="打开会话列表">☰</button>
           <div><span>{{ activeConversationId ? 'ACTIVE CONVERSATION' : 'NEW CONVERSATION' }}</span><h2 id="conversationTitle">{{ activeTitle || '新对话' }}</h2></div>
           <span class="admin-agent-readonly-badge">只读分析</span>
         </header>
@@ -177,19 +177,19 @@
       <aside class="admin-agent-safety" aria-label="Agent 安全边界">
         <p class="admin-kicker">SAFETY BOUNDARY</p><h2>人类保留决定权</h2>
         <ul><li><strong>只读工具</strong><span>仅查询获准模块，不写入业务数据。</span></li><li><strong>隐私最小化</strong><span>不向模型发送电话、微信、API Key 或精确住址。</span></li><li><strong>逐次审计</strong><span>记录提问、工具名和结果状态。</span></li></ul>
-        <div class="admin-agent-safety-note"><strong>3C 执行边界</strong><p>仅低风险、全部硬规则满足时允许受控自动通过；自动驳回、删除、改角色权限和资金写入仍为禁区。</p></div>
+        <div class="admin-agent-safety-note"><strong>自动审核执行边界</strong><p>仅低风险、全部硬规则满足时允许受控自动通过；自动驳回、删除、改角色权限和资金写入仍为禁区。</p></div>
       </aside>
     </section>
   </main>
 
-  <div v-if="automationOpen" class="admin-dialog-backdrop" role="presentation" @mousedown.self="closeAutomation">
+  <div v-if="automationOpen" class="admin-dialog-backdrop" role="presentation" @click.self="onBackdropAutomation">
     <section class="admin-dialog admin-agent-automation-dialog" role="dialog" aria-modal="true" aria-labelledby="automationTitle">
       <div class="admin-dialog-head admin-agent-automation-head">
-        <div><span>HUMAN-CONTROLLED AUTOMATION · PHASE 3C</span><h2 id="automationTitle">受控自动审核</h2><p>由超级管理员手动启动的小批量审核。没有定时后台任务，也不会自动驳回。</p></div>
+        <div><span>HUMAN-CONTROLLED AUTOMATION</span><h2 id="automationTitle">受控自动审核</h2><p>由超级管理员手动启动的小批量审核。没有定时后台任务，也不会自动驳回。</p></div>
         <button class="admin-dialog-close" type="button" :disabled="automationBusy" @click="closeAutomation"><span aria-hidden="true">×</span><span class="ui-sr-only">关闭</span></button>
       </div>
       <div class="admin-dialog-body admin-agent-automation-body">
-        <div v-if="automationLoading" class="admin-agent-automation-loading" role="status">正在读取 3C 控制状态…</div>
+        <div v-if="automationLoading" class="admin-agent-automation-loading" role="status">正在读取 自动审核控制状态…</div>
         <template v-else>
           <section class="admin-agent-automation-command" aria-label="自动审核配置">
             <div class="admin-agent-automation-command-main">
@@ -200,7 +200,7 @@
             <label class="admin-agent-automation-switch">
               <input v-model="automationForm.enabled" type="checkbox" :disabled="automationBusy">
               <span aria-hidden="true"></span>
-              <strong>{{ automationForm.enabled ? '3C 已开启' : '3C 已停用' }}</strong>
+              <strong>{{ automationForm.enabled ? '自动审核已开启' : '自动审核已停用' }}</strong>
               <small>{{ automationForm.enabled ? '仍需手动点击运行' : '不会调用模型或改变申请状态' }}</small>
             </label>
           </section>
@@ -238,7 +238,7 @@
 
           <section class="admin-agent-automation-runs" aria-labelledby="automationRunsTitle">
             <div class="admin-agent-automation-section-head"><div><p class="admin-kicker">RUN LEDGER</p><h3 id="automationRunsTitle">最近运行与逐条证据</h3></div><span>所有记录均不含电话、地址与完整问卷</span></div>
-            <div v-if="!automationRuns.length" class="admin-agent-automation-empty">还没有 3C 运行记录。建议先保存影子模式并手动运行一次。</div>
+            <div v-if="!automationRuns.length" class="admin-agent-automation-empty">还没有 自动审核运行记录。建议先保存影子模式并手动运行一次。</div>
             <div v-else class="admin-agent-run-list">
               <button v-for="run in automationRuns" :key="run.id" type="button" class="admin-agent-run-row" :class="{'is-active':automationCurrent&&String(automationCurrent.run.id)===String(run.id)}" @click="loadAutomationRun(run.id)">
                 <span class="admin-agent-run-mode">{{ automationModeLabel(run.mode) }}</span><strong>批次 #{{ run.id }}</strong><small>{{ timeLabel(run.startedAt) }}</small>
@@ -264,7 +264,7 @@
     </section>
   </div>
 
-  <div v-if="configOpen" class="admin-dialog-backdrop" role="presentation" @mousedown.self="closeConfig">
+  <div v-if="configOpen" class="admin-dialog-backdrop" role="presentation" @click.self="onBackdropConfig">
     <section class="admin-dialog admin-agent-config-dialog" role="dialog" aria-modal="true" aria-labelledby="configTitle">
       <div class="admin-dialog-head"><div><span>PLATFORM MODEL CONNECTION</span><h2 id="configTitle">配置平台真实模型</h2></div><button class="admin-dialog-close" type="button" :disabled="configBusy" @click="closeConfig"><span aria-hidden="true">×</span><span class="ui-sr-only">关闭</span></button></div>
       <form class="admin-edit-form" @submit.prevent="saveConfig">
@@ -279,70 +279,568 @@
           <div class="admin-agent-config-state" :class="{'is-error':configError}"><strong>{{ configError ? '操作失败' : statusLabel }}</strong><span>{{ configError || configMessage || status.connectionMessage || '保存后请执行一次真实连接测试。' }}</span></div>
         </div>
         <div class="admin-dialog-actions">
-          <button v-if="status.configured" class="ui-button is-danger" type="button" :disabled="configBusy" @click="clearConfig">清除配置</button>
+          <button v-if="status.configured" class="ui-button is-danger" type="button" :disabled="configBusy" @click="openClearConfig($event)">清除配置</button>
           <button class="ui-button is-ghost" type="button" :disabled="configBusy||!status.configured||!status.enabled" @click="testConfig">{{ testing ? '正在测试…' : '测试连接' }}</button>
           <button class="ui-button is-primary" type="submit" :disabled="configBusy">{{ saving ? '正在保存…' : '保存平台配置' }}</button>
         </div>
       </form>
     </section>
   </div>
-</div>
 
+  <div v-if="historyOpen" class="admin-agent-history-scrim" @click="closeHistory" aria-hidden="true"></div>
+
+  <div v-if="renameOpen" class="admin-dialog-backdrop" @click.self="onBackdropRename">
+    <section class="admin-dialog" role="dialog" aria-modal="true" aria-labelledby="agentRenameTitle">
+      <div class="admin-dialog-head">
+        <div><span>会话标题</span><h2 id="agentRenameTitle">修改会话标题</h2></div>
+        <button class="admin-dialog-close" type="button" :disabled="renameSaving" @click="cancelRename" aria-label="关闭">关闭</button>
+      </div>
+      <div class="admin-dialog-body">
+        <div class="ui-form-field">
+          <label for="agentRenameInput">标题 <small>必填，最多 60 字</small></label>
+          <input id="agentRenameInput" ref="renameFirst" v-model.trim="renameTitle" class="ui-form-input" maxlength="60"
+                 :aria-invalid="String(!!renameError)" :aria-describedby="renameError ? 'agentRenameError' : null" :disabled="renameSaving" />
+          <p v-if="renameError" id="agentRenameError" class="ui-field-error" role="alert">{{ renameError }}</p>
+        </div>
+      </div>
+      <div class="admin-dialog-actions">
+        <button class="ui-button is-ghost" type="button" :disabled="renameSaving" @click="cancelRename">取消</button>
+        <button class="ui-button is-primary" type="button" :disabled="renameSaving" @click="confirmRename">{{ renameSaving ? '正在保存…' : '保存标题' }}</button>
+      </div>
+    </section>
+  </div>
+
+  <div v-if="deleteOpen" class="admin-dialog-backdrop" @click.self="onBackdropDelete">
+    <section class="admin-dialog" role="alertdialog" aria-modal="true" aria-labelledby="agentDeleteTitle">
+      <div class="admin-dialog-head">
+        <div><span>不可恢复</span><h2 id="agentDeleteTitle">删除会话？</h2></div>
+        <button class="admin-dialog-close" type="button" :disabled="deleteSaving" @click="cancelDelete" aria-label="关闭">关闭</button>
+      </div>
+      <div class="admin-dialog-body">
+        <p class="admin-dialog-copy">将删除「{{ deleteItem && (deleteItem.title || '未命名会话') }}」及其全部问答，不可恢复。</p>
+        <div v-if="deleteError" id="agentDeleteError" class="admin-inline-message is-error" role="alert" tabindex="-1">{{ deleteError }}</div>
+      </div>
+      <div class="admin-dialog-actions">
+        <button class="ui-button is-ghost" type="button" :disabled="deleteSaving" @click="cancelDelete">取消</button>
+        <button class="ui-button is-primary" type="button" :disabled="deleteSaving" @click="confirmDelete">{{ deleteSaving ? '正在删除…' : '确认删除' }}</button>
+      </div>
+    </section>
+  </div>
+
+  <div v-if="clearOpen" class="admin-dialog-backdrop" @click.self="onBackdropClear">
+    <section class="admin-dialog" role="alertdialog" aria-modal="true" aria-labelledby="agentClearTitle">
+      <div class="admin-dialog-head">
+        <div><span>配置</span><h2 id="agentClearTitle">清除平台模型配置？</h2></div>
+        <button class="admin-dialog-close" type="button" :disabled="clearSaving" @click="cancelClear" aria-label="关闭">关闭</button>
+      </div>
+      <div class="admin-dialog-body">
+        <p class="admin-dialog-copy">清除后所有管理员将无法使用真实 Agent。历史会话不会删除。</p>
+        <div v-if="clearError" id="agentClearError" class="admin-inline-message is-error" role="alert" tabindex="-1">{{ clearError }}</div>
+      </div>
+      <div class="admin-dialog-actions">
+        <button class="ui-button is-ghost" type="button" :disabled="clearSaving" @click="cancelClear">取消</button>
+        <button class="ui-button is-primary" type="button" :disabled="clearSaving" @click="confirmClear">{{ clearSaving ? '正在清除…' : '确认清除' }}</button>
+      </div>
+    </section>
+  </div>
+
+</div>
 <script src="../../js/jquery.min.js"></script><script src="../../js/auth-session.js?v=20260728"></script><script src="../../js/admin-auth.js?v=20260729c"></script><script src="../../js/vue.min.js"></script><script src="../../js/admin-agent-markdown.js?v=20260728b"></script>
 <script>
 (function(){'use strict';
   Vue.component('agent-rich-inline',{functional:true,props:{parts:{type:Array,default:function(){return[];}}},render:function(h,context){return h('span',{class:'admin-agent-rich-inline'},context.props.parts.map(function(part,index){var tag=part.type==='strong'?'strong':(part.type==='code'?'code':'span');return h(tag,{key:index},[part.text||'']);}));}});
   Vue.component('agent-rich-answer',{props:{text:{type:String,default:''}},computed:{blocks:function(){return AdminAgentMarkdown.parse(this.text);}},template:'<div class="admin-agent-rich-answer"><template v-for="(block,bi) in blocks"><h3 v-if="block.type===\'heading\'&&block.level<=2" :key="\'h3-\'+bi"><agent-rich-inline :parts="block.parts"></agent-rich-inline></h3><h4 v-else-if="block.type===\'heading\'" :key="\'h4-\'+bi"><agent-rich-inline :parts="block.parts"></agent-rich-inline></h4><p v-else-if="block.type===\'paragraph\'" :key="\'p-\'+bi"><agent-rich-inline :parts="block.parts"></agent-rich-inline></p><blockquote v-else-if="block.type===\'quote\'" :key="\'q-\'+bi"><agent-rich-inline :parts="block.parts"></agent-rich-inline></blockquote><hr v-else-if="block.type===\'divider\'" :key="\'d-\'+bi"><ol v-else-if="block.type===\'list\'&&block.ordered" :key="\'ol-\'+bi" :start="block.start||1"><li v-for="(item,ii) in block.items" :key="ii"><agent-rich-inline :parts="item"></agent-rich-inline><ul v-if="item.children&&item.children.length"><li v-for="(child,ci) in item.children" :key="ci"><agent-rich-inline :parts="child"></agent-rich-inline></li></ul></li></ol><ul v-else-if="block.type===\'list\'" :key="\'ul-\'+bi"><li v-for="(item,ii) in block.items" :key="ii"><agent-rich-inline :parts="item"></agent-rich-inline><ul v-if="item.children&&item.children.length"><li v-for="(child,ci) in item.children" :key="ci"><agent-rich-inline :parts="child"></agent-rich-inline></li></ul></li></ul><div v-else-if="block.type===\'table\'" class="admin-agent-answer-table" :key="\'t-\'+bi"><table><thead><tr><th v-for="(cell,ci) in block.headers" :key="ci"><agent-rich-inline :parts="cell.parts"></agent-rich-inline></th></tr></thead><tbody><tr v-for="(row,ri) in block.rows" :key="ri"><td v-for="(cell,ci) in row" :key="ci" :data-label="block.headers[ci].plain"><agent-rich-inline :parts="cell"></agent-rich-inline></td></tr></tbody></table></div></template></div>'});
   AuthSession.bootstrap({requireAuth:true,allowCachedOnNetworkError:false,onDone:function(ok,user){if(!ok||!user)return;document.getElementById('authWait').hidden=true;
-    new Vue({el:'#workspace',data:{user:user,menuItems: AdminWorkspace.navigation(user.permission),
-          menuGroups: AdminWorkspace.navigationGroups(user.permission),
-          desktopNav: AdminWorkspace.desktopNavigation(user.permission),
-          currentNavFlag: 'admin_agent',
-          moreOpen: false,mobileOpen:false,accountOpen:false,historyOpen:false,pageError:'',statusLoading:true,status:{configured:false,enabled:false,apiKeyConfigured:false,canConfigure:false,connected:false,connectionStatus:'untested',connectionMessage:'',baseUrl:'',model:'',apiKeyHint:''},overviewLoading:true,overview:{},historyLoading:true,conversationLoading:false,conversations:[],activeConversationId:null,activeTitle:'',turns:[],draft:'',asking:false,askError:'',configOpen:false,saving:false,testing:false,configError:'',configMessage:'',showApiKey:false,configForm:{enabled:true,baseUrl:'',model:'',apiKey:''},automationOpen:false,automationLoading:false,automationSaving:false,automationRunning:false,automationError:'',automationMessage:'',automationRuns:[],automationCurrent:null,automationSavedSignature:'',automationGuardedPhrase:'启用受控自动通过',automationForm:{enabled:false,mode:'shadow',maxBatch:3,expectedVersion:1,acknowledgeNoAutoReject:false,acknowledgeHumanFallback:false,confirmationText:''},quickPrompts:['汇总当前待办并按优先级排序','列出待审核领养申请并提示风险','检查动物档案的数据质量问题','汇总尚未完成的救助请求']},
-      computed:{configBusy:function(){return this.saving||this.testing;},automationBusy:function(){return this.automationSaving||this.automationRunning;},automationDirty:function(){return JSON.stringify([!!this.automationForm.enabled,this.automationForm.mode,Number(this.automationForm.maxBatch)])!==this.automationSavedSignature;},automationPhraseState:function(){var value=(this.automationForm.confirmationText||'').trim();if(!value)return'empty';return value===this.automationGuardedPhrase?'match':'mismatch';},automationPhraseHint:function(){var value=(this.automationForm.confirmationText||'').trim();if(!value)return'这是受控写入确认，需完整输入上方短语。';if(value===this.automationGuardedPhrase)return'确认短语一致，可以保存。';if(value==='启动受控自动通过')return'你输入的是“启动”；第 2 个字应为“用”，请改为“启用”。';return'确认短语不一致，请对照上方内容逐字检查。';},statusLabel:function(){if(this.statusLoading)return'状态读取中';if(this.status.connected)return'真实模型已连接';if(this.status.connectionStatus==='failed')return'连接失败';if(this.status.configured&&this.status.enabled)return'等待连接测试';if(this.status.configured)return'Agent 已停用';return'平台模型未配置';},statusClass:function(){return{'is-connected':this.status.connected,'is-error':this.status.connectionStatus==='failed','is-pending':this.status.configured&&!this.status.connected};},metricCards:function(){var o=this.overview||{};return[{key:'adopt',label:'待审领养',value:this.metric(o.pending_adoptions),note:'需要 adopt 权限'},{key:'proof',label:'待审凭证',value:this.metric(o.pending_proofs),note:'需要 proof 权限'},{key:'volunteer',label:'待审义工',value:this.metric(o.pending_volunteers),note:'需要 volunteer 权限'},{key:'rescue',label:'处理中救助',value:this.metric(o.open_rescues),note:'需要 help / rescue 权限'},{key:'animal',label:'可用动物档案',value:this.metric(o.available_animals),note:'需要 animal 权限'}];}},
-      created:function(){this.loadAll();},
-      methods:{
-          closeMenus: function () { this.mobileOpen = false; this.accountOpen = false; this.moreOpen = false; },
-          toggleMore: function () { this.moreOpen = !this.moreOpen; this.accountOpen = false; this.mobileOpen = false; },
-          toggleMobile: function () { this.mobileOpen = !this.mobileOpen; this.accountOpen = false; this.moreOpen = false; },
-          toggleAccount: function () { this.accountOpen = !this.accountOpen; this.moreOpen = false; this.mobileOpen = false; },
-          isNavActive: function (flag) { return AdminWorkspace.flagsMatch(flag, this.currentNavFlag); },
-          isMoreCurrent: function () { var vm = this; var more = (this.desktopNav && this.desktopNav.more) || []; return more.some(function (item) { return AdminWorkspace.flagsMatch(item.flag, vm.currentNavFlag); }); },
-          isOverviewActive: function () { return !this.currentNavFlag; },
-
-        api:function(options){return $.ajax(Object.assign({contentType:'application/json;charset=UTF-8',cache:false},options));},
-        messageOf:function(res,xhr){if(res&&res.msg)return res.msg;if(xhr&&xhr.responseJSON&&xhr.responseJSON.msg)return xhr.responseJSON.msg;return'请求失败，请稍后重试。';},
-        metric:function(value){return value===null||typeof value==='undefined'?'无权限':Number(value||0);},
-        avatarUrl:function(v){return AdminWorkspace.avatarUrl(v);},avatarFallback:function(e){AdminWorkspace.avatarFallback(e);},logout:function(){AuthSession.logout();},
-        closeLayers:function(){this.mobileOpen=false;this.accountOpen=false;if(this.configOpen&&!this.configBusy)this.closeConfig();if(this.automationOpen&&!this.automationBusy)this.closeAutomation();},
-        loadAll:function(){this.pageError='';this.loadStatus();this.loadOverview();this.loadConversations();},
-        loadStatus:function(){var vm=this;vm.statusLoading=true;vm.api({url:'/api/admin-agent/status',type:'GET'}).done(function(res){if(!res||res.code!=='0'||!res.data){vm.pageError=vm.messageOf(res);return;}vm.status=res.data;}).fail(function(xhr){vm.pageError=vm.messageOf(null,xhr);}).always(function(){vm.statusLoading=false;});},
-        loadOverview:function(){var vm=this;vm.overviewLoading=true;vm.api({url:'/api/admin-agent/overview',type:'GET'}).done(function(res){if(res&&res.code==='0'&&res.data)vm.overview=res.data;else vm.pageError=vm.messageOf(res);}).fail(function(xhr){vm.pageError=vm.messageOf(null,xhr);}).always(function(){vm.overviewLoading=false;});},
-        loadConversations:function(){var vm=this;vm.historyLoading=true;vm.api({url:'/api/admin-agent/conversations?limit=50',type:'GET'}).done(function(res){if(res&&res.code==='0')vm.conversations=Array.isArray(res.data)?res.data:[];}).always(function(){vm.historyLoading=false;});},
-        newConversation:function(){this.activeConversationId=null;this.activeTitle='';this.turns=[];this.askError='';this.historyOpen=false;},
-        openConversation:function(id){var vm=this;vm.conversationLoading=true;vm.askError='';vm.api({url:'/api/admin-agent/conversations/'+encodeURIComponent(id),type:'GET'}).done(function(res){if(!res||res.code!=='0'||!res.data){vm.askError=vm.messageOf(res);return;}vm.activeConversationId=res.data.conversation.id;vm.activeTitle=res.data.conversation.title;vm.turns=Array.isArray(res.data.turns)?res.data.turns:[];vm.historyOpen=false;vm.scrollBottom();}).fail(function(xhr){vm.askError=vm.messageOf(null,xhr);}).always(function(){vm.conversationLoading=false;});},
-        renameConversation:function(item){var title=window.prompt('输入新的会话标题（最多 60 字）',item.title||'');if(title===null)return;title=title.trim();if(!title||title.length>60){window.alert('标题不能为空且不能超过 60 字。');return;}var vm=this;vm.api({url:'/api/admin-agent/conversations/'+encodeURIComponent(item.id)+'/title',type:'PUT',data:JSON.stringify({title:title})}).done(function(res){if(res&&res.code==='0'){if(String(vm.activeConversationId)===String(item.id))vm.activeTitle=res.data.title;vm.loadConversations();}else window.alert(vm.messageOf(res));}).fail(function(xhr){window.alert(vm.messageOf(null,xhr));});},
-        deleteConversation:function(item){if(!window.confirm('删除“'+(item.title||'该会话')+'”及其全部问答？此操作不可恢复。'))return;var vm=this;vm.api({url:'/api/admin-agent/conversations/'+encodeURIComponent(item.id),type:'DELETE'}).done(function(res){if(res&&res.code==='0'){if(String(vm.activeConversationId)===String(item.id))vm.newConversation();vm.loadConversations();}else window.alert(vm.messageOf(res));}).fail(function(xhr){window.alert(vm.messageOf(null,xhr));});},
-        requestId:function(){if(window.crypto&&typeof window.crypto.randomUUID==='function')return window.crypto.randomUUID().replace(/-/g,'');return Date.now().toString(36)+'_'+Math.random().toString(36).slice(2);},
-        ask:function(){var vm=this,q=vm.draft.trim();if(vm.asking||!q||!vm.status.connected)return;vm.asking=true;vm.askError='';var payload={requestId:vm.requestId(),conversationId:vm.activeConversationId,question:q};vm.api({url:'/api/admin-agent/ask',type:'POST',data:JSON.stringify(payload)}).done(function(res){if(!res||res.code!=='0'||!res.data){vm.askError=vm.messageOf(res);return;}vm.activeConversationId=res.data.conversationId;vm.activeTitle=res.data.conversationTitle;vm.turns.push(res.data.turn);vm.draft='';vm.loadConversations();vm.loadOverview();vm.scrollBottom();}).fail(function(xhr){vm.askError=vm.messageOf(null,xhr);vm.loadStatus();}).always(function(){vm.asking=false;});},
-        scrollBottom:function(){var vm=this;vm.$nextTick(function(){if(vm.$refs.messages)vm.$refs.messages.scrollTop=vm.$refs.messages.scrollHeight;});},
-        timeLabel:function(v){if(!v)return'时间未知';var d=new Date(String(v).replace(' ','T'));if(isNaN(d.getTime()))return String(v);var now=new Date();if(d.toDateString()===now.toDateString())return'今天 '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');return(d.getMonth()+1)+'月'+d.getDate()+'日 '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');},
-        toolLabels:function(turn){var map={get_management_overview:'待办概览',list_pending_adoptions:'领养申请',get_adoption_review_context:'领养审核上下文',list_pending_volunteers:'义工申请',list_open_rescues:'救助请求',list_pending_proofs:'领养凭证',get_data_quality_summary:'数据质量'};try{var a=JSON.parse(turn.toolsJson||'[]');return Array.isArray(a)?a.map(function(x){return map[x]||x;}):[];}catch(e){return[];}},
-        openAutomation:function(){if(!this.status.canConfigure)return;this.automationOpen=true;this.automationError='';this.automationMessage='';this.loadAutomation();},
-        closeAutomation:function(){if(!this.automationBusy){this.automationOpen=false;this.automationForm.confirmationText='';}},
-        applyAutomationStatus:function(data){var cfg=data&&data.config?data.config:{enabled:false,mode:'shadow',maxBatch:3,version:1};this.automationRuns=data&&Array.isArray(data.recentRuns)?data.recentRuns:[];this.automationForm={enabled:!!cfg.enabled,mode:cfg.mode||'shadow',maxBatch:Number(cfg.maxBatch||3),expectedVersion:Number(cfg.version||1),acknowledgeNoAutoReject:false,acknowledgeHumanFallback:false,confirmationText:''};this.automationSavedSignature=JSON.stringify([!!cfg.enabled,cfg.mode||'shadow',Number(cfg.maxBatch||3)]);},
-        loadAutomation:function(){var vm=this;vm.automationLoading=true;vm.automationError='';vm.api({url:'/api/admin-agent/automation/status',type:'GET'}).done(function(res){if(!res||res.code!=='0'||!res.data){vm.automationError=vm.messageOf(res);return;}vm.applyAutomationStatus(res.data);if(vm.automationRuns.length)vm.loadAutomationRun(vm.automationRuns[0].id);}).fail(function(xhr){vm.automationError=vm.messageOf(null,xhr);}).always(function(){vm.automationLoading=false;});},
-        saveAutomation:function(){var vm=this;if(vm.automationBusy)return;if(vm.automationForm.enabled&&vm.automationForm.mode==='guarded'&&vm.automationForm.acknowledgeNoAutoReject&&vm.automationForm.acknowledgeHumanFallback&&vm.automationPhraseState!=='match'){vm.automationError=vm.automationPhraseHint;vm.$nextTick(function(){if(vm.$refs.automationPhrase)vm.$refs.automationPhrase.focus();});return;}vm.automationSaving=true;vm.automationError='';vm.automationMessage='';var payload=Object.assign({},vm.automationForm);vm.api({url:'/api/admin-agent/automation/config',type:'POST',data:JSON.stringify(payload)}).done(function(res){if(!res||res.code!=='0'||!res.data){vm.automationError=vm.messageOf(res);return;}vm.applyAutomationStatus(res.data);vm.automationMessage='控制设置已保存。系统不会自动运行，需由超级管理员手动启动。';}).fail(function(xhr){vm.automationError=vm.messageOf(null,xhr);}).always(function(){vm.automationSaving=false;});},
-        runAutomation:function(){var vm=this;if(vm.automationBusy||!vm.automationForm.enabled||!vm.status.connected)return;vm.automationRunning=true;vm.automationError='';vm.automationMessage='正在逐条执行硬规则检查和模型评估，请勿重复提交。';var payload={requestId:vm.requestId()};vm.api({url:'/api/admin-agent/automation/run',type:'POST',data:JSON.stringify(payload),timeout:60000}).done(function(res){if(!res||res.code!=='0'||!res.data){vm.automationError=vm.messageOf(res);return;}vm.automationCurrent=res.data;vm.automationMessage='本批次完成：自动通过 '+Number(res.data.run.autoApprovedCount||0)+'，转人工 '+Number(res.data.run.manualCount||0)+'，自动驳回 0。';vm.loadAutomationRuns();vm.loadOverview();}).fail(function(xhr){vm.automationError=vm.messageOf(null,xhr);}).always(function(){vm.automationRunning=false;});},
-        loadAutomationRuns:function(){var vm=this;vm.api({url:'/api/admin-agent/automation/runs?limit=10',type:'GET'}).done(function(res){if(res&&res.code==='0')vm.automationRuns=Array.isArray(res.data)?res.data:[];});},
-        loadAutomationRun:function(id){var vm=this;vm.api({url:'/api/admin-agent/automation/runs/'+encodeURIComponent(id),type:'GET'}).done(function(res){if(res&&res.code==='0'&&res.data)vm.automationCurrent=res.data;}).fail(function(xhr){vm.automationError=vm.messageOf(null,xhr);});},
-        automationModeLabel:function(v){return v==='guarded'?'受控模式':'影子模式';},automationRunStatus:function(v){return v==='completed'?'已完成':v==='running'?'运行中':'失败';},automationOutcome:function(v){return{shadow:'影子评估',auto_approved:'已自动通过',manual_review:'转人工复核',failed:'处理失败'}[v]||v;},
-        openConfig:function(){if(!this.status.canConfigure)return;this.configError='';this.configMessage='';this.showApiKey=false;this.configForm={enabled:this.status.configured?!!this.status.enabled:true,baseUrl:this.status.baseUrl||'',model:this.status.model||'',apiKey:''};this.configOpen=true;},
-        closeConfig:function(){if(!this.configBusy){this.configOpen=false;this.configForm.apiKey='';this.showApiKey=false;}},
-        saveConfig:function(){var vm=this;vm.saving=true;vm.configError='';vm.configMessage='';vm.api({url:'/api/admin-agent/config',type:'POST',data:JSON.stringify(vm.configForm)}).done(function(res){if(!res||res.code!=='0'||!res.data){vm.configError=vm.messageOf(res);return;}vm.status=res.data;vm.configForm.apiKey='';vm.configMessage='配置已加密保存。启用后请点击“测试连接”确认真实可用。';vm.loadOverview();}).fail(function(xhr){vm.configError=vm.messageOf(null,xhr);}).always(function(){vm.saving=false;});},
-        testConfig:function(){var vm=this;vm.testing=true;vm.configError='';vm.configMessage='';vm.api({url:'/api/admin-agent/config/test',type:'POST',data:'{}'}).done(function(res){if(!res||res.code!=='0'||!res.data){vm.configError=vm.messageOf(res);return;}vm.status=res.data;vm.configMessage='真实模型连接成功，可以开始提问。';}).fail(function(xhr){vm.configError=vm.messageOf(null,xhr);vm.loadStatus();}).always(function(){vm.testing=false;});},
-        clearConfig:function(){if(!window.confirm('清除平台 API 配置？所有管理员将立即无法使用真实 Agent，历史会话不会删除。'))return;var vm=this;vm.saving=true;vm.configError='';vm.api({url:'/api/admin-agent/config/clear',type:'POST',data:'{}'}).done(function(res){if(res&&res.code==='0'){vm.status=res.data;vm.configForm={enabled:true,baseUrl:'',model:'',apiKey:''};vm.configMessage='平台配置已清除，历史会话仍保留。';}else vm.configError=vm.messageOf(res);}).fail(function(xhr){vm.configError=vm.messageOf(null,xhr);}).always(function(){vm.saving=false;});}
-      }});
+    var focusTrap=(function(){
+      var state={root:null,onKey:null,prevOverflow:'',onEscape:null};
+      function focusable(root){
+        return Array.prototype.slice.call(root.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'))
+          .filter(function(el){return !el.disabled&&(el.offsetParent!==null||el===document.activeElement||el.getClientRects().length);});
+      }
+      return{
+        activate:function(root,initial,onEscape){
+          this.deactivate();
+          if(!root)return;
+          state.root=root;state.onEscape=typeof onEscape==='function'?onEscape:null;
+          state.prevOverflow=document.body.style.overflow;document.body.style.overflow='hidden';
+          if(!root.hasAttribute('tabindex'))root.setAttribute('tabindex','-1');
+          state.onKey=function(e){
+            if(!state.root)return;
+            if(e.key==='Escape'||e.keyCode===27){if(state.onEscape){e.preventDefault();e.stopPropagation();state.onEscape();}return;}
+            if(e.key!=='Tab')return;
+            var list=focusable(state.root);if(!list.length){e.preventDefault();state.root.focus();return;}
+            var first=list[0],last=list[list.length-1],active=document.activeElement;
+            if(e.shiftKey){if(active===first||!state.root.contains(active)){e.preventDefault();last.focus();}}
+            else if(active===last||!state.root.contains(active)){e.preventDefault();first.focus();}
+          };
+          document.addEventListener('keydown',state.onKey,true);
+          setTimeout(function(){
+            var target=initial;
+            if(!target||!state.root.contains(target)||target.disabled){var list=focusable(state.root);target=list[0]||state.root;}
+            if(target&&target.focus)target.focus();
+          },0);
+        },
+        deactivate:function(){
+          if(state.onKey){document.removeEventListener('keydown',state.onKey,true);state.onKey=null;}
+          state.onEscape=null;document.body.style.overflow=state.prevOverflow||'';state.root=null;
+        },
+        root:function(){return state.root;}
+      };
+    })();
+    window.__agentWriteLocks={rename:false,del:false,config:false,save:false,test:false,clear:false,ask:false,autoSave:false,autoRun:false};
+    new Vue({el:'#workspace',data:{
+      user:user,
+      menuItems:AdminWorkspace.navigation(user.permission),
+      menuGroups:AdminWorkspace.navigationGroups(user.permission),
+      desktopNav:AdminWorkspace.desktopNavigation(user.permission),
+      currentNavFlag:'admin_agent',
+      moreOpen:false,mobileOpen:false,accountOpen:false,historyOpen:false,
+      pageError:'',statusLoading:true,statusSeq:0,overviewSeq:0,historySeq:0,conversationSeq:0,configSeq:0,
+      status:{configured:false,enabled:false,apiKeyConfigured:false,canConfigure:false,connected:false,connectionStatus:'untested',connectionMessage:'',baseUrl:'',model:'',apiKeyHint:''},
+      overviewLoading:true,overview:{},
+      historyLoading:true,conversationLoading:false,conversations:[],activeConversationId:null,activeTitle:'',turns:[],
+      draft:'',asking:false,askError:'',
+      configOpen:false,saving:false,testing:false,configError:'',configMessage:'',showApiKey:false,
+      configForm:{enabled:true,baseUrl:'',model:'',apiKey:''},
+      automationOpen:false,automationLoading:false,automationSaving:false,automationRunning:false,automationError:'',automationMessage:'',
+      automationRuns:[],automationCurrent:null,automationSavedSignature:'',automationGuardedPhrase:'启用受控自动通过',
+      automationForm:{enabled:false,mode:'shadow',maxBatch:3,expectedVersion:1,acknowledgeNoAutoReject:false,acknowledgeHumanFallback:false,confirmationText:''},
+      quickPrompts:['汇总当前待办并按优先级排序','列出待审核领养申请并提示风险','检查动物档案的数据质量问题','汇总尚未完成的救助请求'],
+      renameOpen:false,renameItem:null,renameTitle:'',renameError:'',renameSaving:false,
+      deleteOpen:false,deleteItem:null,deleteError:'',deleteSaving:false,
+      clearOpen:false,clearError:'',clearSaving:false,
+      returnFocusStack:[]
+    },
+    computed:{
+      configBusy:function(){var L=window.__agentWriteLocks||{};return !!(this.saving||this.testing||this.clearSaving||L.config||L.save||L.test||L.clear);},
+      automationBusy:function(){return this.automationSaving||this.automationRunning;},
+      automationDirty:function(){return JSON.stringify([!!this.automationForm.enabled,this.automationForm.mode,Number(this.automationForm.maxBatch)])!==this.automationSavedSignature;},
+      automationPhraseState:function(){var value=(this.automationForm.confirmationText||'').trim();if(!value)return'empty';return value===this.automationGuardedPhrase?'match':'mismatch';},
+      automationPhraseHint:function(){var value=(this.automationForm.confirmationText||'').trim();if(!value)return'这是受控写入确认，需完整输入上方短语。';if(value===this.automationGuardedPhrase)return'确认短语一致，可以保存。';if(value==='启动受控自动通过')return'你输入的是“启动”；第 2 个字应为“用”，请改为“启用”。';return'确认短语不一致，请对照上方内容逐字检查。';},
+      statusLabel:function(){
+        if(this.statusLoading)return'状态读取中';
+        if(this.status.connected===true)return'AI Agent 已连接';
+        if(this.status.connectionStatus==='failed')return'连接失败';
+        if(this.status.configured&&this.status.enabled===false)return'Agent 已禁用';
+        if(this.status.configured&&this.status.enabled)return'已配置 · 等待连接测试';
+        if(this.status.configured)return'已配置 · 未测试';
+        return'未配置';
+      },
+      statusClass:function(){
+        return{
+          'is-connected':this.status.connected===true,
+          'is-error':this.status.connectionStatus==='failed',
+          'is-pending':this.status.configured&&!this.status.connected&&this.status.connectionStatus!=='failed',
+          'is-disabled':this.status.configured&&this.status.enabled===false
+        };
+      },
+      metricCards:function(){
+        var o=this.overview||{};
+        return[
+          {key:'adopt',label:'待审领养',value:this.metric(o.pending_adoptions),note:'需要 adopt 权限'},
+          {key:'proof',label:'待审凭证',value:this.metric(o.pending_proofs),note:'需要 proof 权限'},
+          {key:'volunteer',label:'待审义工',value:this.metric(o.pending_volunteers),note:'需要 volunteer 权限'},
+          {key:'rescue',label:'处理中救助',value:this.metric(o.open_rescues),note:'需要 help / rescue 权限'},
+          {key:'animal',label:'可用动物档案',value:this.metric(o.available_animals),note:'需要 animal 权限'}
+        ];
+      }
+    },
+    created:function(){
+      var vm=this;
+      this._onDocEsc=function(e){
+        if(e.key!=='Escape'&&e.keyCode!==27)return;
+        if(focusTrap.root())return;
+        if(vm.anyWriteBusy()){e.preventDefault();e.stopPropagation();return;}
+        if(vm.historyOpen){e.preventDefault();vm.closeHistory();return;}
+      };
+      document.addEventListener('keydown',this._onDocEsc,true);
+      this.loadAll();
+    },
+    beforeDestroy:function(){
+      if(this._onDocEsc)document.removeEventListener('keydown',this._onDocEsc,true);
+      focusTrap.deactivate();
+      document.body.classList.remove('agent-history-locked');
+    },
+    watch:{
+      renameOpen:function(v){var vm=this;if(v){this.$nextTick(function(){var root=document.querySelector('[role="dialog"][aria-labelledby="agentRenameTitle"]');focusTrap.activate(root,vm.$refs.renameFirst||document.getElementById('agentRenameInput'),function(){if(!vm.renameSaving)vm.cancelRename();});});}else if(!this.anyDialog())focusTrap.deactivate();},
+      deleteOpen:function(v){var vm=this;if(v){this.$nextTick(function(){var root=document.querySelector('[role="alertdialog"][aria-labelledby="agentDeleteTitle"]');focusTrap.activate(root,root&&root.querySelector('button.is-ghost'),function(){if(!vm.deleteSaving)vm.cancelDelete();});});}else if(!this.anyDialog())focusTrap.deactivate();},
+      clearOpen:function(v){var vm=this;if(v){this.$nextTick(function(){var root=document.querySelector('[role="alertdialog"][aria-labelledby="agentClearTitle"]');focusTrap.activate(root,root&&root.querySelector('button.is-ghost'),function(){if(!vm.clearSaving)vm.cancelClear();});});}else if(this.configOpen){// Nested clear closed while config stays open: re-bind trap to config (do not leave trap on detached clear root).
+        this.$nextTick(function(){
+          var root=document.querySelector('[role="dialog"].admin-agent-config-dialog, [role="dialog"][aria-labelledby="configTitle"]');
+          if(!root)return;
+          var preferred=document.activeElement&&root.contains(document.activeElement)?document.activeElement:(root.querySelector('button.is-danger')||root.querySelector('input,button'));
+          focusTrap.activate(root,preferred,function(){if(!vm.configBusy)vm.closeConfig();});
+        });
+      }else if(!this.anyDialog())focusTrap.deactivate();},
+      configOpen:function(v){var vm=this;if(v){this.$nextTick(function(){var root=document.querySelector('[role="dialog"].admin-agent-config-dialog, [role="dialog"][aria-labelledby="configTitle"], .admin-dialog-backdrop .admin-dialog');if(!root)root=document.querySelector('.admin-dialog-backdrop .admin-dialog');focusTrap.activate(root,root&&root.querySelector('input,button'),function(){if(!vm.configBusy)vm.closeConfig();});});}else if(!this.anyDialog())focusTrap.deactivate();},
+      automationOpen:function(v){var vm=this;if(v){this.$nextTick(function(){var root=document.querySelector('[role="dialog"][aria-labelledby="automationTitle"]');focusTrap.activate(root,root&&root.querySelector('button,input,select'),function(){if(!vm.automationBusy)vm.closeAutomation();});});}else if(!this.anyDialog())focusTrap.deactivate();}
+    },
+    methods:{
+      closeMenus:function(){this.mobileOpen=false;this.accountOpen=false;this.moreOpen=false;},
+      toggleMore:function(){this.moreOpen=!this.moreOpen;this.accountOpen=false;this.mobileOpen=false;},
+      toggleMobile:function(){this.mobileOpen=!this.mobileOpen;this.accountOpen=false;this.moreOpen=false;},
+      toggleAccount:function(){this.accountOpen=!this.accountOpen;this.moreOpen=false;this.mobileOpen=false;},
+      isNavActive:function(flag){return AdminWorkspace.flagsMatch(flag,this.currentNavFlag);},
+      isMoreCurrent:function(){var vm=this,more=(this.desktopNav&&this.desktopNav.more)||[];return more.some(function(item){return AdminWorkspace.flagsMatch(item.flag,vm.currentNavFlag);});},
+      isOverviewActive:function(){return !this.currentNavFlag;},
+      api:function(options){return $.ajax(Object.assign({contentType:'application/json;charset=UTF-8',cache:false},options));},
+      messageOf:function(res,xhr){if(res&&res.msg)return res.msg;if(xhr&&xhr.responseJSON&&xhr.responseJSON.msg)return xhr.responseJSON.msg;if(xhr&&xhr.status===401)return'登录已失效，请重新登录。';if(xhr&&xhr.status===403)return'当前账号无权执行该操作。';if(xhr&&xhr.status===409)return'请求冲突，请稍后重试。';if(xhr&&xhr.status>=500)return'服务暂时不可用。';return'请求失败，请稍后重试。';},
+      metric:function(value){return value===null||typeof value==='undefined'?'无权限':Number(value||0);},
+      avatarUrl:function(v){return AdminWorkspace.avatarUrl(v);},
+      avatarFallback:function(e){AdminWorkspace.avatarFallback(e);},
+      logout:function(){AuthSession.logout();},
+      anyWriteBusy:function(){
+        var L=window.__agentWriteLocks||{};
+        return !!(this.asking||this.saving||this.testing||this.clearSaving||this.renameSaving||this.deleteSaving||this.automationBusy||L.ask||L.save||L.test||L.clear||L.rename||L.del||L.autoSave||L.autoRun);
+      },
+      anyDialog:function(){return !!(this.renameOpen||this.deleteOpen||this.clearOpen||this.configOpen||this.automationOpen);},
+      pushReturnFocus:function(evt){var t=evt&&evt.currentTarget;if(t)this.returnFocusStack.push(t);},
+      restoreReturnFocus:function(){
+        var t=null;while(this.returnFocusStack.length){t=this.returnFocusStack.pop();if(t&&t.isConnected)break;t=null;}
+        this.$nextTick(function(){if(t&&t.focus)try{t.focus();}catch(e){}});
+      },
+      openHistory:function(evt){this.historyOpen=true;document.body.classList.add('agent-history-locked');},
+      closeHistory:function(){this.historyOpen=false;document.body.classList.remove('agent-history-locked');},
+      closeLayers:function(){
+        this.closeMenus();
+        if(this.anyWriteBusy())return;
+        if(this.renameOpen)this.cancelRename();
+        else if(this.deleteOpen)this.cancelDelete();
+        else if(this.clearOpen)this.cancelClear();
+        else if(this.configOpen)this.closeConfig();
+        else if(this.automationOpen)this.closeAutomation();
+        else if(this.historyOpen)this.closeHistory();
+      },
+      loadAll:function(){this.pageError='';this.loadStatus();this.loadOverview();this.loadConversations();},
+      loadStatus:function(){
+        var vm=this,seq=++vm.statusSeq;vm.statusLoading=true;
+        vm.api({url:'/api/admin-agent/status',type:'GET'}).done(function(res){
+          if(seq!==vm.statusSeq)return;
+          if(!res||res.code!=='0'||!res.data){vm.pageError=vm.messageOf(res);return;}
+          vm.status=res.data;
+        }).fail(function(xhr){if(seq!==vm.statusSeq)return;vm.pageError=vm.messageOf(null,xhr);})
+        .always(function(){if(seq===vm.statusSeq)vm.statusLoading=false;});
+      },
+      loadOverview:function(){
+        var vm=this,seq=++vm.overviewSeq;vm.overviewLoading=true;
+        vm.api({url:'/api/admin-agent/overview',type:'GET'}).done(function(res){
+          if(seq!==vm.overviewSeq)return;
+          if(res&&res.code==='0'&&res.data)vm.overview=res.data;
+        }).fail(function(){/* overview failure is non-fatal for chat */}).always(function(){if(seq===vm.overviewSeq)vm.overviewLoading=false;});
+      },
+      loadConversations:function(){
+        var vm=this,seq=++vm.historySeq;vm.historyLoading=true;
+        vm.api({url:'/api/admin-agent/conversations?limit=50',type:'GET'}).done(function(res){
+          if(seq!==vm.historySeq)return;
+          if(res&&res.code==='0')vm.conversations=Array.isArray(res.data)?res.data:[];
+        }).always(function(){if(seq===vm.historySeq)vm.historyLoading=false;});
+      },
+      newConversation:function(){
+        // Invalidate in-flight openConversation responses (latest-wins)
+        this.conversationSeq+=1;
+        this.conversationLoading=false;
+        this.activeConversationId=null;
+        this.activeTitle='';
+        this.turns=[];
+        this.askError='';
+        this.closeHistory();
+      },
+      openConversation:function(id){
+        var vm=this,seq=++vm.conversationSeq;
+        vm.conversationLoading=true;vm.askError='';
+        var wanted=String(id);
+        vm.api({url:'/api/admin-agent/conversations/'+encodeURIComponent(id),type:'GET'}).done(function(res){
+          if(seq!==vm.conversationSeq)return;
+          if(!res||res.code!=='0'||!res.data){vm.askError=vm.messageOf(res);return;}
+          if(String(res.data.conversation.id)!==wanted&&String(id)!==String(res.data.conversation.id))return;
+          vm.activeConversationId=res.data.conversation.id;
+          vm.activeTitle=res.data.conversation.title;
+          vm.turns=Array.isArray(res.data.turns)?res.data.turns:[];
+          vm.closeHistory();
+          vm.scrollBottom();
+        }).fail(function(xhr){if(seq!==vm.conversationSeq)return;vm.askError=vm.messageOf(null,xhr);})
+        .always(function(){if(seq===vm.conversationSeq)vm.conversationLoading=false;});
+      },
+      openRename:function(item,evt){
+        this.pushReturnFocus(evt);
+        this.renameItem=item;this.renameTitle=(item&&item.title)||'';this.renameError='';this.renameOpen=true;
+      },
+      cancelRename:function(){if(this.renameSaving||window.__agentWriteLocks.rename)return;this.renameOpen=false;this.renameItem=null;this.renameError='';this.restoreReturnFocus();},
+      onBackdropRename:function(){if(!this.renameSaving)this.cancelRename();},
+      confirmRename:function(){
+        var vm=this,L=window.__agentWriteLocks;
+        if(vm.renameSaving||L.rename||!vm.renameItem)return;
+        var title=(vm.renameTitle||'').trim();
+        if(!title){vm.renameError='标题不能为空。';return;}
+        if(title.length>60){vm.renameError='标题不能超过 60 字。';return;}
+        L.rename=true;vm.renameSaving=true;vm.renameError='';
+        var id=vm.renameItem.id;
+        vm.api({url:'/api/admin-agent/conversations/'+encodeURIComponent(id)+'/title',type:'PUT',data:JSON.stringify({title:title})})
+          .done(function(res){
+            if(!res||res.code!=='0'){vm.renameError=vm.messageOf(res);return;}
+            var next=(res.data&&res.data.title)||title;
+            if(String(vm.activeConversationId)===String(id))vm.activeTitle=next;
+            vm.conversations=vm.conversations.map(function(c){return String(c.id)===String(id)?Object.assign({},c,{title:next}):c;});
+            vm.renameOpen=false;vm.renameItem=null;vm.restoreReturnFocus();vm.loadConversations();
+          }).fail(function(xhr){vm.renameError=vm.messageOf(null,xhr);})
+          .always(function(){vm.renameSaving=false;L.rename=false;});
+      },
+      openDelete:function(item,evt){
+        this.pushReturnFocus(evt);
+        this.deleteItem=item;this.deleteError='';this.deleteOpen=true;
+      },
+      cancelDelete:function(){if(this.deleteSaving||window.__agentWriteLocks.del)return;this.deleteOpen=false;this.deleteItem=null;this.deleteError='';this.restoreReturnFocus();},
+      onBackdropDelete:function(){if(!this.deleteSaving)this.cancelDelete();},
+      confirmDelete:function(){
+        var vm=this,L=window.__agentWriteLocks;
+        if(vm.deleteSaving||L.del||!vm.deleteItem)return;
+        L.del=true;vm.deleteSaving=true;vm.deleteError='';
+        var id=vm.deleteItem.id;
+        vm.api({url:'/api/admin-agent/conversations/'+encodeURIComponent(id),type:'DELETE'})
+          .done(function(res){
+            if(!res||res.code!=='0'){vm.deleteError=vm.messageOf(res);vm.$nextTick(function(){var e=document.getElementById('agentDeleteError');if(e&&e.focus)e.focus();});return;}
+            if(String(vm.activeConversationId)===String(id))vm.newConversation();
+            vm.deleteOpen=false;vm.deleteItem=null;vm.restoreReturnFocus();vm.loadConversations();
+          }).fail(function(xhr){
+            vm.deleteError=vm.messageOf(null,xhr);
+            vm.$nextTick(function(){var e=document.getElementById('agentDeleteError');if(e&&e.focus)e.focus();});
+          }).always(function(){vm.deleteSaving=false;L.del=false;});
+      },
+      requestId:function(){
+        if(window.crypto&&typeof window.crypto.randomUUID==='function')return window.crypto.randomUUID().replace(/-/g,'');
+        return Date.now().toString(36)+'_'+Math.random().toString(36).slice(2);
+      },
+      ask:function(){
+        var vm=this,L=window.__agentWriteLocks;
+        var q=vm.draft.trim();
+        if(vm.asking||L.ask||!q||vm.status.connected!==true)return;
+        L.ask=true;vm.asking=true;vm.askError='';
+        var payload={requestId:vm.requestId(),conversationId:vm.activeConversationId,question:q};
+        vm.api({url:'/api/admin-agent/ask',type:'POST',data:JSON.stringify(payload)})
+          .done(function(res){
+            if(!res||res.code!=='0'||!res.data){vm.askError=vm.messageOf(res);return;}
+            // success only: clear draft and append one turn
+            vm.activeConversationId=res.data.conversationId;
+            vm.activeTitle=res.data.conversationTitle;
+            if(res.data.turn)vm.turns.push(res.data.turn);
+            vm.draft='';
+            vm.loadConversations();vm.loadOverview();vm.scrollBottom();
+          }).fail(function(xhr){
+            vm.askError=vm.messageOf(null,xhr);
+            // keep draft for retry
+            vm.loadStatus();
+          }).always(function(){vm.asking=false;L.ask=false;});
+      },
+      scrollBottom:function(){var vm=this;vm.$nextTick(function(){if(vm.$refs.messages)vm.$refs.messages.scrollTop=vm.$refs.messages.scrollHeight;});},
+      timeLabel:function(v){
+        if(!v)return'时间未知';
+        var d=new Date(String(v).replace(' ','T'));
+        if(isNaN(d.getTime()))return String(v);
+        var now=new Date();
+        function p(n){return(n<10?'0':'')+n;}
+        if(d.toDateString()===now.toDateString())return'今天 '+p(d.getHours())+':'+p(d.getMinutes());
+        return(d.getMonth()+1)+'月'+d.getDate()+'日 '+p(d.getHours())+':'+p(d.getMinutes());
+      },
+      toolLabels:function(turn){
+        var map={get_management_overview:'待办概览',list_pending_adoptions:'领养申请',get_adoption_review_context:'领养审核上下文',list_pending_volunteers:'义工申请',list_open_rescues:'救助请求',list_pending_proofs:'领养凭证',get_data_quality_summary:'数据质量'};
+        try{var a=JSON.parse(turn.toolsJson||'[]');return Array.isArray(a)?a.map(function(x){return map[x]||x;}):[];}catch(e){return[];}
+      },
+      openAutomation:function(evt){
+        if(!this.status.canConfigure)return;
+        this.pushReturnFocus(evt);
+        this.automationOpen=true;this.automationError='';this.automationMessage='';this.loadAutomation();
+      },
+      closeAutomation:function(){if(!this.automationBusy){this.automationOpen=false;this.automationForm.confirmationText='';this.restoreReturnFocus();}},
+      onBackdropAutomation:function(){if(!this.automationBusy)this.closeAutomation();},
+      applyAutomationStatus:function(data){
+        var cfg=data&&data.config?data.config:{enabled:false,mode:'shadow',maxBatch:3,version:1};
+        this.automationRuns=data&&Array.isArray(data.recentRuns)?data.recentRuns:[];
+        this.automationForm={enabled:!!cfg.enabled,mode:cfg.mode||'shadow',maxBatch:Number(cfg.maxBatch||3),expectedVersion:Number(cfg.version||1),acknowledgeNoAutoReject:false,acknowledgeHumanFallback:false,confirmationText:''};
+        this.automationSavedSignature=JSON.stringify([!!cfg.enabled,cfg.mode||'shadow',Number(cfg.maxBatch||3)]);
+      },
+      loadAutomation:function(){
+        var vm=this;vm.automationLoading=true;vm.automationError='';
+        vm.api({url:'/api/admin-agent/automation/status',type:'GET'}).done(function(res){
+          if(!res||res.code!=='0'||!res.data){vm.automationError=vm.messageOf(res);return;}
+          vm.applyAutomationStatus(res.data);
+          if(vm.automationRuns.length)vm.loadAutomationRun(vm.automationRuns[0].id);
+        }).fail(function(xhr){vm.automationError=vm.messageOf(null,xhr);}).always(function(){vm.automationLoading=false;});
+      },
+      saveAutomation:function(){
+        var vm=this,L=window.__agentWriteLocks;
+        if(vm.automationBusy||L.autoSave)return;
+        // Guarded mode: any incomplete confirmation blocks POST
+        if(vm.automationForm.enabled&&vm.automationForm.mode==='guarded'&&(
+          !vm.automationForm.acknowledgeNoAutoReject||
+          !vm.automationForm.acknowledgeHumanFallback||
+          vm.automationPhraseState!=='match'
+        )){
+          if(!vm.automationForm.acknowledgeNoAutoReject)vm.automationError='请确认：系统绝不自动驳回。';
+          else if(!vm.automationForm.acknowledgeHumanFallback)vm.automationError='请确认：已接受人工兜底与小批量范围。';
+          else vm.automationError=vm.automationPhraseHint||'确认短语不一致。';
+          vm.$nextTick(function(){
+            var root=document.querySelector('[aria-labelledby="automationTitle"]')||document;
+            if(!vm.automationForm.acknowledgeNoAutoReject){
+              var c1=root.querySelector('.admin-agent-guarded-confirm input[type="checkbox"]');
+              if(c1&&c1.focus)c1.focus();
+              return;
+            }
+            if(!vm.automationForm.acknowledgeHumanFallback){
+              var boxes=root.querySelectorAll('.admin-agent-guarded-confirm input[type="checkbox"]');
+              if(boxes[1]&&boxes[1].focus)boxes[1].focus();
+              return;
+            }
+            if(vm.$refs.automationPhrase)vm.$refs.automationPhrase.focus();
+          });
+          return;
+        }
+        L.autoSave=true;vm.automationSaving=true;vm.automationError='';vm.automationMessage='';
+        var payload=Object.assign({},vm.automationForm);
+        vm.api({url:'/api/admin-agent/automation/config',type:'POST',data:JSON.stringify(payload)})
+          .done(function(res){
+            if(!res||res.code!=='0'||!res.data){vm.automationError=vm.messageOf(res);return;}
+            vm.applyAutomationStatus(res.data);
+            vm.automationMessage='控制设置已保存。系统不会自动运行，需由超级管理员手动启动。';
+          }).fail(function(xhr){vm.automationError=vm.messageOf(null,xhr);})
+          .always(function(){vm.automationSaving=false;L.autoSave=false;});
+      },
+      runAutomation:function(){
+        var vm=this,L=window.__agentWriteLocks;
+        if(vm.automationBusy||L.autoRun||!vm.automationForm.enabled||vm.status.connected!==true)return;
+        if(vm.automationForm.mode==='guarded'){
+          if(!vm.automationForm.acknowledgeNoAutoReject||!vm.automationForm.acknowledgeHumanFallback||vm.automationPhraseState!=='match'){
+            vm.automationError='请完成受控模式确认项与确认短语后再运行。';return;
+          }
+        }
+        L.autoRun=true;vm.automationRunning=true;vm.automationError='';vm.automationMessage='正在逐条执行硬规则检查和模型评估，请勿重复提交。';
+        var payload={requestId:vm.requestId()};
+        vm.api({url:'/api/admin-agent/automation/run',type:'POST',data:JSON.stringify(payload),timeout:60000})
+          .done(function(res){
+            if(!res||res.code!=='0'||!res.data){vm.automationError=vm.messageOf(res);return;}
+            vm.automationCurrent=res.data;
+            vm.automationMessage='本批次完成：自动通过 '+Number(res.data.run.autoApprovedCount||0)+'，转人工 '+Number(res.data.run.manualCount||0)+'，自动驳回 0。';
+            vm.loadAutomationRuns();vm.loadOverview();
+          }).fail(function(xhr){vm.automationError=vm.messageOf(null,xhr);})
+          .always(function(){vm.automationRunning=false;L.autoRun=false;});
+      },
+      loadAutomationRuns:function(){var vm=this;vm.api({url:'/api/admin-agent/automation/runs?limit=10',type:'GET'}).done(function(res){if(res&&res.code==='0')vm.automationRuns=Array.isArray(res.data)?res.data:[];});},
+      loadAutomationRun:function(id){var vm=this;vm.api({url:'/api/admin-agent/automation/runs/'+encodeURIComponent(id),type:'GET'}).done(function(res){if(res&&res.code==='0'&&res.data)vm.automationCurrent=res.data;}).fail(function(xhr){vm.automationError=vm.messageOf(null,xhr);});},
+      automationModeLabel:function(v){return v==='guarded'?'受控模式':'影子模式';},
+      automationRunStatus:function(v){return v==='completed'?'已完成':v==='running'?'运行中':'失败';},
+      automationOutcome:function(v){return{shadow:'影子评估',auto_approved:'已自动通过',manual_review:'转人工复核',failed:'处理失败'}[v]||v;},
+      openConfig:function(evt){
+        if(!this.status.canConfigure)return;
+        this.pushReturnFocus(evt);
+        this.configError='';this.configMessage='';this.showApiKey=false;
+        this.configForm={enabled:this.status.configured?!!this.status.enabled:true,baseUrl:this.status.baseUrl||'',model:this.status.model||'',apiKey:''};
+        this.configOpen=true;
+      },
+      closeConfig:function(){if(!this.configBusy){this.configOpen=false;this.configForm.apiKey='';this.showApiKey=false;this.restoreReturnFocus();}},
+      onBackdropConfig:function(){if(!this.configBusy)this.closeConfig();},
+      configMutexBusy:function(){
+        var L=window.__agentWriteLocks||{};
+        return !!(this.saving||this.testing||this.clearSaving||L.config||L.save||L.test||L.clear);
+      },
+      saveConfig:function(){
+        var vm=this,L=window.__agentWriteLocks;
+        // Shared config mutex: save/test/clear exclusive
+        if(vm.configMutexBusy())return;
+        L.config=true;L.save=true;vm.saving=true;vm.configError='';vm.configMessage='';
+        var seq=++vm.configSeq;
+        var payload={enabled:!!vm.configForm.enabled,baseUrl:vm.configForm.baseUrl,model:vm.configForm.model,apiKey:vm.configForm.apiKey};
+        vm.api({url:'/api/admin-agent/config',type:'POST',data:JSON.stringify(payload)})
+          .done(function(res){
+            if(seq!==vm.configSeq)return;
+            if(!res||res.code!=='0'||!res.data){vm.configError=vm.messageOf(res);return;}
+            vm.status=res.data;vm.configForm.apiKey='';
+            vm.configMessage='配置已加密保存。启用后请点击“测试连接”确认真实可用。保存成功不等于已连接。';
+            vm.loadOverview();
+          }).fail(function(xhr){if(seq!==vm.configSeq)return;vm.configError=vm.messageOf(null,xhr);})
+          .always(function(){if(seq===vm.configSeq){vm.saving=false;L.save=false;L.config=false;}});
+      },
+      applyConfigTestFailure:function(message){
+        // Immediately revoke stale "connected" so UI cannot keep green after a failed test.
+        // Do not wipe baseUrl/model/apiKeyConfigured or the in-form apiKey draft.
+        var msg=String(message||'连接测试失败。');
+        this.status=Object.assign({},this.status,{
+          connected:false,
+          connectionStatus:'failed',
+          connectionMessage:msg
+        });
+        this.configError=msg;
+        this.configMessage='';
+      },
+      refreshStatusAfterConfigOp:function(seq){
+        // Status refresh is gated by the same configSeq so a late reply cannot overwrite a newer save/test/clear.
+        var vm=this;
+        vm.api({url:'/api/admin-agent/status',type:'GET'}).done(function(res){
+          if(seq!==vm.configSeq)return;
+          if(res&&res.code==='0'&&res.data)vm.status=res.data;
+        });
+      },
+      testConfig:function(){
+        var vm=this,L=window.__agentWriteLocks;
+        if(vm.configMutexBusy())return;
+        L.config=true;L.test=true;vm.testing=true;vm.configError='';vm.configMessage='';
+        var seq=++vm.configSeq;
+        vm.api({url:'/api/admin-agent/config/test',type:'POST',data:'{}'})
+          .done(function(res){
+            if(seq!==vm.configSeq)return;
+            if(!res||res.code!=='0'||!res.data){
+              // Business failure body (may include wrapped provider 401 as app 502 code in msg)
+              vm.applyConfigTestFailure(vm.messageOf(res));
+              return;
+            }
+            vm.status=res.data;
+            if(vm.status.connected===true)vm.configMessage='真实模型连接成功，可以开始提问。';
+            else{
+              // Success HTTP but not connected — treat as failed connection presentation
+              if(vm.status.connectionStatus!=='failed'){
+                vm.status=Object.assign({},vm.status,{connected:false,connectionStatus:vm.status.connectionStatus||'failed'});
+              }
+              vm.configMessage=vm.status.connectionMessage||'连接测试未通过。';
+            }
+          }).fail(function(xhr){
+            if(seq!==vm.configSeq)return;
+            // App-level HTTP 401 = session expired (auth interceptor/logout path). Still show error;
+            // do not confuse with provider 401 which is typically wrapped as HTTP 502 by the backend.
+            var msg=vm.messageOf(null,xhr);
+            if(xhr&&Number(xhr.status)===401){
+              vm.configError=msg;
+              return;
+            }
+            vm.applyConfigTestFailure(msg);
+            // Optional authoritative refresh under the same configSeq (late replies discarded)
+            vm.refreshStatusAfterConfigOp(seq);
+          }).always(function(){
+            // Always release this attempt's locks when it is still the latest config op
+            if(seq===vm.configSeq){vm.testing=false;L.test=false;L.config=false;}
+          });
+      },
+      openClearConfig:function(evt){
+        if(this.configMutexBusy())return;
+        this.pushReturnFocus(evt);
+        this.clearError='';this.clearOpen=true;
+      },
+      cancelClear:function(){if(this.clearSaving||window.__agentWriteLocks.clear||window.__agentWriteLocks.config)return;this.clearOpen=false;this.clearError='';this.restoreReturnFocus();},
+      onBackdropClear:function(){if(!this.clearSaving&&!window.__agentWriteLocks.config)this.cancelClear();},
+      confirmClear:function(){
+        var vm=this,L=window.__agentWriteLocks;
+        if(vm.configMutexBusy())return;
+        L.config=true;L.clear=true;vm.clearSaving=true;vm.clearError='';
+        var seq=++vm.configSeq;
+        vm.api({url:'/api/admin-agent/config/clear',type:'POST',data:'{}'})
+          .done(function(res){
+            if(seq!==vm.configSeq)return;
+            if(!res||res.code!=='0'){vm.clearError=vm.messageOf(res);return;}
+            vm.status=res.data;
+            vm.configForm={enabled:true,baseUrl:'',model:'',apiKey:''};
+            vm.configMessage='平台配置已清除，历史会话仍保留。';
+            vm.clearOpen=false;vm.configOpen=true;vm.restoreReturnFocus();
+          }).fail(function(xhr){if(seq!==vm.configSeq)return;vm.clearError=vm.messageOf(null,xhr);})
+          .always(function(){if(seq===vm.configSeq){vm.clearSaving=false;L.clear=false;L.config=false;}});
+      }
+    }});
   }});
 })();
 </script>

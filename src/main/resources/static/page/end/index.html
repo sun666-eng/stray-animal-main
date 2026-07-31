@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>工作台 · 归途计划管理</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
   <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c">
-  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260729c">
+  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260731a">
 </head>
 <body>
 <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
-<div id="workspace" :class="{'is-nav-open': mobileOpen}" class="admin-shell" v-cloak @keyup.esc="closeMenus" @click="closeMenus">
+<div id="workspace" :class="{'is-nav-open': mobileOpen}" class="admin-shell dashboard-home" v-cloak @keyup.esc="closeMenus" @click="closeMenus">
   <header class="ui-header admin-header" @click.stop>
     <div class="ui-header-inner">
       <a class="ui-brand" href="/page/end/index.html" aria-label="返回管理工作台">
@@ -90,85 +90,98 @@
   <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
 
   <main class="admin-main">
-    <section class="admin-hero" aria-labelledby="dashboardTitle">
+    <section class="admin-hero dashboard-home-hero" aria-labelledby="dashboardTitle">
       <div>
         <p class="admin-kicker">Operations overview</p>
-        <h1 id="dashboardTitle">工作台概览</h1>
-        <p>集中查看平台当前真实汇总数据，并从已授权入口继续处理动物档案、申请、公告与救助事务。</p>
+        <h1 id="dashboardTitle">管理工作台</h1>
+        <p>汇总当前数据库中的真实总量、公告与（若已授权）资金概览。此处不虚构队列数量或风险指标。</p>
       </div>
-      <div class="admin-hero-meta">
-        <span>当前登录账号</span>
-        <strong>{{ user.username }}</strong>
+      <div class="dashboard-home-identity" aria-label="当前身份">
+        <div class="dashboard-home-id-row"><span>当前账号</span><strong>{{ user.username }}</strong></div>
+        <div class="dashboard-home-id-row"><span>工作台角色</span><strong>{{ workspaceRoleLabel }}</strong></div>
+        <div class="dashboard-home-id-row"><span>数据更新</span><strong>{{ lastUpdatedLabel || '尚未加载' }}</strong></div>
       </div>
     </section>
 
-    <section aria-labelledby="metricTitle">
+    <section class="dashboard-home-section" aria-labelledby="metricTitle">
       <div class="admin-section-head">
-        <div><h2 id="metricTitle">平台数据</h2><p>数据来自平台聚合接口，反映当前数据库记录。</p></div>
+        <div>
+          <h2 id="metricTitle">平台总量指标</h2>
+          <p>来自 <code>/api/dashboard/public-stats</code> 的 COUNT 汇总，均为存量总量，不是待处理队列。</p>
+        </div>
+        <button class="ui-button is-ghost" type="button" :disabled="statsLoading" @click="loadStats">{{ statsLoading ? '读取中…' : '刷新总量' }}</button>
       </div>
-      <div v-if="statsLoading" class="admin-metric-grid" aria-label="平台数据加载中">
-        <div v-for="n in 4" :key="n" class="admin-metric"><div class="ui-skeleton ui-skeleton-line"></div><div class="ui-skeleton ui-skeleton-line short"></div></div>
+      <div v-if="statsLoading" class="admin-metric-grid" aria-busy="true" aria-label="平台数据加载中">
+        <div v-for="n in 4" :key="'sk-'+n" class="admin-metric"><div class="ui-skeleton ui-skeleton-line"></div><div class="ui-skeleton ui-skeleton-line short"></div></div>
       </div>
       <div v-else-if="statsError" class="admin-status is-error" role="alert">
-        <div><strong>平台数据暂时无法读取</strong><br>{{ statsError }}<br><button class="ui-button is-ghost" type="button" @click="loadStats">重新加载</button></div>
+        <div>
+          <strong>平台总量暂时无法读取</strong><br>{{ statsError }}
+          <br><button class="ui-button is-ghost" type="button" @click="loadStats">重试总量</button>
+        </div>
       </div>
-      <div v-else class="admin-metric-grid">
-        <article class="admin-metric"><span>已审核通过义工记录</span><strong>{{ stats.volunteers }}</strong><small>审核状态为通过的义工记录数</small></article>
-        <article class="admin-metric"><span>动物档案</span><strong>{{ stats.animals }}</strong><small>平台内全部动物档案数</small></article>
-        <article class="admin-metric"><span>领养申请</span><strong>{{ stats.adopts }}</strong><small>平台内全部领养申请数</small></article>
-        <article class="admin-metric"><span>注册用户</span><strong>{{ stats.users }}</strong><small>平台内注册账号总数</small></article>
+      <div v-else class="admin-metric-grid" aria-label="平台总量">
+        <article class="admin-metric"><span>义工通过记录</span><strong>{{ stats.volunteers }}</strong><small>审核通过的义工记录总量</small></article>
+        <article class="admin-metric"><span>动物档案总量</span><strong>{{ stats.animals }}</strong><small>平台内全部动物档案数</small></article>
+        <article class="admin-metric"><span>领养申请总量</span><strong>{{ stats.adopts }}</strong><small>全部领养申请记录数</small></article>
+        <article class="admin-metric"><span>注册用户总量</span><strong>{{ stats.users }}</strong><small>注册账号总数</small></article>
       </div>
     </section>
 
-    <section v-if="menuItems.length" class="admin-section" aria-labelledby="routeTitle">
+    <section v-if="menuItems.length" class="admin-section dashboard-home-section" aria-labelledby="routeTitle">
       <div class="admin-section-head">
-        <div><h2 id="routeTitle">已授权功能</h2><p>这里只显示当前账号具有权限的固定管理入口。</p></div>
+        <div><h2 id="routeTitle">已授权管理入口</h2><p>入口仅来自当前账号权限，不硬编码全量管理链接。</p></div>
       </div>
       <div class="admin-route-grid">
-        <a v-for="(item, index) in menuItems" :key="'card-' + item.flag" class="admin-route-card" :href="item.href">
+        <a v-for="(item, index) in menuItems" :key="'card-'+item.flag" class="admin-route-card" :href="item.href">
           <span aria-hidden="true">{{ String(index + 1).padStart(2, '0') }}</span>
           <div><strong>{{ item.label }}</strong><small>进入管理页面</small></div>
         </a>
       </div>
     </section>
 
-    <section v-else class="admin-section" aria-labelledby="routeTitleEmpty">
+    <section v-else class="admin-section dashboard-home-section" aria-labelledby="routeTitleEmpty">
       <div class="admin-section-head">
         <div>
-          <h2 id="routeTitleEmpty">我的服务</h2>
-          <p>当前账号是普通用户。请使用下列用户端功能；管理工作台入口仅对管理员开放。</p>
+          <h2 id="routeTitleEmpty">用户服务入口</h2>
+          <p>当前账号没有管理权限。仅展示用户端服务，不暴露管理功能、财务或 AI 管理入口。</p>
         </div>
       </div>
       <div class="admin-route-grid">
-        <a v-for="(item, index) in userServices" :key="'user-' + item.id" class="admin-route-card" :href="item.href">
+        <a v-for="(item, index) in userServices" :key="'user-'+item.id" class="admin-route-card" :href="item.href">
           <span aria-hidden="true">{{ String(index + 1).padStart(2, '0') }}</span>
           <div><strong>{{ item.label }}</strong><small>{{ item.desc }}</small></div>
         </a>
       </div>
     </section>
 
-    <section v-if="menuItems.length" class="admin-section" aria-labelledby="userEntryTitle">
+    <section v-if="menuItems.length" class="admin-section dashboard-home-section" aria-labelledby="userEntryTitle">
       <div class="admin-section-head">
         <div><h2 id="userEntryTitle">用户端快捷入口</h2><p>管理员也可从这里进入领养、救助与义工等用户流程。</p></div>
       </div>
       <div class="admin-route-grid">
-        <a v-for="(item, index) in userServices.slice(0, 6)" :key="'admin-user-' + item.id" class="admin-route-card" :href="item.href">
+        <a v-for="(item, index) in userServices.slice(0, 6)" :key="'admin-user-'+item.id" class="admin-route-card" :href="item.href">
           <span aria-hidden="true">{{ String(index + 1).padStart(2, '0') }}</span>
           <div><strong>{{ item.label }}</strong><small>{{ item.desc }}</small></div>
         </a>
       </div>
     </section>
 
-    <section class="admin-section" aria-labelledby="insightTitle">
+    <section class="admin-section dashboard-home-section" aria-labelledby="insightTitle">
       <div class="admin-section-head">
-        <div><h2 id="insightTitle">运营信息</h2><p>公告使用公开分页接口；资金分析仅对具有资金权限的账号加载。</p></div>
+        <div><h2 id="insightTitle">公告与运营概况</h2><p>各区域独立加载与重试；一块失败不影响其它区域。</p></div>
       </div>
       <div class="admin-two-column">
         <article v-if="hasFlag('account')" class="admin-panel" aria-labelledby="accountTitle">
-          <h3 id="accountTitle">资金分类汇总</h3>
-          <p class="admin-panel-intro">按款项标签展示实际收入与支出聚合，金额单位为元。</p>
-          <div v-if="accountLoading" class="admin-status" role="status">正在读取资金汇总...</div>
-          <div v-else-if="accountError" class="admin-status is-error" role="alert"><div>{{ accountError }}<br><button class="ui-button is-ghost" type="button" @click="loadAccountStats">重新加载</button></div></div>
+          <div class="dashboard-panel-head">
+            <h3 id="accountTitle">资金收支汇总</h3>
+            <button class="ui-button is-ghost" type="button" :disabled="accountLoading" @click="loadAccountStats">{{ accountLoading ? '读取中…' : '刷新资金' }}</button>
+          </div>
+          <p class="admin-panel-intro">仅在具备资金权限时请求 <code>/api/account/stats/by-label</code>。金额为十进制字符串展示，不推断币种。</p>
+          <div v-if="accountLoading" class="admin-status" role="status" aria-busy="true">正在读取资金汇总…</div>
+          <div v-else-if="accountError" class="admin-status is-error" role="alert">
+            <div>{{ accountError }}<br><button class="ui-button is-ghost" type="button" @click="loadAccountStats">重试资金</button></div>
+          </div>
           <div v-else>
             <div class="admin-account-totals">
               <div class="admin-account-total"><span>收入合计</span><strong class="ui-money-income">{{ money(accountStats.incomeTotal) }}</strong></div>
@@ -180,7 +193,7 @@
               <div class="admin-breakdown">
                 <h4>收入分类</h4>
                 <div v-if="accountStats.income.length" class="admin-bar-list">
-                  <div v-for="item in accountStats.income" :key="'in-' + item.name" class="admin-bar-row">
+                  <div v-for="item in accountStats.income" :key="'in-'+item.name" class="admin-bar-row">
                     <div class="admin-bar-copy"><span>{{ item.name }}</span><strong>{{ money(item.value) }}</strong></div>
                     <div class="admin-bar-track" aria-hidden="true"><div class="admin-bar-fill" :style="{width: barWidth(item.value, accountStats.income) + '%'}"></div></div>
                   </div>
@@ -190,7 +203,7 @@
               <div class="admin-breakdown is-expense">
                 <h4>支出分类</h4>
                 <div v-if="accountStats.expense.length" class="admin-bar-list">
-                  <div v-for="item in accountStats.expense" :key="'out-' + item.name" class="admin-bar-row">
+                  <div v-for="item in accountStats.expense" :key="'out-'+item.name" class="admin-bar-row">
                     <div class="admin-bar-copy"><span>{{ item.name }}</span><strong>{{ money(item.value) }}</strong></div>
                     <div class="admin-bar-track" aria-hidden="true"><div class="admin-bar-fill" :style="{width: barWidth(item.value, accountStats.expense) + '%'}"></div></div>
                   </div>
@@ -202,13 +215,21 @@
         </article>
 
         <article class="admin-panel" aria-labelledby="noticeTitle">
-          <h3 id="noticeTitle">公告预览</h3>
-          <p class="admin-panel-intro">公开公告分页接口返回的三条记录，不推断顺序或展示不存在的发布日期。</p>
-          <div v-if="noticeLoading" class="admin-status" role="status">正在读取公告...</div>
-          <div v-else-if="noticeError" class="admin-status is-error" role="alert"><div>{{ noticeError }}<br><button class="ui-button is-ghost" type="button" @click="loadNotices">重新加载</button></div></div>
+          <div class="dashboard-panel-head">
+            <h3 id="noticeTitle">公告预览</h3>
+            <button class="ui-button is-ghost" type="button" :disabled="noticeLoading" @click="loadNotices">{{ noticeLoading ? '读取中…' : '刷新公告' }}</button>
+          </div>
+          <p class="admin-panel-intro">公开公告分页前 3 条。不推断排序规则或虚构发布日期。</p>
+          <div v-if="noticeLoading" class="admin-status" role="status" aria-busy="true">正在读取公告…</div>
+          <div v-else-if="noticeError" class="admin-status is-error" role="alert">
+            <div>{{ noticeError }}<br><button class="ui-button is-ghost" type="button" @click="loadNotices">重试公告</button></div>
+          </div>
           <div v-else-if="!notices.length" class="admin-status">暂无公告。</div>
           <div v-else class="admin-notice-list">
-            <article v-for="item in notices" :key="item.id" class="admin-notice"><h4>{{ item.title || '未命名公告' }}</h4><p>{{ summary(item.content) }}</p></article>
+            <article v-for="item in notices" :key="item.id" class="admin-notice">
+              <h4>{{ item.title || '未命名公告' }}</h4>
+              <p>{{ summary(item.content) }}</p>
+            </article>
           </div>
           <a class="admin-section-link" href="/page/front/notice_list.html">查看公告中心</a>
         </article>
@@ -246,13 +267,32 @@
           accountOpen: false,
           statsLoading: true,
           statsError: '',
+          statsSeq: 0,
           stats: { volunteers: 0, animals: 0, adopts: 0, users: 0 },
           noticeLoading: true,
           noticeError: '',
+          noticeSeq: 0,
           notices: [],
           accountLoading: false,
           accountError: '',
-          accountStats: { income: [], expense: [], incomeTotal: 0, expenseTotal: 0, balance: 0 }
+          accountSeq: 0,
+          accountStats: { income: [], expense: [], incomeTotal: '0.00', expenseTotal: '0.00', balance: '0.00' },
+          lastUpdatedAt: null
+        },
+        computed: {
+          workspaceRoleLabel: function () {
+            if (this.menuItems && this.menuItems.length) {
+              if (this.hasFlag('admin_agent') || this.hasFlag('user')) return '管理员';
+              return '授权管理员';
+            }
+            return '普通用户';
+          },
+          lastUpdatedLabel: function () {
+            if (!this.lastUpdatedAt) return '';
+            var d = this.lastUpdatedAt;
+            function p(n) { return (n < 10 ? '0' : '') + n; }
+            return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+          }
         },
         created: function () {
           this.loadStats();
@@ -264,64 +304,153 @@
           toggleMobile: function () { this.mobileOpen = !this.mobileOpen; this.accountOpen = false; this.moreOpen = false; },
           toggleAccount: function () { this.accountOpen = !this.accountOpen; this.moreOpen = false; this.mobileOpen = false; },
           isNavActive: function (flag) { return AdminWorkspace.flagsMatch(flag, this.currentNavFlag); },
-          isMoreCurrent: function () { var vm = this; var more = (this.desktopNav && this.desktopNav.more) || []; return more.some(function (item) { return AdminWorkspace.flagsMatch(item.flag, vm.currentNavFlag); }); },
+          isMoreCurrent: function () {
+            var vm = this, more = (this.desktopNav && this.desktopNav.more) || [];
+            return more.some(function (item) { return AdminWorkspace.flagsMatch(item.flag, vm.currentNavFlag); });
+          },
           isOverviewActive: function () { return !this.currentNavFlag; },
-
           hasFlag: function (flag) { return AdminWorkspace.hasFlag(this.user, flag); },
           avatarUrl: function (flag) { return AdminWorkspace.avatarUrl(flag); },
           avatarFallback: function (event) { AdminWorkspace.avatarFallback(event); },
           closeMenus: function () { this.mobileOpen = false; this.accountOpen = false; this.moreOpen = false; },
           logout: function () { AuthSession.logout(); },
+          failMessage: function (xhr, fallback) {
+            if (xhr) {
+              var s = xhr.status;
+              if (s === 401) return '登录已失效，请重新登录。';
+              if (s === 403) return '当前账号无权访问该数据。';
+              if (s === 409) return (xhr.responseJSON && xhr.responseJSON.msg) || '请求冲突，请稍后重试。';
+              if (s >= 500) return (xhr.responseJSON && xhr.responseJSON.msg) || '服务暂时不可用（' + s + '）。';
+              if (xhr.responseJSON && xhr.responseJSON.msg) return xhr.responseJSON.msg;
+            }
+            return fallback || '请检查网络连接后重试。';
+          },
+          touchUpdated: function () { this.lastUpdatedAt = new Date(); },
+          parseStatCount: function (value) {
+            if (value === null || value === undefined || value === '') return null;
+            var n = Number(value);
+            if (!Number.isFinite(n) || n < 0 || Math.floor(n) !== n) return null;
+            return n;
+          },
           loadStats: function () {
-            var vm = this;
+            var vm = this, seq = ++vm.statsSeq;
             vm.statsLoading = true;
             vm.statsError = '';
-            $.ajax({ url: '/api/dashboard/public-stats', type: 'GET', cache: false }).done(function (res) {
-              if (!res || res.code !== '0' || !res.data) { vm.statsError = (res && res.msg) || '服务返回了无法识别的数据。'; return; }
-              vm.stats = {
-                volunteers: Number(res.data.volunteers || 0),
-                animals: Number(res.data.animals || 0),
-                adopts: Number(res.data.adopts || 0),
-                users: Number(res.data.users || 0)
-              };
-            }).fail(function () { vm.statsError = '请检查网络连接后重试。'; }).always(function () { vm.statsLoading = false; });
+            $.ajax({ url: '/api/dashboard/public-stats', type: 'GET', cache: false })
+              .done(function (res) {
+                if (seq !== vm.statsSeq) return;
+                if (!res || res.code !== '0' || !res.data || typeof res.data !== 'object') {
+                  vm.statsError = (res && res.msg) || '服务返回了无法识别的数据。';
+                  return;
+                }
+                var v = vm.parseStatCount(res.data.volunteers);
+                var a = vm.parseStatCount(res.data.animals);
+                var d = vm.parseStatCount(res.data.adopts);
+                var u = vm.parseStatCount(res.data.users);
+                if (v === null || a === null || d === null || u === null) {
+                  vm.statsError = '统计数据结构异常';
+                  // do not overwrite last valid stats
+                  return;
+                }
+                vm.stats = { volunteers: v, animals: a, adopts: d, users: u };
+                vm.touchUpdated();
+              })
+              .fail(function (xhr) {
+                if (seq !== vm.statsSeq) return;
+                vm.statsError = vm.failMessage(xhr, '请检查网络连接后重试。');
+              })
+              .always(function () { if (seq === vm.statsSeq) vm.statsLoading = false; });
           },
           loadNotices: function () {
-            var vm = this;
+            var vm = this, seq = ++vm.noticeSeq;
             vm.noticeLoading = true;
             vm.noticeError = '';
-            $.ajax({ url: '/api/notice/page', type: 'GET', data: { pageNum: 1, pageSize: 3 }, cache: false }).done(function (res) {
-              if (!res || res.code !== '0' || !res.data) { vm.noticeError = (res && res.msg) || '服务返回了无法识别的数据。'; return; }
-              vm.notices = Array.isArray(res.data.records) ? res.data.records : [];
-            }).fail(function () { vm.noticeError = '请检查网络连接后重试。'; }).always(function () { vm.noticeLoading = false; });
+            $.ajax({ url: '/api/notice/page', type: 'GET', data: { pageNum: 1, pageSize: 3 }, cache: false })
+              .done(function (res) {
+                if (seq !== vm.noticeSeq) return;
+                if (!res || res.code !== '0' || !res.data || !Array.isArray(res.data.records)) {
+                  vm.noticeError = (res && res.msg) || '服务返回了无法识别的数据。';
+                  vm.notices = [];
+                  return;
+                }
+                vm.notices = res.data.records;
+                vm.touchUpdated();
+              })
+              .fail(function (xhr) {
+                if (seq !== vm.noticeSeq) return;
+                vm.noticeError = vm.failMessage(xhr, '请检查网络连接后重试。');
+                vm.notices = [];
+              })
+              .always(function () { if (seq === vm.noticeSeq) vm.noticeLoading = false; });
           },
           loadAccountStats: function () {
             var vm = this;
             if (!vm.hasFlag('account')) return;
+            var seq = ++vm.accountSeq;
             vm.accountLoading = true;
             vm.accountError = '';
-            $.ajax({ url: '/api/account/stats/by-label', type: 'GET', cache: false }).done(function (res) {
-              if (!res || res.code !== '0' || !res.data) { vm.accountError = (res && res.msg) || '服务返回了无法识别的数据。'; return; }
-              vm.accountStats = {
-                income: vm.normalizeBreakdown(res.data.incomeByLabel),
-                expense: vm.normalizeBreakdown(res.data.expenseByLabel),
-                incomeTotal: String(res.data.incomeTotal || '0.00'),
-                expenseTotal: String(res.data.expenseTotal || '0.00'),
-                balance: String(res.data.balance || '0.00')
-              };
-            }).fail(function () { vm.accountError = '资金汇总读取失败，请稍后重试。'; }).always(function () { vm.accountLoading = false; });
+            $.ajax({ url: '/api/account/stats/by-label', type: 'GET', cache: false })
+              .done(function (res) {
+                if (seq !== vm.accountSeq) return;
+                if (!res || res.code !== '0' || !res.data) {
+                  vm.accountError = (res && res.msg) || '服务返回了无法识别的数据。';
+                  return;
+                }
+                vm.accountStats = {
+                  income: vm.normalizeBreakdown(res.data.incomeByLabel),
+                  expense: vm.normalizeBreakdown(res.data.expenseByLabel),
+                  incomeTotal: String(res.data.incomeTotal || '0.00'),
+                  expenseTotal: String(res.data.expenseTotal || '0.00'),
+                  balance: String(res.data.balance || '0.00')
+                };
+                vm.touchUpdated();
+              })
+              .fail(function (xhr) {
+                if (seq !== vm.accountSeq) return;
+                if (xhr && xhr.status === 403) {
+                  vm.accountError = '当前账号无权读取资金汇总。';
+                  return;
+                }
+                vm.accountError = vm.failMessage(xhr, '资金汇总读取失败，请稍后重试。');
+              })
+              .always(function () { if (seq === vm.accountSeq) vm.accountLoading = false; });
           },
           normalizeBreakdown: function (rows) {
             return (Array.isArray(rows) ? rows : []).map(function (row) {
               return { name: String((row && row.name) || '未分类'), value: String((row && row.value) || '0.00') };
             });
           },
+          // Convert money string to integer cents; null if illegal. Supports sign and 0–2 decimals.
+          amountToCents: function (value) {
+            var s = String(value == null ? '' : value).trim();
+            var m = /^([+-]?)(\d+)(?:\.(\d{1,2}))?$/.exec(s);
+            if (!m) return null;
+            var whole = m[2].replace(/^0+(?=\d)/, '') || '0';
+            var frac = ((m[3] || '') + '00').slice(0, 2);
+            try {
+              var cents = BigInt(whole) * 100n + BigInt(frac);
+              return m[1] === '-' ? -cents : cents;
+            } catch (e) {
+              return null;
+            }
+          },
           barWidth: function (value, rows) {
-            var max = rows.reduce(function (current, row) {
-              var candidate = String((row && row.value) || '0.00');
-              return BigInt(candidate.replace('.', '')) > BigInt(current.replace('.', '')) ? candidate : current;
-            }, '0.00');
-            return DecimalMoney.percent(value, max);
+            var list = Array.isArray(rows) ? rows : [];
+            if (!list.length) return 0;
+            var maxAbs = 0n;
+            for (var i = 0; i < list.length; i++) {
+              var c = this.amountToCents(list[i] && list[i].value);
+              if (c === null) continue;
+              var a = c < 0n ? -c : c;
+              if (a > maxAbs) maxAbs = a;
+            }
+            if (maxAbs === 0n) return 0;
+            var v = this.amountToCents(value);
+            if (v === null) return 0;
+            var abs = v < 0n ? -v : v;
+            var pct = Number((abs * 100n) / maxAbs);
+            if (!Number.isFinite(pct) || pct < 0) return 0;
+            return Math.max(0, Math.min(100, pct));
           },
           money: function (value) { return DecimalMoney.format(value); },
           moneyAbs: function (value) { return DecimalMoney.format(value, { absolute: true }); },
