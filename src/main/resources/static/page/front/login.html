@@ -1,134 +1,315 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta name="description" content="登录归途计划流浪动物救助平台">
-    <title>登录 · 归途计划</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-    <link rel="stylesheet" href="../../css/product-ui.css?v=20260728">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta name="description" content="登录归途计划流浪动物救助平台">
+  <title>登录 · 归途计划</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
+  <link rel="stylesheet" href="../../css/product-ui.css?v=20260801g">
 </head>
 <body>
-<div id="app" v-cloak class="ui-auth-page">
-    <section class="ui-auth-visual" aria-label="归途计划品牌故事">
-        <img src="/prototype-assets/editorial-02.svg" alt="等待领养动物的视觉占位图">
-        <a class="ui-brand ui-auth-brand" href="./index.html"><span class="ui-brand-mark">♡</span><span class="ui-brand-copy"><strong>归途计划</strong><small>PAWS ON THE WAY HOME</small></span></a>
-        <div class="ui-auth-story"><small>WELCOME BACK</small><h1>今天，也一起做点温暖的事。</h1><p>浏览领养、发起救助、加入志愿服务，并随时查看每一次行动的进展。</p></div>
-    </section>
-    <main class="ui-auth-main">
-        <form class="ui-auth-form" novalidate @submit.prevent="login">
-            <a class="ui-back-link" href="./animal_browse.html">← 先浏览待领养动物</a>
-            <h2>登录账户</h2>
-            <p class="ui-auth-intro">用户与管理员共用入口，登录后会根据权限进入对应工作台。</p>
+<div id="app" v-cloak class="ui-auth-page ui-login-page">
+  <section class="ui-auth-visual" aria-label="归途计划品牌故事">
+    <img src="/prototype-assets/editorial-02.svg" alt="">
+    <a class="ui-brand ui-auth-brand" href="./index.html">
+      <span class="ui-brand-mark">♡</span>
+      <span class="ui-brand-copy"><strong>归途计划</strong><small>PAWS ON THE WAY HOME</small></span>
+    </a>
+    <div class="ui-auth-story">
+      <small>WELCOME BACK</small>
+      <h1>今天，也一起做点温暖的事。</h1>
+      <p>浏览领养、发起救助、加入志愿服务，并随时查看每一次行动的进展。</p>
+    </div>
+  </section>
+  <main class="ui-auth-main">
+    <form class="ui-auth-form" novalidate @submit.prevent="login">
+      <a class="ui-back-link" href="./animal_browse.html">← 先浏览待领养动物</a>
+      <h1 class="ui-auth-heading" id="loginTitle">登录账户</h1>
+      <p class="ui-auth-intro">用户与管理员共用入口，登录后会根据权限进入对应工作台。</p>
 
-            <div class="ui-form-field">
-                <label for="loginUsername">账号</label>
-                <input id="loginUsername" v-model.trim="form.username" class="ui-form-input" type="text" autocomplete="username" :aria-invalid="String(!!errors.username)" aria-describedby="loginUsernameError">
-                <p v-if="errors.username" id="loginUsernameError" class="ui-field-error">{{ errors.username }}</p>
-            </div>
-            <div class="ui-form-field">
-                <label for="loginPassword">密码</label>
-                <input id="loginPassword" v-model="form.password" class="ui-form-input" type="password" autocomplete="current-password" :aria-invalid="String(!!errors.password)" aria-describedby="loginPasswordError">
-                <p v-if="errors.password" id="loginPasswordError" class="ui-field-error">{{ errors.password }}</p>
-            </div>
-            <div class="ui-form-field">
-                <label for="loginCode">图形验证码 <small>点击图片可刷新</small></label>
-                <div class="ui-captcha-row">
-                    <input id="loginCode" v-model.trim="form.code" class="ui-form-input" type="text" inputmode="text" autocomplete="off" :aria-invalid="String(!!errors.code)" aria-describedby="loginCodeError">
-                    <div id="picyzm" class="ui-captcha" role="img" aria-label="图形验证码，点击刷新"></div>
-                </div>
-                <p v-if="errors.code" id="loginCodeError" class="ui-field-error">{{ errors.code }}</p>
-            </div>
+      <div class="ui-form-field">
+        <label for="loginUsername">账号</label>
+        <input
+          id="loginUsername"
+          ref="username"
+          v-model.trim="form.username"
+          class="ui-form-input"
+          type="text"
+          name="username"
+          autocomplete="username"
+          maxlength="64"
+          :disabled="submitting"
+          :aria-invalid="errors.username ? 'true' : 'false'"
+          :aria-describedby="errors.username ? 'loginUsernameError' : null"
+        >
+        <p v-if="errors.username" id="loginUsernameError" class="ui-field-error" role="alert">{{ errors.username }}</p>
+      </div>
 
-            <div v-if="formError" class="ui-form-alert" role="alert">{{ formError }}</div>
-            <button class="ui-button is-primary ui-auth-submit" type="submit" :disabled="submitting">{{ submitting ? '正在登录…' : '登录' }}</button>
-            <div class="ui-auth-links"><span>还没有账户？</span><a href="./register.html">创建账户</a></div>
-            <p class="ui-auth-footnote">登录即表示你同意平台按隐私政策处理必要的账户和业务信息。</p>
-            <div class="sr-only" aria-live="polite">{{ liveMessage }}</div>
-        </form>
-    </main>
+      <div class="ui-form-field">
+        <label for="loginPassword">密码</label>
+        <input
+          id="loginPassword"
+          ref="password"
+          v-model="form.password"
+          class="ui-form-input"
+          type="password"
+          name="password"
+          autocomplete="current-password"
+          maxlength="128"
+          :disabled="submitting"
+          :aria-invalid="errors.password ? 'true' : 'false'"
+          :aria-describedby="errors.password ? 'loginPasswordError' : null"
+        >
+        <p v-if="errors.password" id="loginPasswordError" class="ui-field-error" role="alert">{{ errors.password }}</p>
+      </div>
+
+      <div class="ui-form-field">
+        <label for="loginCode">页面校验码 <small>仅浏览器本地校验，非服务端安全验证码 · 点击或键盘可刷新</small></label>
+        <div class="ui-captcha-row">
+          <input
+            id="loginCode"
+            ref="code"
+            v-model.trim="form.code"
+            class="ui-form-input"
+            type="text"
+            name="code"
+            inputmode="text"
+            autocomplete="off"
+            maxlength="8"
+            :disabled="submitting || captchaBroken"
+            :aria-invalid="errors.code ? 'true' : 'false'"
+            :aria-describedby="errors.code ? 'loginCodeError loginCodeHelp' : 'loginCodeHelp'"
+          >
+          <div
+            id="picyzm"
+            class="ui-captcha"
+            role="button"
+            tabindex="0"
+            data-login-captcha
+            aria-label="刷新页面校验码"
+            :aria-disabled="String(submitting || captchaBroken)"
+            @click="refreshCaptcha"
+            @keydown.enter.prevent="refreshCaptcha"
+            @keydown.space.prevent="refreshCaptcha"
+          ></div>
+        </div>
+        <p id="loginCodeHelp" class="ui-field-hint">此校验码只在本页生成与核对，不会作为后端登录凭据发送。</p>
+        <p v-if="errors.code" id="loginCodeError" class="ui-field-error" role="alert">{{ errors.code }}</p>
+      </div>
+
+      <div v-if="formError" ref="formError" class="ui-form-alert" role="alert" tabindex="-1">{{ formError }}</div>
+      <button class="ui-button is-primary ui-auth-submit" type="submit" data-login-submit :disabled="submitting || captchaBroken">
+        {{ submitting ? '正在登录…' : '登录' }}
+      </button>
+      <div class="ui-auth-links">
+        <span>还没有账户？</span>
+        <a :href="registerHref" data-login-to-register>创建账户</a>
+      </div>
+      <p class="ui-auth-footnote">登录即表示你同意平台按隐私政策处理必要的账户和业务信息。</p>
+      <div class="sr-only" aria-live="assertive">{{ liveMessage }}</div>
+    </form>
+  </main>
 </div>
 
 <script src="../../js/jquery.min.js"></script>
 <script src="../../js/vue.min.js"></script>
 <script src="../../js/gVerify.js?v=20260728"></script>
 <script src="../../js/auth-session.js?v=20260728"></script>
-<script src="../../js/user-workspace.js?v=20260728"></script>
+<script src="../../js/user-workspace.js?v=20260801g"></script>
 <script>
-var verifyCode = null;
+(function () {
+  'use strict';
 
-function hasAdminAccess(user) {
-  return window.UserWorkspace ? UserWorkspace.hasAdminAccess(user) : false;
-}
-
-function defaultHome(user) {
-  return window.UserWorkspace ? UserWorkspace.defaultHome(user) : '/page/front/index.html';
-}
-
-function safeRedirect(user) {
-  var raw = new URLSearchParams(location.search).get('redirect') || '';
-  if (!raw) return defaultHome(user);
-  var target;
-  try { target = new URL(raw, location.origin); } catch (e) { return defaultHome(user); }
-  if (target.origin !== location.origin || raw.indexOf('\\') >= 0 || raw.indexOf('..') >= 0) return defaultHome(user);
-  var publicPaths = ['/page/front/index.html','/page/front/animal_browse.html','/page/front/notice_list.html','/page/front/account_public.html','/page/front/notice_detail.html','/page/front/animal_detail.html'];
-  var memberPaths = ['/page/end/index.html','/page/end/person.html','/page/front/my_adopt.html','/page/front/my_visit.html','/page/front/my_volunteer.html','/page/front/my_rescue.html','/page/front/adopt_apply.html','/page/front/adopt_proof.html','/page/front/volunteer_apply.html','/page/front/rescue_apply.html'];
-  var adminPaths = ['/page/end/user.html','/page/end/role.html','/page/end/permission.html','/page/end/animal.html','/page/end/adopt.html','/page/end/proof.html','/page/end/visit.html','/page/end/volunteer.html','/page/end/account.html','/page/end/notice.html','/page/end/help.html'];
-  if (publicPaths.indexOf(target.pathname) < 0 && memberPaths.indexOf(target.pathname) < 0 && adminPaths.indexOf(target.pathname) < 0) return defaultHome(user);
-  if (adminPaths.indexOf(target.pathname) >= 0 && !hasAdminAccess(user)) {
-    return defaultHome(user);
-  }
-  return target.pathname + target.search;
-}
-
-new Vue({
-  el: '#app',
-  data: { form: { username: '', password: '', code: '' }, errors: {}, formError: '', submitting: false, liveMessage: '' },
-  mounted: function () {
-    if (window.AuthSession) {
-      AuthSession.bootstrap({ requireAuth: false, allowCachedOnNetworkError: false, onDone: function (ok, user) {
-        if (ok) location.replace(safeRedirect(user));
-      }});
+  function safeRedirect(user) {
+    if (window.UserWorkspace && UserWorkspace.safeRedirectFromLocation) {
+      return UserWorkspace.safeRedirectFromLocation(user, {});
     }
-    try { verifyCode = new GVerify({ id: 'picyzm', type: 'blend' }); } catch (e) { verifyCode = null; }
-  },
-  methods: {
-    validate: function () {
-      this.errors = {};
-      if (!this.form.username) this.errors.username = '请输入账号';
-      if (!this.form.password) this.errors.password = '请输入密码';
-      if (!this.form.code) this.errors.code = '请输入图形验证码';
-      else if (verifyCode && !verifyCode.validate(this.form.code)) this.errors.code = '图形验证码不正确，请重新输入';
-      return Object.keys(this.errors).length === 0;
+    return '/page/front/index.html';
+  }
+
+  function registerLink() {
+    if (window.UserWorkspace && UserWorkspace.withRedirectParam) {
+      return UserWorkspace.withRedirectParam('./register.html');
+    }
+    return './register.html';
+  }
+
+  new Vue({
+    el: '#app',
+    data: {
+      form: { username: '', password: '', code: '' },
+      errors: {},
+      formError: '',
+      submitting: false,
+      liveMessage: '',
+      captchaBroken: false,
+      verifyCode: null,
+      registerHref: registerLink()
     },
-    login: function () {
-      if (this.submitting || !this.validate()) return;
-      this.submitting = true;
-      this.formError = '';
-      this.liveMessage = '正在登录';
-      $.ajax({
-        url: '/api/user/login', type: 'POST', contentType: 'application/json', timeout: 8000,
-        data: JSON.stringify({ username: this.form.username, password: this.form.password })
-      }).done(res => {
-        if (res && res.code === '0' && res.data && res.data.user) {
-          if (window.AuthSession) AuthSession.saveSession(res.data.user, null, res.data.csrfToken);
-          this.liveMessage = '登录成功，正在进入首页';
-          location.replace(safeRedirect(res.data.user));
+    mounted: function () {
+      var view = this;
+      if (window.AuthSession) {
+        AuthSession.bootstrap({
+          requireAuth: false,
+          allowCachedOnNetworkError: false,
+          onDone: function (ok, user) {
+            if (ok && user) location.replace(safeRedirect(user));
+          }
+        });
+      }
+      view.initCaptcha();
+    },
+    methods: {
+      initCaptcha: function () {
+        this.captchaBroken = false;
+        this.verifyCode = null;
+        try {
+          if (typeof GVerify !== 'function') throw new Error('GVerify missing');
+          this.verifyCode = new GVerify({ id: 'picyzm', type: 'blend' });
+          if (!this.verifyCode || typeof this.verifyCode.validate !== 'function') {
+            throw new Error('captcha init incomplete');
+          }
+        } catch (e) {
+          this.verifyCode = null;
+          this.captchaBroken = true;
+          this.errors = Object.assign({}, this.errors, {
+            code: '页面校验码未能加载，请刷新页面后重试。'
+          });
+          this.formError = '页面校验码未能加载，暂时无法登录。';
+          this.liveMessage = this.formError;
+        }
+      },
+      refreshCaptcha: function () {
+        if (this.submitting) return;
+        if (!this.verifyCode || typeof this.verifyCode.refresh !== 'function') {
+          this.initCaptcha();
           return;
         }
-        this.formError = (res && res.msg) || '账号、密码或验证码不正确';
-        this.liveMessage = this.formError;
-        this.form.code = '';
-        if (verifyCode) verifyCode.refresh();
-      }).fail(xhr => {
-        var message = xhr && xhr.status === 429 ? '尝试次数过多，请稍后再试' : '网络连接异常，请稍后重试';
+        try {
+          this.verifyCode.refresh();
+          this.form.code = '';
+          if (this.errors.code) {
+            var next = Object.assign({}, this.errors);
+            delete next.code;
+            this.errors = next;
+          }
+        } catch (e) {
+          this.captchaBroken = true;
+          this.errors = Object.assign({}, this.errors, { code: '校验码刷新失败，请刷新页面。' });
+        }
+      },
+      clearFieldError: function (key) {
+        if (!this.errors[key]) return;
+        var next = Object.assign({}, this.errors);
+        delete next[key];
+        this.errors = next;
+      },
+      focusFirstIssue: function () {
+        var view = this;
+        view.$nextTick(function () {
+          var order = ['username', 'password', 'code'];
+          var map = { username: 'username', password: 'password', code: 'code' };
+          for (var i = 0; i < order.length; i++) {
+            if (view.errors[order[i]] && view.$refs[map[order[i]]]) {
+              try { view.$refs[map[order[i]]].focus(); } catch (e) {}
+              return;
+            }
+          }
+          if (view.formError && view.$refs.formError) {
+            try { view.$refs.formError.focus(); } catch (e2) {}
+          }
+        });
+      },
+      validate: function () {
+        this.errors = {};
+        this.formError = '';
+        if (!this.form.username) this.errors.username = '请输入账号';
+        if (!this.form.password) this.errors.password = '请输入密码';
+        if (this.captchaBroken || !this.verifyCode) {
+          this.errors.code = '页面校验码未能加载，请刷新页面后重试。';
+        } else if (!this.form.code) {
+          this.errors.code = '请输入页面校验码';
+        } else if (!this.verifyCode.validate(this.form.code)) {
+          this.errors.code = '页面校验码不正确，请重新输入';
+          this.form.code = '';
+          try { this.verifyCode.refresh(); } catch (e) {}
+        }
+        var ok = Object.keys(this.errors).length === 0;
+        if (!ok) {
+          this.liveMessage = this.errors.username || this.errors.password || this.errors.code || '请检查填写内容';
+          this.focusFirstIssue();
+        }
+        return ok;
+      },
+      loginErrorMessage: function (xhr, textStatus) {
+        if (textStatus === 'timeout' || !xhr || xhr.status === 0) {
+          return '网络连接异常，请稍后重试';
+        }
+        if (xhr.status === 429) {
+          return (xhr.responseJSON && xhr.responseJSON.msg) || '尝试次数过多，请稍后再试';
+        }
+        if (xhr.status >= 500) {
+          return (xhr.responseJSON && xhr.responseJSON.msg) || '服务暂时不可用，请稍后重试';
+        }
+        if (xhr.status === 400 || xhr.status === 401 || xhr.status === 403) {
+          return (xhr.responseJSON && xhr.responseJSON.msg) || '账号或密码错误';
+        }
+        return (xhr.responseJSON && xhr.responseJSON.msg) || '登录失败，请稍后重试';
+      },
+      afterAuthFailure: function (message) {
         this.formError = message;
         this.liveMessage = message;
-      }).always(() => { this.submitting = false; });
+        this.form.password = '';
+        this.form.code = '';
+        if (this.verifyCode && typeof this.verifyCode.refresh === 'function') {
+          try { this.verifyCode.refresh(); } catch (e) {}
+        }
+        this.focusFirstIssue();
+      },
+      login: function () {
+        if (this.submitting) return;
+        if (!this.validate()) return;
+        var view = this;
+        view.submitting = true;
+        view.formError = '';
+        view.liveMessage = '正在登录';
+        // Backend does not receive captcha; only username/password are sent.
+        $.ajax({
+          url: '/api/user/login',
+          type: 'POST',
+          contentType: 'application/json',
+          timeout: 8000,
+          data: JSON.stringify({
+            username: view.form.username,
+            password: view.form.password
+          })
+        }).done(function (res) {
+          if (res && res.code === '0' && res.data && res.data.user) {
+            if (window.AuthSession) AuthSession.saveSession(res.data.user, null, res.data.csrfToken);
+            view.liveMessage = '登录成功，正在进入工作台';
+            location.replace(safeRedirect(res.data.user));
+            return;
+          }
+          // Malformed success / business failure — stay on page.
+          // Never treat a bare code=0 msg as success when user payload is missing.
+          var msg = '登录未完成，请检查账号与密码';
+          if (res && res.data === false) {
+            msg = '登录未成功，请检查账号与密码';
+          } else if (res && res.code && res.code !== '0' && res.msg) {
+            msg = String(res.msg);
+          }
+          view.afterAuthFailure(msg);
+        }).fail(function (xhr, textStatus) {
+          view.afterAuthFailure(view.loginErrorMessage(xhr, textStatus));
+        }).always(function () {
+          view.submitting = false;
+        });
+      }
     }
-  }
-});
+  });
+})();
 </script>
 </body>
 </html>

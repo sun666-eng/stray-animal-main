@@ -166,7 +166,15 @@ Assert-True ($registerHtml -match 'id="registerPasswordConfirm"' -and $registerH
 Assert-True ($registerHtml -match 'allowCachedOnNetworkError:\s*false') "register: cached identity cannot bypass authoritative revalidation"
 $loginHtml = Read-Utf8 (Join-Path $staticRoot "page/front/login.html")
 Assert-True ($loginHtml -match 'allowCachedOnNetworkError:\s*false') "login: stale cached identity cannot create redirect loop"
-Assert-True ($loginHtml -match 'new URL\(raw, location\.origin\)' -and $loginHtml -match 'raw\.indexOf\(''\.\.''' -and $loginHtml -match 'adminPaths') "login: redirect is normalized and canonical allowlisted"
+# Phase 3G: redirect allowlist lives in shared UserWorkspace (login/register both consume it).
+$userWorkspaceJs = Read-Utf8 (Join-Path $staticRoot "js/user-workspace.js")
+Assert-True (
+  ($loginHtml -match 'UserWorkspace\.safeRedirectFromLocation|UserWorkspace\.safeRedirect') -and
+  ($userWorkspaceJs -match 'function safeRedirect') -and
+  ($userWorkspaceJs -match 'new URL\(') -and
+  ($userWorkspaceJs -match "indexOf\('\.\.'\)") -and
+  ($userWorkspaceJs -match 'ADMIN_REDIRECT_PATHS|isAdminPath|hasAdminAccess')
+) "login: redirect is normalized and canonical allowlisted"
 
 $petCareHtml = Read-Utf8 (Join-Path $staticRoot "page/front/pet_care.html")
 Assert-True ($petCareHtml -match '/api/petcare/config' -and $petCareHtml -notmatch 'v-if="isAdmin"|Number\(role\.id\)\s*===\s*1') "pet care: personal AI configuration is available to every authenticated user"

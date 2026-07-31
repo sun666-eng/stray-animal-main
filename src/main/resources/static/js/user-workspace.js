@@ -104,6 +104,125 @@
     return hasAdminAccess(user) ? '/page/end/index.html' : '/page/front/index.html';
   }
 
+  // Safe post-auth return targets (must match real pages under /page).
+  var PUBLIC_REDIRECT_PATHS = Object.freeze([
+    '/page/front/index.html',
+    '/page/front/animal_browse.html',
+    '/page/front/animal_detail.html',
+    '/page/front/notice_list.html',
+    '/page/front/notice_detail.html',
+    '/page/front/account_public.html',
+    '/page/front/login.html',
+    '/page/front/register.html'
+  ]);
+
+  var MEMBER_REDIRECT_PATHS = Object.freeze([
+    '/page/front/my_adopt.html',
+    '/page/front/my_visit.html',
+    '/page/front/my_volunteer.html',
+    '/page/front/my_rescue.html',
+    '/page/front/adopt_apply.html',
+    '/page/front/adopt_proof.html',
+    '/page/front/volunteer_apply.html',
+    '/page/front/volunteer_tasks.html',
+    '/page/front/rescue_apply.html',
+    '/page/front/favorites.html',
+    '/page/front/pet_care.html',
+    '/page/front/notifications.html',
+    '/page/end/person.html',
+    '/page/end/index.html'
+  ]);
+
+  var ADMIN_REDIRECT_PATHS = Object.freeze([
+    '/page/end/user.html',
+    '/page/end/role.html',
+    '/page/end/permission.html',
+    '/page/end/animal.html',
+    '/page/end/adopt.html',
+    '/page/end/proof.html',
+    '/page/end/visit.html',
+    '/page/end/volunteer.html',
+    '/page/end/account.html',
+    '/page/end/notice.html',
+    '/page/end/help.html',
+    '/page/end/operations.html',
+    '/page/end/admin_agent.html'
+  ]);
+
+  function isAdminPath(pathname) {
+    return ADMIN_REDIRECT_PATHS.indexOf(pathname) >= 0;
+  }
+
+  function isAllowedPath(pathname) {
+    return PUBLIC_REDIRECT_PATHS.indexOf(pathname) >= 0
+      || MEMBER_REDIRECT_PATHS.indexOf(pathname) >= 0
+      || ADMIN_REDIRECT_PATHS.indexOf(pathname) >= 0;
+  }
+
+  /**
+   * Resolve a safe same-origin return URL after login/register.
+   * options.memberOnly: reject admin paths even if user has admin flags
+   *   (used after registration — accounts start without admin rights).
+   */
+  function safeRedirect(user, raw, options) {
+    options = options || {};
+    var fallback = defaultHome(user);
+    if (raw == null || raw === '') return fallback;
+    var text = String(raw);
+    if (!text || text.charAt(0) !== '/' || text.charAt(1) === '/') return fallback;
+    if (text.indexOf('\\') >= 0 || text.indexOf('..') >= 0) return fallback;
+    if (/[\u0000-\u001F\u007F]/.test(text)) return fallback;
+    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(text)) return fallback;
+    var target;
+    try {
+      target = new URL(text, (typeof location !== 'undefined' && location.origin) ? location.origin : 'http://127.0.0.1');
+    } catch (e) {
+      return fallback;
+    }
+    if (typeof location !== 'undefined' && location.origin && target.origin !== location.origin) return fallback;
+    var pathname = target.pathname || '';
+    if (!isAllowedPath(pathname)) return fallback;
+    if (isAdminPath(pathname)) {
+      if (options.memberOnly) return fallback;
+      if (!hasAdminAccess(user)) return fallback;
+    }
+    // Keep business query; drop fragment to avoid hash-based tricks.
+    return pathname + (target.search || '');
+  }
+
+  /** Read ?redirect= from current location and resolve safely. */
+  function safeRedirectFromLocation(user, options) {
+    var raw = '';
+    try {
+      raw = new URLSearchParams(location.search).get('redirect') || '';
+    } catch (e) {
+      raw = '';
+    }
+    return safeRedirect(user, raw, options);
+  }
+
+  /**
+   * Append current redirect query to a same-page auth link (login ↔ register).
+   * Does not validate the redirect value here; consumers still call safeRedirect on use.
+   */
+  function withRedirectParam(href) {
+    var raw = '';
+    try {
+      raw = new URLSearchParams(location.search).get('redirect') || '';
+    } catch (e) {
+      raw = '';
+    }
+    if (!raw || raw.charAt(0) !== '/' || raw.charAt(1) === '/') return href;
+    if (raw.indexOf('\\') >= 0 || raw.indexOf('..') >= 0) return href;
+    try {
+      var u = new URL(href, location.origin);
+      u.searchParams.set('redirect', raw);
+      return u.pathname + u.search;
+    } catch (e2) {
+      return href;
+    }
+  }
+
   function services() {
     return USER_SERVICES.slice();
   }
@@ -135,8 +254,16 @@
     FRONT_ACCOUNT_GROUPS: FRONT_ACCOUNT_GROUPS,
     USER_SERVICES: USER_SERVICES,
     SERVICE_GROUPS: SERVICE_GROUPS,
+    PUBLIC_REDIRECT_PATHS: PUBLIC_REDIRECT_PATHS,
+    MEMBER_REDIRECT_PATHS: MEMBER_REDIRECT_PATHS,
+    ADMIN_REDIRECT_PATHS: ADMIN_REDIRECT_PATHS,
     hasAdminAccess: hasAdminAccess,
     defaultHome: defaultHome,
+    safeRedirect: safeRedirect,
+    safeRedirectFromLocation: safeRedirectFromLocation,
+    withRedirectParam: withRedirectParam,
+    isAdminPath: isAdminPath,
+    isAllowedPath: isAllowedPath,
     services: services,
     serviceGroups: serviceGroups,
     publicNavigation: publicNavigation,

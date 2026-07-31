@@ -3186,3 +3186,108 @@ body.ui-adoption-dialog-open {
     transition-duration: .01ms !important;
   }
 }
+
+/* ===== Phase 3G: login / register auth onboarding ===== */
+.ui-login-page,
+.ui-register-page { overflow-x: hidden; overflow-y: auto; }
+.ui-login-page .ui-auth-heading,
+.ui-register-page .ui-auth-heading {
+  margin: 0 0 10px;
+  font-size: clamp(30px, 4vw, 38px);
+  letter-spacing: -.05em;
+  overflow-wrap: anywhere;
+}
+.ui-login-page .ui-form-input,
+.ui-register-page .ui-form-input,
+.ui-login-page .ui-auth-submit,
+.ui-register-page .ui-auth-submit,
+.ui-login-page .ui-captcha,
+.ui-register-page .ui-checkbox {
+  min-height: 44px;
+}
+.ui-login-page .ui-captcha {
+  min-width: 44px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+.ui-login-page .ui-captcha:focus-visible,
+.ui-register-page .ui-form-input:focus-visible,
+.ui-login-page .ui-form-input:focus-visible,
+.ui-login-page .ui-auth-submit:focus-visible,
+.ui-register-page .ui-auth-submit:focus-visible {
+  outline: 2px solid var(--ui-accent-strong, #d63a1f);
+  outline-offset: 2px;
+}
+.ui-login-page .ui-field-hint,
+.ui-register-page .ui-password-hint {
+  margin: 6px 0 0;
+  color: var(--ui-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+.ui-login-page .ui-form-alert,
+.ui-register-page .ui-form-alert {
+  margin-top: 14px;
+  overflow-wrap: anywhere;
+}
+.ui-register-page .ui-auth-accept {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 8px;
+  min-height: 44px;
+  line-height: 1.55;
+}
+.ui-register-page .ui-auth-accept input {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  flex: 0 0 auto;
+}
+.ui-register-page .ui-auth-accept.is-error span { color: var(--ui-danger, #d64343); }
+.ui-login-page .ui-auth-main,
+.ui-register-page .ui-auth-main {
+  overflow: visible;
+  max-width: 100vw;
+}
+@media (max-width: 900px) {
+  .ui-login-page,
+  .ui-register-page {
+    display: block;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+  .ui-login-page .ui-auth-visual,
+  .ui-register-page .ui-auth-visual {
+    min-height: 220px;
+    max-height: 280px;
+  }
+  .ui-login-page .ui-auth-main,
+  .ui-register-page .ui-auth-main {
+    display: block;
+    padding: 28px 20px 48px;
+    overflow: visible;
+  }
+}
+@media (max-width: 390px) {
+  .ui-login-page .ui-captcha-row,
+  .ui-register-page .ui-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .ui-login-page .ui-captcha { width: 100%; height: 48px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-login-page *,
+  .ui-login-page *::before,
+  .ui-login-page *::after,
+  .ui-register-page *,
+  .ui-register-page *::before,
+  .ui-register-page *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

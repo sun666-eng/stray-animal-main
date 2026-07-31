@@ -1131,14 +1131,14 @@ GPT 确认焦点已过；真实 390×844 复现搜索区空白：
 
 ---
 
-### Phase 3F：用户收藏与照顾知识助手工作台（2026-07-31 · 验收通过待审）
+### Phase 3F：用户收藏与照顾知识助手工作台（2026-07-31 · 已封存）
 
 **基线 tip**: `38f67baff6457e34a732719cab0c36ee3d6b97f9`（Phase 3E）
 **产品封存 3E**: `07394318976d5917ae4b9a2b1d0065f55800460a`
 **分支**: `ui-polish/phase-3f-favorites-petcare-workspace-20260731`
 **测试端口**: `18130`（dev；结束精确释放；不操作 9999）
 
-**状态**: **严格验收通过**；**未提交、未推送、未进入 Phase 3G** — 等待 GPT 审核
+**封存提交**: `27e5514db5d4bdab6a4ed4eb897ce8ae9e0c33a3` · `feat(ui): seal phase 3f favorites and pet care workspace`（已推送；未合 main）
 
 | 项 | 值 |
 |----|-----|
@@ -1166,4 +1166,92 @@ GPT 确认焦点已过；真实 390×844 复现搜索区空白：
 `phase-3f-report.json` · `run-strict-final.log` · `screenshots-index.json` ·
 `reg-summary-phases.json`
 
-**停止**: 不提交、不推送、不合并 main、不进入 Phase 3G。等待 GPT 独立审核。
+**停止（3F 已完成）**: 已封存并推送；未合 main。
+
+---
+
+### Phase 3G：用户登录、注册与安全返回闭环（2026-08-01 · 验收通过待审）
+
+**基线 tip**: `27e5514db5d4bdab6a4ed4eb897ce8ae9e0c33a3`（Phase 3F 封存）
+**分支**: `ui-polish/phase-3g-auth-onboarding-20260801`
+**测试端口**: `18132`（dev；结束精确释放；不操作 9999）
+
+**状态**: **严格验收通过**；**未提交、未推送、未进入 Phase 3H** — 等待 GPT 审核
+
+| 项 | 值 |
+|----|-----|
+| 页面范围 | `login.html` · `register.html` |
+| 缓存 | 两页 `product-ui.css?v=20260801g` · `user-workspace.js?v=20260801g` |
+| Phase 3G | **194 / 0 / 0** strict；矩阵 **10/10**；截图 **12**；probes **49** |
+| best-effort / fallback / skipped | **0 / 0 / 0** |
+| 写入隔离 | fixture **34** · real **0** |
+| login / register POST | **26** / **8**（全部 fixture） |
+| redirect 矩阵 | **16** 项真实导航 |
+| 回归 3F→3A | 全部 exit **0**（3A 曾服务中途退出，重启后完整重跑 exit 0） |
+| 总门禁 | adversarial **853/0** · Maven **473/0/0/0** · git diff --check **0** |
+| P0/P1/P2/P3 | **0/0/0/0** |
+
+**产品修改**:
+
+- 登录错误映射（400/401/429/5xx/网络）；畸形成功不跳转；写锁；诚实验证码；aria-live。
+- 注册校验与后端契约对齐；payload 仅四字段；memberOnly redirect。
+- `UserWorkspace.safeRedirect` 共享白名单与拒绝规则；登录/注册共用。
+- CSS 限定认证页根类。
+
+**测试**: 新建 `tools/ui-polish-phase-3g.cjs`（真实 Playwright；realWrites=0）。
+
+权威: `output/playwright/ui-polish-phase-3g/PHASE-3G-REPORT.md` · `phase-3g-report.json` · `run-strict-final.log` · `screenshots-index.json` · `reg-summary-phases.json`
+
+**停止**: 不提交、不推送、不合并 main、不进入 Phase 3H。等待 GPT 独立审核。
+
+---
+
+### Phase 3G 验收可信度返修（2026-08-01）
+
+**测试端口**: `18134`（结束后精确释放；不操作 9999）
+
+**状态**: **strict=true**；**未提交、未推送、未进入 Phase 3H** — 等待 GPT 最终封存审核
+
+| 项 | 值 |
+|----|-----|
+| Assertions | **231 / 0 / 0** |
+| requestfailed 账本 | expected **2** · unexpected **0** · GET/static/html **0** |
+| 分类器自测 | **10 / 10** |
+| Session/CSRF 证据 | login + register · jwtResidue **0** |
+| 真实验证码 probe | **pass** · `login-real-captcha.png` |
+| 截图 | **13**（index 一致） |
+| 回归 3F→3A | 全部 exit **0**（3A 曾服务中途退出，重启后完整重跑） |
+| adversarial | **853/0**（`-BaseUrl http://127.0.0.1:18134`） |
+| Maven | **473/0/0/0** |
+| git diff --check | **0** |
+| P0/P1/P2/P3 | **0/0/0/0** |
+
+**返修要点**: 移除宽泛 requestfailed 白名单；显式 `expectedRequestFailureLedger`；导航 settle + 独立 page 消除 GET ERR_ABORTED；分类器负向自测；Session/CSRF 真实断言；真实验证码 canvas smoke。
+
+权威: `output/playwright/ui-polish-phase-3g/PHASE-3G-REPORT.md`
+
+**Phase 3G 验收可信度返修完成，等待 GPT 最终封存审核。**
+
+---
+
+### Phase 3G scenarioId 账本匹配返修（2026-08-01）
+
+**测试端口**: `18136`（结束精确释放；不操作 9999）
+
+**状态**: **strict=true**；**未提交、未推送、未进入 Phase 3H**
+
+| 项 | 值 |
+|----|-----|
+| Assertions | **236 / 0 / 0** |
+| requestfailed | expected **2** · unexpected **0** · GET/static/html **0** |
+| 匹配键 | **scenarioId + method + pathname + failure + expectedCount** |
+| 捕获时机 | `page.on('request')` 写入；`requestfailed` 只读发起时 scenarioId |
+| 分类器自测 | **15 / 15**（含 scenarioId 错配/空/超次/页切场景仍绑定发起时） |
+| Session/CSRF · 真实验证码 | 仍通过 |
+| 回归 3F→3A | 全部 exit **0** |
+| adversarial | **853/0**（`-BaseUrl http://127.0.0.1:18136`） |
+| Maven | **473/0/0/0** |
+| git diff --check | **0** |
+| P0/P1/P2/P3 | **0/0/0/0** |
+
+**Phase 3G scenarioId 账本匹配返修完成，等待 GPT 最终封存审核。**
