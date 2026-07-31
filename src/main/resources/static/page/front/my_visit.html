@@ -1,43 +1,339 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="description" content="查看领养动物的真实回访记录">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="查看领养动物的真实回访计划与记录">
   <title>回访记录 · 归途计划</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-  <link rel="stylesheet" href="../../css/product-ui.css?v=20260731a">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
+  <link rel="stylesheet" href="../../css/product-ui.css?v=20260731c">
 </head>
-<body>
-<div id="authWait" class="ui-state" role="status"><div><span class="ui-state-mark ui-skeleton"></span><h2>正在验证登录状态</h2></div></div>
+<body class="ui-user-adoption-page ui-visit-workflow-page">
+<div id="authWait" class="ui-state" role="status">
+  <div><span class="ui-state-mark ui-skeleton"></span><h2>正在验证登录状态</h2></div>
+</div>
 <div id="app" v-cloak>
   <front-site-header :user="user"></front-site-header>
-  <main class="ui-container ui-workspace"><div class="ui-workspace-grid">
-    <nav class="ui-side-nav" aria-label="个人业务导航"><strong>我的行动</strong><a href="./my_adopt.html">领养申请</a><a href="./notifications.html">消息通知</a><a class="is-active" href="./my_visit.html" aria-current="page">回访记录</a><a href="./my_volunteer.html">志愿服务</a><a href="./my_rescue.html">救助记录</a></nav>
-    <section aria-labelledby="visitTitle">
-      <div class="ui-panel-head"><div><h1 id="visitTitle" class="ui-workspace-title">回访记录</h1><p>查看工作人员登记的回访日期、健康评分、备注和图片。系统未记录回访方式。</p></div><a v-if="petId" class="ui-button is-ghost" href="./my_visit.html">查看全部</a></div>
-      <div v-if="petId" class="ui-status-key" role="note"><span><i class="is-done"></i>当前筛选动物 #{{ petId }}</span></div>
-      <div v-if="plans.length" class="ui-record-list" style="margin-bottom:22px"><article v-for="plan in plans" :key="'plan-'+plan.id" class="ui-record-card" style="grid-template-columns:1fr auto"><div class="ui-record-copy"><span class="ui-badge" :class="planBadge(plan.status)">{{ planStatus(plan.status) }}</span><h2>{{ plan.planType==='7_day'?'7 天适应回访':plan.planType==='30_day'?'30 天健康回访':'90 天稳定回访' }}</h2><p>计划日期 {{ dateText(plan.dueAt) }} · 动物 #{{ plan.aid }}</p></div></article></div>
-      <div v-if="loading" class="ui-state" role="status"><div><span class="ui-state-mark ui-skeleton"></span><h2>正在读取回访记录</h2></div></div>
-      <div v-else-if="error" class="ui-state" role="alert"><div><span class="ui-state-mark">!</span><h2>回访记录暂时无法读取</h2><p>{{ error }}</p><button class="ui-button is-dark" type="button" @click="load(pageNum)">重新加载</button></div></div>
-      <div v-else-if="!records.length" class="ui-state"><div><span class="ui-state-mark">♡</span><h2>暂无回访记录</h2><p>领养通过后，工作人员可根据真实回访情况录入记录。</p><a class="ui-button is-ghost" href="./my_adopt.html">返回我的领养</a></div></div>
-      <div v-else class="ui-record-list">
-        <article v-for="item in records" :key="item.id" class="ui-record-card">
-          <img :src="imageUrl(item.pic)" :alt="(item.aname||'领养动物')+'的回访图片'" @error="imageFallback">
-          <div class="ui-record-copy"><span class="ui-badge is-done">健康评分 {{ score(item.state) }}</span><h2>{{ item.aname || ('动物 #'+item.petId) }}</h2><p>回访日期 {{ dateText(item.vtime) }} · 记录人 {{ item.vname || '-' }}</p><p>{{ item.remark || '未填写回访备注' }}</p></div>
-          <div class="ui-record-actions"><a class="ui-button is-ghost" :href="animalUrl(item.petId)">查看动物</a></div>
-        </article>
-      </div>
-      <div v-if="!loading&&!error&&totalPages>1" class="ui-pagination"><span>第 {{ pageNum }} 页，共 {{ total }} 条记录</span><div class="ui-page-buttons"><button type="button" :disabled="pageNum===1" @click="load(pageNum-1)">上一页</button><button v-for="page in pages" :key="page" type="button" :class="{'is-current':page===pageNum}" :aria-current="page===pageNum?'page':null" @click="load(page)">{{ page }}</button><button type="button" :disabled="pageNum===totalPages" @click="load(pageNum+1)">下一页</button></div></div>
-    </section>
-  </div></main>
+  <main class="ui-container ui-workspace">
+    <div class="ui-workspace-grid">
+      <nav class="ui-side-nav" aria-label="个人业务导航">
+        <strong>我的行动</strong>
+        <a href="./my_adopt.html">领养申请</a>
+        <a href="./notifications.html">消息通知</a>
+        <a class="is-active" href="./my_visit.html" aria-current="page">回访记录</a>
+        <a href="./my_volunteer.html">志愿服务</a>
+        <a href="./my_rescue.html">救助记录</a>
+      </nav>
+
+      <section aria-labelledby="visitTitle">
+        <div class="ui-panel-head ui-adoption-workspace-head">
+          <div>
+            <span class="ui-section-kicker">POST-ADOPTION CARE</span>
+            <h1 id="visitTitle" class="ui-workspace-title">回访记录</h1>
+            <p>查看工作人员登记的计划、回访日期、健康评分、备注和图片。系统没有记录的回访方式不会被推断。</p>
+          </div>
+          <a v-if="petId || parameterError" class="ui-button is-ghost" href="./my_visit.html">查看全部回访</a>
+        </div>
+
+        <div v-if="parameterError" class="ui-state ui-adoption-state" role="alert">
+          <div>
+            <span class="ui-state-mark">!</span>
+            <h2>动物编号无效</h2>
+            <p>{{ parameterError }}</p>
+            <a class="ui-button is-dark" href="./my_visit.html">查看全部回访</a>
+          </div>
+        </div>
+
+        <template v-else>
+          <div v-if="petId" class="ui-status-key" role="note">
+            <span><i class="is-done"></i>当前筛选动物 #{{ petId }}</span>
+          </div>
+
+          <section class="ui-panel ui-visit-plan-panel" aria-labelledby="visitPlanTitle">
+            <div class="ui-panel-head">
+              <div>
+                <span class="ui-section-kicker">01 · SCHEDULE</span>
+                <h2 id="visitPlanTitle">回访计划</h2>
+                <p>计划状态与到期日期来自系统记录；逾期或异常计划需要工作人员跟进。</p>
+              </div>
+              <button class="ui-button is-ghost" type="button" :disabled="planLoading" @click="loadPlans">
+                {{ planLoading ? '正在刷新…' : '刷新计划' }}
+              </button>
+            </div>
+
+            <div v-if="planLoading" class="ui-compact-state" role="status">
+              <span class="ui-state-mark ui-skeleton"></span><p>正在读取回访计划…</p>
+            </div>
+            <div v-else-if="planError" class="ui-inline-alert is-error" role="alert">
+              <span>{{ planError }}</span>
+              <button class="ui-button is-ghost" type="button" @click="loadPlans">重试</button>
+            </div>
+            <div v-else-if="!plans.length" class="ui-compact-state">
+              <span class="ui-state-mark">—</span>
+              <div><strong>暂无回访计划</strong><p>正式完成领养后，系统才会生成相应计划。</p></div>
+            </div>
+            <div v-else class="ui-visit-plan-grid">
+              <article v-for="plan in plans" :key="idText(plan.id)" class="ui-visit-plan-card">
+                <div>
+                  <span class="ui-badge" :class="planBadge(plan.status)">{{ planStatus(plan.status) }}</span>
+                  <small>{{ idText(plan.id) === '无效编号' ? '计划编号未记录' : '计划 #' + idText(plan.id) }}</small>
+                </div>
+                <h3>{{ planTypeText(plan.planType) }}</h3>
+                <p>计划日期 {{ dateText(plan.dueAt) }}</p>
+                <p>动物 #{{ idText(plan.aid) }}</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="ui-panel ui-visit-record-panel" aria-labelledby="visitRecordTitle">
+            <div class="ui-panel-head">
+              <div>
+                <span class="ui-section-kicker">02 · RECORDS</span>
+                <h2 id="visitRecordTitle">真实回访记录</h2>
+                <p>共 {{ total }} 条。图片、评分和备注均按工作人员实际登记展示。</p>
+              </div>
+              <button class="ui-button is-ghost" type="button" :disabled="recordLoading" @click="loadRecords(pageNum)">
+                {{ recordLoading ? '正在刷新…' : '刷新记录' }}
+              </button>
+            </div>
+
+            <div v-if="recordLoading" class="ui-state" role="status">
+              <div><span class="ui-state-mark ui-skeleton"></span><h2>正在读取回访记录</h2></div>
+            </div>
+            <div v-else-if="recordError" class="ui-state" role="alert">
+              <div>
+                <span class="ui-state-mark">!</span>
+                <h2>回访记录暂时无法读取</h2>
+                <p>{{ recordError }}</p>
+                <button class="ui-button is-dark" type="button" @click="loadRecords(pageNum)">重新加载</button>
+              </div>
+            </div>
+            <div v-else-if="!records.length" class="ui-state">
+              <div>
+                <span class="ui-state-mark">♡</span>
+                <h2>暂无回访记录</h2>
+                <p>领养完成后，工作人员会根据真实回访情况录入记录。</p>
+                <a class="ui-button is-ghost" href="./my_adopt.html">返回我的领养</a>
+              </div>
+            </div>
+            <div v-else class="ui-record-list ui-visit-record-list">
+              <article v-for="item in records" :key="idText(item.id)" class="ui-record-card ui-visit-record">
+                <img :src="imageUrl(item.pic)" :alt="(item.aname || '领养动物') + '的回访图片'" @error="imageFallback">
+                <div class="ui-record-copy">
+                  <div class="ui-record-heading">
+                    <span class="ui-badge" :class="scoreBadge(item.state)">健康评分 {{ score(item.state) }}</span>
+                    <small>{{ idText(item.id) === '无效编号' ? '记录编号未记录' : '记录 #' + idText(item.id) }}</small>
+                  </div>
+                  <h2>{{ item.aname || ('动物 #' + idText(item.petId)) }}</h2>
+                  <p>回访日期 {{ dateText(item.vtime) }} · 记录人 {{ item.vname || '未记录' }}</p>
+                  <p class="ui-visit-method-note">回访方式：未记录</p>
+                  <p>{{ item.remark || '未填写回访备注' }}</p>
+                </div>
+                <div class="ui-record-actions">
+                  <a class="ui-button is-ghost" :href="animalUrl(item.petId)">查看动物</a>
+                </div>
+              </article>
+            </div>
+
+            <div v-if="!recordLoading && !recordError && totalPages>1" class="ui-pagination">
+              <span>第 {{ pageNum }} 页，共 {{ total }} 条记录</span>
+              <div class="ui-page-buttons">
+                <button type="button" :disabled="pageNum===1 || recordLoading" @click="loadRecords(pageNum-1)">上一页</button>
+                <button v-for="page in pages" :key="page" type="button" :class="{'is-current':page===pageNum}"
+                        :aria-current="page===pageNum ? 'page' : null" :disabled="recordLoading" @click="loadRecords(page)">{{ page }}</button>
+                <button type="button" :disabled="pageNum===totalPages || recordLoading" @click="loadRecords(pageNum+1)">下一页</button>
+              </div>
+            </div>
+          </section>
+        </template>
+      </section>
+    </div>
+  </main>
   <front-site-footer></front-site-footer>
 </div>
-<script src="../../js/jquery.min.js"></script><script src="../../js/vue.min.js"></script>
+<script src="../../js/jquery.min.js"></script>
+<script src="../../js/vue.min.js"></script>
 <script src="../../js/user-workspace.js?v=20260731a"></script>
-<script src="../../js/front-shell.js?v=20260731a"></script><script src="../../js/auth-session.js?v=20260728"></script>
+<script src="../../js/front-shell.js?v=20260731a"></script>
+<script src="../../js/auth-session.js?v=20260728"></script>
 <script>
-(function(){'use strict';AuthSession.bootstrap({requireAuth:true,allowCachedOnNetworkError:false,onDone:function(ok,user){if(!ok||!user)return;document.getElementById('authWait').hidden=true;new Vue({el:'#app',data:{user:user,records:[],plans:[],loading:true,error:'',pageNum:1,pageSize:8,total:0,totalPages:1,petId:null,mobileOpen:false},computed:{userInitial:function(){return this.user.username?this.user.username.slice(0,1).toUpperCase():'U';},pages:function(){var values=[];var start=Math.max(1,this.pageNum-2);var end=Math.min(this.totalPages,start+4);start=Math.max(1,end-4);for(var page=start;page<=end;page+=1)values.push(page);return values;}},created:function(){var raw=new URLSearchParams(window.location.search).get('aid');this.petId=/^[1-9][0-9]*$/.test(raw||'')?raw:null;this.loadPlans();this.load(1);},methods:{loadPlans:function(){var view=this;$.get('/api/visit-plans/mine',{aid:view.petId||undefined}).done(function(res){if(res&&res.code==='0'&&Array.isArray(res.data))view.plans=res.data;});},load:function(page){var view=this;view.loading=true;view.error='';$.ajax({url:'/api/visit/mine',type:'GET',data:{pageNum:page,pageSize:view.pageSize,petId:view.petId||undefined},cache:false}).done(function(res){if(!res||res.code!=='0'||!res.data||!Array.isArray(res.data.records)){view.error=(res&&res.msg)||'服务返回了无法识别的数据。';return;}view.records=res.data.records;view.pageNum=Number(res.data.current||page);view.total=Number(res.data.total||0);view.totalPages=Math.max(1,Number(res.data.pages||1));}).fail(function(xhr){view.error=(xhr.responseJSON&&xhr.responseJSON.msg)||'请检查网络连接后重试。';}).always(function(){view.loading=false;});},planStatus:function(v){return {0:'待执行',1:'已完成',2:'已逾期',3:'已取消',4:'异常待处理'}[Number(v)]||'状态未知';},planBadge:function(v){return Number(v)===1?'is-done':Number(v)===0?'is-pending':'is-closed';},score:function(value){var score=Number(value);return score>=1&&score<=5?score+'/5':'未记录';},dateText:function(value){return typeof value==='string'&&/^\d{4}-\d{2}-\d{2}/.test(value)?value.slice(0,10):'未记录';},imageUrl:function(flag){var value=flag==null?'':String(flag);return /^[a-zA-Z0-9-]{1,64}$/.test(value)?'/api/files/'+encodeURIComponent(value):'/prototype-assets/editorial-01.svg';},imageFallback:function(event){event.target.onerror=null;event.target.src='/prototype-assets/editorial-01.svg';},animalUrl:function(id){return './animal_detail.html?id='+encodeURIComponent(id);}}});}});})();
+(function () {
+  'use strict';
+  function canonicalId(value) {
+    var normalized = value == null ? '' : String(value).trim();
+    return /^[1-9][0-9]{0,18}$/.test(normalized) ? normalized : '';
+  }
+  function errorMessage(xhr, fallback) {
+    return xhr && xhr.responseJSON && xhr.responseJSON.msg ? xhr.responseJSON.msg : fallback;
+  }
+
+  AuthSession.bootstrap({
+    requireAuth: true,
+    allowCachedOnNetworkError: false,
+    onDone: function (ok, user) {
+      if (!ok || !user) return;
+      document.getElementById('authWait').hidden = true;
+      new Vue({
+        el: '#app',
+        data: {
+          user: user,
+          records: [],
+          plans: [],
+          planLoading: false,
+          planError: '',
+          recordLoading: false,
+          recordError: '',
+          pageNum: 1,
+          pageSize: 8,
+          total: 0,
+          totalPages: 1,
+          petId: '',
+          parameterError: '',
+          planRequest: null,
+          planSeq: 0,
+          recordRequest: null,
+          recordSeq: 0,
+          mobileOpen: false
+        },
+        computed: {
+          userInitial: function () {
+            return this.user.username ? this.user.username.slice(0, 1).toUpperCase() : 'U';
+          },
+          pages: function () {
+            var values = [];
+            var start = Math.max(1, this.pageNum - 2);
+            var end = Math.min(this.totalPages, start + 4);
+            start = Math.max(1, end - 4);
+            for (var page = start; page <= end; page += 1) values.push(page);
+            return values;
+          }
+        },
+        created: function () {
+          var raw = new URLSearchParams(window.location.search).get('aid');
+          if (raw != null && raw !== '') {
+            this.petId = canonicalId(raw);
+            if (!this.petId) {
+              this.parameterError = '查询参数 aid 必须是有效的正十进制动物编号。';
+              return;
+            }
+          }
+          this.loadPlans();
+          this.loadRecords(1);
+        },
+        beforeDestroy: function () {
+          if (this.planRequest) this.planRequest.abort();
+          if (this.recordRequest) this.recordRequest.abort();
+        },
+        methods: {
+          loadPlans: function () {
+            if (this.parameterError) return;
+            var seq = ++this.planSeq;
+            if (this.planRequest) this.planRequest.abort();
+            this.planLoading = true;
+            this.planError = '';
+            this.planRequest = $.ajax({
+              url: '/api/visit-plans/mine',
+              type: 'GET',
+              cache: false,
+              data: { aid: this.petId || undefined }
+            }).done(function (res) {
+              if (seq !== this.planSeq) return;
+              if (res && res.code === '0' && Array.isArray(res.data)) {
+                this.plans = res.data;
+              } else {
+                this.plans = [];
+                this.planError = (res && res.msg) || '服务返回了无法识别的回访计划。';
+              }
+            }.bind(this)).fail(function (xhr, statusText) {
+              if (seq !== this.planSeq || statusText === 'abort') return;
+              this.plans = [];
+              this.planError = errorMessage(xhr, '回访计划暂时无法读取，请稍后重试。');
+            }.bind(this)).always(function () {
+              if (seq === this.planSeq) this.planLoading = false;
+            }.bind(this));
+          },
+          loadRecords: function (page) {
+            if (this.parameterError) return;
+            var requestedPage = Math.max(1, Number(page) || 1);
+            var seq = ++this.recordSeq;
+            if (this.recordRequest) this.recordRequest.abort();
+            this.recordLoading = true;
+            this.recordError = '';
+            this.recordRequest = $.ajax({
+              url: '/api/visit/mine',
+              type: 'GET',
+              cache: false,
+              data: { pageNum: requestedPage, pageSize: this.pageSize, petId: this.petId || undefined }
+            }).done(function (res) {
+              if (seq !== this.recordSeq) return;
+              if (!res || res.code !== '0' || !res.data || !Array.isArray(res.data.records)) {
+                this.records = [];
+                this.total = 0;
+                this.totalPages = 1;
+                this.recordError = (res && res.msg) || '服务返回了无法识别的回访记录。';
+                return;
+              }
+              this.records = res.data.records;
+              this.pageNum = Math.max(1, Number(res.data.current || requestedPage));
+              this.total = Math.max(0, Number(res.data.total || 0));
+              this.totalPages = Math.max(1, Number(res.data.pages || 1));
+            }.bind(this)).fail(function (xhr, statusText) {
+              if (seq !== this.recordSeq || statusText === 'abort') return;
+              this.records = [];
+              this.total = 0;
+              this.totalPages = 1;
+              this.recordError = errorMessage(xhr, '请检查网络连接后重试。');
+            }.bind(this)).always(function () {
+              if (seq === this.recordSeq) this.recordLoading = false;
+            }.bind(this));
+          },
+          idText: function (value) {
+            return canonicalId(value) || '无效编号';
+          },
+          planStatus: function (value) {
+            return { 0: '待执行', 1: '已完成', 2: '已逾期', 3: '已取消', 4: '异常待处理' }[Number(value)] || '状态未知';
+          },
+          planBadge: function (value) {
+            return Number(value) === 1 ? 'is-done' : Number(value) === 0 ? 'is-pending' : 'is-closed';
+          },
+          planTypeText: function (value) {
+            return {
+              '7_day': '7 天适应回访',
+              '30_day': '30 天健康回访',
+              '90_day': '90 天稳定回访'
+            }[String(value || '')] || '回访计划';
+          },
+          score: function (value) {
+            var score = Number(value);
+            return Number.isInteger(score) && score >= 1 && score <= 5 ? score + '/5' : '未记录';
+          },
+          scoreBadge: function (value) {
+            var score = Number(value);
+            return score >= 4 ? 'is-done' : score >= 1 ? 'is-pending' : 'is-closed';
+          },
+          dateText: function (value) {
+            return typeof value === 'string' && /^[0-9]{4}-[0-9]{2}-[0-9]{2}/.test(value)
+              ? value.slice(0, 10)
+              : '未记录';
+          },
+          imageUrl: function (flag) {
+            var value = flag == null ? '' : String(flag);
+            return /^[a-zA-Z0-9-]{1,64}$/.test(value)
+              ? '/api/files/' + encodeURIComponent(value)
+              : '/prototype-assets/editorial-01.svg';
+          },
+          imageFallback: function (event) {
+            event.target.onerror = null;
+            event.target.src = '/prototype-assets/editorial-01.svg';
+          },
+          animalUrl: function (id) {
+            return './animal_detail.html?id=' + encodeURIComponent(canonicalId(id));
+          }
+        }
+      });
+    }
+  });
+})();
 </script>
 </body>
 </html>

@@ -1478,3 +1478,597 @@ body.ui-front-drawer-open { overflow: hidden; }
   .ui-public-notice-list .ui-notice-card,
   .ui-public-catalog .ui-animal-card { transform: none !important; }
 }
+
+/* ===== Phase 3C · 用户领养闭环（2026-07-31）===== */
+.ui-user-adoption-page #app {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+.ui-user-adoption-page main {
+  min-width: 0;
+  flex: 1 0 auto;
+}
+.ui-user-adoption-page .ui-breadcrumb a {
+  color: inherit;
+  text-decoration: none;
+  text-underline-offset: 3px;
+}
+.ui-user-adoption-page .ui-breadcrumb a:hover,
+.ui-user-adoption-page .ui-breadcrumb a:focus-visible {
+  color: var(--ui-ink);
+  text-decoration: underline;
+}
+.ui-user-adoption-page .ui-page-head {
+  border-bottom: 1px solid rgba(17,18,17,.06);
+  background:
+    linear-gradient(90deg, rgba(214,58,31,.035) 1px, transparent 1px) 0 0 / 80px 100%,
+    linear-gradient(180deg, #fffefb 0%, rgba(255,255,255,.3) 100%);
+}
+.ui-user-adoption-page .ui-panel {
+  min-width: 0;
+  border-radius: 8px;
+  background: #fffefb;
+}
+.ui-user-adoption-page main button,
+.ui-user-adoption-page main .ui-button,
+.ui-user-adoption-page .ui-dialog button {
+  min-height: 44px;
+}
+.ui-user-adoption-page .ui-page-buttons button {
+  min-width: 44px;
+  width: 44px;
+  height: 44px;
+}
+.ui-user-adoption-page .ui-side-nav {
+  border-radius: 8px;
+  background: #fffefb;
+}
+.ui-user-adoption-page .ui-side-nav a.is-active {
+  position: relative;
+  color: var(--ui-accent-strong);
+  background: #fff1ec;
+}
+.ui-user-adoption-page .ui-side-nav a.is-active::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 0;
+  width: 3px;
+  background: var(--ui-accent-strong);
+}
+.ui-section-kicker {
+  display: block;
+  margin-bottom: 9px;
+  color: #994b3d;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .15em;
+}
+.ui-adoption-workspace-head {
+  margin-bottom: 18px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--ui-line);
+}
+.ui-adoption-workspace-head > div {
+  min-width: 0;
+}
+.ui-adoption-workspace-head p {
+  max-width: 740px;
+}
+.ui-adoption-state {
+  min-height: 430px;
+  border: 1px solid var(--ui-line);
+  border-radius: 8px;
+  background: #fffefb;
+}
+.ui-inline-alert.is-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  color: #983d35;
+  background: #fff0ee;
+}
+.ui-inline-alert > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ui-inline-alert .ui-button {
+  flex: 0 0 auto;
+  min-height: 44px;
+}
+.ui-field-error {
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+}
+.ui-record-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-bottom: 9px;
+}
+.ui-record-heading small {
+  color: var(--ui-muted);
+  font-size: 10px;
+  font-weight: 680;
+  font-variant-numeric: tabular-nums;
+}
+body.ui-adoption-dialog-open {
+  overflow: hidden;
+}
+.ui-adoption-dialog-backdrop {
+  z-index: 160;
+}
+.ui-adoption-confirm-dialog {
+  width: min(560px,100%);
+  border-radius: 8px;
+  background: #fffefb;
+}
+.ui-confirm-copy {
+  padding-top: 22px;
+}
+.ui-confirm-copy > p {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 15px;
+  line-height: 1.75;
+}
+.ui-consequence-note {
+  margin-top: 18px;
+  padding: 15px 17px;
+  border-left: 3px solid var(--ui-danger);
+  background: #fff1ee;
+}
+.ui-consequence-note strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+.ui-consequence-note p {
+  margin: 0;
+  color: #765a55;
+  font-size: 12px;
+  line-height: 1.75;
+}
+
+.ui-adoption-flow {
+  width: min(1020px,calc(100% - 40px));
+}
+.ui-adoption-animal-summary {
+  position: relative;
+  grid-template-columns: 210px minmax(0,1fr);
+  gap: 28px;
+  overflow: hidden;
+  padding: 28px;
+}
+.ui-adoption-animal-summary::after {
+  content: "PROFILE";
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  color: rgba(17,18,17,.12);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .16em;
+}
+.ui-adoption-animal-summary img {
+  width: 210px;
+  height: 172px;
+  border-radius: 5px;
+}
+.ui-adoption-animal-summary h1 {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.ui-adoption-animal-summary h1.is-long-title {
+  font-size: 25px;
+  line-height: 1.15;
+}
+.ui-adoption-animal-summary p {
+  overflow-wrap: anywhere;
+}
+.ui-adoption-form {
+  padding: 32px;
+}
+.ui-adoption-form .ui-panel-head {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--ui-line);
+}
+.ui-adoption-form .ui-form-alert {
+  margin-top: 22px;
+}
+.ui-adoption-form .ui-form-actions {
+  align-items: center;
+  justify-content: flex-end;
+  padding-top: 21px;
+  border-top: 1px solid var(--ui-line);
+}
+
+.ui-adoption-toolbar {
+  border-radius: 8px;
+  box-shadow: 0 12px 34px rgba(17,18,17,.04);
+}
+.ui-adoption-toolbar::before {
+  content: "SEARCH";
+  padding: 0 7px 0 4px;
+  color: #994b3d;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .14em;
+}
+.ui-adoption-record-list {
+  margin-top: 17px;
+}
+.ui-adoption-record {
+  align-items: start;
+  border-radius: 8px;
+  background: #fffefb;
+}
+.ui-adoption-record > img {
+  height: 96px;
+  border-radius: 5px;
+}
+.ui-adoption-record .ui-record-copy {
+  min-width: 0;
+}
+.ui-adoption-record .ui-record-copy h2,
+.ui-adoption-record .ui-record-copy p,
+.ui-adoption-record .ui-workflow-timeline {
+  overflow-wrap: anywhere;
+}
+.ui-adoption-record .ui-record-actions {
+  min-width: 132px;
+}
+.ui-adoption-record .ui-record-actions .ui-button {
+  width: 100%;
+}
+.ui-timeline-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--ui-danger);
+}
+.ui-timeline-error button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid #edc8c4;
+  border-radius: 8px;
+  color: inherit;
+  background: #fff;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.ui-proof-intake,
+.ui-proof-ledger {
+  padding: 30px;
+}
+.ui-proof-intake .ui-panel-head,
+.ui-proof-ledger .ui-panel-head {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--ui-line);
+}
+.ui-proof-upload-box {
+  border-radius: 7px;
+  background: #f7f6f1;
+}
+.ui-proof-upload-box.has-stage {
+  border-color: #9fc9ae;
+  background: #f4fbf6;
+}
+.ui-proof-upload-box .ui-upload-preview {
+  border-radius: 5px;
+}
+.ui-upload-copy {
+  min-width: 0;
+}
+.ui-file-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ui-file-actions label {
+  margin: 0;
+}
+.ui-file-name {
+  display: block;
+  max-width: 100%;
+  margin-top: 12px;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+.ui-stage-note {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  margin-top: 10px;
+  padding: 0 9px;
+  border-radius: 999px;
+  color: var(--ui-success);
+  background: #eaf6ef;
+  font-size: 10px;
+  font-weight: 720;
+}
+.ui-proof-list {
+  margin-top: 12px;
+}
+.ui-proof-record {
+  border-radius: 7px;
+  background: #fff;
+}
+.ui-proof-record img {
+  border-radius: 4px;
+}
+.ui-proof-copy {
+  min-width: 0;
+}
+.ui-proof-copy > strong,
+.ui-proof-copy p {
+  overflow-wrap: anywhere;
+}
+.ui-proof-copy > div {
+  margin-top: 8px;
+}
+
+.ui-visit-plan-panel,
+.ui-visit-record-panel {
+  padding: 30px;
+}
+.ui-visit-plan-panel .ui-panel-head,
+.ui-visit-record-panel .ui-panel-head {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--ui-line);
+}
+.ui-compact-state {
+  min-height: 112px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 18px;
+  color: var(--ui-muted);
+  text-align: left;
+}
+.ui-compact-state .ui-state-mark {
+  flex: 0 0 auto;
+  margin: 0;
+}
+.ui-compact-state strong {
+  display: block;
+  color: var(--ui-ink);
+  font-size: 14px;
+}
+.ui-compact-state p {
+  margin: 5px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.ui-visit-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 10px;
+}
+.ui-visit-plan-card {
+  min-width: 0;
+  padding: 17px;
+  border: 1px solid var(--ui-line);
+  border-radius: 7px;
+  background: #fff;
+}
+.ui-visit-plan-card > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ui-visit-plan-card small {
+  color: var(--ui-muted);
+  font-size: 10px;
+}
+.ui-visit-plan-card h3 {
+  margin: 18px 0 10px;
+  overflow-wrap: anywhere;
+  font-size: 18px;
+  letter-spacing: -.025em;
+}
+.ui-visit-plan-card p {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+  color: var(--ui-muted);
+  font-size: 11px;
+}
+.ui-visit-record-list {
+  margin-top: 10px;
+}
+.ui-visit-record {
+  align-items: start;
+  border-radius: 7px;
+}
+.ui-visit-record .ui-record-copy {
+  min-width: 0;
+}
+.ui-visit-record .ui-record-copy h2,
+.ui-visit-record .ui-record-copy p {
+  overflow-wrap: anywhere;
+}
+.ui-visit-method-note {
+  display: inline-block;
+  padding: 3px 7px;
+  border-radius: 4px;
+  background: var(--ui-soft);
+}
+
+@media (max-width: 960px) {
+  .ui-adoption-flow {
+    width: min(100% - 32px,1020px);
+  }
+  .ui-visit-plan-grid {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .ui-user-adoption-page .ui-page-head {
+    padding-top: 44px;
+  }
+  .ui-user-adoption-page .ui-workspace {
+    padding-top: 26px;
+  }
+  .ui-adoption-workspace-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .ui-adoption-workspace-head > .ui-button {
+    width: 100%;
+  }
+  .ui-adoption-state {
+    min-height: 330px;
+  }
+  .ui-inline-alert.is-error {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .ui-inline-alert.is-error .ui-button {
+    width: 100%;
+  }
+  .ui-adoption-animal-summary {
+    grid-template-columns: 92px minmax(0,1fr);
+    gap: 15px;
+    padding: 18px;
+  }
+  .ui-adoption-animal-summary::after {
+    display: none;
+  }
+  .ui-adoption-animal-summary img {
+    width: 92px;
+    height: 92px;
+  }
+  .ui-adoption-animal-summary h1,
+  .ui-adoption-animal-summary h1.is-long-title {
+    font-size: 23px;
+  }
+  .ui-adoption-animal-summary p {
+    grid-column: 1/-1;
+  }
+  .ui-adoption-form,
+  .ui-proof-intake,
+  .ui-proof-ledger,
+  .ui-visit-plan-panel,
+  .ui-visit-record-panel {
+    padding: 20px 16px;
+  }
+  .ui-adoption-form .ui-panel-head,
+  .ui-proof-intake .ui-panel-head,
+  .ui-proof-ledger .ui-panel-head,
+  .ui-visit-plan-panel .ui-panel-head,
+  .ui-visit-record-panel .ui-panel-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .ui-adoption-form .ui-form-actions .ui-button {
+    width: 100%;
+  }
+  .ui-adoption-toolbar::before {
+    display: none;
+  }
+  .ui-adoption-toolbar .ui-search {
+    width: 100%;
+    height: 48px;
+    min-height: 48px;
+    flex: 0 0 48px;
+  }
+  .ui-adoption-toolbar .ui-button {
+    width: 100%;
+  }
+  .ui-adoption-record {
+    grid-template-columns: 76px minmax(0,1fr);
+    gap: 14px;
+  }
+  .ui-adoption-record > img {
+    width: 76px;
+    height: 76px;
+  }
+  .ui-adoption-record .ui-record-actions {
+    min-width: 0;
+    grid-column: 1/-1;
+    display: grid;
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+  .ui-proof-upload-box {
+    grid-template-columns: 92px minmax(0,1fr);
+  }
+  .ui-proof-upload-box .ui-upload-preview {
+    width: 92px;
+    height: 82px;
+  }
+  .ui-proof-record {
+    grid-template-columns: 76px minmax(0,1fr);
+  }
+  .ui-proof-record .ui-button {
+    width: 100%;
+  }
+  .ui-visit-plan-grid {
+    grid-template-columns: 1fr;
+  }
+  .ui-visit-record {
+    grid-template-columns: 76px minmax(0,1fr);
+  }
+  .ui-visit-record .ui-record-actions {
+    grid-column: 1/-1;
+  }
+  .ui-visit-record .ui-record-actions .ui-button {
+    width: 100%;
+  }
+  .ui-adoption-confirm-dialog {
+    border-radius: 8px 8px 4px 4px;
+  }
+}
+
+@media (max-width: 350px) {
+  .ui-adoption-flow {
+    width: min(100% - 24px,1020px);
+  }
+  .ui-adoption-animal-summary {
+    grid-template-columns: 1fr;
+  }
+  .ui-adoption-animal-summary img {
+    width: 100%;
+    height: 180px;
+  }
+  .ui-adoption-record .ui-record-actions {
+    grid-template-columns: 1fr;
+  }
+  .ui-proof-upload-box {
+    grid-template-columns: 1fr;
+  }
+  .ui-proof-upload-box .ui-upload-preview {
+    width: 100%;
+    height: 150px;
+  }
+  .ui-file-actions .ui-button {
+    width: 100%;
+  }
+  .ui-dialog-actions .ui-button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-user-adoption-page *,
+  .ui-user-adoption-page *::before,
+  .ui-user-adoption-page *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

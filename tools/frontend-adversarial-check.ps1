@@ -332,8 +332,8 @@ $adminProofHtml = Read-Utf8 (Join-Path $staticRoot "page/end/proof.html")
 $adminVisitHtml = Read-Utf8 (Join-Path $staticRoot "page/end/visit.html")
 $adoptApplyHtml = Read-Utf8 (Join-Path $staticRoot "page/front/adopt_apply.html")
 Assert-True ($myAdoptHtml -match '/api/adopt/page2' -and $myAdoptHtml -notmatch 'uid:\s*this\.user\.id' -and $myAdoptHtml -match 'status-text\.js' -and $myAdoptHtml -match 'StatusText\.adopt\(value\)') "batch 7 owner adoption: session-owned pagination and shared neutral state semantics"
-Assert-True ($proofFrontHtml -match '/api/proof/page1' -and $proofFrontHtml -match 'paid:this\.aid' -and $proofFrontHtml -notmatch 'pageSize:100|\.filter\(item=>String\(item\.paid\)' -and $proofFrontHtml -match 'res\.data!==true' -and $proofFrontHtml -match "appendUploadPurpose\(upload,'proof'\)") "batch 7 owner proof: server-side animal filtering, exact mutation success, and proof-purpose upload"
-Assert-True ($myVisitHtml -match '/api/visit/mine' -and $myVisitHtml -notmatch 'uid\s*:\s*(this|view)\.user\.id|sessionStorage\.getItem' -and $myVisitHtml -match '系统未记录回访方式' -and $myVisitHtml -notmatch '上门/电话|startsWith\(') "batch 7 owner visit: authoritative session, safe file flags, and no unsupported method claim"
+Assert-True ($proofFrontHtml -match '/api/proof/page1' -and $proofFrontHtml -match 'paid\s*:\s*this\.aid' -and $proofFrontHtml -notmatch 'pageSize\s*:\s*100|\.filter\([^)]*item\.paid' -and $proofFrontHtml -match 'res\.data\s*!==\s*true' -and $proofFrontHtml -match "appendUploadPurpose\(upload,\s*'proof'\)") "batch 7 owner proof: server-side animal filtering, exact mutation success, and proof-purpose upload"
+Assert-True ($myVisitHtml -match '/api/visit/mine' -and $myVisitHtml -notmatch 'uid\s*:\s*(this|view)\.user\.id|sessionStorage\.getItem' -and $myVisitHtml -match '回访方式：未记录' -and $myVisitHtml -notmatch '上门/电话|startsWith\(') "batch 7 owner visit: authoritative session, safe file flags, and no unsupported method claim"
 foreach ($batch7Admin in @(
     @{ Name = 'admin adopt'; Html = $adminAdoptHtml; Flag = 'adopt' },
     @{ Name = 'admin proof'; Html = $adminProofHtml; Flag = 'proof' },
@@ -382,7 +382,7 @@ foreach ($preMountPage in @(
 }
 Assert-True ($adoptApplyHtml -match 'res\.data===true|res\.data\s*===\s*true') "batch 7 adoption submit: exact Boolean success prevents false redirect"
 Assert-True ($adoptApplyHtml -match '\[0,1\]\.includes\(Number\(animal\.tstate\)\)' -and $adoptApplyHtml -match '仍可提交' -and $animalDetailHtml -match '\[0,\s*1\]\.includes\(Number\(this\.animal\.tstate\)\)') "batch 7 adoption competition: applying animals remain honestly open to additional applicants"
-Assert-True ($proofFrontHtml -match '/api/adopt/mine/' -and $proofFrontHtml -notmatch '/api/adopt/page2' -and $proofFrontHtml -match '\[1,3\]\.includes\(Number\(res\.data\.vstate\)\)' -and $proofFrontHtml -match '/api/files/staged/') "batch 7 owner proof: material-required or pending-handover preflight and staged upload cleanup"
+Assert-True ($proofFrontHtml -match '/api/adopt/mine/' -and $proofFrontHtml -notmatch '/api/adopt/page2' -and $proofFrontHtml -match '\[1,\s*3\]\.includes\(Number\(relation\.vstate\)\)' -and $proofFrontHtml -match '/api/files/staged/') "batch 7 owner proof: material-required or pending-handover preflight and staged upload cleanup"
 Assert-True ($adminAdoptHtml -match 'canVisit\s*:\s*AdminWorkspace\.hasFlag\(user,\s*"visit"\)' -and $adminAdoptHtml -match 'vstate\)===4&&canVisit' -and ([regex]::Matches($adminAdoptHtml, "askAction\(item,'reject'").Count -ge 2)) "admin adopt: completed-only visit gate and mobile rejection parity"
 Assert-True (([regex]::Matches($adminProofHtml, 'askAudit\(item,2').Count -ge 2) -and $adminProofHtml -match '/api/files/staged/' -and $adminVisitHtml -match '/api/files/staged/') "admin proof and visit: mobile rejection parity and staged upload cleanup"
 

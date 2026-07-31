@@ -1,74 +1,438 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="提交流浪动物领养申请">
-    <title>提交领养申请 · 归途计划</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-    <link rel="stylesheet" href="../../css/product-ui.css?v=20260731a">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="提交流浪动物领养申请">
+  <title>提交领养申请 · 归途计划</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
+  <link rel="stylesheet" href="../../css/product-ui.css?v=20260731c">
 </head>
-<body>
-<div id="authWait" class="ui-state" role="status"><div><span class="ui-state-mark ui-skeleton"></span><h2>正在验证登录状态</h2></div></div>
-<div id="app" v-cloak>
-    <front-site-header :user="user"></front-site-header>
-    <main>
-        <section class="ui-page-head"><div class="ui-container"><div class="ui-breadcrumb"><a href="./animal_browse.html" style="color:inherit;text-decoration:none">等待一个家</a><span>/</span><strong>领养申请</strong></div><div class="ui-page-head-row"><div><h1>认真开始，一起回家</h1><p>申请资料仅用于评估领养条件和后续联系。提交后可在个人工作台查看审核进度。</p></div><span class="ui-badge is-waiting">约 4 分钟</span></div></div></section>
-        <section class="ui-container ui-workspace">
-            <div v-if="loading" class="ui-state"><div><span class="ui-state-mark ui-skeleton"></span><h2>正在读取动物信息</h2><p>请稍候。</p></div></div>
-            <div v-else-if="pageError || !animal" class="ui-state" role="alert"><div><span class="ui-state-mark">!</span><h2>暂时不能提交申请</h2><p>{{ pageError || '未找到动物信息。' }}</p><a class="ui-button is-dark" href="./animal_browse.html">返回动物浏览</a></div></div>
-            <template v-else>
-                <section class="ui-panel ui-animal-summary">
-                    <img :src="imageUrl(animal.tpic)" :alt="animal.tname || '待领养动物'" @error="imageFallback">
-                    <div><span class="ui-badge" :class="Number(animal.tstate)===0?'is-waiting':Number(animal.tstate)===1?'is-pending':'is-done'">{{ stateText(animal.tstate) }}</span><h1>{{ animal.tname || '未命名动物' }}</h1><p>{{ animal.tdescribe || '暂无详细介绍。工作人员会在审核沟通中补充信息。' }}</p><div class="ui-meta-row"><span>{{ animal.ttype || '品种待确认' }}</span><span>{{ animal.tsex || '性别待确认' }}</span><span>编号 #{{ animal.id }}</span></div></div>
-                </section>
-                <form class="ui-panel" novalidate @submit.prevent="submit">
-                    <div class="ui-panel-head"><div><h2>领养条件</h2><p>当前申请账户：{{ user.username }}。账户身份、动物名称、图片和审核状态均由服务端确定。</p></div><span class="ui-badge is-pending">待审核</span></div>
-                    <div v-if="existingNotice" class="ui-inline-alert" :role="existingBlocked?'alert':'status'">{{ existingNotice }} <a v-if="existingBlocked" class="ui-button is-ghost" href="./my_adopt.html">查看我的申请</a></div>
-                    <div v-if="Number(animal.tstate)===1" class="ui-inline-alert" role="status">该动物已有待审申请，你仍可提交；工作人员最终只会批准一位申请人。</div><div v-else-if="Number(animal.tstate)!==0" class="ui-inline-alert" role="alert">该动物已完成领养，不能再提交申请。</div>
-                    <div class="ui-form-grid">
-                        <div class="ui-form-field"><label for="adoptAge">年龄</label><input id="adoptAge" v-model.number="form.age" class="ui-form-input" type="number" min="18" max="100" inputmode="numeric"></div>
-                        <div class="ui-form-field"><label for="adoptGender">性别</label><select id="adoptGender" v-model="form.gender" class="ui-form-input"><option value="">请选择</option><option value="男">男</option><option value="女">女</option><option value="其他">其他</option></select></div>
-                        <div class="ui-form-field"><label for="adoptPhone">联系电话</label><input id="adoptPhone" v-model.trim="form.tel" class="ui-form-input" type="tel" autocomplete="tel" maxlength="11"></div>
-                        <div class="ui-form-field"><label for="adoptWechat">微信号</label><input id="adoptWechat" v-model.trim="form.wechat" class="ui-form-input" type="text" maxlength="20" autocomplete="off"></div>
-                        <div class="ui-form-field"><label for="adoptOccupation">职业</label><input id="adoptOccupation" v-model.trim="form.occupation" class="ui-form-input" type="text" maxlength="12"></div>
-                        <div class="ui-form-field"><label for="adoptMarital">婚姻状况</label><select id="adoptMarital" v-model.number="form.maritalstatus" class="ui-form-input"><option :value="null">请选择</option><option :value="1">已婚</option><option :value="2">未婚</option></select></div>
-                        <div class="ui-form-field"><label for="adoptResident">是否有固定住所</label><select id="adoptResident" v-model.number="form.fixresident" class="ui-form-input"><option :value="null">请选择</option><option :value="1">有</option><option :value="0">无</option></select></div>
-                        <div class="ui-form-field"><label for="adoptIncome">月收入区间</label><select id="adoptIncome" v-model.number="form.income" class="ui-form-input"><option :value="null">请选择</option><option :value="0">暂无稳定收入</option><option :value="2000">2,000–3,000</option><option :value="3000">3,000–4,000</option><option :value="4000">4,000–5,000</option><option :value="5000">5,000 以上</option></select></div>
-                        <div class="ui-form-field"><label for="adoptExperience">养宠经验</label><select id="adoptExperience" v-model.number="form.experience" class="ui-form-input"><option :value="null">请选择</option><option :value="1">有</option><option :value="0">无</option></select></div>
-                        <div class="ui-form-field"><label for="adoptPets">现有宠物数量</label><input id="adoptPets" v-model.number="form.petnum" class="ui-form-input" type="number" min="0" max="30" inputmode="numeric"></div>
-                        <div class="ui-form-field is-full"><label for="adoptFamily">家人是否同意领养</label><select id="adoptFamily" v-model.number="form.familyagree" class="ui-form-input"><option :value="null">请选择</option><option :value="1">同意</option><option :value="0">不同意</option></select></div>
-                        <div class="ui-form-field is-full"><label for="adoptAddress">家庭住址</label><textarea id="adoptAddress" v-model.trim="form.location" class="ui-form-textarea" maxlength="120" placeholder="填写城市、区县和可用于回访的详细地址"></textarea></div>
-                    </div>
-                    <div v-if="formError" class="ui-form-alert" role="alert">{{ formError }}</div>
-                    <div class="ui-form-actions"><button class="ui-button is-primary" type="submit" :disabled="submitting || existingBlocked || ![0,1].includes(Number(animal.tstate))">{{ submitting ? '正在提交…' : '确认提交申请' }}</button><a class="ui-button is-ghost" :href="'./animal_detail.html?id='+encodeURIComponent(animal.id)">返回动物详情</a></div>
-                    <div class="sr-only" aria-live="polite">{{ liveMessage }}</div>
-                </form>
-            </template>
-        </section>
-    </main>
-    <front-site-footer></front-site-footer>
+<body class="ui-user-adoption-page ui-adoption-apply-page">
+<div id="authWait" class="ui-state" role="status">
+  <div><span class="ui-state-mark ui-skeleton"></span><h2>正在验证登录状态</h2></div>
 </div>
-<script src="../../js/jquery.min.js"></script><script src="../../js/vue.min.js"></script>
+<div id="app" v-cloak>
+  <front-site-header :user="user"></front-site-header>
+  <main>
+    <section class="ui-page-head">
+      <div class="ui-container">
+        <div class="ui-breadcrumb"><a href="./animal_browse.html">等待一个家</a><span>/</span><strong>领养申请</strong></div>
+        <div class="ui-page-head-row">
+          <div><h1>认真开始，一起回家</h1><p>资料仅用于领养评估与后续联系。提交后可在“我的领养”查看每一次真实状态变化。</p></div>
+          <span class="ui-badge is-waiting">约 4 分钟</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="ui-container ui-workspace ui-adoption-flow">
+      <div v-if="loading" class="ui-state" role="status">
+        <div><span class="ui-state-mark ui-skeleton"></span><h2>正在确认申请条件</h2><p>读取动物状态和你的既有申请。</p></div>
+      </div>
+
+      <div v-else-if="pageError || !animal" class="ui-state ui-adoption-state" role="alert">
+        <div>
+          <span class="ui-state-mark">!</span>
+          <h2>暂时不能提交申请</h2>
+          <p>{{ pageError || '未找到动物信息。' }}</p>
+          <div class="ui-state-actions">
+            <button v-if="pageRetryable" class="ui-button is-dark" type="button" @click="loadPage">重新检查</button>
+            <a class="ui-button is-ghost" href="./animal_browse.html">返回动物浏览</a>
+          </div>
+        </div>
+      </div>
+
+      <template v-else>
+        <section class="ui-panel ui-animal-summary ui-adoption-animal-summary">
+          <img :src="imageUrl(animal.tpic)" :alt="animal.tname || '待领养动物'" @error="imageFallback">
+          <div>
+            <span class="ui-badge" :class="animalBadge(animal.tstate)">{{ stateText(animal.tstate) }}</span>
+            <h1 :class="{'is-long-title': String(animal.tname || '').length > 18}">{{ animal.tname || '未命名动物' }}</h1>
+            <p>{{ animal.tdescribe || '暂无详细介绍。工作人员会在审核沟通中补充信息。' }}</p>
+            <div class="ui-meta-row">
+              <span>{{ animal.ttype || '品种待确认' }}</span>
+              <span>{{ animal.tsex || '性别待确认' }}</span>
+              <span>编号 #{{ animalId }}</span>
+            </div>
+          </div>
+        </section>
+
+        <form class="ui-panel ui-adoption-form" novalidate @submit.prevent="submit">
+          <div class="ui-panel-head">
+            <div>
+              <span class="ui-section-kicker">APPLICATION PROFILE</span>
+              <h2>领养条件</h2>
+              <p>当前账户：{{ user.username }}。账户身份、动物档案和审核状态均由服务端确定。</p>
+            </div>
+            <span class="ui-badge is-pending">人工审核</span>
+          </div>
+
+          <div v-if="existingNotice" class="ui-inline-alert" :role="existingBlocked ? 'alert' : 'status'">
+            <span>{{ existingNotice }}</span>
+            <a v-if="existingBlocked" class="ui-button is-ghost" href="./my_adopt.html">查看我的申请</a>
+          </div>
+          <div v-if="preflightError" class="ui-inline-alert is-error" role="alert">
+            <span>{{ preflightError }}</span>
+            <button class="ui-button is-ghost" type="button" @click="retryPreflight">重新确认</button>
+          </div>
+          <div v-if="Number(animal.tstate)===1" class="ui-inline-alert" role="status">
+            该动物已有待审申请，你仍可提交；工作人员会比较全部申请，最终只批准一位申请人。
+          </div>
+          <div v-else-if="Number(animal.tstate)!==0" class="ui-inline-alert is-error" role="alert">
+            该动物当前不可申请，请返回动物详情查看最新状态。
+          </div>
+
+          <div class="ui-form-grid">
+            <div class="ui-form-field">
+              <label for="adoptAge">年龄 <small>18–100 岁</small></label>
+              <input id="adoptAge" v-model.number="form.age" class="ui-form-input" type="number" min="18" max="100" inputmode="numeric"
+                     :aria-invalid="fieldErrors.age ? 'true' : 'false'" :aria-describedby="fieldErrors.age ? 'adoptAgeError' : null">
+              <p v-if="fieldErrors.age" id="adoptAgeError" class="ui-field-error">{{ fieldErrors.age }}</p>
+            </div>
+            <div class="ui-form-field">
+              <label for="adoptGender">性别</label>
+              <select id="adoptGender" v-model="form.gender" class="ui-form-input"
+                      :aria-invalid="fieldErrors.gender ? 'true' : 'false'" :aria-describedby="fieldErrors.gender ? 'adoptGenderError' : null">
+                <option value="">请选择</option><option value="男">男</option><option value="女">女</option><option value="其他">其他</option>
+              </select>
+              <p v-if="fieldErrors.gender" id="adoptGenderError" class="ui-field-error">{{ fieldErrors.gender }}</p>
+            </div>
+            <div class="ui-form-field">
+              <label for="adoptPhone">联系电话 <small>11 位手机号</small></label>
+              <input id="adoptPhone" v-model.trim="form.tel" class="ui-form-input" type="tel" autocomplete="tel" maxlength="11"
+                     :aria-invalid="fieldErrors.tel ? 'true' : 'false'" :aria-describedby="fieldErrors.tel ? 'adoptPhoneError' : null">
+              <p v-if="fieldErrors.tel" id="adoptPhoneError" class="ui-field-error">{{ fieldErrors.tel }}</p>
+            </div>
+            <div class="ui-form-field">
+              <label for="adoptWechat">微信号 <small>最多 20 字符</small></label>
+              <input id="adoptWechat" v-model.trim="form.wechat" class="ui-form-input" type="text" maxlength="20" autocomplete="off"
+                     :aria-invalid="fieldErrors.wechat ? 'true' : 'false'" :aria-describedby="fieldErrors.wechat ? 'adoptWechatError' : null">
+              <p v-if="fieldErrors.wechat" id="adoptWechatError" class="ui-field-error">{{ fieldErrors.wechat }}</p>
+            </div>
+            <div class="ui-form-field">
+              <label for="adoptOccupation">职业 <small>最多 12 字符</small></label>
+              <input id="adoptOccupation" v-model.trim="form.occupation" class="ui-form-input" type="text" maxlength="12"
+                     :aria-invalid="fieldErrors.occupation ? 'true' : 'false'" :aria-describedby="fieldErrors.occupation ? 'adoptOccupationError' : null">
+              <p v-if="fieldErrors.occupation" id="adoptOccupationError" class="ui-field-error">{{ fieldErrors.occupation }}</p>
+            </div>
+            <div class="ui-form-field">
+              <label for="adoptMarital">婚姻状况</label>
+              <select id="adoptMarital" v-model.number="form.maritalstatus" class="ui-form-input"
+                      :aria-invalid="fieldErrors.maritalstatus ? 'true' : 'false'" :aria-describedby="fieldErrors.maritalstatus ? 'adoptMaritalError' : null">
+                <option :value="null">请选择</option><option :value="1">已婚</option><option :value="2">未婚</option>
+              </select>
+              <p v-if="fieldErrors.maritalstatus" id="adoptMaritalError" class="ui-field-error">{{ fieldErrors.maritalstatus }}</p>
+            </div>
+            <div class="ui-form-field">
+              <label for="adoptResident">是否有固定住所</label>
+              <select id="adoptResident" v-model.number="form.fixresident" class="ui-form-input"
+                      :aria-invalid="fieldErrors.fixresident ? 'true' : 'false'" :aria-describedby="fieldErrors.fixresident ? 'adoptResidentError' : null">
+                <option :value="null">请选择</option><option :value="1">有</option><option :value="0">无</option>
+              </select>
+              <p v-if="fieldErrors.fixresident" id="adoptResidentError" class="ui-field-error">{{ fieldErrors.fixresident }}</p>
+            </div>
+            <div class="ui-form-field">
+              <label for="adoptIncome">月收入区间</label>
+              <select id="adoptIncome" v-model.number="form.income" class="ui-form-input"
+                      :aria-invalid="fieldErrors.income ? 'true' : 'false'" :aria-describedby="fieldErrors.income ? 'adoptIncomeError' : null">
+                <option :value="null">请选择</option><option :value="0">暂无稳定收入</option><option :value="2000">2,000–3,000</option><option :value="3000">3,000–4,000</option><option :value="4000">4,000–5,000</option><option :value="5000">5,000 以上</option>
+              </select>
+              <p v-if="fieldErrors.income" id="adoptIncomeError" class="ui-field-error">{{ fieldErrors.income }}</p>
+            </div>
+            <div class="ui-form-field">
+              <label for="adoptExperience">养宠经验</label>
+              <select id="adoptExperience" v-model.number="form.experience" class="ui-form-input"
+                      :aria-invalid="fieldErrors.experience ? 'true' : 'false'" :aria-describedby="fieldErrors.experience ? 'adoptExperienceError' : null">
+                <option :value="null">请选择</option><option :value="1">有</option><option :value="0">无</option>
+              </select>
+              <p v-if="fieldErrors.experience" id="adoptExperienceError" class="ui-field-error">{{ fieldErrors.experience }}</p>
+            </div>
+            <div class="ui-form-field">
+              <label for="adoptPets">现有宠物数量 <small>0–30 只</small></label>
+              <input id="adoptPets" v-model.number="form.petnum" class="ui-form-input" type="number" min="0" max="30" inputmode="numeric"
+                     :aria-invalid="fieldErrors.petnum ? 'true' : 'false'" :aria-describedby="fieldErrors.petnum ? 'adoptPetsError' : null">
+              <p v-if="fieldErrors.petnum" id="adoptPetsError" class="ui-field-error">{{ fieldErrors.petnum }}</p>
+            </div>
+            <div class="ui-form-field is-full">
+              <label for="adoptFamily">家人是否同意领养</label>
+              <select id="adoptFamily" v-model.number="form.familyagree" class="ui-form-input"
+                      :aria-invalid="fieldErrors.familyagree ? 'true' : 'false'" :aria-describedby="fieldErrors.familyagree ? 'adoptFamilyError' : null">
+                <option :value="null">请选择</option><option :value="1">同意</option><option :value="0">不同意</option>
+              </select>
+              <p v-if="fieldErrors.familyagree" id="adoptFamilyError" class="ui-field-error">{{ fieldErrors.familyagree }}</p>
+            </div>
+            <div class="ui-form-field is-full">
+              <label for="adoptAddress">家庭住址 <small>最多 255 字符</small></label>
+              <textarea id="adoptAddress" v-model.trim="form.location" class="ui-form-textarea" maxlength="255"
+                        placeholder="填写城市、区县和可用于回访的详细地址"
+                        :aria-invalid="fieldErrors.location ? 'true' : 'false'" :aria-describedby="fieldErrors.location ? 'adoptAddressError' : null"></textarea>
+              <p v-if="fieldErrors.location" id="adoptAddressError" class="ui-field-error">{{ fieldErrors.location }}</p>
+            </div>
+          </div>
+
+          <div v-if="formError" ref="formError" class="ui-form-alert" role="alert" tabindex="-1">{{ formError }}</div>
+          <div class="ui-form-actions">
+            <button id="adoptSubmit" class="ui-button is-primary" type="submit"
+                    :disabled="submitting || existingBlocked || !preflightReady || ![0,1].includes(Number(animal.tstate))">
+              {{ submitting ? '正在提交…' : '确认提交申请' }}
+            </button>
+            <a class="ui-button is-ghost" :href="'./animal_detail.html?id='+encodeURIComponent(animalId)">返回动物详情</a>
+          </div>
+          <div class="sr-only" aria-live="polite">{{ liveMessage }}</div>
+        </form>
+      </template>
+    </section>
+  </main>
+  <front-site-footer></front-site-footer>
+</div>
+<script src="../../js/jquery.min.js"></script>
+<script src="../../js/vue.min.js"></script>
 <script src="../../js/user-workspace.js?v=20260731a"></script>
-<script src="../../js/front-shell.js?v=20260731a"></script><script src="../../js/auth-session.js?v=20260728"></script><script src="../../js/status-text.js?v=20260728"></script>
+<script src="../../js/front-shell.js?v=20260731a"></script>
+<script src="../../js/auth-session.js?v=20260728"></script>
+<script src="../../js/status-text.js?v=20260728"></script>
 <script>
-AuthSession.bootstrap({requireAuth:true,allowCachedOnNetworkError:false,onDone:function(ok,user){if(!ok||!user)return;document.getElementById('authWait').hidden=true;new Vue({
-  el:'#app',
-  data:{user:{},animal:null,loading:true,pageError:'',formError:'',existingNotice:'',existingBlocked:false,liveMessage:'',submitting:false,mobileOpen:false,form:{gender:'',age:null,maritalstatus:null,occupation:'',tel:'',location:'',fixresident:null,income:null,experience:null,petnum:0,familyagree:null,wechat:''}},
-  computed:{userInitial(){return this.user.username?this.user.username.slice(0,1).toUpperCase():'U';}},
-  created(){this.user=user;this.loadAnimal();},
-  methods:{
-    loadAnimal(){const id=new URLSearchParams(location.search).get('animalId');if(!id){this.loading=false;this.pageError='缺少动物编号，请从动物详情页重新进入。';return;}$.ajax({url:'/api/animal/'+encodeURIComponent(id),type:'GET'}).done(res=>{if(res&&res.code==='0'&&res.data){this.animal=res.data;this.checkExisting(id);}else this.pageError=(res&&res.msg)||'动物不存在。';}).fail(()=>{this.pageError='动物信息读取失败，请稍后重试。';}).always(()=>{this.loading=false;});},
-    // 审计修复 M1：填表前预检既有申请，避免填完 4 分钟问卷才被 409
-    checkExisting(id){$.ajax({url:'/api/adopt/mine/'+encodeURIComponent(id),type:'GET'}).done(res=>{if(!res||res.code!=='0'||!res.data)return;const v=Number(res.data.vstate);if(v===0||v===1){this.existingBlocked=true;this.existingNotice=v===0?'你已提交过该动物的申请，正在等待审核。':'你的申请已通过，无需重复提交。';}else{this.existingNotice='你此前对该动物的申请未通过；重新提交将以本次填写的内容替换原申请。';}});},
-    validate(){if(![0,1].includes(Number(this.animal.tstate)))return '该动物当前不可申请';if(!this.form.age||Number(this.form.age)<18||Number(this.form.age)>100)return '申请人年龄需在 18–100 岁之间';if(!this.form.gender)return '请选择性别';if(!/^1\d{10}$/.test(this.form.tel))return '请输入正确的 11 位手机号';if(!this.form.wechat)return '请输入微信号';if(!this.form.occupation)return '请输入职业';if(this.form.maritalstatus===null||this.form.fixresident===null||this.form.income===null||this.form.experience===null||this.form.familyagree===null)return '请完成所有选择项';if(this.form.petnum===null||Number(this.form.petnum)<0)return '宠物数量不能小于 0';if(!this.form.location)return '请输入家庭住址';return '';},
-    submit(){if(this.submitting)return;this.formError=this.validate();if(this.formError)return;this.submitting=true;this.liveMessage='正在提交领养申请';const payload={aid:Number(this.animal.id),gender:this.form.gender,age:Number(this.form.age),maritalstatus:Number(this.form.maritalstatus),occupation:this.form.occupation,tel:String(this.form.tel),location:this.form.location,fixresident:Number(this.form.fixresident),income:Number(this.form.income),experience:Number(this.form.experience),petnum:Number(this.form.petnum),familyagree:Number(this.form.familyagree),wechat:this.form.wechat};$.ajax({url:'/api/adopt',type:'POST',contentType:'application/json',data:JSON.stringify(payload)}).done(res=>{if(res&&res.code==='0'&&res.data===true){this.liveMessage='申请提交成功';location.replace('./my_adopt.html');return;}this.formError=(res&&res.msg)||'申请未提交，请稍后重试。';this.liveMessage=this.formError;}).fail(xhr=>{this.formError=(xhr.responseJSON&&xhr.responseJSON.msg)||'申请未提交，请检查网络后重试。';this.liveMessage=this.formError;}).always(()=>{this.submitting=false;});},
-    stateText(value){return StatusText.animal(value);},
-    imageUrl(flag){return flag?'/api/files/'+encodeURIComponent(flag):'/prototype-assets/editorial-01.svg';},
-    imageFallback(event){event.target.src='/prototype-assets/editorial-01.svg';}
+(function () {
+  'use strict';
+  function canonicalId(value) {
+    var normalized = value == null ? '' : String(value).trim();
+    return /^[1-9][0-9]{0,18}$/.test(normalized) ? normalized : '';
   }
-});}});
+  function responseMessage(xhr, fallback) {
+    return xhr && xhr.responseJSON && xhr.responseJSON.msg ? xhr.responseJSON.msg : fallback;
+  }
+
+  AuthSession.bootstrap({
+    requireAuth: true,
+    allowCachedOnNetworkError: false,
+    onDone: function (ok, user) {
+      if (!ok || !user) return;
+      document.getElementById('authWait').hidden = true;
+      new Vue({
+        el: '#app',
+        data: {
+          user: user,
+          animalId: '',
+          animal: null,
+          loading: true,
+          pageError: '',
+          pageRetryable: false,
+          formError: '',
+          fieldErrors: {},
+          existingNotice: '',
+          existingBlocked: false,
+          preflightReady: false,
+          preflightError: '',
+          liveMessage: '',
+          submitting: false,
+          pageSeq: 0,
+          animalRequest: null,
+          existingRequest: null,
+          mobileOpen: false,
+          form: {
+            gender: '', age: null, maritalstatus: null, occupation: '', tel: '',
+            location: '', fixresident: null, income: null, experience: null,
+            petnum: 0, familyagree: null, wechat: ''
+          }
+        },
+        computed: {
+          userInitial: function () {
+            return this.user.username ? this.user.username.slice(0, 1).toUpperCase() : 'U';
+          }
+        },
+        created: function () {
+          this.loadPage();
+        },
+        beforeDestroy: function () {
+          if (this.animalRequest) this.animalRequest.abort();
+          if (this.existingRequest) this.existingRequest.abort();
+        },
+        methods: {
+          loadPage: function () {
+            var rawId = new URLSearchParams(window.location.search).get('animalId');
+            var id = canonicalId(rawId);
+            var seq = ++this.pageSeq;
+            if (this.animalRequest) this.animalRequest.abort();
+            if (this.existingRequest) this.existingRequest.abort();
+            this.animalId = id;
+            this.animal = null;
+            this.loading = true;
+            this.pageError = '';
+            this.pageRetryable = false;
+            this.existingNotice = '';
+            this.existingBlocked = false;
+            this.preflightReady = false;
+            this.preflightError = '';
+            if (!id) {
+              this.loading = false;
+              this.pageError = '动物编号缺失或格式无效，请从动物详情页重新进入。';
+              return;
+            }
+            this.animalRequest = $.ajax({
+              url: '/api/animal/' + encodeURIComponent(id),
+              type: 'GET',
+              cache: false
+            }).done(function (res) {
+              if (seq !== this.pageSeq) return;
+              if (!res || res.code !== '0' || !res.data) {
+                this.pageError = (res && res.msg) || '动物信息不存在。';
+                return;
+              }
+              this.animal = res.data;
+              this.checkExisting(id, seq);
+            }.bind(this)).fail(function (xhr, statusText) {
+              if (seq !== this.pageSeq || statusText === 'abort') return;
+              this.pageError = responseMessage(xhr, '动物信息读取失败，请稍后重试。');
+              this.pageRetryable = true;
+            }.bind(this)).always(function () {
+              if (seq === this.pageSeq && !this.animal) this.loading = false;
+            }.bind(this));
+          },
+          checkExisting: function (id, seq) {
+            this.existingRequest = $.ajax({
+              url: '/api/adopt/mine/' + encodeURIComponent(id),
+              type: 'GET',
+              cache: false
+            }).done(function (res) {
+              if (seq !== this.pageSeq) return;
+              if (!res || res.code !== '0' || !res.data) {
+                this.preflightError = (res && res.msg) || '既有申请检查返回了无法识别的数据。';
+                return;
+              }
+              var state = Number(res.data.vstate);
+              if ([0, 1, 3].includes(state)) {
+                this.existingBlocked = true;
+                this.existingNotice = state === 0
+                  ? '你已提交过该动物的申请，当前正在等待审核。'
+                  : state === 1
+                    ? '你的申请已通过，正在等待线下交接，无需重复提交。'
+                    : '你的申请正在等待补充材料，请到“我的领养”继续处理。';
+              } else {
+                this.existingNotice = '你此前的申请已结束；如果动物仍开放领养，可以用本次资料重新申请。';
+              }
+              this.preflightReady = true;
+            }.bind(this)).fail(function (xhr, statusText) {
+              if (seq !== this.pageSeq || statusText === 'abort') return;
+              if (xhr && xhr.status === 404) {
+                this.preflightReady = true;
+                return;
+              }
+              this.preflightError = responseMessage(xhr, '暂时无法确认你是否已有申请，请重试后再提交。');
+            }.bind(this)).always(function () {
+              if (seq === this.pageSeq) this.loading = false;
+            }.bind(this));
+          },
+          retryPreflight: function () {
+            if (!this.animalId) return;
+            if (this.existingRequest) this.existingRequest.abort();
+            this.preflightError = '';
+            this.preflightReady = false;
+            this.loading = true;
+            this.checkExisting(this.animalId, this.pageSeq);
+          },
+          validate: function () {
+            var errors = {};
+            if (!this.animal || ![0, 1].includes(Number(this.animal.tstate))) errors.form = '该动物当前不可申请。';
+            if (!this.preflightReady) errors.form = this.preflightError || '请先完成既有申请检查。';
+            if (!Number.isInteger(Number(this.form.age)) || Number(this.form.age) < 18 || Number(this.form.age) > 100) errors.age = '年龄需在 18–100 岁之间。';
+            if (!['男', '女', '其他'].includes(this.form.gender)) errors.gender = '请选择性别。';
+            if (!/^1[0-9]{10}$/.test(String(this.form.tel || ''))) errors.tel = '请输入正确的 11 位手机号。';
+            if (!String(this.form.wechat || '').trim()) errors.wechat = '请输入微信号。';
+            if (!String(this.form.occupation || '').trim()) errors.occupation = '请输入职业。';
+            if (![1, 2].includes(Number(this.form.maritalstatus))) errors.maritalstatus = '请选择婚姻状况。';
+            if (![0, 1].includes(Number(this.form.fixresident))) errors.fixresident = '请选择固定住所情况。';
+            if (this.form.income === null || Number(this.form.income) < 0) errors.income = '请选择月收入区间。';
+            if (![0, 1].includes(Number(this.form.experience))) errors.experience = '请选择养宠经验。';
+            if (!Number.isInteger(Number(this.form.petnum)) || Number(this.form.petnum) < 0 || Number(this.form.petnum) > 30) errors.petnum = '宠物数量需在 0–30 之间。';
+            if (![0, 1].includes(Number(this.form.familyagree))) errors.familyagree = '请选择家人意见。';
+            if (!String(this.form.location || '').trim()) errors.location = '请输入家庭住址。';
+            this.fieldErrors = errors;
+            return errors;
+          },
+          focusFirstError: function (errors) {
+            var order = [
+              ['age', 'adoptAge'], ['gender', 'adoptGender'], ['tel', 'adoptPhone'],
+              ['wechat', 'adoptWechat'], ['occupation', 'adoptOccupation'],
+              ['maritalstatus', 'adoptMarital'], ['fixresident', 'adoptResident'],
+              ['income', 'adoptIncome'], ['experience', 'adoptExperience'],
+              ['petnum', 'adoptPets'], ['familyagree', 'adoptFamily'], ['location', 'adoptAddress']
+            ];
+            this.$nextTick(function () {
+              var row = order.find(function (entry) { return !!errors[entry[0]]; });
+              var target = row ? document.getElementById(row[1]) : this.$refs.formError;
+              if (target) target.focus();
+            }.bind(this));
+          },
+          submit: function () {
+            if (this.submitting) return;
+            this.formError = '';
+            var errors = this.validate();
+            if (Object.keys(errors).length) {
+              this.formError = errors.form || '请检查标出的申请资料后再提交。';
+              this.liveMessage = this.formError;
+              this.focusFirstError(errors);
+              return;
+            }
+            this.submitting = true;
+            this.liveMessage = '正在提交领养申请';
+            var payload = {
+              aid: this.animalId,
+              gender: this.form.gender,
+              age: Number(this.form.age),
+              maritalstatus: Number(this.form.maritalstatus),
+              occupation: String(this.form.occupation).trim(),
+              tel: String(this.form.tel),
+              location: String(this.form.location).trim(),
+              fixresident: Number(this.form.fixresident),
+              income: Number(this.form.income),
+              experience: Number(this.form.experience),
+              petnum: Number(this.form.petnum),
+              familyagree: Number(this.form.familyagree),
+              wechat: String(this.form.wechat).trim()
+            };
+            $.ajax({
+              url: '/api/adopt',
+              type: 'POST',
+              contentType: 'application/json',
+              data: JSON.stringify(payload)
+            }).done(function (res) {
+              if (res && res.code === '0' && res.data === true) {
+                this.liveMessage = '申请提交成功';
+                window.location.replace('./my_adopt.html');
+                return;
+              }
+              this.formError = (res && res.msg) || '申请未提交，请稍后重试。';
+              this.liveMessage = this.formError;
+              this.focusFirstError({});
+            }.bind(this)).fail(function (xhr) {
+              this.formError = responseMessage(xhr, '申请未提交，请检查网络后重试。');
+              this.liveMessage = this.formError;
+              this.focusFirstError({});
+            }.bind(this)).always(function () {
+              this.submitting = false;
+            }.bind(this));
+          },
+          stateText: function (value) {
+            return StatusText.animal(value);
+          },
+          animalBadge: function (value) {
+            return Number(value) === 0 ? 'is-waiting' : Number(value) === 1 ? 'is-pending' : 'is-closed';
+          },
+          imageUrl: function (flag) {
+            var value = flag == null ? '' : String(flag);
+            return /^[a-zA-Z0-9-]{1,64}$/.test(value)
+              ? '/api/files/' + encodeURIComponent(value)
+              : '/prototype-assets/editorial-01.svg';
+          },
+          imageFallback: function (event) {
+            event.target.onerror = null;
+            event.target.src = '/prototype-assets/editorial-01.svg';
+          }
+        }
+      });
+    }
+  });
+})();
 </script>
 </body>
 </html>
