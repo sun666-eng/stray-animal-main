@@ -36,7 +36,12 @@ const RESCUE_NOTIFICATION_PAGES = new Set([
 const VOLUNTEER_SERVICE_PAGES = new Set([
   'volunteer_apply.html', 'my_volunteer.html', 'volunteer_tasks.html'
 ]);
+// Phase 3F favorites + pet care workspace pages.
+const FAVORITES_PETCARE_PAGES = new Set([
+  'favorites.html', 'pet_care.html'
+]);
 function expectedProductCache(file) {
+  if (FAVORITES_PETCARE_PAGES.has(file)) return '20260731f';
   if (VOLUNTEER_SERVICE_PAGES.has(file)) return '20260731e';
   if (RESCUE_NOTIFICATION_PAGES.has(file)) return '20260731d';
   if (ADOPTION_PAGES.has(file)) return '20260731c';

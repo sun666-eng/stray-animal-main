@@ -6,25 +6,25 @@
     <meta name="description" content="向照顾知识助手询问动物喂养、健康与行为问题">
     <title>照顾知识助手 · 归途计划</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-    <link rel="stylesheet" href="../../css/product-ui.css?v=20260731a">
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260731f">
 </head>
 <body>
 <div id="authWait" class="ui-state" role="status"><div><span class="ui-state-mark ui-skeleton"></span><h2>正在验证登录状态</h2></div></div>
-<div id="app" v-cloak>
+<div id="app" v-cloak @keyup.esc="onEscape">
     <front-site-header :user="user"></front-site-header>
 
-    <main class="ui-container ui-workspace">
+    <main class="ui-container ui-workspace petcare-workspace">
         <div class="ui-panel-head petcare-heading">
             <div>
                 <p class="ui-eyebrow">PET CARE ASSISTANT</p>
                 <div class="petcare-title-row">
                     <h1 class="ui-workspace-title">照顾知识助手</h1>
                     <div class="petcare-title-actions">
-                        <button class="petcare-history-button" type="button" @click="historyPanelOpen=!historyPanelOpen" :aria-expanded="String(historyPanelOpen)">
+                        <button class="petcare-history-button" type="button" data-petcare-history-toggle @click="toggleHistoryPanel" :aria-expanded="String(historyPanelOpen)">
                             <span aria-hidden="true">◫</span>
                             <span>聊天记录</span>
                         </button>
-                        <button class="petcare-config-button" type="button" @click="openConfig" :disabled="configLoading" aria-haspopup="dialog">
+                        <button class="petcare-config-button" type="button" data-petcare-config-open @click="openConfig($event)" :disabled="configLoading" aria-haspopup="dialog">
                             <span class="petcare-config-icon" aria-hidden="true">⌁</span>
                             <span>配置 API</span>
                         </button>
@@ -40,38 +40,48 @@
             </div>
         </div>
 
-        <section class="petcare-chat-layout" :class="{'is-sidebar-hidden':!historyPanelOpen}" aria-label="照顾助手工作区">
-            <aside v-show="historyPanelOpen" class="ui-panel petcare-conversation-sidebar" aria-label="历史会话">
+        <div v-if="historyPanelOpen && isMobileHistory" class="petcare-history-scrim" role="presentation" @click="closeHistoryPanel(true)"></div>
+        <section class="petcare-chat-layout" :class="{'is-sidebar-hidden':!historyPanelOpen, 'is-mobile-drawer': isMobileHistory && historyPanelOpen}" aria-label="照顾助手工作区">
+            <aside
+                v-show="historyPanelOpen"
+                ref="historySidebar"
+                class="ui-panel petcare-conversation-sidebar"
+                aria-label="历史会话"
+                :aria-modal="isMobileHistory && historyPanelOpen ? 'true' : null"
+                :role="isMobileHistory && historyPanelOpen ? 'dialog' : null"
+                :tabindex="isMobileHistory && historyPanelOpen ? -1 : null"
+                @keydown.tab="trapHistoryFocus"
+            >
                 <div class="petcare-conversation-sidebar-head">
-                    <div><span>CONVERSATIONS</span><strong>历史聊天</strong></div>
-                    <button type="button" aria-label="隐藏历史聊天" @click="historyPanelOpen=false">‹</button>
+                    <div><span>CONVERSATIONS</span><strong id="petcareHistoryTitle">历史聊天</strong></div>
+                    <button type="button" data-petcare-history-close aria-label="隐藏历史聊天" @click="closeHistoryPanel(true)">‹</button>
                 </div>
-                <button class="petcare-new-conversation" type="button" :disabled="asking" @click="newConversation">
+                <button class="petcare-new-conversation" type="button" data-petcare-new-conversation :disabled="asking" @click="newConversation">
                     <span aria-hidden="true">＋</span> 新对话
                 </button>
                 <div class="petcare-conversation-list">
                     <div v-if="conversationLoading && conversations.length===0" class="petcare-conversation-empty">正在读取会话目录…</div>
                     <div v-else-if="conversationError" class="petcare-conversation-empty is-error" role="alert">{{ conversationError }}<br><button type="button" @click="loadConversations">重新读取目录</button></div>
                     <div v-else-if="conversations.length===0" class="petcare-conversation-empty">还没有历史聊天。<br>提出第一个问题后会保存在这里。</div>
-                    <article v-for="item in conversations" :key="item.id" class="petcare-conversation-item" :class="{'is-active':currentConversationId===item.id}">
-                        <button type="button" :disabled="asking||conversationMutating" @click="openConversation(item.id)">
+                    <article v-for="item in conversations" :key="item.id" class="petcare-conversation-item" :class="{'is-active':currentConversationId===item.id}" :data-conversation-id="item.id">
+                        <button type="button" data-petcare-open-conversation :disabled="asking||conversationMutating" @click="openConversation(item.id)">
                             <strong>{{ item.title }}</strong>
                             <time :datetime="item.updatedAt">{{ formatConversationTime(item.updatedAt) }}</time>
                             <span>{{ item.preview || '暂无内容概括' }}</span>
                             <small>{{ item.turnCount }} 轮对话</small>
                         </button>
-                        <button class="petcare-conversation-delete" type="button" :disabled="asking||conversationMutating" aria-label="删除这次聊天" @click="deleteConversation(item)">×</button>
+                        <button class="petcare-conversation-delete" type="button" data-petcare-delete-conversation :data-conversation-id="item.id" :disabled="asking||conversationMutating" aria-label="删除这次聊天" @click="openDeleteConversation(item, $event)">×</button>
                     </article>
                 </div>
                 <div v-if="conversations.length" class="petcare-conversation-sidebar-foot">
                     <span>仅当前账号可见</span>
-                    <button type="button" :disabled="conversationLoading||historyLoading||asking||conversationMutating" @click="clearHistory">清空全部</button>
+                    <button type="button" data-petcare-clear-history :disabled="conversationLoading||historyLoading||asking||conversationMutating" @click="openClearHistory($event)">清空全部</button>
                 </div>
             </aside>
 
             <article class="ui-panel petcare-chat-panel" aria-label="问答对话">
                 <div class="petcare-current-conversation">
-                    <button v-if="!historyPanelOpen" class="petcare-sidebar-reveal" type="button" @click="historyPanelOpen=true" aria-label="显示历史聊天">◫</button>
+                    <button v-if="!historyPanelOpen" class="petcare-sidebar-reveal" type="button" data-petcare-history-reveal @click="openHistoryPanel" aria-label="显示历史聊天">◫</button>
                     <div class="petcare-current-title">
                         <span>{{ currentConversationId ? 'CURRENT CONVERSATION' : 'NEW CONVERSATION' }}</span>
                         <div v-if="editingTitle" class="petcare-title-editor">
@@ -127,11 +137,20 @@
         </section>
     </main>
 
-    <div v-if="configOpen" class="ui-dialog-backdrop" @click.self="closeConfig">
-        <section class="ui-dialog petcare-config-dialog" role="dialog" aria-modal="true" aria-labelledby="aiConfigTitle" aria-describedby="aiConfigDescription">
+    <div v-if="configOpen" class="ui-dialog-backdrop" role="presentation" @click.self="closeConfig">
+        <section
+            ref="configDialog"
+            class="ui-dialog petcare-config-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="aiConfigTitle"
+            aria-describedby="aiConfigDescription"
+            tabindex="-1"
+            @keydown.tab="trapConfigFocus"
+        >
             <div class="ui-dialog-head">
                 <div><span>AI AGENT CONNECTION</span><h2 id="aiConfigTitle">连接真实模型</h2></div>
-                <button type="button" aria-label="关闭 API 配置" @click="closeConfig">关闭</button>
+                <button type="button" data-petcare-config-close aria-label="关闭 API 配置" :disabled="configBusy" @click="closeConfig">关闭</button>
             </div>
 
             <div class="petcare-config-intro">
@@ -175,14 +194,44 @@
                     <span>只影响你的问答，不会覆盖其他用户。配置一次后，退出登录、再次登录或服务重启仍会保留；未配置时使用平台 Agent（如有）或内置知识库。</span>
                 </div>
 
-                <p v-if="configMessage||configError" class="petcare-config-message" :class="{'is-error': configError}" role="status" aria-live="polite">{{ configError || configMessage }}</p>
+                <p v-if="configMessage||configError" class="petcare-config-message" data-petcare-config-status :class="{'is-error': configError}" :role="configError ? 'alert' : 'status'" aria-live="polite">{{ configError || configMessage }}</p>
 
                 <div class="ui-dialog-actions">
-                    <button v-if="configStatus.personalConfigured" class="ui-button is-ghost petcare-clear-button" type="button" :disabled="configSaving||testingConfig" @click="clearConfig">清除个人配置</button>
-                    <button class="ui-button is-ghost" type="button" :disabled="configSaving||testingConfig||autoTestingConfig||!configStatus.personalConfigured||!configStatus.ready" @click="testConfig">{{ testingConfig ? '正在连接…' : '测试连接' }}</button>
-                    <button class="ui-button is-primary" type="submit" :disabled="configSaving||testingConfig||autoTestingConfig">{{ configSaving ? '正在保存…' : (configForm.enabled ? '保存并启用' : '保存并停用') }}</button>
+                    <button v-if="configStatus.personalConfigured" class="ui-button is-ghost petcare-clear-button" type="button" data-petcare-clear-config :disabled="configSaving||testingConfig" @click="openClearConfig($event)">清除个人配置</button>
+                    <button class="ui-button is-ghost" type="button" data-petcare-test-config :disabled="configSaving||testingConfig||autoTestingConfig||!configStatus.personalConfigured||!configStatus.ready" @click="testConfig">{{ testingConfig ? '正在连接…' : '测试连接' }}</button>
+                    <button class="ui-button is-primary" type="submit" data-petcare-save-config :disabled="configSaving||testingConfig||autoTestingConfig">{{ configSaving ? '正在保存…' : (configForm.enabled ? '保存并启用' : '保存并停用') }}</button>
                 </div>
             </form>
+        </section>
+    </div>
+
+    <div v-if="confirmDialog" class="ui-dialog-backdrop" role="presentation" @click.self="onConfirmBackdrop">
+        <section
+            ref="confirmDialogEl"
+            class="ui-dialog petcare-confirm-dialog"
+            role="dialog"
+            aria-modal="true"
+            :aria-labelledby="confirmDialog.titleId"
+            :aria-describedby="confirmDialog.descId"
+            tabindex="-1"
+            @keydown.tab="trapConfirmFocus"
+        >
+            <div class="ui-dialog-head">
+                <div>
+                    <span>{{ confirmDialog.eyebrow }}</span>
+                    <h2 :id="confirmDialog.titleId">{{ confirmDialog.title }}</h2>
+                </div>
+            </div>
+            <div class="ui-dialog-body">
+                <p :id="confirmDialog.descId">{{ confirmDialog.body }}</p>
+                <p v-if="confirmError" class="ui-form-alert is-error" data-petcare-confirm-error role="alert" aria-live="assertive">{{ confirmError }}</p>
+            </div>
+            <div class="ui-dialog-actions">
+                <button class="ui-button is-ghost" type="button" data-petcare-confirm-cancel :disabled="confirmBusy" @click="cancelConfirm">取消</button>
+                <button class="ui-button is-danger" type="button" data-petcare-confirm-ok :disabled="confirmBusy" @click="executeConfirm">
+                    {{ confirmBusy ? '处理中…' : confirmDialog.confirmLabel }}
+                </button>
+            </div>
         </section>
     </div>
 
@@ -234,28 +283,38 @@ AuthSession.bootstrap({ requireAuth: true, allowCachedOnNetworkError: false, onD
       requestedConversationId: null,
       currentConversationTitleValue: '',
       historyPanelOpen: window.innerWidth >= 860,
+      viewportWidth: window.innerWidth || 1280,
       editingTitle: false,
       titleSaving: false,
       titleDraft: '',
+      confirmDialog: null,
+      confirmTrigger: null,
+      confirmBusy: false,
+      confirmError: '',
+      configTrigger: null,
+      focusAfterDeleteId: '',
+      focusAfterDeleteIndex: -1,
       configStatus: { enabled: false, ready: false, connected: false, connectionStatus: 'untested', connectionMessage: '', lastTestedAt: null, baseUrl: '', model: '', apiKeyConfigured: false, apiKeyHint: '', personalConfigured: false, source: 'local' },
       configForm: { enabled: true, baseUrl: '', model: 'deepseek-v4-flash', apiKey: '' }
     },
     computed: {
       userInitial: function () { return this.user.username ? this.user.username.slice(0, 1).toUpperCase() : 'U'; },
+      isMobileHistory: function () { return this.viewportWidth < 860; },
       agentStateLabel: function () {
         if (this.autoTestingConfig) return '正在验证个人 Agent';
-        if (this.configStatus.personalConfigured && this.configStatus.connected) return '个人 Agent 已连接';
+        // Only connected===true shows "已连接" — ready/save/untested never greenwash.
+        if (this.configStatus.personalConfigured && this.configStatus.connected === true) return '个人 Agent 已连接';
         if (this.configStatus.personalConfigured && this.configStatus.connectionStatus === 'failed') return '个人 Agent 连接失败';
         if (this.configStatus.personalConfigured && !this.configStatus.enabled) return '个人 Agent 已停用';
         if (this.configStatus.personalConfigured && this.configStatus.ready) return '个人 Agent 待测试';
-        if (this.configStatus.source === 'platform' && this.configStatus.connected) return '平台 Agent 可用';
+        if (this.configStatus.source === 'platform' && this.configStatus.connected === true) return '平台 Agent 可用';
         return '知识库模式';
       },
       currentConversationTitle: function () {
         return this.currentConversationTitleValue || '新对话';
       },
       configBusy: function () {
-        return this.configLoading || this.configSaving || this.testingConfig || this.autoTestingConfig;
+        return this.configLoading || this.configSaving || this.testingConfig || this.autoTestingConfig || this.confirmBusy;
       }
     },
     created: function () {
@@ -271,12 +330,127 @@ AuthSession.bootstrap({ requireAuth: true, allowCachedOnNetworkError: false, onD
       this._mutationRequest = null;
       this._askRequest = null;
       this._configRequest = null;
+      this._onResize = this.onResize.bind(this);
+      window.addEventListener('resize', this._onResize);
+      document.addEventListener('keydown', this.onDocumentKey);
       this.loadTopics();
       this.loadConfig(false, true, true);
       // 只读会话目录，不自动打开旧消息；每次进入助手都从干净的新对话开始。
       this.loadConversations();
     },
+    beforeDestroy: function () {
+      window.removeEventListener('resize', this._onResize);
+      document.removeEventListener('keydown', this.onDocumentKey);
+      document.body.classList.remove('ui-modal-open', 'petcare-history-open');
+    },
     methods: {
+      onResize: function () {
+        this.viewportWidth = window.innerWidth || 1280;
+        if (!this.isMobileHistory) {
+          document.body.classList.remove('petcare-history-open');
+        } else if (this.historyPanelOpen) {
+          document.body.classList.add('petcare-history-open');
+        }
+      },
+      onDocumentKey: function (event) {
+        if (event.key === 'Escape') this.onEscape();
+      },
+      onEscape: function () {
+        if (this.confirmDialog) {
+          if (this.confirmBusy) return;
+          this.cancelConfirm();
+          return;
+        }
+        if (this.configOpen) {
+          if (this.configBusy) return;
+          this.closeConfig();
+          return;
+        }
+        if (this.historyPanelOpen && this.isMobileHistory) {
+          this.closeHistoryPanel(true);
+        }
+      },
+      openHistoryPanel: function () {
+        this.historyPanelOpen = true;
+        if (this.isMobileHistory) {
+          document.body.classList.add('petcare-history-open');
+          var vm = this;
+          this.$nextTick(function () {
+            var side = vm.$refs.historySidebar;
+            if (side && side.focus) {
+              try { side.focus(); } catch (e) {}
+            }
+          });
+        }
+      },
+      /**
+       * Unified close for mobile drawer / desktop sidebar.
+       * Always clears body scroll lock. Optionally restores focus to history toggle.
+       */
+      closeHistoryPanel: function (restoreToggleFocus) {
+        this.historyPanelOpen = false;
+        document.body.classList.remove('petcare-history-open');
+        if (restoreToggleFocus) {
+          var vm = this;
+          this.$nextTick(function () {
+            var toggle = document.querySelector('[data-petcare-history-toggle], [data-petcare-history-reveal]');
+            if (toggle && toggle.focus) {
+              try { toggle.focus(); } catch (e) {}
+            }
+          });
+        }
+      },
+      toggleHistoryPanel: function () {
+        if (this.historyPanelOpen) this.closeHistoryPanel(true);
+        else this.openHistoryPanel();
+      },
+      trapHistoryFocus: function (event) {
+        if (!this.isMobileHistory || !this.historyPanelOpen || event.key !== 'Tab') return;
+        var dialog = this.$refs.historySidebar;
+        if (!dialog) return;
+        var focusable = Array.prototype.slice.call(dialog.querySelectorAll(
+          'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+        )).filter(function (el) {
+          return el.offsetWidth > 0 || el.offsetHeight > 0;
+        });
+        if (!focusable.length) {
+          event.preventDefault();
+          if (dialog.focus) dialog.focus();
+          return;
+        }
+        var first = focusable[0];
+        var last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      },
+      trapConfigFocus: function (event) {
+        var dialog = this.$refs.configDialog;
+        if (!dialog || event.key !== 'Tab') return;
+        var focusable = Array.prototype.slice.call(dialog.querySelectorAll(
+          'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+        )).filter(function (el) {
+          return el.offsetWidth > 0 || el.offsetHeight > 0;
+        });
+        if (!focusable.length) {
+          event.preventDefault();
+          dialog.focus();
+          return;
+        }
+        var first = focusable[0];
+        var last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      },
       loadTopics: function () {
         var vm = this;
         $.ajax({ url: '/api/petcare/topics', type: 'GET' }).done(function (res) {
@@ -328,18 +502,33 @@ AuthSession.bootstrap({ requireAuth: true, allowCachedOnNetworkError: false, onD
             vm._configRequest = null;
           });
       },
-      openConfig: function () {
+      openConfig: function (event) {
+        this.configTrigger = event && event.currentTarget ? event.currentTarget : document.querySelector('[data-petcare-config-open]');
         this.configError = '';
         this.configMessage = '';
         this.showApiKey = false;
         this.loadConfig(true, false, !this.configDirty);
+        var vm = this;
+        this.$nextTick(function () {
+          var dialog = vm.$refs.configDialog;
+          if (dialog && dialog.focus) {
+            try { dialog.focus(); } catch (e) {}
+          }
+        });
       },
       closeConfig: function () {
         if (this.configBusy) return;
+        var trigger = this.configTrigger;
         this.configOpen = false;
         this.configForm.apiKey = '';
         this.showApiKey = false;
         this.replacingApiKey = false;
+        this.configTrigger = null;
+        this.$nextTick(function () {
+          if (trigger && document.contains(trigger) && trigger.focus) {
+            try { trigger.focus(); } catch (e) {}
+          }
+        });
       },
       beginReplaceApiKey: function () {
         this.replacingApiKey = true;
@@ -398,13 +587,26 @@ AuthSession.bootstrap({ requireAuth: true, allowCachedOnNetworkError: false, onD
           vm.replacingApiKey = false;
         });
       },
+      openClearConfig: function (event) {
+        if (this.configBusy || !this.configStatus.personalConfigured) return;
+        this.openConfirm({
+          kind: 'clear-config',
+          eyebrow: 'CLEAR CONFIG',
+          title: '清除个人 AI 配置？',
+          body: '确认清除当前账号的个人 AI 配置？保存的 API Key 将一并删除，此操作不可撤销。',
+          confirmLabel: '确认清除',
+          titleId: 'petcareClearConfigTitle',
+          descId: 'petcareClearConfigDesc',
+          trigger: event && event.currentTarget ? event.currentTarget : null
+        });
+      },
       clearConfig: function () {
         var vm = this;
         if (vm.configBusy || !vm.configStatus.personalConfigured) return;
-        if (!window.confirm('确认清除当前账号的个人 AI 配置？保存的 API Key 将一并删除。')) return;
         var generation = ++vm._configGeneration;
         vm.abortRequest('_configRequest');
         vm.configSaving = true;
+        vm.confirmBusy = true;
         vm.configError = '';
         vm.configMessage = '';
         vm._configRequest = $.ajax({ url: '/api/petcare/config/clear', type: 'POST' })
@@ -416,16 +618,37 @@ AuthSession.bootstrap({ requireAuth: true, allowCachedOnNetworkError: false, onD
               vm.configMessage = res.data.source === 'platform'
                 ? '个人配置已清除，现在使用平台 Agent。'
                 : '个人配置已清除，现在使用内置知识库。';
+              vm.closeConfirm(false);
+              vm.$nextTick(function () {
+                var status = document.querySelector('[data-petcare-config-status]');
+                var title = document.getElementById('aiConfigTitle');
+                var target = status || title || document.querySelector('[data-petcare-save-config]');
+                if (target) {
+                  if (status && !status.hasAttribute('tabindex')) status.setAttribute('tabindex', '-1');
+                  if (title && !title.hasAttribute('tabindex')) title.setAttribute('tabindex', '-1');
+                  try { target.focus(); } catch (e) {}
+                }
+              });
+            } else if (res && res.data === false) {
+              // data=false must not surface generic Result msg「成功」.
+              vm.setConfirmError('清除未成功，配置仍保留。');
             } else {
-              vm.configError = (res && res.msg) || '个人配置清除失败。';
+              vm.setConfirmError((res && res.msg) || '个人配置清除失败。');
             }
           })
           .fail(function (xhr, status) {
-            if (generation === vm._configGeneration && status !== 'abort') vm.configError = vm.responseError(xhr, '个人配置清除失败。');
+            if (generation === vm._configGeneration && status !== 'abort') {
+              if (xhr && xhr.status === 401) {
+                vm.setConfirmError('登录已失效，请重新登录后再试。');
+              } else {
+                vm.setConfirmError(vm.responseError(xhr, '个人配置清除失败。'));
+              }
+            }
           })
           .always(function () {
             if (generation !== vm._configGeneration) return;
             vm.configSaving = false;
+            if (!vm.confirmDialog) vm.confirmBusy = false;
             vm._configRequest = null;
             vm.configForm.apiKey = '';
             vm.showApiKey = false;
@@ -467,7 +690,14 @@ AuthSession.bootstrap({ requireAuth: true, allowCachedOnNetworkError: false, onD
           })
           .fail(function (xhr, status) {
             if (generation !== vm._configGeneration || status === 'abort') return;
-            vm.configError = vm.responseError(xhr, '连接测试失败。');
+            // App 401 is login failure — never misreport as invalid API key.
+            if (xhr && xhr.status === 401) {
+              vm.configError = '登录已失效，请重新登录后再测试连接。';
+            } else if (xhr && (xhr.status === 502 || xhr.status === 504)) {
+              vm.configError = '模型服务商连接失败，请稍后重试。';
+            } else {
+              vm.configError = vm.responseError(xhr, '连接测试失败。');
+            }
             vm.configStatus.connected = false;
             vm.configStatus.connectionStatus = 'failed';
             vm.configStatus.connectionMessage = vm.configError;
@@ -477,6 +707,153 @@ AuthSession.bootstrap({ requireAuth: true, allowCachedOnNetworkError: false, onD
             vm.testingConfig = false;
             vm._configRequest = null;
           });
+      },
+      openConfirm: function (opts) {
+        this.confirmTrigger = opts.trigger || null;
+        this.confirmError = '';
+        this.confirmDialog = {
+          kind: opts.kind,
+          eyebrow: opts.eyebrow || 'CONFIRM',
+          title: opts.title || '确认操作？',
+          body: opts.body || '',
+          confirmLabel: opts.confirmLabel || '确认',
+          titleId: opts.titleId || 'petcareConfirmTitle',
+          descId: opts.descId || 'petcareConfirmDesc',
+          payload: opts.payload || null
+        };
+        document.body.classList.add('ui-modal-open');
+        var vm = this;
+        this.$nextTick(function () {
+          var el = vm.$refs.confirmDialogEl;
+          if (el && el.focus) el.focus();
+        });
+      },
+      cancelConfirm: function () {
+        if (this.confirmBusy) return;
+        this.closeConfirm(true);
+      },
+      onConfirmBackdrop: function () {
+        if (this.confirmBusy) return;
+        this.cancelConfirm();
+      },
+      setConfirmError: function (message) {
+        var vm = this;
+        vm.confirmError = message || '操作失败，请重试。';
+        vm.confirmBusy = false;
+        vm.$nextTick(function () {
+          var errEl = document.querySelector('[data-petcare-confirm-error]');
+          var okBtn = document.querySelector('[data-petcare-confirm-ok]');
+          var target = errEl || okBtn;
+          if (target && target.focus) {
+            if (errEl && !errEl.hasAttribute('tabindex')) errEl.setAttribute('tabindex', '-1');
+            try { target.focus(); } catch (e) {}
+          }
+        });
+      },
+      closeConfirm: function (restoreFocus) {
+        var trigger = this.confirmTrigger;
+        var kind = this.confirmDialog && this.confirmDialog.kind;
+        this.confirmDialog = null;
+        this.confirmTrigger = null;
+        this.confirmBusy = false;
+        this.confirmError = '';
+        if (!this.configOpen) document.body.classList.remove('ui-modal-open');
+        if (restoreFocus) {
+          this.$nextTick(function () {
+            if (trigger && document.contains(trigger) && trigger.focus) {
+              try { trigger.focus(); } catch (e) {}
+            } else if (kind === 'clear-config') {
+              var clearBtn = document.querySelector('[data-petcare-clear-config]');
+              if (clearBtn && clearBtn.focus) {
+                try { clearBtn.focus(); } catch (e) {}
+              }
+            }
+          });
+        }
+      },
+      executeConfirm: function () {
+        if (!this.confirmDialog || this.confirmBusy) return;
+        var kind = this.confirmDialog.kind;
+        if (kind === 'clear-config') this.clearConfig();
+        else if (kind === 'delete-conversation') this.deleteConversation(this.confirmDialog.payload);
+        else if (kind === 'clear-history') this.clearHistory();
+      },
+      trapConfirmFocus: function (event) {
+        var dialog = this.$refs.confirmDialogEl;
+        if (!dialog || event.key !== 'Tab') return;
+        var focusable = Array.prototype.slice.call(dialog.querySelectorAll(
+          'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+        )).filter(function (el) {
+          return el.offsetWidth > 0 || el.offsetHeight > 0;
+        });
+        if (!focusable.length) {
+          event.preventDefault();
+          dialog.focus();
+          return;
+        }
+        var first = focusable[0];
+        var last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      },
+      openDeleteConversation: function (item, event) {
+        if (!item || this.asking || this.conversationMutating) return;
+        this.openConfirm({
+          kind: 'delete-conversation',
+          eyebrow: 'DELETE CONVERSATION',
+          title: '删除这次聊天？',
+          body: '确认删除「' + (item.title || '未命名对话') + '」？这次聊天将无法恢复。',
+          confirmLabel: '确认删除',
+          titleId: 'petcareDeleteConvTitle',
+          descId: 'petcareDeleteConvDesc',
+          payload: item,
+          trigger: event && event.currentTarget ? event.currentTarget : null
+        });
+      },
+      openClearHistory: function (event) {
+        if (this.asking || this.conversationMutating || !this.conversations.length) return;
+        this.openConfirm({
+          kind: 'clear-history',
+          eyebrow: 'CLEAR HISTORY',
+          title: '清空全部聊天记录？',
+          body: '确认清空当前账号的全部照顾助手聊天记录？此操作不可撤销。',
+          confirmLabel: '确认清空',
+          titleId: 'petcareClearHistoryTitle',
+          descId: 'petcareClearHistoryDesc',
+          trigger: event && event.currentTarget ? event.currentTarget : null
+        });
+      },
+      restoreFocusAfterConversationDelete: function (deletedId, deletedIndex) {
+        var vm = this;
+        vm.$nextTick(function () {
+          function focusEl(el) {
+            if (el && el.focus) {
+              try { el.focus(); return true; } catch (e) {}
+            }
+            return false;
+          }
+          var items = Array.prototype.slice.call(document.querySelectorAll('.petcare-conversation-item[data-conversation-id]'));
+          var next = null;
+          var prev = null;
+          if (deletedIndex >= 0 && items.length) {
+            if (deletedIndex < items.length) next = items[deletedIndex];
+            if (deletedIndex - 1 >= 0) prev = items[deletedIndex - 1];
+            else if (!next && items.length) prev = items[items.length - 1];
+          } else if (items.length) {
+            next = items[0];
+          }
+          var target = null;
+          if (next) target = next.querySelector('[data-petcare-open-conversation]');
+          if (!target && prev) target = prev.querySelector('[data-petcare-open-conversation]');
+          if (!target) target = document.querySelector('[data-petcare-new-conversation]');
+          if (!target) target = document.getElementById('petcareHistoryTitle');
+          focusEl(target);
+        });
       },
       // 把工具名翻译成用户能懂的说明，展示 agent 实际查了什么（可信度 + 可观测性）
       toolLabels: function (names) {
@@ -570,7 +947,17 @@ AuthSession.bootstrap({ requireAuth: true, allowCachedOnNetworkError: false, onD
             vm.currentConversationTitleValue = res.data.conversation.title || '未命名对话';
             vm.messages = vm.historyMessages(res.data.history.items);
             vm.editingTitle = false;
-            if (window.innerWidth < 860) vm.historyPanelOpen = false;
+            // Unified close: clears body scroll lock on mobile drawer.
+            if (vm.isMobileHistory) vm.closeHistoryPanel(false);
+            vm.$nextTick(function () {
+              var input = document.getElementById('petCareInput');
+              var title = document.querySelector('.petcare-current-title h2');
+              var target = input || title;
+              if (target && target.focus) {
+                if (title && !title.hasAttribute('tabindex')) title.setAttribute('tabindex', '-1');
+                try { target.focus(); } catch (e) {}
+              }
+            });
           })
           .fail(function (xhr, status) {
             if (generation === vm._historyGeneration && status !== 'abort') vm.historyError = vm.responseError(xhr, '这次聊天读取失败。');
@@ -599,7 +986,15 @@ AuthSession.bootstrap({ requireAuth: true, allowCachedOnNetworkError: false, onD
         this.historyLoading = false;
         this.titleSaving = false;
         this.editingTitle = false;
-        if (window.innerWidth < 860) this.historyPanelOpen = false;
+        // Unified close: clears body scroll lock on mobile drawer.
+        if (this.isMobileHistory) this.closeHistoryPanel(false);
+        var vm = this;
+        this.$nextTick(function () {
+          var input = document.getElementById('petCareInput');
+          if (input && input.focus) {
+            try { input.focus(); } catch (e) {}
+          }
+        });
       },
       beginRename: function () {
         if (!this.currentConversationId) return;
@@ -652,7 +1047,8 @@ AuthSession.bootstrap({ requireAuth: true, allowCachedOnNetworkError: false, onD
       deleteConversation: function (item) {
         var vm = this;
         if (!item || vm.asking || vm.conversationMutating) return;
-        if (!window.confirm('确认删除“' + item.title + '”？这次聊天将无法恢复。')) return;
+        var idsBefore = (vm.conversations || []).map(function (row) { return String(row.id); });
+        var deletedIndex = idsBefore.indexOf(String(item.id));
         var generation = ++vm._mutationGeneration;
         ++vm._conversationGeneration;
         vm.abortRequest('_conversationRequest');
@@ -667,6 +1063,7 @@ AuthSession.bootstrap({ requireAuth: true, allowCachedOnNetworkError: false, onD
         }
         vm.abortRequest('_mutationRequest');
         vm.conversationMutating = true;
+        vm.confirmBusy = true;
         vm.conversationError = '';
         vm._mutationRequest = $.ajax({ url: '/api/petcare/conversations/' + encodeURIComponent(item.id), type: 'DELETE' })
           .done(function (res) {
@@ -674,16 +1071,25 @@ AuthSession.bootstrap({ requireAuth: true, allowCachedOnNetworkError: false, onD
             if (res && res.code === '0' && res.data === true) {
               if (vm.currentConversationId === item.id) vm.newConversation();
               vm.conversations = vm.conversations.filter(function (entry) { return entry.id !== item.id; });
+              vm.closeConfirm(false);
+              vm.restoreFocusAfterConversationDelete(String(item.id), deletedIndex);
             } else {
-              vm.conversationError = (res && res.msg) || '会话删除失败。';
+              vm.setConfirmError(
+                res && res.data === false
+                  ? '会话删除未成功，列表未改变。'
+                  : ((res && res.msg) || '会话删除失败。')
+              );
             }
           })
           .fail(function (xhr, status) {
-            if (generation === vm._mutationGeneration && status !== 'abort') vm.conversationError = vm.responseError(xhr, '会话删除失败。');
+            if (generation === vm._mutationGeneration && status !== 'abort') {
+              vm.setConfirmError(vm.responseError(xhr, '会话删除失败。'));
+            }
           })
           .always(function () {
             if (generation !== vm._mutationGeneration) return;
             vm.conversationMutating = false;
+            if (!vm.confirmDialog) vm.confirmBusy = false;
             vm._mutationRequest = null;
             if (vm.conversationRefreshQueued) {
               vm.conversationRefreshQueued = false;
@@ -694,7 +1100,6 @@ AuthSession.bootstrap({ requireAuth: true, allowCachedOnNetworkError: false, onD
       clearHistory: function () {
         var vm = this;
         if (vm.asking || vm.conversationMutating || !vm.conversations.length) return;
-        if (!window.confirm('确认清空当前账号的全部照顾助手聊天记录？此操作不可撤销。')) return;
         var generation = ++vm._mutationGeneration;
         ++vm._conversationGeneration;
         ++vm._historyGeneration;
@@ -707,23 +1112,38 @@ AuthSession.bootstrap({ requireAuth: true, allowCachedOnNetworkError: false, onD
         vm.titleSaving = false;
         vm.abortRequest('_mutationRequest');
         vm.conversationMutating = true;
-        vm.conversationError = '';
+        vm.confirmBusy = true;
+        vm.confirmError = '';
         vm._mutationRequest = $.ajax({ url: '/api/petcare/history', type: 'DELETE' })
           .done(function (res) {
             if (generation !== vm._mutationGeneration) return;
             if (res && res.code === '0' && res.data === true) {
               vm.newConversation();
               vm.conversations = [];
+              vm.closeConfirm(false);
+              vm.$nextTick(function () {
+                var target = document.querySelector('[data-petcare-new-conversation]') || document.getElementById('petcareHistoryTitle');
+                if (target && target.focus) {
+                  try { target.focus(); } catch (e) {}
+                }
+              });
             } else {
-              vm.conversationError = (res && res.msg) || '聊天历史清空失败。';
+              vm.setConfirmError(
+                res && res.data === false
+                  ? '聊天历史清空未成功，内容未改变。'
+                  : ((res && res.msg) || '聊天历史清空失败。')
+              );
             }
           })
           .fail(function (xhr, status) {
-            if (generation === vm._mutationGeneration && status !== 'abort') vm.conversationError = vm.responseError(xhr, '聊天历史清空失败。');
+            if (generation === vm._mutationGeneration && status !== 'abort') {
+              vm.setConfirmError(vm.responseError(xhr, '聊天历史清空失败。'));
+            }
           })
           .always(function () {
             if (generation !== vm._mutationGeneration) return;
             vm.conversationMutating = false;
+            if (!vm.confirmDialog) vm.confirmBusy = false;
             vm._mutationRequest = null;
           });
       },

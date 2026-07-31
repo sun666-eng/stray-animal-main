@@ -1,147 +1,411 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>我的收藏 · 归途计划</title>
-    <link rel="stylesheet" href="../../css/product-ui.css?v=20260731a" />
-    <style>
-      [v-cloak] {
-        display: none;
-      }
-      .fav-head {
-        padding: 60px 0 28px;
-      }
-      .fav-head h1 {
-        font-size: clamp(38px, 6vw, 70px);
-        margin: 8px 0;
-      }
-      .fav-grid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 20px;
-      }
-      .fav-card {
-        border: 1px solid #e3dfd8;
-        border-radius: 24px;
-        overflow: hidden;
-        background: #fff;
-      }
-      .fav-card img {
-        width: 100%;
-        aspect-ratio: 4/3;
-        object-fit: cover;
-      }
-      .fav-copy {
-        padding: 20px;
-      }
-      .fav-copy h2 {
-        margin: 0 0 8px;
-      }
-      .fav-actions {
-        display: flex;
-        gap: 8px;
-        margin-top: 18px;
-      }
-      .fav-empty {
-        text-align: center;
-        padding: 80px;
-        border: 1px dashed #d8d4cc;
-        border-radius: 24px;
-      }
-      @media (max-width: 800px) {
-        .fav-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <div id="app" v-cloak>
-      <front-site-header :user="user"></front-site-header>
-      <main class="ui-container">
-        <section class="fav-head">
-          <p class="ui-eyebrow">SAVED ANIMALS</p>
-          <h1>我的收藏</h1>
-          <p>把想进一步了解的动物先放在这里；收藏不等于占用领养名额。</p>
-        </section>
-        <div v-if="loading" class="fav-empty">正在读取收藏...</div>
-        <div v-else-if="!items.length" class="fav-empty">
-          <h2>还没有收藏</h2>
-          <p>浏览等待领养的动物，找到适合长期相伴的伙伴。</p>
-          <a class="ui-button is-primary" href="./animal_browse.html">去看看</a>
-        </div>
-        <div v-else class="fav-grid">
-          <article
-            v-for="item in items"
-            :key="item.favorite_id"
-            class="fav-card"
-          >
-            <img :src="image(item.tpic)" :alt="item.tname" />
-            <div class="fav-copy">
-              <h2>{{item.tname||'未命名动物'}}</h2>
-              <p>{{item.ttype||'类型待确认'}} · {{item.tsex||'性别未知'}}</p>
-              <div class="fav-actions">
-                <a
-                  class="ui-button is-dark"
-                  :href="'./animal_detail.html?id='+item.id"
-                  >查看档案</a
-                ><button class="ui-button is-ghost" @click="remove(item)">
-                  取消收藏
-                </button>
-              </div>
-            </div>
-          </article>
-        </div>
-    </main><front-site-footer></front-site-footer>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="查看与管理已收藏的动物档案">
+  <title>我的收藏 · 归途计划</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
+  <link rel="stylesheet" href="../../css/product-ui.css?v=20260731f">
+</head>
+<body>
+<div id="authWait" class="ui-auth-wait" role="status">正在验证登录状态...</div>
+<div id="app" v-cloak @keyup.esc="onEscape">
+  <front-site-header :user="user"></front-site-header>
+
+  <main class="ui-container favorites-workspace">
+    <section class="favorites-hero" aria-labelledby="favoritesTitle">
+      <p class="ui-eyebrow">SAVED ANIMALS</p>
+      <h1 id="favoritesTitle" class="ui-workspace-title">我的收藏</h1>
+      <p>把想进一步了解的动物先放在这里。<strong>收藏不等于占用领养名额</strong>，也不保证可被领养。</p>
+      <div class="ui-form-actions">
+        <a class="ui-button is-primary" href="./animal_browse.html" data-favorites-browse>浏览动物</a>
+      </div>
+    </section>
+
+    <div v-if="actionError" class="ui-form-alert is-error" role="alert" aria-live="assertive">{{ actionError }}</div>
+
+    <div v-if="loading" class="ui-state" role="status" aria-live="polite">
+      <div>
+        <span class="ui-state-mark ui-skeleton"></span>
+        <h2>{{ items.length ? '正在更新收藏' : '正在读取收藏' }}</h2>
+        <p>正在向服务端确认你当前的收藏列表。</p>
+      </div>
     </div>
-    <script src="../../js/jquery.min.js"></script>
-    <script src="../../js/auth-session.js?v=20260728"></script>
-    <script src="../../js/vue.min.js"></script>
+
+    <div v-else-if="error" class="ui-state" role="alert">
+      <div>
+        <span class="ui-state-mark">!</span>
+        <h2>收藏暂时无法加载</h2>
+        <p>{{ error }}</p>
+        <button class="ui-button is-dark" type="button" data-favorites-retry :disabled="loading" @click="load">
+          {{ loading ? '正在重试…' : '重新加载' }}
+        </button>
+      </div>
+    </div>
+
+    <div v-else-if="!items.length" class="ui-state favorites-empty" role="status">
+      <div>
+        <span class="ui-state-mark">＋</span>
+        <h2>还没有收藏</h2>
+        <p>浏览等待了解的动物，把想继续关注的档案放在这里。</p>
+        <a class="ui-button is-primary" href="./animal_browse.html" data-favorites-browse-empty>浏览动物</a>
+      </div>
+    </div>
+
+    <div v-else class="favorites-grid">
+      <article
+        v-for="item in items"
+        :key="canonicalId(item.favorite_id) || canonicalId(item.id)"
+        class="favorites-card"
+        :data-animal-id="canonicalId(item.id)"
+        :data-favorite-id="canonicalId(item.favorite_id)"
+      >
+        <div class="favorites-card-media">
+          <img
+            :src="imageUrl(item.tpic)"
+            :alt="(item.tname || '未命名动物') + ' 的照片'"
+            @error="onImageError"
+          >
+          <span class="ui-badge" :class="stateBadge(item.tstate)">{{ stateText(item.tstate) }}</span>
+        </div>
+        <div class="favorites-card-body">
+          <h2 class="favorites-card-title">{{ item.tname || '未命名动物' }}</h2>
+          <p class="favorites-card-meta">
+            {{ item.ttype || '类型待确认' }} · {{ item.tsex || '性别未知' }}
+          </p>
+          <p v-if="item.created_at" class="favorites-card-time">
+            收藏于 <time :datetime="isoTime(item.created_at)">{{ formatTime(item.created_at) }}</time>
+          </p>
+          <p v-if="item.tdescribe" class="favorites-card-desc">{{ item.tdescribe }}</p>
+          <p v-if="!isAdoptable(item.tstate)" class="ui-field-hint">
+            当前档案{{ stateText(item.tstate) === '状态未知' ? '状态待确认' : '暂不可直接申请领养' }}；你仍可查看完整档案。
+          </p>
+          <div class="ui-form-actions favorites-card-actions">
+            <a
+              class="ui-button is-dark"
+              data-favorites-detail
+              :data-animal-id="canonicalId(item.id)"
+              :href="detailUrl(item.id)"
+            >查看档案</a>
+            <button
+              class="ui-button is-ghost"
+              type="button"
+              data-favorites-remove
+              :data-animal-id="canonicalId(item.id)"
+              :disabled="!!writeBusy"
+              @click="openRemove(item, $event)"
+            >{{ writeBusy === canonicalId(item.id) ? '正在取消…' : '取消收藏' }}</button>
+          </div>
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <div v-if="confirmItem" class="ui-dialog-backdrop" role="presentation" @click.self="onBackdrop">
+    <section
+      ref="confirmDialog"
+      class="ui-dialog favorites-confirm-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="favoritesConfirmTitle"
+      aria-describedby="favoritesConfirmDesc"
+      tabindex="-1"
+      @keydown.tab="trapConfirmFocus"
+    >
+      <div class="ui-dialog-head">
+        <div>
+          <span>CONFIRM REMOVE</span>
+          <h2 id="favoritesConfirmTitle">取消收藏这只动物？</h2>
+        </div>
+      </div>
+      <div class="ui-dialog-body">
+        <p id="favoritesConfirmDesc">
+          「{{ confirmItem.tname || ('档案 #' + canonicalId(confirmItem.id)) }}」将从你的收藏列表移除。
+          这不会影响任何领养申请；确认后才会向服务端发送请求。
+        </p>
+        <p v-if="actionError" class="ui-form-alert is-error" role="alert">{{ actionError }}</p>
+      </div>
+      <div class="ui-dialog-actions">
+        <button class="ui-button is-ghost" type="button" data-favorites-cancel :disabled="!!writeBusy" @click="cancelConfirm">取消</button>
+        <button
+          class="ui-button is-danger"
+          type="button"
+          data-favorites-confirm-remove
+          :disabled="!!writeBusy"
+          @click="executeRemove"
+        >{{ writeBusy ? '正在取消…' : '确认取消收藏' }}</button>
+      </div>
+    </section>
+  </div>
+
+  <front-site-footer></front-site-footer>
+</div>
+<script src="../../js/jquery.min.js"></script>
+<script src="../../js/vue.min.js"></script>
 <script src="../../js/user-workspace.js?v=20260731a"></script>
 <script src="../../js/front-shell.js?v=20260731a"></script>
-    <script>
-      (function () {
-        AuthSession.bootstrap({
-          requireAuth: true,
-          onDone: function (ok, user) {
-            if (!ok) return;
-            new Vue({
-              el: "#app",
-              data: { user: user, items: [], loading: true },
-              created: function () {
-                this.load();
-              },
-              methods: {
-                load: function () {
-                  var vm = this;
-                  $.get("/api/operations/favorites")
-                    .done(function (r) {
-                      vm.items = r.data || [];
-                    })
-                    .always(function () {
-                      vm.loading = false;
-                    });
-                },
-                remove: function (item) {
-                  var vm = this;
-                  $.ajax({
-                    url: "/api/operations/favorites/" + item.id,
-                    type: "DELETE",
-                  }).done(function () {
-                    vm.load();
-                  });
-                },
-                image: function (flag) {
-                  return /^[A-Za-z0-9-]{1,64}$/.test(flag || "")
-                    ? "/api/files/" + encodeURIComponent(flag)
-                    : "/prototype-assets/editorial-02.svg";
-                },
-              },
+<script src="../../js/auth-session.js?v=20260728"></script>
+<script>
+(function () {
+  'use strict';
+
+  function canonicalId(value) {
+    var normalized = value == null ? '' : String(value).trim();
+    return /^[1-9][0-9]{0,18}$/.test(normalized) ? normalized : '';
+  }
+
+  function exactBoolSuccess(res) {
+    return !!(res && res.code === '0' && res.data === true);
+  }
+
+  function errorMessage(xhr, fallback) {
+    return (xhr && xhr.responseJSON && xhr.responseJSON.msg) || fallback;
+  }
+
+  AuthSession.bootstrap({
+    requireAuth: true,
+    allowCachedOnNetworkError: false,
+    onDone: function (ok, authenticatedUser) {
+      if (!ok || !authenticatedUser) return;
+      var wait = document.getElementById('authWait');
+      if (wait) wait.hidden = true;
+      new Vue({
+        el: '#app',
+        data: {
+          user: authenticatedUser,
+          items: [],
+          loading: true,
+          error: '',
+          actionError: '',
+          listRequest: null,
+          listSeq: 0,
+          writeBusy: '',
+          confirmItem: null,
+          confirmTrigger: null,
+          focusAfterRemoveId: '',
+          focusAfterRemoveIndex: -1
+        },
+        created: function () {
+          this.load();
+          document.addEventListener('keydown', this.onDocumentKey);
+        },
+        beforeDestroy: function () {
+          if (this.listRequest) this.listRequest.abort();
+          document.removeEventListener('keydown', this.onDocumentKey);
+          document.body.classList.remove('ui-modal-open');
+        },
+        methods: {
+          canonicalId: canonicalId,
+          load: function () {
+            var view = this;
+            if (view.listRequest) view.listRequest.abort();
+            var seq = ++view.listSeq;
+            view.loading = true;
+            view.error = '';
+            // Fail closed: never show stale list as if it were a new success.
+            view.listRequest = $.ajax({
+              url: '/api/operations/favorites',
+              type: 'GET',
+              cache: false
+            }).done(function (res) {
+              if (seq !== view.listSeq) return;
+              if (!res || res.code !== '0' || !Array.isArray(res.data)) {
+                view.items = [];
+                view.error = (res && res.msg) || '服务返回了无法识别的收藏数据。';
+                return;
+              }
+              view.items = res.data.filter(function (row) {
+                return !!canonicalId(row && row.id);
+              }).map(function (row) {
+                var copy = Object.assign({}, row);
+                copy.id = canonicalId(row.id);
+                if (row.favorite_id != null && row.favorite_id !== '') {
+                  copy.favorite_id = canonicalId(row.favorite_id) || String(row.favorite_id);
+                }
+                return copy;
+              });
+            }).fail(function (xhr, statusText) {
+              if (seq !== view.listSeq || statusText === 'abort') return;
+              view.items = [];
+              view.error = errorMessage(xhr, '收藏加载失败，请稍后重试。');
+            }).always(function () {
+              if (seq !== view.listSeq) return;
+              view.listRequest = null;
+              view.loading = false;
+              if (view.focusAfterRemoveId) {
+                var deletedId = view.focusAfterRemoveId;
+                var deletedIndex = view.focusAfterRemoveIndex;
+                view.focusAfterRemoveId = '';
+                view.focusAfterRemoveIndex = -1;
+                view.restoreFocusAfterRemove(deletedId, deletedIndex);
+              }
             });
           },
-        });
-      })();
-    </script>
-  </body>
+          restoreFocusAfterRemove: function (deletedId, deletedIndex) {
+            var view = this;
+            view.$nextTick(function () {
+              function focusEl(el) {
+                if (el && el.focus) {
+                  try { el.focus(); return true; } catch (e) {}
+                }
+                return false;
+              }
+              var cards = Array.prototype.slice.call(document.querySelectorAll('.favorites-card[data-animal-id]'));
+              var nextCard = null;
+              var prevCard = null;
+              if (deletedIndex >= 0 && cards.length) {
+                if (deletedIndex < cards.length) nextCard = cards[deletedIndex];
+                if (deletedIndex - 1 >= 0) prevCard = cards[deletedIndex - 1];
+                else if (!nextCard && cards.length) prevCard = cards[cards.length - 1];
+              } else if (cards.length) {
+                nextCard = cards[0];
+              }
+              var target = null;
+              if (nextCard) target = nextCard.querySelector('[data-favorites-detail]');
+              if (!target && prevCard) target = prevCard.querySelector('[data-favorites-detail]');
+              if (!target) target = document.querySelector('[data-favorites-browse-empty], [data-favorites-browse]');
+              if (!target) target = document.getElementById('favoritesTitle');
+              if (!focusEl(target)) {
+                var main = document.querySelector('main');
+                if (main) {
+                  if (!main.hasAttribute('tabindex')) main.setAttribute('tabindex', '-1');
+                  focusEl(main);
+                }
+              }
+            });
+          },
+          stateText: function (value) {
+            var n = parseInt(String(value == null ? '' : value).trim(), 10);
+            return { 0: '待领养', 1: '审核中', 2: '已领养', 3: '不可领养' }[n] || '状态未知';
+          },
+          stateBadge: function (value) {
+            var n = parseInt(String(value == null ? '' : value).trim(), 10);
+            return n === 0 ? 'is-pending'
+              : n === 1 ? 'is-pending'
+              : n === 2 ? 'is-done'
+              : n === 3 ? 'is-closed'
+              : 'is-neutral';
+          },
+          isAdoptable: function (value) {
+            return Number(value) === 0;
+          },
+          detailUrl: function (id) {
+            var cid = canonicalId(id);
+            return cid ? './animal_detail.html?id=' + encodeURIComponent(cid) : './animal_browse.html';
+          },
+          imageUrl: function (flag) {
+            return /^[A-Za-z0-9_-]{1,64}$/.test(String(flag || ''))
+              ? '/api/files/' + encodeURIComponent(String(flag))
+              : '/prototype-assets/editorial-02.svg';
+          },
+          onImageError: function (event) {
+            if (event && event.target) event.target.src = '/prototype-assets/editorial-02.svg';
+          },
+          isoTime: function (value) {
+            if (!value) return '';
+            return String(value).replace(' ', 'T');
+          },
+          formatTime: function (value) {
+            if (!value) return '';
+            var text = String(value).replace('T', ' ');
+            return text.length >= 16 ? text.slice(0, 16) : text;
+          },
+          openRemove: function (item, event) {
+            if (this.writeBusy || !canonicalId(item && item.id)) return;
+            this.confirmTrigger = event && event.currentTarget ? event.currentTarget : null;
+            this.confirmItem = item;
+            this.actionError = '';
+            document.body.classList.add('ui-modal-open');
+            this.$nextTick(function () {
+              var dialog = this.$refs.confirmDialog;
+              if (dialog && dialog.focus) dialog.focus();
+            });
+          },
+          cancelConfirm: function () {
+            if (this.writeBusy) return;
+            var trigger = this.confirmTrigger;
+            this.confirmItem = null;
+            this.confirmTrigger = null;
+            document.body.classList.remove('ui-modal-open');
+            this.$nextTick(function () {
+              if (trigger && document.contains(trigger) && trigger.focus) trigger.focus();
+            });
+          },
+          onBackdrop: function () {
+            if (this.writeBusy) return;
+            this.cancelConfirm();
+          },
+          executeRemove: function () {
+            if (this.writeBusy || !this.confirmItem) return;
+            var id = canonicalId(this.confirmItem.id);
+            if (!id) {
+              this.actionError = '动物编号无效，无法取消收藏。';
+              return;
+            }
+            var view = this;
+            var idsBefore = (view.items || []).map(function (row) { return canonicalId(row.id); });
+            var deletedIndex = idsBefore.indexOf(id);
+            view.writeBusy = id;
+            view.actionError = '';
+            $.ajax({
+              url: '/api/operations/favorites/' + encodeURIComponent(id),
+              type: 'DELETE'
+            }).done(function (res) {
+              if (!exactBoolSuccess(res)) {
+                if (res && res.data === false) {
+                  view.actionError = '取消收藏未成功，记录仍保留在列表中。';
+                } else {
+                  view.actionError = (res && res.msg) || '取消收藏失败，记录仍保留在列表中。';
+                }
+                return;
+              }
+              view.confirmItem = null;
+              view.confirmTrigger = null;
+              document.body.classList.remove('ui-modal-open');
+              view.focusAfterRemoveId = id;
+              view.focusAfterRemoveIndex = deletedIndex;
+              view.load();
+            }).fail(function (xhr) {
+              view.actionError = errorMessage(xhr, '取消收藏失败，记录仍保留在列表中。');
+            }).always(function () {
+              view.writeBusy = '';
+            });
+          },
+          onEscape: function () {
+            if (this.confirmItem && !this.writeBusy) this.cancelConfirm();
+          },
+          onDocumentKey: function (event) {
+            if (event.key === 'Escape') this.onEscape();
+          },
+          trapConfirmFocus: function (event) {
+            var dialog = this.$refs.confirmDialog;
+            if (!dialog || event.key !== 'Tab') return;
+            var focusable = Array.prototype.slice.call(dialog.querySelectorAll(
+              'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+            )).filter(function (el) {
+              return el.offsetWidth > 0 || el.offsetHeight > 0;
+            });
+            if (!focusable.length) {
+              event.preventDefault();
+              dialog.focus();
+              return;
+            }
+            var first = focusable[0];
+            var last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+              event.preventDefault();
+              last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+              event.preventDefault();
+              first.focus();
+            }
+          }
+        }
+      });
+    }
+  });
+})();
+</script>
+</body>
 </html>

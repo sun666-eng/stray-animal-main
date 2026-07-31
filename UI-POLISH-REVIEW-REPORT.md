@@ -1127,4 +1127,43 @@ GPT 确认焦点已过；真实 390×844 复现搜索区空白：
 `phase-3e-report.json` · `run-strict-final.log` · `screenshots-index.json` ·
 `reg-summary-phases.json`
 
-**下一步**: 以本分支封存提交为基线开 Phase 3F（提示词见 `output/playwright/ui-polish-phase-3e/PHASE-3F-PROMPT.md`）。不合并 main。
+**封存状态**: Phase 3E 已提交并推送（产品 `0739431` · tip `38f67ba`）。
+
+---
+
+### Phase 3F：用户收藏与照顾知识助手工作台（2026-07-31 · 验收通过待审）
+
+**基线 tip**: `38f67baff6457e34a732719cab0c36ee3d6b97f9`（Phase 3E）
+**产品封存 3E**: `07394318976d5917ae4b9a2b1d0065f55800460a`
+**分支**: `ui-polish/phase-3f-favorites-petcare-workspace-20260731`
+**测试端口**: `18130`（dev；结束精确释放；不操作 9999）
+
+**状态**: **严格验收通过**；**未提交、未推送、未进入 Phase 3G** — 等待 GPT 审核
+
+| 项 | 值 |
+|----|-----|
+| 页面范围 | `favorites.html` · `pet_care.html` |
+| 缓存 | 两页 `product-ui.css?v=20260731f`；shell/workspace `v=20260731a` |
+| Phase 3F | **196 / 0 / 0** strict；矩阵 **10/10**；截图 **15**；probes **40**；abort **1/1/0**；race final **c2** |
+| best-effort / fallback / skipped | **0 / 0 / 0** |
+| 写入隔离 | fixture **40** · real **0** |
+| evaluate | usage **43** · readonly **43** |
+| 全量回归 | 3E–1C 全部 exit **0** |
+| 总门禁 | adversarial **853/0** · Maven **473/0/0** · git diff --check **0** |
+| P0/P1/P2/P3 | **0/0/0/0** |
+
+**产品修改**:
+
+- 收藏：状态机、latest-wins、自定义确认、精确 Boolean、成功焦点 fallthrough。
+- 助手：统一 `closeHistoryPanel` 滚动锁；确认弹窗内 `confirmError`；配置弹窗焦点生命周期；仅 `connected===true` 显示已连接。
+- CSS 限定 `.favorites-workspace` / `.petcare-workspace`。
+
+**测试**: 新建 	ools/ui-polish-phase-3f.cjs（真实 Playwright；无占位循环；无 3E 数字冒充）。
+
+**竞态**: 打开 c1(hold)→c2(fast)；最终 conversationId=**c2**；abort registered/consumed/unused=**1/1/0**（scenario conversation-detail-A-slow-abort，GET /api/petcare/conversations/c1）。
+
+权威: `output/playwright/ui-polish-phase-3f/PHASE-3F-REPORT.md` ·
+`phase-3f-report.json` · `run-strict-final.log` · `screenshots-index.json` ·
+`reg-summary-phases.json`
+
+**停止**: 不提交、不推送、不合并 main、不进入 Phase 3G。等待 GPT 独立审核。

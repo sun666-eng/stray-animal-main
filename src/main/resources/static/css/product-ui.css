@@ -3113,3 +3113,76 @@ body.ui-adoption-dialog-open {
     transition-duration: .01ms !important;
   }
 }
+
+/* ===== Phase 3F: favorites workspace + petcare workspace polish ===== */
+.favorites-workspace { padding-bottom: 48px; }
+.favorites-hero { padding: 48px 0 28px; max-width: 720px; }
+.favorites-hero .ui-workspace-title { margin: 8px 0 12px; font-size: clamp(34px, 5vw, 56px); letter-spacing: -.04em; }
+.favorites-hero p { color: var(--ui-muted); line-height: 1.7; }
+.favorites-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.favorites-card { min-width: 0; display: flex; flex-direction: column; border: 1px solid var(--ui-line); border-radius: 20px; overflow: hidden; background: #fff; box-shadow: 0 10px 30px rgba(24, 28, 24, .04); }
+.favorites-card-media { position: relative; background: #f3f1ec; }
+.favorites-card-media img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
+.favorites-card-media .ui-badge { position: absolute; top: 12px; left: 12px; }
+.favorites-card-body { display: flex; flex-direction: column; gap: 8px; padding: 18px 18px 20px; min-width: 0; }
+.favorites-card-title { margin: 0; font-size: 20px; letter-spacing: -.03em; overflow-wrap: anywhere; }
+.favorites-card-meta, .favorites-card-time { margin: 0; color: var(--ui-muted); font-size: 13px; }
+.favorites-card-desc { margin: 0; color: var(--ui-ink); font-size: 13px; line-height: 1.65; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.favorites-card-actions { margin-top: 8px; }
+.favorites-card-actions .ui-button { min-height: 44px; }
+.favorites-empty .ui-button, .favorites-workspace .ui-state .ui-button { min-height: 44px; }
+.favorites-confirm-dialog .ui-dialog-actions .ui-button { min-height: 44px; }
+
+.petcare-workspace .petcare-history-button,
+.petcare-workspace .petcare-config-button,
+.petcare-workspace .petcare-new-conversation,
+.petcare-workspace .ui-chat-compose .ui-button,
+.petcare-workspace #petCareInput { min-height: 44px; }
+.petcare-workspace #petCareInput { min-height: 88px; }
+.petcare-workspace .petcare-conversation-delete { width: 44px; height: 44px; top: 14px; right: 4px; opacity: 1; }
+.petcare-workspace .petcare-rich-answer,
+.petcare-workspace .ui-chat-bubble { overflow-wrap: anywhere; word-break: break-word; }
+.petcare-workspace .petcare-answer-table { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.petcare-workspace .petcare-answer-table table { width: 100%; min-width: 0; border-collapse: collapse; }
+.petcare-workspace .petcare-history-scrim { display: none; }
+.petcare-confirm-dialog .ui-dialog-actions .ui-button { min-height: 44px; }
+
+@media (max-width: 1100px) {
+  .favorites-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 800px) {
+  .favorites-grid { grid-template-columns: 1fr; }
+  .favorites-hero { padding-top: 36px; }
+}
+@media (max-width: 859px) {
+  .petcare-workspace .petcare-chat-layout { grid-template-columns: minmax(0, 1fr); }
+  .petcare-workspace .petcare-history-scrim {
+    display: block; position: fixed; inset: 0; z-index: 90; background: rgba(17,18,17,.46);
+  }
+  .petcare-workspace .petcare-conversation-sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; z-index: 95;
+    width: min(320px, 88vw); height: 100vh; max-height: 100vh;
+    border-radius: 0; box-shadow: 18px 0 48px rgba(0,0,0,.18);
+  }
+  body.petcare-history-open { overflow: hidden; }
+  .petcare-workspace .petcare-answer-table table,
+  .petcare-workspace .petcare-answer-table thead { display: block; width: 100%; }
+  .petcare-workspace .petcare-answer-table thead { position: absolute; left: -9999px; }
+  .petcare-workspace .petcare-answer-table tbody,
+  .petcare-workspace .petcare-answer-table tr,
+  .petcare-workspace .petcare-answer-table td { display: block; width: 100%; }
+  .petcare-workspace .petcare-answer-table tr { margin: 0 0 12px; padding: 10px 0; border-bottom: 1px solid var(--ui-line); }
+  .petcare-workspace .petcare-answer-table td { padding: 4px 0; }
+  .petcare-workspace .petcare-answer-table td::before {
+    content: attr(data-label); display: block; color: var(--ui-muted); font-size: 11px; font-weight: 700; margin-bottom: 2px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .favorites-workspace *, .favorites-workspace *::before, .favorites-workspace *::after,
+  .petcare-workspace *, .petcare-workspace *::before, .petcare-workspace *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
