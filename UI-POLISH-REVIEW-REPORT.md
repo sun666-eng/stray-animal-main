@@ -450,7 +450,7 @@
 | ui-polish-phase-1 / 1b / 1c | 全过（1c 134/0，矩阵 90） |
 | adversarial | **851/0** |
 | mvn test | 0 |
-| git diff --check | 0 |
+| git diff --check | **0**（真实 exit，见 git-diff-check.log） |
 
 ### 端口
 
@@ -594,7 +594,7 @@ admin-workspace.css?v=20260729c  →  admin-workspace.css?v=20260730a
 | ui-polish-phase-1c | **134/0** |
 | adversarial | **851/0** |
 | mvn test | **473/0** |
-| git diff --check | 0 |
+| git diff --check | **0**（真实 exit，见 git-diff-check.log） |
 
 ### 停止
 
@@ -634,7 +634,7 @@ GPT 在独立端口 18085 复现：权限保存 / 角色删除浏览器网络 **
 | ui-polish-phase-1c | **134/0** |
 | adversarial | **851/0** |
 | mvn test | **473/0** |
-| git diff --check | **0** |
+| git diff --check | **0**（真实 exit，见 git-diff-check.log） |
 | leftover `UI_AUDIT_2B_*` | **0** |
 | 18086 结束后 | **stopped**；9999 未触碰 |
 
@@ -1223,7 +1223,7 @@ GPT 确认焦点已过；真实 390×844 复现搜索区空白：
 | 回归 3F→3A | 全部 exit **0**（3A 曾服务中途退出，重启后完整重跑） |
 | adversarial | **853/0**（`-BaseUrl http://127.0.0.1:18134`） |
 | Maven | **473/0/0/0** |
-| git diff --check | **0** |
+| git diff --check | **0**（真实 exit，见 git-diff-check.log） |
 | P0/P1/P2/P3 | **0/0/0/0** |
 
 **返修要点**: 移除宽泛 requestfailed 白名单；显式 `expectedRequestFailureLedger`；导航 settle + 独立 page 消除 GET ERR_ABORTED；分类器负向自测；Session/CSRF 真实断言；真实验证码 canvas smoke。
@@ -1251,7 +1251,7 @@ GPT 确认焦点已过；真实 390×844 复现搜索区空白：
 | 回归 3F→3A | 全部 exit **0** |
 | adversarial | **853/0**（`-BaseUrl http://127.0.0.1:18136`） |
 | Maven | **473/0/0/0** |
-| git diff --check | **0** |
+| git diff --check | **0**（真实 exit，见 git-diff-check.log） |
 | P0/P1/P2/P3 | **0/0/0/0** |
 
 **Phase 3G scenarioId 账本匹配返修完成，等待 GPT 最终封存审核。**
@@ -1290,7 +1290,7 @@ GPT 确认焦点已过；真实 390×844 复现搜索区空白：
 | fixture / real / synthetic / directStore | **15 / 0 / 0 / 0** |
 | requiredJourneyWrites | **6/6 exact ×1** |
 | bestEffort / fallback | **0 / 0** |
-| git diff --check | **0** |
+| git diff --check | **0**（真实 exit，见 git-diff-check.log） |
 | git status | 仅 `M UI-POLISH-REVIEW-REPORT.md` + `?? tools/ui-polish-phase-3h.cjs`（**.bak 已删**） |
 | P0/P1/P2/P3 | **0/0/0/0** |
 
@@ -1302,3 +1302,39 @@ GPT 确认焦点已过；真实 390×844 复现搜索区空白：
 权威: `output/playwright/ui-polish-phase-3h/PHASE-3H-REPORT.md` · `phase-3h-report.json` · `request-ledger.json`
 
 **Phase 3H 最终封存收口完成，未提交、未推送，等待 GPT 最终审核。**
+
+---
+
+### Phase 4A：真实后端跨角色闭环 + 公告 absence 微返修（2026-08-01）
+
+**基线**: `e9119b9` · **分支**: `release/phase-4a-real-e2e-20260801`
+**套件**: `tools/release-phase-4a-real-e2e.cjs`
+**端口**: `18154`（已释放；**未触碰 9999**）
+**DB**: `test` · profile `dev`（报告无密钥）
+
+**状态**: **STRICT=true** · 未提交、未推送、未合并 main、不进入 4B — 等待 GPT 最终审核
+
+| 项 | 值 |
+|----|-----|
+| Assertions | **223 / 0 / 0** |
+| Journeys | **8 / 8** |
+| cleanupFailed | **0** |
+| final-state-audit.ok | **true** |
+| notice 契约自测 | **10/10 allOk=true** |
+| notice cleanup VERIFY | HTTP **404** / code **404** / confirmedAbsent=true |
+| notice final-state | confirmed-absent http=404 code=404 |
+| notice DB dual proof | noticeId=**23** rows=0（MySQL OK） |
+| git diff --check | **0**（真实 exit，见 git-diff-check.log） |
+| 产品修改 | **无** |
+| testMarker | `E2E4A_20260801T071918Z_38021C` |
+| userId / animalId / taskId / signupId / noticeId / volunteerId | `67` / `10038` / `21` / `12` / `23` / `24` |
+
+**微返修**:
+1. `isConfirmedAbsent(httpStatus, json)` 仅 404/code404/无 data 或 200/code0/data null
+2. cleanup VERIFY notice + final-state notice 均改用该函数（禁止 `code===404||!data` / `queryOk&&!present`）
+3. 确定性契约自测失败则 strict=false / exit 1
+4. RESIDUAL-AUDIT `final-notice-db-absent`：SQL 成功且精确 noticeId 不存在
+
+权威: `output/playwright/release-phase-4a/PHASE-4A-REPORT.md` · `final-state-audit.json` · `cleanup-audit.json` · `RESIDUAL-AUDIT.md` · `git-diff-check.log`
+
+**Phase 4A 公告 absence 微返修完成，未提交、未推送，等待 GPT 最终审核。**
