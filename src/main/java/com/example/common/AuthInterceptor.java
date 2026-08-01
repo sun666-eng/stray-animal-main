@@ -22,7 +22,9 @@ public class AuthInterceptor implements HandlerInterceptor {
 
     private static final Set<String> PUBLIC_API_PATHS = new HashSet<>(Arrays.asList(
             "/api/user/login",
-            "/api/user/register"
+            "/api/user/register",
+            "/api/health/live",
+            "/api/health/ready"
     ));
 
     private static final Map<String, List<String>> API_FLAG_RULES = new HashMap<>();
@@ -191,7 +193,16 @@ public class AuthInterceptor implements HandlerInterceptor {
     }
 
     private boolean isPublicApi(String path, String method) {
+        // Health probes: exact path only; GET/HEAD only (no write methods).
+        if (("/api/health/live".equals(path) || "/api/health/ready".equals(path))
+                && ("GET".equalsIgnoreCase(method) || "HEAD".equalsIgnoreCase(method))) {
+            return true;
+        }
         if (PUBLIC_API_PATHS.contains(path)) {
+            // login/register remain method-agnostic as before; health already gated above
+            if ("/api/health/live".equals(path) || "/api/health/ready".equals(path)) {
+                return "GET".equalsIgnoreCase(method) || "HEAD".equalsIgnoreCase(method);
+            }
             return true;
         }
         // B2.1：精确路径 + 方法，禁止 startsWith 过宽公开

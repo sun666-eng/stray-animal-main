@@ -29,6 +29,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                     "/api/user/login",
                     "/api/user/register",
+                    "/api/health/live",
+                    "/api/health/ready",
                     "/page/end",
                     "/page/end/",
                     "/page/end/login.html",

@@ -38,8 +38,13 @@ app:
   bootstrap:
     # 生产首个管理员仅通过环境变量创建，见 InitialAdminBootstrap
     initial-admin-enabled: true
+  health:
+    db-timeout-ms: 2000
+    ready-cache-ms: 3000
 
 server:
+  # 优雅关闭：让进行中的请求有界完成后再退出
+  shutdown: graceful
   servlet:
     session:
       cookie:
@@ -49,6 +54,8 @@ server:
         same-site: lax
 
 spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
   datasource:
     # 生产建议开启 SSL（按云厂商调整）
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:}?useUnicode=true&characterEncoding=utf-8&useSSL=${DB_USE_SSL:true}&serverTimezone=GMT%2b8&connectTimeout=5000&socketTimeout=60000

@@ -1,10 +1,12 @@
 package com.example.config;
 
 import com.alibaba.druid.pool.DruidDataSource;
+import com.example.component.ProdDeploymentRules;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 
 import javax.sql.DataSource;
 
@@ -24,14 +26,31 @@ import javax.sql.DataSource;
  * 本 Bean 用 {@code @ConfigurationProperties(prefix = "spring.datasource")} 宽松绑定,
  * yml 里的 kebab-case 键（max-active/max-wait/keep-alive 等）直达 druid setter。
  * 无需配置的项（已核实默认为安全值）：test-while-idle=true、MySQL ping 校验自动启用。
+ *
+ * <p>prod 下在创建/初始化连接池之前再次执行 {@link ProdDeploymentRules}，
+ * 确保 root/test/空密码等在 MySQL Access denied 之前被拒绝。
  */
 @Slf4j
 @Configuration
 public class DataSourceConfig {
 
+    private final Environment environment;
+
+    public DataSourceConfig(Environment environment) {
+        this.environment = environment;
+    }
+
     @Bean(initMethod = "init", destroyMethod = "close")
     @ConfigurationProperties(prefix = "spring.datasource")
     public DataSource dataSource() {
+        // Full validate (profile count + prod rules) so multi-profile prod,dev fails with the
+        // exact profile message before any MySQL contact — same rules as EnvironmentPostProcessor.
+        for (String profile : environment.getActiveProfiles()) {
+            if ("prod".equals(profile)) {
+                ProdDeploymentRules.validate(environment);
+                break;
+            }
+        }
         DruidDataSource ds = new DruidDataSource();
         log.info("使用显式 DruidDataSource（连接池参数经 spring.datasource.* 宽松绑定）");
         return ds;

@@ -46,6 +46,7 @@ class DeploymentProfileGuardTest {
         environment.setProperty("app.ai.config-encryption-key", "independent-ai-config-key-32-bytes-minimum");
         environment.setProperty("app.ai.allow-loopback-personal-config", "false");
         environment.setProperty("app.schema-guard.auto-migrate", "false");
+        environment.setProperty("app.cors.allowed-origin-patterns", "https://app.example.local");
 
         assertDoesNotThrow(() -> new DeploymentProfileGuard(environment)
                 .run(new DefaultApplicationArguments(new String[0])));
@@ -154,6 +155,7 @@ class DeploymentProfileGuardTest {
         environment.setProperty("app.ai.config-encryption-key", "independent-ai-config-key-32-bytes-minimum");
         environment.setProperty("app.ai.allow-loopback-personal-config", "false");
         environment.setProperty("app.schema-guard.auto-migrate", "false");
+        environment.setProperty("app.cors.allowed-origin-patterns", "https://app.example.local");
         return environment;
     }
 

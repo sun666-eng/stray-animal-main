@@ -25,9 +25,19 @@ public class StartupReadinessFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
+        String path = request.getRequestURI() == null ? "" : request.getRequestURI();
+        // Health probes are owned by HealthController:
+        // - /live answers while runners are still finishing
+        // - /ready is allowed through so the controller can return HTTP 503 {"status":"DOWN"}
+        //   until ApplicationReadyEvent + dependencies are OK (no false green)
+        if ("/api/health/live".equals(path) || "/api/health/ready".equals(path)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         if (!readiness.isReady()) {
             response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
             response.setContentType("application/json;charset=UTF-8");
+            // Generic body only — no paths, exceptions, or dependency detail.
             response.getWriter().write("{\"code\":\"503\",\"msg\":\"服务正在完成安全启动检查\"}");
             return;
         }

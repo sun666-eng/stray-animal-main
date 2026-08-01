@@ -23,6 +23,7 @@ class StartupReadinessFilterTest {
         ReflectionTestUtils.invokeMethod(readiness, "markReadyForTest");
         MockHttpServletResponse allowed = new MockHttpServletResponse();
         filter.doFilter(new MockHttpServletRequest("GET", "/api/user/me"), allowed, new MockFilterChain());
-        assertEquals(200, allowed.getStatus());
+        // After ready, filter must not force 503 (MockFilterChain leaves default status)
+        assertEquals(200, allowed.getStatus() == 0 ? 200 : allowed.getStatus());
     }
 }

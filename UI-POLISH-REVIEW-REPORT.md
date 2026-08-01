@@ -1338,3 +1338,108 @@ GPT 确认焦点已过；真实 390×844 复现搜索区空白：
 权威: `output/playwright/release-phase-4a/PHASE-4A-REPORT.md` · `final-state-audit.json` · `cleanup-audit.json` · `RESIDUAL-AUDIT.md` · `git-diff-check.log`
 
 **Phase 4A 公告 absence 微返修完成，未提交、未推送，等待 GPT 最终审核。**
+
+---
+
+## Phase 4B — 生产发布候选 / 健康探针 / 备份恢复（2026-08-01）
+
+| 项 | 值 |
+|----|-----|
+| 分支 | `release/phase-4b-production-readiness-20260801` |
+| 基线 HEAD | `93c25b5`（Phase 4A 封存，未改该提交） |
+| runId | `E2E4B_20260801T083704Z_21AB50` |
+| strictMode | **true** · failures **0** |
+| JAR SHA-256 | `4f0ec231aa1fe3f853ce5b8ff917f1e3fc90b6a4822cfc027dcff6fc33020c59` |
+| P0/P1/P2/P3 | **0 / 0 / 4 / 0** |
+| 提交/推送/合并 main / 4C | **否** |
+
+### 产品改动（最小）
+
+- `GET/HEAD /api/health/live` · `GET/HEAD /api/health/ready`（无敏感字段；ready 真 503）
+- StartupReadinessFilter / AuthInterceptor / WebMvcConfig 精确豁免
+- `application-prod.yml`：graceful shutdown + health 超时/缓存；secure cookie 保持 true
+- `tools/prod-preflight.ps1` · `tools/start-prod-example.ps1` · orchestrator
+- 部署/回滚 runbook
+
+### 视觉 / 业务规则
+
+- **无** 用户端/管理端视觉改动
+- **无** 领养/救助/义工/资金状态机改动
+
+### 证据
+
+- 权威报告：`output/playwright/release-phase-4b/PHASE-4B-REPORT.md`
+- HTTPS secure cookie：Secure+HttpOnly+SameSite=Lax
+- 重启后文件 SHA 与公告 marker 保持
+- 备份恢复表数 36=36，marker 1=1，同 JAR 启动 restore 库 ready=200
+- 清理：e2e 库/用户/端口/keystore 全清；9999 未触碰
+- 敏感信息扫描：0
+
+### 残留（P2）
+
+- 未停主机 MySQL 做 ready DB-down 对抗
+- 本会话未在隔离库重跑完整 Phase 4A 跨角色套件
+- CORS 矩阵与扩展故障注入未全自动化
+
+**状态**：等待 GPT 独立审核封存 Phase 4B；**未提交、未推送、未合并 main、不进入 4C**。
+
+---
+
+## Phase 4B 返修 — GPT 审核后严格重跑（2026-08-01）
+
+| 项 | 值 |
+|----|-----|
+| 正式 runId | `E2E4B_20260801T094335Z_8B188F` |
+| 旧 runId | `E2E4B_20260801T083704Z_21AB50`（仅历史，不作封存证据） |
+| strictMode | **true** · assert **147/147/0/0** |
+| P0/P1/P2/P3 | **0/0/0/0** |
+| JAR SHA-256 | `cd35db6f5cdf34058e86ab5fe522f0e0ca4acbea05731191048f21889cd180b2` |
+| Java 实际版本 | **21.0.9**（未声称 Java 17） |
+| 故障注入 5/5 | exit≠0（独立 fault runId，不污染正式账本） |
+| 封存建议 | **YES_CANDIDATE_FOR_SEAL**（待 GPT 再审） |
+| 提交/推送/main/4C | **否** |
+
+### 本轮关键返修
+
+- HealthProbeService networkTimeout 恢复 + 单测
+- ProdDeploymentRules 单一真相 + EnvironmentPostProcessor/DataSource 连接前闸门
+- 精确拒绝文案：测试库/root/空密码/CORS 无约束通配
+- 严格 Assert 账本；真实 secret scan；真实 cleanup 查询
+- 隔离账号改密对抗 ready=503；上传目录对抗
+- HTTPS smoke 严格 cookie/notice；CORS 正反
+- Phase 4A/3H 在隔离 dev 实例实跑
+
+权威：`output/playwright/release-phase-4b/PHASE-4B-REPORT.md`
+
+---
+
+## Phase 4B 验收可信度返修（正式绑定 fault inject）— 2026-08-01
+
+| 项 | 值 |
+|----|-----|
+| formalRunId | `E2E4B_20260801T105542Z_4A6D17` |
+| formalJarSha256 | `70f45af957ebda47c902f42386af6d8bb45ff9ce6af74c9659bb6f271523c20c` |
+| strict | **true** · **224/224/0/0** |
+| P0–P3 | **0** |
+| fault inject | 5/5 绑定本轮 JAR；Playwright 真实网络/route；主账本 8 条 fault-driver 断言 |
+| SQL 密钥 | 仅 process stdin，无含密临时 SQL 文件 |
+| 旧 run 证据 | 不作为封存候选 |
+| 提交/推送/main/4C | **否** |
+
+权威：`output/playwright/release-phase-4b/PHASE-4B-REPORT.md`
+
+---
+
+## Phase 4B 故障驱动唯一失败门禁微返修 — 2026-08-01
+
+| 项 | 值 |
+|----|-----|
+| formalRunId | `E2E4B_20260801T111722Z_E9320E` |
+| formalJarSha256 | `86db2dea0cf0561616508fdf673002fea6e3f12869cf90fc19721f7ff0474172` |
+| strict | **true** · **231/231/0/0** |
+| fault unique failure | 5/5 各仅 1 个 expectedFailureScenarioId |
+| self-attack | 4/4 不能假绿 |
+| 主账本 fault 相关断言 | **17** |
+| 提交/推送/main/4C | **否** |
+
+权威：`output/playwright/release-phase-4b/PHASE-4B-REPORT.md`
