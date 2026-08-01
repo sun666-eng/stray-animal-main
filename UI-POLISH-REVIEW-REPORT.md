@@ -1170,13 +1170,13 @@ GPT 确认焦点已过；真实 390×844 复现搜索区空白：
 
 ---
 
-### Phase 3G：用户登录、注册与安全返回闭环（2026-08-01 · 验收通过待审）
+### Phase 3G：用户登录、注册与安全返回闭环（2026-08-01 · 已封存）
 
 **基线 tip**: `27e5514db5d4bdab6a4ed4eb897ce8ae9e0c33a3`（Phase 3F 封存）
 **分支**: `ui-polish/phase-3g-auth-onboarding-20260801`
 **测试端口**: `18132`（dev；结束精确释放；不操作 9999）
 
-**状态**: **严格验收通过**；**未提交、未推送、未进入 Phase 3H** — 等待 GPT 审核
+**封存提交**: `f5185543f8428dba568a29bab1afa95c83d05704` · `feat(ui): seal phase 3g auth onboarding and secure redirect`（已推送 `origin/ui-polish/phase-3g-auth-onboarding-20260801`；未合 main）
 
 | 项 | 值 |
 |----|-----|
@@ -1202,7 +1202,7 @@ GPT 确认焦点已过；真实 390×844 复现搜索区空白：
 
 权威: `output/playwright/ui-polish-phase-3g/PHASE-3G-REPORT.md` · `phase-3g-report.json` · `run-strict-final.log` · `screenshots-index.json` · `reg-summary-phases.json`
 
-**停止**: 不提交、不推送、不合并 main、不进入 Phase 3H。等待 GPT 独立审核。
+**停止（3G 已完成）**: 已封存并推送；未合 main。
 
 ---
 
@@ -1255,3 +1255,50 @@ GPT 确认焦点已过；真实 390×844 复现搜索区空白：
 | P0/P1/P2/P3 | **0/0/0/0** |
 
 **Phase 3G scenarioId 账本匹配返修完成，等待 GPT 最终封存审核。**
+
+---
+
+### Phase 3H：用户端跨页面旅程与最终一致性（2026-08-01）
+
+**基线 tip**: `f5185543f8428dba568a29bab1afa95c83d05704`（Phase 3G 封存）
+**分支**: `ui-polish/phase-3h-20260801`
+**产品代码**: 本轮**无变更**
+
+#### 3H 初验假绿（不得封存）
+
+| 项 | 值 |
+|----|-----|
+| 端口 | 18138 / GPT 复跑 18139 |
+| 表面结果 | **512/0/0**（假绿） |
+| 原因 | Journey 用 `evaluate(fetch)` / 直接 push store / synthetic 报名 / 直接改 petCareConfig / 无条件 ok:true；宽泛正则；固定 8 分；错误截图；help/mine·visit/mine 契约松散 |
+
+**结论**: 原 512/0 **不得封存 Phase 3H**。
+
+#### 3H 验收可信度返修 + 最终封存收口（等待 GPT 最终审核）
+
+**测试端口（封存收口）**: `18142`（结束精确释放；**未触碰 9999**）
+此前可信度返修端口 `18140` 已释放。
+
+**状态**: **STRICT=true**；**未提交、未推送、未合并 main、未进入下一阶段**
+
+| 项 | 值 |
+|----|-----|
+| Assertions | **557 / 0 / 0** |
+| Matrix | **100/100**（20×5） |
+| Journeys A–G | **7/7** |
+| Screenshots | **28** |
+| fixture / real / synthetic / directStore | **15 / 0 / 0 / 0** |
+| requiredJourneyWrites | **6/6 exact ×1** |
+| bestEffort / fallback | **0 / 0** |
+| git diff --check | **0** |
+| git status | 仅 `M UI-POLISH-REVIEW-REPORT.md` + `?? tools/ui-polish-phase-3h.cjs`（**.bak 已删**） |
+| P0/P1/P2/P3 | **0/0/0/0** |
+
+**封存收口三项**:
+1. Journey F：删除 `|| w1 === 1`；AND 门禁 store.connected=false + status=failed + 弹窗失败文案 + 无「个人 Agent 已连接」+ 无 is-ready + POST test ×1
+2. Journey D：删除 `|| store.rescues.length >= 1`；DOM 成功面板「救助请求已进入处理队列」或 my_rescue 唯一标题
+3. 删除 `tools/ui-polish-phase-3h.cjs.bak`
+
+权威: `output/playwright/ui-polish-phase-3h/PHASE-3H-REPORT.md` · `phase-3h-report.json` · `request-ledger.json`
+
+**Phase 3H 最终封存收口完成，未提交、未推送，等待 GPT 最终审核。**
