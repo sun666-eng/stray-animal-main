@@ -1443,3 +1443,20 @@ GPT 确认焦点已过；真实 390×844 复现搜索区空白：
 | 提交/推送/main/4C | **否** |
 
 权威：`output/playwright/release-phase-4b/PHASE-4B-REPORT.md`
+
+---
+
+## Phase 4C — 安全/隐私/越权对抗可信度返修（未提交）
+
+| 项 | 值 |
+|----|-----|
+| 分支 | `release/phase-4c-security-privacy-20260801` |
+| 基线 4B | `893e024b70e9117c89c204ffac67ad3655eb1f4a` |
+| formalRunId | `E2E4C_20260801T160823Z_84A8E0` |
+| JAR | `919b68e19365e067228797a6f80ad99c8217aa1ef8836751758ce83e2f94f19e` |
+| port | `18181` |
+| security-e2e / 4A / 3H / adv / mvn / diff | 0 / 0 / 0 / 0 / 0 / 0 |
+| self-attack / ledger-gate | post-freeze (see evidence `PHASE-4C-REPORT.md`) |
+| 提交/推送/main/4D | **否** |
+
+权威证据（gitignored）：`D:\Documents\日期归档\2026\2026.4.7\Myproject\stray-animal-main\output\playwright\release-phase-4c\runs\E2E4C_20260801T160823Z_84A8E0\PHASE-4C-REPORT.md`

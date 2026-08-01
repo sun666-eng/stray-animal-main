@@ -68,7 +68,7 @@ public class FileController {
         }
         Long ownerId = user != null ? user.getId() : null;
         log.info("文件上传请求 - 用户ID: {}, purpose: {}->{}, 文件名: {}, 大小: {}bytes",
-                ownerId, purpose, resolvedPurpose, file.getOriginalFilename(), file.getSize());
+                ownerId, purpose, resolvedPurpose, sanitizeForLog(file.getOriginalFilename()), file.getSize());
         try {
             FileVO fileVO = doUpload(file, ownerId, resolvedPurpose, file.getContentType());
             return Result.success(fileVO);
@@ -107,7 +107,7 @@ public class FileController {
             return Result.success(batch);
         }
         for (MultipartFile file : files) {
-            String name = file == null ? "" : file.getOriginalFilename();
+            String name = file == null ? "" : sanitizeForLog(file.getOriginalFilename());
             if (!isValidUpload(file)) {
                 batch.addFailure(name, "文件为空或扩展名不允许");
                 continue;
@@ -390,12 +390,15 @@ public class FileController {
 
     private FileVO doUploadLocked(MultipartFile file, Long ownerId, String purpose, String contentType) throws Exception {
         fileAssetService.assertStagedQuota(ownerId, 1, file.getSize());
-        String originalName = file.getOriginalFilename();
+        String originalName = sanitizeFileName(file.getOriginalFilename());
         try (InputStream input = file.getInputStream()) {
             fileAssetService.validateImageContent(originalName, purpose, input);
         }
         String flag = UUID.randomUUID().toString().replace("-", "");
         String extension = FileUtil.extName(originalName).toLowerCase();
+        if (StrUtil.isBlank(extension) || !ALLOWED_EXTENSIONS.contains(extension)) {
+            throw new CustomException("400", "文件不能为空或类型不允许");
+        }
         String storedName = flag + "." + extension;
         File dir = fileStorage.getRootFile();
         if (!dir.isDirectory()) {
@@ -436,6 +439,11 @@ public class FileController {
         if (StrUtil.isBlank(originalName)) {
             return false;
         }
+        // Reject path traversal / absolute path clients before any disk write.
+        if (originalName.contains("..") || originalName.contains("/") || originalName.contains("\\")
+                || originalName.indexOf('\0') >= 0) {
+            return false;
+        }
         String ext = FileUtil.extName(originalName);
         return ext != null && ALLOWED_EXTENSIONS.contains(ext.toLowerCase());
     }
@@ -444,6 +452,47 @@ public class FileController {
         if (StrUtil.isBlank(fileName)) {
             return "unknown";
         }
-        return fileName.replaceAll("[^a-zA-Z0-9.\\-_\\u4e00-\\u9fa5]", "_");
+        String name = fileName.replace('\\', '/');
+        int slash = name.lastIndexOf('/');
+        if (slash >= 0) {
+            name = name.substring(slash + 1);
+        }
+        name = name.replace("..", "_");
+        name = name.replaceAll("[^a-zA-Z0-9.\\-_\\u4e00-\\u9fa5]", "_");
+        if (StrUtil.isBlank(name) || ".".equals(name) || "..".equals(name)) {
+            return "unknown";
+        }
+        return name.length() > 200 ? name.substring(0, 200) : name;
+    }
+
+    /** 日志用：去除 CR/LF/控制字符，防止日志注入；不回显原始客户端文件名。 */
+    static String sanitizeForLog(String fileName) {
+        if (fileName == null) {
+            return "";
+        }
+        String cleaned = fileName
+                .replace('\r', '_')
+                .replace('\n', '_')
+                .replace('\t', '_')
+                .replaceAll("[\\p{Cntrl}]", "_");
+        cleaned = sanitizeFileNameStatic(cleaned);
+        return cleaned.length() > 120 ? cleaned.substring(0, 120) : cleaned;
+    }
+
+    private static String sanitizeFileNameStatic(String fileName) {
+        if (StrUtil.isBlank(fileName)) {
+            return "unknown";
+        }
+        String name = fileName.replace('\\', '/');
+        int slash = name.lastIndexOf('/');
+        if (slash >= 0) {
+            name = name.substring(slash + 1);
+        }
+        name = name.replace("..", "_");
+        name = name.replaceAll("[^a-zA-Z0-9.\\-_\\u4e00-\\u9fa5]", "_");
+        if (StrUtil.isBlank(name) || ".".equals(name) || "..".equals(name)) {
+            return "unknown";
+        }
+        return name;
     }
 }

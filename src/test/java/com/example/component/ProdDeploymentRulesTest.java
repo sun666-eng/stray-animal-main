@@ -71,6 +71,7 @@ class ProdDeploymentRulesTest {
         environment.setProperty("app.jwt.secret", "prod-secret-with-enough-length-32chars");
         environment.setProperty("app.ai.config-encryption-key", "independent-ai-config-key-32-bytes-minimum");
         environment.setProperty("app.ai.allow-loopback-personal-config", "false");
+        environment.setProperty("app.ai.allow-proxy-synthetic-dns", "false");
         environment.setProperty("app.schema-guard.auto-migrate", "false");
         environment.setProperty("app.cors.allowed-origin-patterns", "https://app.example.local");
         return environment;

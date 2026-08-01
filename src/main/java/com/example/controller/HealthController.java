@@ -4,7 +4,6 @@ import com.example.service.HealthProbeService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,6 +14,7 @@ import java.util.Map;
 
 /**
  * Minimal public health endpoints. No secrets, paths, DB names, or stack traces.
+ * Must not create HttpSession or Set-Cookie on /live.
  */
 @RestController
 @RequestMapping("/api/health")
@@ -26,7 +26,10 @@ public class HealthController {
         this.healthProbeService = healthProbeService;
     }
 
-    /** Process is alive and can answer HTTP. Does not check DB or disk. */
+    /**
+     * Process is alive and can answer HTTP. Does not check DB or disk.
+     * Stateless: never mints a session (no Set-Cookie / JSESSIONID).
+     */
     @RequestMapping(value = "/live", method = {RequestMethod.GET, RequestMethod.HEAD})
     public ResponseEntity<Map<String, String>> live() {
         return ResponseEntity.ok()

@@ -16,6 +16,8 @@ app:
   ai:
     # 本地联调假 LLM（http://127.0.0.1:18080/v1）；生产禁止
     allow-loopback-personal-config: true
+    # Clash Fake-IP 仅开发可选；生产禁止。默认 false，需时显式 true
+    allow-proxy-synthetic-dns: ${AI_ALLOW_PROXY_SYNTHETIC_DNS:false}
   password:
     # 开发允许明文登录并自动升级 BCrypt（A2）
     allow-plaintext-login: true

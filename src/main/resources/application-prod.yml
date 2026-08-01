@@ -10,6 +10,7 @@ app:
     allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:}
   ai:
     allow-loopback-personal-config: false
+    allow-proxy-synthetic-dns: false
     config-encryption-key: ${AI_CONFIG_ENCRYPTION_KEY:}
   data-fix:
     enabled: false

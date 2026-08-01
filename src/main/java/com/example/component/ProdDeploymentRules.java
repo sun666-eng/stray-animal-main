@@ -137,6 +137,11 @@ public final class ProdDeploymentRules {
         if (Boolean.TRUE.equals(allowLoopbackPersonalConfig)) {
             throw new CustomException("500", "生产必须 app.ai.allow-loopback-personal-config=false");
         }
+        Boolean allowProxySyntheticDns = environment.getProperty(
+                "app.ai.allow-proxy-synthetic-dns", Boolean.class, Boolean.FALSE);
+        if (Boolean.TRUE.equals(allowProxySyntheticDns)) {
+            throw new CustomException("500", "生产必须 app.ai.allow-proxy-synthetic-dns=false");
+        }
 
         String aiConfigEncryptionKey = firstNonBlank(
                 environment.getProperty("app.ai.config-encryption-key"),

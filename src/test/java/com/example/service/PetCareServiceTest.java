@@ -21,9 +21,14 @@ class PetCareServiceTest {
     private PetCareService service;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         service = new PetCareService();
         service.setAiEnabled(false);
+        ReflectionTestUtils.setField(service, "allowLoopbackPersonalConfig", false);
+        ReflectionTestUtils.setField(service, "allowProxySyntheticDns", false);
+        // 默认注入公网解析，避免单测依赖真实 DNS / 外网
+        InetAddress publicIp = InetAddress.getByName("8.8.8.8");
+        service.setHostResolver(host -> new InetAddress[]{publicIp});
     }
 
     @Test
@@ -176,11 +181,66 @@ class PetCareServiceTest {
         assertTrue(PetCareService.isForbiddenAddress(InetAddress.getByName("fc00::1")));
         assertFalse(PetCareService.isForbiddenAddress(InetAddress.getByName("8.8.8.8")));
 
-        // RFC 2544 地址只可作为 Clash 等代理对公网域名的 DNS Fake-IP；
-        // validateBaseUrl 仍会拒绝用户直接填写 https://198.18.x.x。
+        // 生产默认：198.18 Fake-IP 亦视为不安全解析结果
         assertTrue(PetCareService.isProxySyntheticAddress(InetAddress.getByName("198.18.0.26")));
         assertFalse(PetCareService.isProxySyntheticAddress(InetAddress.getByName("10.0.0.8")));
-        assertFalse(PetCareService.isUnsafeResolvedAddress(InetAddress.getByName("198.18.0.26")));
+        assertTrue(PetCareService.isUnsafeResolvedAddress(InetAddress.getByName("198.18.0.26")));
         assertTrue(PetCareService.isUnsafeResolvedAddress(InetAddress.getByName("10.0.0.8")));
+        // 仅 dev-only flag 可放行 198.18 解析结果
+        assertFalse(PetCareService.isUnsafeResolvedAddress(InetAddress.getByName("198.18.0.26"), true));
+        assertTrue(PetCareService.isUnsafeResolvedAddress(InetAddress.getByName("10.0.0.8"), true));
+    }
+
+    @Test
+    void dnsPrivate_rejectsBeforeAnyConnect_viaInjectedResolver() throws Exception {
+        // 模拟 hostname → 127.0.0.1 / 10/8 / 169.254 / IPv6 loopback / 198.18
+        Object[][] cases = {
+                {"evil-loopback.test", InetAddress.getByName("127.0.0.1")},
+                {"evil-10.test", InetAddress.getByName("10.1.2.3")},
+                {"evil-linklocal.test", InetAddress.getByName("169.254.169.254")},
+                {"evil-v6.test", InetAddress.getByName("::1")},
+                {"evil-fakeip.test", InetAddress.getByName("198.18.0.26")}
+        };
+        for (Object[] c : cases) {
+            String host = (String) c[0];
+            InetAddress addr = (InetAddress) c[1];
+            service.setHostResolver(h -> {
+                if (host.equals(h)) {
+                    return new InetAddress[]{addr};
+                }
+                throw new java.net.UnknownHostException(h);
+            });
+            CustomException ex = assertThrows(CustomException.class, () -> service.createAiConfig(
+                    true, "https://" + host + "/v1", "model", "secret", null),
+                    "must reject DNS private host=" + host);
+            assertEquals("400", ex.getCode());
+            assertTrue(ex.getMsg().contains("非公网") || ex.getMsg().contains("SSRF")
+                    || ex.getMsg().contains("公网 HTTPS"), ex.getMsg());
+        }
+        // 确认解析器被调用且不会因“连接失败”而通过：无 HTTP 客户端参与
+    }
+
+    @Test
+    void dnsPublic_allowsWhenResolverReturnsPublic() throws Exception {
+        InetAddress publicIp = InetAddress.getByName("1.1.1.1");
+        service.setHostResolver(h -> new InetAddress[]{publicIp});
+        PetCareService.AiConnectionConfig cfg = service.createAiConfig(
+                true, "https://api.example.com/v1", "model", "secret", null);
+        assertEquals("https://api.example.com/v1", cfg.getBaseUrl());
+    }
+
+    @Test
+    void proxySyntheticDns_onlyWhenDevFlagEnabled() throws Exception {
+        InetAddress fakeIp = InetAddress.getByName("198.18.0.26");
+        service.setHostResolver(h -> new InetAddress[]{fakeIp});
+        // 默认关闭：拒绝
+        assertThrows(CustomException.class, () -> service.createAiConfig(
+                true, "https://via-clash.example/v1", "model", "secret", null));
+        // 显式 dev flag：允许 198.18 解析结果
+        service.setAllowProxySyntheticDns(true);
+        PetCareService.AiConnectionConfig cfg = service.createAiConfig(
+                true, "https://via-clash.example/v1", "model", "secret", null);
+        assertEquals("https://via-clash.example/v1", cfg.getBaseUrl());
+        service.setAllowProxySyntheticDns(false);
     }
 }

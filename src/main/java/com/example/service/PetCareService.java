@@ -110,6 +110,33 @@ public class PetCareService {
     @Value("${app.ai.allow-loopback-personal-config:false}")
     private boolean allowLoopbackPersonalConfig;
 
+    /**
+     * 仅开发：允许公网域名 DNS 解析结果落在 RFC 2544 Fake-IP（198.18.0.0/15，如 Clash）。
+     * 生产必须 false；不得把 198.18 当“安全公网”。
+     */
+    @Value("${app.ai.allow-proxy-synthetic-dns:false}")
+    private boolean allowProxySyntheticDns;
+
+    /**
+     * DNS 解析可注入，便于单元测试证明“解析到私网即拒绝且不发起连接”。
+     * 默认 {@link InetAddress#getAllByName(String)}。
+     */
+    @FunctionalInterface
+    public interface HostResolver {
+        InetAddress[] resolve(String host) throws UnknownHostException;
+    }
+
+    private volatile HostResolver hostResolver = InetAddress::getAllByName;
+
+    /** 测试注入；生产代码路径禁止调用。 */
+    void setHostResolver(HostResolver hostResolver) {
+        this.hostResolver = hostResolver == null ? InetAddress::getAllByName : hostResolver;
+    }
+
+    void setAllowProxySyntheticDns(boolean allowProxySyntheticDns) {
+        this.allowProxySyntheticDns = allowProxySyntheticDns;
+    }
+
     @jakarta.annotation.Resource
     private PetCareTools petCareTools;
 
@@ -341,9 +368,45 @@ public class PetCareService {
                     || isForbiddenIpLiteral(host)) {
                 throw new IllegalArgumentException("invalid endpoint");
             }
+            // 保存前解析 DNS：私网/回环/链路本地必须在任何出站连接前被拒绝（SSRF）。
+            assertHostResolvesPublic(host);
             return value;
         } catch (IllegalArgumentException e) {
+            String detail = e.getMessage() == null ? "" : e.getMessage();
+            if (detail.contains("non-public") || detail.contains("DNS") || detail.contains("resolves")) {
+                throw new CustomException("400", "个人 Base URL 解析到非公网地址，已拒绝（SSRF 防护）");
+            }
             throw new CustomException("400", "个人 Base URL 必须是有效的公网 HTTPS 地址，例如 https://api.example.com/v1");
+        }
+    }
+
+    /**
+     * 在发起任何 HTTP(S) 连接前解析主机名；任一地址非公网则拒绝。
+     * IP literal 已在 {@link #isForbiddenIpLiteral} 拦截，此处主要覆盖 hostname→私网。
+     */
+    void assertHostResolvesPublic(String host) {
+        if (host == null || host.isEmpty()) {
+            throw new IllegalArgumentException("AI endpoint DNS host empty");
+        }
+        // IP literal：不再二次解析，避免依赖系统 DNS 副作用
+        if (host.matches("^[0-9.]+$") || host.contains(":")) {
+            if (isForbiddenIpLiteral(host)) {
+                throw new IllegalArgumentException("AI endpoint resolves to a non-public address");
+            }
+            return;
+        }
+        try {
+            InetAddress[] addresses = hostResolver.resolve(host);
+            if (addresses == null || addresses.length == 0) {
+                throw new IllegalArgumentException("AI endpoint DNS returned no address");
+            }
+            for (InetAddress address : addresses) {
+                if (isUnsafeResolvedAddress(address, this.allowProxySyntheticDns)) {
+                    throw new IllegalArgumentException("AI endpoint resolves to a non-public address");
+                }
+            }
+        } catch (UnknownHostException e) {
+            throw new IllegalArgumentException("AI endpoint DNS could not resolve host");
         }
     }
 
@@ -401,8 +464,8 @@ public class PetCareService {
 
     /**
      * Clash 等透明代理会把公网域名映射到 RFC 2544 的 198.18.0.0/15 Fake-IP 段。
-     * 该地址段仍禁止作为用户直接填写的 IP literal，但允许作为公网域名的 DNS
-     * 解析结果，由 HTTPS 的原始域名/SNI 继续约束实际目标。
+     * 默认视为不安全；仅当 {@code app.ai.allow-proxy-synthetic-dns=true}（dev-only）时
+     * 才放行该 DNS 解析结果。IP literal 始终禁止。
      */
     static boolean isProxySyntheticAddress(InetAddress address) {
         if (address == null) {
@@ -417,8 +480,22 @@ public class PetCareService {
         return first == 198 && (second == 18 || second == 19);
     }
 
+    /**
+     * 解析结果是否不安全。默认（allowProxySyntheticDns=false）下 198.18/15 亦拒绝。
+     */
     static boolean isUnsafeResolvedAddress(InetAddress address) {
-        return isForbiddenAddress(address) && !isProxySyntheticAddress(address);
+        return isUnsafeResolvedAddress(address, false);
+    }
+
+    static boolean isUnsafeResolvedAddress(InetAddress address, boolean allowProxySyntheticDns) {
+        if (address == null) {
+            return true;
+        }
+        if (!isForbiddenAddress(address)) {
+            return false;
+        }
+        // 仅在显式允许时，把 198.18 Fake-IP 当作“可接受的解析结果”
+        return !(allowProxySyntheticDns && isProxySyntheticAddress(address));
     }
 
     void assertPublicEndpoint(AiConnectionConfig connectionConfig) throws Exception {
@@ -429,15 +506,11 @@ public class PetCareService {
         if (allowLoopbackPersonalConfig && uri.getHost() != null && isLoopbackPersonalHost(uri.getHost())) {
             return;
         }
-        InetAddress[] addresses = InetAddress.getAllByName(uri.getHost());
-        if (addresses.length == 0) {
-            throw new IllegalArgumentException("AI endpoint DNS returned no address");
+        if (uri.getHost() == null) {
+            throw new IllegalArgumentException("AI endpoint host missing");
         }
-        for (InetAddress address : addresses) {
-            if (isUnsafeResolvedAddress(address)) {
-                throw new IllegalArgumentException("AI endpoint resolves to a non-public address");
-            }
-        }
+        // 连接前再次 DNS 校验（与保存时同一策略）；不在此发起业务 HTTP。
+        assertHostResolvesPublic(uri.getHost());
     }
 
     private static String trim(String value) {
