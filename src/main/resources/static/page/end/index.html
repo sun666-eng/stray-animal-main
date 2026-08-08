@@ -6,7 +6,7 @@
   <title>工作台 · 归途计划管理</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
   <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c">
-  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260731a">
+  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260808b">
 </head>
 <body>
 <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
@@ -89,132 +89,67 @@
   </header>
   <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
 
-  <main class="admin-main">
+  <main class="admin-main dashboard-home-main">
     <section class="admin-hero dashboard-home-hero" aria-labelledby="dashboardTitle">
-      <div>
+      <div class="dashboard-home-hero-copy">
         <p class="admin-kicker">Operations overview</p>
         <h1 id="dashboardTitle">管理工作台</h1>
         <p>汇总当前数据库中的真实总量、公告与（若已授权）资金概览。此处不虚构队列数量或风险指标。</p>
-      </div>
-      <div class="dashboard-home-identity" aria-label="当前身份">
-        <div class="dashboard-home-id-row"><span>当前账号</span><strong>{{ user.username }}</strong></div>
-        <div class="dashboard-home-id-row"><span>工作台角色</span><strong>{{ workspaceRoleLabel }}</strong></div>
-        <div class="dashboard-home-id-row"><span>数据更新</span><strong>{{ lastUpdatedLabel || '尚未加载' }}</strong></div>
-      </div>
-    </section>
-
-    <section class="dashboard-home-section" aria-labelledby="metricTitle">
-      <div class="admin-section-head">
-        <div>
-          <h2 id="metricTitle">平台总量指标</h2>
-          <p>来自 <code>/api/dashboard/public-stats</code> 的 COUNT 汇总，均为存量总量，不是待处理队列。</p>
+        <div class="dashboard-home-identity" aria-label="当前身份">
+          <div class="dashboard-home-id-row"><span>当前账号</span><strong>{{ user.username }}</strong></div>
+          <div class="dashboard-home-id-row"><span>工作台角色</span><strong>{{ workspaceRoleLabel }}</strong></div>
+          <div class="dashboard-home-id-row"><span>数据更新</span><strong>{{ lastUpdatedLabel || '尚未加载' }}</strong></div>
         </div>
-        <button class="ui-button is-ghost" type="button" :disabled="statsLoading" @click="loadStats">{{ statsLoading ? '读取中…' : '刷新总量' }}</button>
+        <button class="ui-button is-ghost dashboard-home-refresh" type="button" :disabled="statsLoading" @click="loadStats">{{ statsLoading ? '读取中…' : '刷新总量' }}</button>
       </div>
-      <div v-if="statsLoading" class="admin-metric-grid" aria-busy="true" aria-label="平台数据加载中">
-        <div v-for="n in 4" :key="'sk-'+n" class="admin-metric"><div class="ui-skeleton ui-skeleton-line"></div><div class="ui-skeleton ui-skeleton-line short"></div></div>
-      </div>
-      <div v-else-if="statsError" class="admin-status is-error" role="alert">
-        <div>
-          <strong>平台总量暂时无法读取</strong><br>{{ statsError }}
-          <br><button class="ui-button is-ghost" type="button" @click="loadStats">重试总量</button>
+      <div class="dashboard-home-metric-band" aria-labelledby="metricTitle">
+        <h2 id="metricTitle" class="sr-only">平台总量指标</h2>
+        <div v-if="statsLoading" class="admin-metric-grid" aria-busy="true" aria-label="平台数据加载中">
+          <div v-for="n in 4" :key="'sk-'+n" class="admin-metric"><div class="ui-skeleton ui-skeleton-line"></div><div class="ui-skeleton ui-skeleton-line short"></div></div>
         </div>
-      </div>
-      <div v-else class="admin-metric-grid" aria-label="平台总量">
-        <article class="admin-metric"><span>义工通过记录</span><strong>{{ stats.volunteers }}</strong><small>审核通过的义工记录总量</small></article>
-        <article class="admin-metric"><span>动物档案总量</span><strong>{{ stats.animals }}</strong><small>平台内全部动物档案数</small></article>
-        <article class="admin-metric"><span>领养申请总量</span><strong>{{ stats.adopts }}</strong><small>全部领养申请记录数</small></article>
-        <article class="admin-metric"><span>注册用户总量</span><strong>{{ stats.users }}</strong><small>注册账号总数</small></article>
-      </div>
-    </section>
-
-    <section v-if="menuItems.length" class="admin-section dashboard-home-section" aria-labelledby="routeTitle">
-      <div class="admin-section-head">
-        <div><h2 id="routeTitle">已授权管理入口</h2><p>入口仅来自当前账号权限，不硬编码全量管理链接。</p></div>
-      </div>
-      <div class="admin-route-grid">
-        <a v-for="(item, index) in menuItems" :key="'card-'+item.flag" class="admin-route-card" :href="item.href">
-          <span aria-hidden="true">{{ String(index + 1).padStart(2, '0') }}</span>
-          <div><strong>{{ item.label }}</strong><small>进入管理页面</small></div>
-        </a>
-      </div>
-    </section>
-
-    <section v-else class="admin-section dashboard-home-section" aria-labelledby="routeTitleEmpty">
-      <div class="admin-section-head">
-        <div>
-          <h2 id="routeTitleEmpty">用户服务入口</h2>
-          <p>当前账号没有管理权限。仅展示用户端服务，不暴露管理功能、财务或 AI 管理入口。</p>
+        <div v-else-if="statsError" class="admin-status is-error dashboard-home-metric-state" role="alert">
+          <div>
+            <strong>平台总量暂时无法读取</strong><br>{{ statsError }}
+            <br><button class="ui-button is-ghost" type="button" @click="loadStats">重试总量</button>
+          </div>
+        </div>
+        <div v-else class="admin-metric-grid" aria-label="平台总量">
+          <article class="admin-metric"><span>义工通过记录</span><strong>{{ stats.volunteers }}</strong><small>审核通过的义工记录总量</small></article>
+          <article class="admin-metric"><span>动物档案总量</span><strong>{{ stats.animals }}</strong><small>平台内全部动物档案数</small></article>
+          <article class="admin-metric"><span>领养申请总量</span><strong>{{ stats.adopts }}</strong><small>全部领养申请记录数</small></article>
+          <article class="admin-metric"><span>注册用户总量</span><strong>{{ stats.users }}</strong><small>注册账号总数</small></article>
         </div>
       </div>
-      <div class="admin-route-grid">
-        <a v-for="(item, index) in userServices" :key="'user-'+item.id" class="admin-route-card" :href="item.href">
-          <span aria-hidden="true">{{ String(index + 1).padStart(2, '0') }}</span>
-          <div><strong>{{ item.label }}</strong><small>{{ item.desc }}</small></div>
-        </a>
-      </div>
     </section>
 
-    <section v-if="menuItems.length" class="admin-section dashboard-home-section" aria-labelledby="userEntryTitle">
-      <div class="admin-section-head">
-        <div><h2 id="userEntryTitle">用户端快捷入口</h2><p>管理员也可从这里进入领养、救助与义工等用户流程。</p></div>
-      </div>
-      <div class="admin-route-grid">
-        <a v-for="(item, index) in userServices.slice(0, 6)" :key="'admin-user-'+item.id" class="admin-route-card" :href="item.href">
-          <span aria-hidden="true">{{ String(index + 1).padStart(2, '0') }}</span>
-          <div><strong>{{ item.label }}</strong><small>{{ item.desc }}</small></div>
-        </a>
-      </div>
-    </section>
+    <div class="dashboard-home-layout">
+      <section v-if="menuItems.length" class="admin-panel dashboard-command-panel" aria-labelledby="routeTitle">
+        <div class="admin-section-head">
+          <div><p class="admin-kicker">Control directory</p><h2 id="routeTitle">已授权管理入口</h2><p>入口仅来自当前账号权限，不硬编码全量管理链接。</p></div>
+          <span class="dashboard-home-count">{{ menuItems.length }} 个入口</span>
+        </div>
+        <div class="admin-route-grid dashboard-route-grid">
+          <a v-for="(item, index) in menuItems" :key="'card-'+item.flag" class="admin-route-card dashboard-route-card" :href="item.href">
+            <span aria-hidden="true">{{ String(index + 1).padStart(2, '0') }}</span>
+            <div><strong>{{ item.label }}</strong><small>进入管理页面</small></div>
+          </a>
+        </div>
+      </section>
 
-    <section class="admin-section dashboard-home-section" aria-labelledby="insightTitle">
-      <div class="admin-section-head">
-        <div><h2 id="insightTitle">公告与运营概况</h2><p>各区域独立加载与重试；一块失败不影响其它区域。</p></div>
-      </div>
-      <div class="admin-two-column">
-        <article v-if="hasFlag('account')" class="admin-panel" aria-labelledby="accountTitle">
-          <div class="dashboard-panel-head">
-            <h3 id="accountTitle">资金收支汇总</h3>
-            <button class="ui-button is-ghost" type="button" :disabled="accountLoading" @click="loadAccountStats">{{ accountLoading ? '读取中…' : '刷新资金' }}</button>
-          </div>
-          <p class="admin-panel-intro">仅在具备资金权限时请求 <code>/api/account/stats/by-label</code>。金额为十进制字符串展示，不推断币种。</p>
-          <div v-if="accountLoading" class="admin-status" role="status" aria-busy="true">正在读取资金汇总…</div>
-          <div v-else-if="accountError" class="admin-status is-error" role="alert">
-            <div>{{ accountError }}<br><button class="ui-button is-ghost" type="button" @click="loadAccountStats">重试资金</button></div>
-          </div>
-          <div v-else>
-            <div class="admin-account-totals">
-              <div class="admin-account-total"><span>收入合计</span><strong class="ui-money-income">{{ money(accountStats.incomeTotal) }}</strong></div>
-              <div class="admin-account-total"><span>支出合计</span><strong class="ui-money-expense">{{ moneyAbs(accountStats.expenseTotal) }}</strong></div>
-              <div class="admin-account-total"><span>当前结余</span><strong>{{ money(accountStats.balance) }}</strong></div>
-            </div>
-            <div v-if="!accountStats.income.length && !accountStats.expense.length" class="admin-status">暂无可展示的资金分类记录。</div>
-            <div v-else class="admin-breakdowns">
-              <div class="admin-breakdown">
-                <h4>收入分类</h4>
-                <div v-if="accountStats.income.length" class="admin-bar-list">
-                  <div v-for="item in accountStats.income" :key="'in-'+item.name" class="admin-bar-row">
-                    <div class="admin-bar-copy"><span>{{ item.name }}</span><strong>{{ money(item.value) }}</strong></div>
-                    <div class="admin-bar-track" aria-hidden="true"><div class="admin-bar-fill" :style="{width: barWidth(item.value, accountStats.income) + '%'}"></div></div>
-                  </div>
-                </div>
-                <div v-else class="admin-inline-message">暂无收入分类。</div>
-              </div>
-              <div class="admin-breakdown is-expense">
-                <h4>支出分类</h4>
-                <div v-if="accountStats.expense.length" class="admin-bar-list">
-                  <div v-for="item in accountStats.expense" :key="'out-'+item.name" class="admin-bar-row">
-                    <div class="admin-bar-copy"><span>{{ item.name }}</span><strong>{{ money(item.value) }}</strong></div>
-                    <div class="admin-bar-track" aria-hidden="true"><div class="admin-bar-fill" :style="{width: barWidth(item.value, accountStats.expense) + '%'}"></div></div>
-                  </div>
-                </div>
-                <div v-else class="admin-inline-message">暂无支出分类。</div>
-              </div>
-            </div>
-          </div>
-        </article>
+      <section v-else class="admin-panel dashboard-command-panel" aria-labelledby="routeTitleEmpty">
+        <div class="admin-section-head">
+          <div><p class="admin-kicker">Service directory</p><h2 id="routeTitleEmpty">用户服务入口</h2><p>当前账号没有管理权限。仅展示用户端服务，不暴露管理功能、财务或 AI 管理入口。</p></div>
+        </div>
+        <div class="admin-route-grid dashboard-route-grid">
+          <a v-for="(item, index) in userServices" :key="'user-'+item.id" class="admin-route-card dashboard-route-card" :href="item.href">
+            <span aria-hidden="true">{{ String(index + 1).padStart(2, '0') }}</span>
+            <div><strong>{{ item.label }}</strong><small>{{ item.desc }}</small></div>
+          </a>
+        </div>
+      </section>
 
-        <article class="admin-panel" aria-labelledby="noticeTitle">
+      <article class="admin-panel dashboard-notice-panel" aria-labelledby="noticeTitle">
+          <p class="admin-kicker">Public signal</p>
           <div class="dashboard-panel-head">
             <h3 id="noticeTitle">公告预览</h3>
             <button class="ui-button is-ghost" type="button" :disabled="noticeLoading" @click="loadNotices">{{ noticeLoading ? '读取中…' : '刷新公告' }}</button>
@@ -232,7 +167,59 @@
             </article>
           </div>
           <a class="admin-section-link" href="/page/front/notice_list.html">查看公告中心</a>
-        </article>
+      </article>
+    </div>
+
+    <section v-if="hasFlag('account')" class="admin-panel dashboard-account-panel" aria-labelledby="accountTitle">
+      <div class="admin-section-head">
+        <div><p class="admin-kicker">Signed ledger</p><h2 id="accountTitle">资金收支汇总</h2><p>仅在具备资金权限时请求汇总；金额为十进制字符串展示，不推断币种。</p></div>
+        <button class="ui-button is-ghost" type="button" :disabled="accountLoading" @click="loadAccountStats">{{ accountLoading ? '读取中…' : '刷新资金' }}</button>
+      </div>
+      <div v-if="accountLoading" class="admin-status" role="status" aria-busy="true">正在读取资金汇总…</div>
+      <div v-else-if="accountError" class="admin-status is-error" role="alert">
+        <div>{{ accountError }}<br><button class="ui-button is-ghost" type="button" @click="loadAccountStats">重试资金</button></div>
+      </div>
+      <div v-else>
+        <div class="admin-account-totals">
+          <div class="admin-account-total"><span>收入合计</span><strong class="ui-money-income">{{ money(accountStats.incomeTotal) }}</strong></div>
+          <div class="admin-account-total"><span>支出合计</span><strong class="ui-money-expense">{{ moneyAbs(accountStats.expenseTotal) }}</strong></div>
+          <div class="admin-account-total"><span>当前结余</span><strong>{{ money(accountStats.balance) }}</strong></div>
+        </div>
+        <div v-if="!accountStats.income.length && !accountStats.expense.length" class="admin-status">暂无可展示的资金分类记录。</div>
+        <div v-else class="admin-breakdowns">
+          <div class="admin-breakdown">
+            <h4>收入分类</h4>
+            <div v-if="accountStats.income.length" class="admin-bar-list">
+              <div v-for="item in accountStats.income" :key="'in-'+item.name" class="admin-bar-row">
+                <div class="admin-bar-copy"><span>{{ item.name }}</span><strong>{{ money(item.value) }}</strong></div>
+                <div class="admin-bar-track" aria-hidden="true"><div class="admin-bar-fill" :style="{width: barWidth(item.value, accountStats.income) + '%'}"></div></div>
+              </div>
+            </div>
+            <div v-else class="admin-inline-message">暂无收入分类。</div>
+          </div>
+          <div class="admin-breakdown is-expense">
+            <h4>支出分类</h4>
+            <div v-if="accountStats.expense.length" class="admin-bar-list">
+              <div v-for="item in accountStats.expense" :key="'out-'+item.name" class="admin-bar-row">
+                <div class="admin-bar-copy"><span>{{ item.name }}</span><strong>{{ money(item.value) }}</strong></div>
+                <div class="admin-bar-track" aria-hidden="true"><div class="admin-bar-fill" :style="{width: barWidth(item.value, accountStats.expense) + '%'}"></div></div>
+              </div>
+            </div>
+            <div v-else class="admin-inline-message">暂无支出分类。</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section v-if="menuItems.length" class="admin-panel dashboard-service-panel" aria-labelledby="userEntryTitle">
+      <div class="admin-section-head">
+        <div><p class="admin-kicker">Public services</p><h2 id="userEntryTitle">用户端快捷入口</h2><p>管理员也可从这里进入领养、救助与义工等用户流程。</p></div>
+      </div>
+      <div class="admin-route-grid dashboard-service-grid">
+        <a v-for="(item, index) in userServices.slice(0, 6)" :key="'admin-user-'+item.id" class="admin-route-card dashboard-service-card" :href="item.href">
+          <span aria-hidden="true">{{ String(index + 1).padStart(2, '0') }}</span>
+          <div><strong>{{ item.label }}</strong><small>{{ item.desc }}</small></div>
+        </a>
       </div>
     </section>
   </main>

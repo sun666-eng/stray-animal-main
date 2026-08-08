@@ -158,9 +158,13 @@ function writeReport() {
     const css = fs.readFileSync('src/main/resources/static/css/admin-workspace.css', 'utf8');
     const suiteSrc = fs.readFileSync('tools/ui-polish-phase-2h.cjs', 'utf8');
 
-    assert('index-cache-31a', indexHtml.includes('admin-workspace.css?v=20260731a'), 'cache');
+    assert('index-cache-0808b', indexHtml.includes('admin-workspace.css?v=20260808b'), 'cache');
     assert('agent-cache-31a', agentHtml.includes('admin-workspace.css?v=20260731a'), 'cache');
     assert('index-dashboard-class', indexHtml.includes('dashboard-home'), 'cls');
+    assert('index-dashboard-command-layout', indexHtml.includes('dashboard-home-layout') && indexHtml.includes('dashboard-command-panel'), 'layout');
+    assert('index-dashboard-metric-band', indexHtml.includes('dashboard-home-metric-band'), 'metric-band');
+    assert('index-dashboard-notice-panel', indexHtml.includes('dashboard-notice-panel'), 'notice-panel');
+    assert('index-dashboard-account-panel', indexHtml.includes('dashboard-account-panel'), 'account-panel');
     assert('agent-workspace-class', agentHtml.includes('agent-workspace'), 'cls');
     assert('index-stats-seq', indexHtml.includes('statsSeq') && indexHtml.includes('noticeSeq') && indexHtml.includes('accountSeq'), 'seq');
     assert('index-no-fake-todo', !/待办数量|风险数量/.test(indexHtml), 'fake');
@@ -174,6 +178,8 @@ function writeReport() {
     assert('agent-delete-dialog', agentHtml.includes('agentDeleteTitle'), 'delete');
     assert('agent-clear-dialog', agentHtml.includes('agentClearTitle'), 'clear');
     assert('css-dashboard-home', css.includes('.dashboard-home-hero'), 'css');
+    assert('css-dashboard-layout', css.includes('.dashboard-home-layout') && css.includes('.dashboard-route-grid'), 'css-layout');
+    assert('css-dashboard-scoped-mobile', css.includes('.dashboard-home-metric-band') && css.includes('@media (max-width: 480px)'), 'css-mobile');
     assert('css-agent-scrim', css.includes('.admin-agent-history-scrim'), 'css');
     assert('self-no-best-effort', !/bestEffort:\s*true/.test(suiteSrc), 'be');
     assert('self-no-true-assert', !/assert\s*\(\s*['"][^'"]+['"]\s*,\s*true\s*,/.test(suiteSrc), 'true');
@@ -521,6 +527,10 @@ function writeReport() {
     assert('dash-title', /管理工作台|工作台/.test(await page.locator('h1').innerText()), 't');
     assert('dash-metrics', (await page.locator('.admin-metric').count()) >= 4, 'm');
     assert('dash-fixture-animals', /12/.test(await page.locator('.admin-metric-grid').innerText()), 'animals');
+    assert('dash-metrics-inside-hero', await page.locator('.dashboard-home-hero .dashboard-home-metric-band .admin-metric-grid').count() === 1, 'metric hierarchy');
+    assert('dash-command-layout-mounted', await page.locator('.dashboard-home-layout .dashboard-command-panel').count() === 1, 'command panel');
+    assert('dash-notice-panel-mounted', await page.locator('.dashboard-home-layout .dashboard-notice-panel').count() === 1, 'notice panel');
+    assert('dash-route-directory-populated', await page.locator('.dashboard-route-grid .dashboard-route-card').count() > 0, 'routes');
     await shot(page, '01-dashboard-admin-desktop', { page: 'index', role: 'admin' });
 
     // notice failure independent
@@ -1735,11 +1745,20 @@ function writeReport() {
     const jerryState = await pageJerry.evaluate(() => {
       const vm = document.querySelector('#workspace').__vue__;
       const hrefs = Array.from(document.querySelectorAll('.admin-route-card')).map((a) => a.getAttribute('href') || '');
+      const hero = document.querySelector('.dashboard-home-hero-copy');
+      const title = document.getElementById('dashboardTitle');
+      const heroBox = hero ? hero.getBoundingClientRect() : null;
+      const titleBox = title ? title.getBoundingClientRect() : null;
       return {
         menuLen: (vm.menuItems || []).length,
         hasAccountPanel: !!document.getElementById('accountTitle'),
         hasAdminAgentLink: hrefs.some((h) => /admin_agent/.test(h)),
-        body: document.body.innerText.slice(0, 200)
+        body: document.body.innerText.slice(0, 200),
+        scrollX: window.scrollX,
+        scrollWidth: document.documentElement.scrollWidth,
+        clientWidth: document.documentElement.clientWidth,
+        heroBox: heroBox ? { x: heroBox.x, width: heroBox.width } : null,
+        titleBox: titleBox ? { x: titleBox.x, width: titleBox.width } : null
       };
     });
     results.roleMatrix.jerry = Object.assign({}, jerryState, { jerryAccountGets });
@@ -1747,6 +1766,8 @@ function writeReport() {
     assert('role-jerry-no-account-panel', !jerryState.hasAccountPanel, JSON.stringify(jerryState));
     assert('role-jerry-no-agent-link', !jerryState.hasAdminAgentLink, JSON.stringify(jerryState));
     assert('role-jerry-no-account-api', jerryAccountGets === 0, 'gets=' + jerryAccountGets);
+    assert('role-jerry-no-horizontal-overflow', jerryState.scrollWidth <= jerryState.clientWidth && jerryState.scrollX === 0, JSON.stringify(jerryState));
+    assert('role-jerry-dashboard-title-visible', !!jerryState.titleBox && jerryState.titleBox.x >= 0 && jerryState.titleBox.width > 0, JSON.stringify(jerryState));
     await pageJerry.screenshot({ path: path.join(shotDir, '21-dashboard-jerry.png'), fullPage: false });
     results.screenshots.push({ file: 'screenshots/21-dashboard-jerry.png', name: '21-dashboard-jerry', time: new Date().toISOString() });
     await ctxJerry.close();
