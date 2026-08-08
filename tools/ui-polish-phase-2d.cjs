@@ -256,8 +256,9 @@ function writeReport() {
     const adoptHtml = fs.readFileSync('src/main/resources/static/page/end/adopt.html', 'utf8');
 
     assert('help-cache-0802a', helpHtml.includes('admin-workspace.css?v=20260802a'), 'cache');
-    assert('animal-cache-30g', animalHtml.includes('admin-workspace.css?v=20260730g'), 'cache');
-    assert('adopt-untouched-30d', adoptHtml.includes('20260730d'), 'adopt cache');
+    assert('animal-cache-0808f', animalHtml.includes('admin-workspace.css?v=20260808f'), 'cache');
+    assert('animal-command-desk', animalHtml.includes('animal-command-desk') && animalHtml.includes('admin-command-hero') && animalHtml.includes('admin-command-panel'), 'layout');
+    assert('adopt-untouched-0808c', adoptHtml.includes('20260808c'), 'adopt cache');
     assert('css-help-gov', css.includes('.help-governance-hero'), 'css');
     assert('css-animal-gov', css.includes('.animal-governance-hero'), 'css');
     assert('css-admin-segmented', /\.admin-segmented\s*\{/.test(css) && /\.admin-segmented\s*>\s*button\.is-active/.test(css.replace(/\s+/g, ' ')), 'segmented css');

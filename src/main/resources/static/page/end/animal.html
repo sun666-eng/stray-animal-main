@@ -9,7 +9,7 @@
     <title>动物档案治理 · 归途计划管理</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
     <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c" />
-    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260730g" />
+    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260808f" />
   </head>
   <body>
     <div id="authWait" class="admin-auth-wait" role="status">
@@ -93,16 +93,16 @@
     </div>
   </header>
   <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
-      <main class="admin-main">
-        <section class="admin-hero animal-governance-hero" aria-labelledby="animalTitle">
-          <div>
+      <main class="admin-main admin-command-main animal-command-desk">
+        <section class="admin-hero animal-governance-hero admin-command-hero" aria-labelledby="animalTitle">
+          <div class="admin-command-hero-copy">
             <p class="admin-kicker">Animal archive desk</p>
             <h1 id="animalTitle">动物档案治理</h1>
             <p class="animal-governance-lead">
               维护名称、品种、性别、生日、图片与描述。领养状态由领养流程统一维护；列表只读当前页。
             </p>
           </div>
-          <div class="animal-governance-metrics" aria-label="档案状态摘要">
+          <div class="animal-governance-metrics admin-command-metrics" aria-label="档案状态摘要">
             <div class="animal-governance-metric"><span>接口总数</span><strong>{{ total }}</strong><small>服务端 total</small></div>
             <div class="animal-governance-metric is-pending"><span>本页待领养</span><strong>{{ pageAvailable }}</strong><small>仅当前页</small></div>
             <div class="animal-governance-metric is-pending"><span>本页流程中</span><strong>{{ pageInFlow }}</strong><small>预留/申请中</small></div>
@@ -110,15 +110,16 @@
             <div class="animal-governance-metric is-closed"><span>本页其他终态</span><strong>{{ pageOther }}</strong><small>仅当前页</small></div>
           </div>
         </section>
-        <section aria-labelledby="animalListTitle">
-          <div class="admin-section-head">
+        <section class="admin-panel admin-command-panel" aria-labelledby="animalListTitle">
+          <div class="admin-section-head admin-command-panel-head">
             <div>
               <h2 id="animalListTitle">动物记录</h2>
               <p>
                 状态只读并由领养流程维护；新增和导入始终从「待领养」开始，工作簿状态不会被采用。
               </p>
             </div>
-            <div class="admin-head-actions">
+            <div class="admin-head-actions admin-command-panel-actions">
+              <span class="admin-command-count">本页 {{ records.length }} 条 · 共 {{ total }} 条</span>
               <button
                 class="ui-button is-ghost"
                 type="button"
@@ -141,7 +142,7 @@
             </div>
           </div>
           <form
-            class="ui-toolbar admin-review-toolbar"
+            class="ui-toolbar admin-review-toolbar admin-command-toolbar"
             role="search"
             @submit.prevent="load(1)"
           >
