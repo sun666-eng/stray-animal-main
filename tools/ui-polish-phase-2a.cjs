@@ -282,7 +282,7 @@ const SAMPLE_MEDICAL = [
     assert('css-no-large-inline-block', !largeInlineStyleBlock, 'large style block present=' + largeInlineStyleBlock);
     const opsClassInHtmlStyle = /<style>[\s\S]*\.ops-tabs[\s\S]*<\/style>/.test(html);
     assert('css-ops-not-in-page-style', !opsClassInHtmlStyle, 'ops in page style');
-    const requiredOps = ['.ops-tabs', '.ops-metrics', '.ops-card', '.ops-form', '.ops-tasks-layout', '.ops-medical-layout', '.ops-signup-cards', '.ops-feedback'];
+    const requiredOps = ['.ops-hero', '.ops-workspace', '.ops-tabs', '.ops-metrics', '.ops-card', '.ops-form', '.ops-tasks-layout', '.ops-medical-layout', '.ops-signup-cards', '.ops-feedback'];
     for (const sel of requiredOps) {
       assert('css-has-' + sel.replace(/^\./, ''), css.includes(sel), sel);
     }
@@ -296,10 +296,10 @@ const SAMPLE_MEDICAL = [
     assert('mime-static', html.includes('accept="image/jpeg,image/png,image/gif,application/pdf"'), 'ok');
     assert('noopener-static', html.includes('rel="noopener"') && html.includes('target="_blank"'), 'ok');
 
-    // Phase 2A cache bust
+    // Operations workspace refresh cache bust
     const htmlContent = fs.readFileSync('src/main/resources/static/page/end/operations.html', 'utf8');
-    assert('cache-bust-20260730a', htmlContent.includes('admin-workspace.css?v=20260730a'), 'missing new version');
-    assert('cache-bust-no-20260729c', !htmlContent.includes('admin-workspace.css?v=20260729c'), 'old version still present');
+    assert('cache-bust-20260808a', htmlContent.includes('admin-workspace.css?v=20260808a'), 'missing new version');
+    assert('cache-bust-no-20260730a', !htmlContent.includes('admin-workspace.css?v=20260730a'), 'old version still present');
   }
 
   // ——— Admin interactive ———
@@ -333,16 +333,16 @@ const SAMPLE_MEDICAL = [
   await page.waitForSelector('[role="tablist"]', { timeout: 15000 });
   await page.waitForTimeout(700);
 
-  // Cache-bust: browser must actually request CSS with v=20260730a (not old 20260729c)
-  const cssHitNew = cssRequests.filter((u) => /admin-workspace\.css\?v=20260730a/i.test(u));
-  const cssHitOld = cssRequests.filter((u) => /admin-workspace\.css\?v=20260729c/i.test(u));
+  // Cache-bust: browser must actually request CSS with v=20260808a (not the prior operations version)
+  const cssHitNew = cssRequests.filter((u) => /admin-workspace\.css\?v=20260808a/i.test(u));
+  const cssHitOld = cssRequests.filter((u) => /admin-workspace\.css\?v=20260730a/i.test(u));
   assert(
-    'cache-bust-network-20260730a',
+    'cache-bust-network-20260808a',
     cssHitNew.length >= 1,
-    'no network request for admin-workspace.css?v=20260730a; seen=' + JSON.stringify(cssRequests)
+    'no network request for admin-workspace.css?v=20260808a; seen=' + JSON.stringify(cssRequests)
   );
   assert(
-    'cache-bust-network-no-20260729c',
+    'cache-bust-network-no-20260730a',
     cssHitOld.length === 0,
     'old CSS version requested: ' + JSON.stringify(cssHitOld)
   );
@@ -357,9 +357,28 @@ const SAMPLE_MEDICAL = [
     }
   });
   assert(
-    'cache-bust-performance-20260730a',
-    perfCss.some((n) => /admin-workspace\.css\?v=20260730a/i.test(n)),
-    'performance resources missing v=20260730a; seen=' + JSON.stringify(perfCss)
+    'cache-bust-performance-20260808a',
+    perfCss.some((n) => /admin-workspace\.css\?v=20260808a/i.test(n)),
+    'performance resources missing v=20260808a; seen=' + JSON.stringify(perfCss)
+  );
+
+  const workspaceLayout = await page.evaluate(() => {
+    const hero = document.querySelector('.ops-hero');
+    const metrics = hero && hero.querySelector('.ops-metrics');
+    const workspace = document.querySelector('.ops-workspace');
+    const tabs = workspace && workspace.querySelector('.ops-tabs');
+    return {
+      hero: !!hero,
+      metricsInsideHero: !!metrics,
+      metricCount: metrics ? metrics.querySelectorAll('.ops-metric').length : 0,
+      workspace: !!workspace,
+      tabsInsideWorkspace: !!tabs
+    };
+  });
+  assert(
+    'operations-command-band-structure',
+    workspaceLayout.hero && workspaceLayout.metricsInsideHero && workspaceLayout.metricCount === 4 && workspaceLayout.workspace && workspaceLayout.tabsInsideWorkspace,
+    JSON.stringify(workspaceLayout)
   );
 
   // three tabs

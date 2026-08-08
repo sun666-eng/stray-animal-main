@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <title>运营中心 · 归途计划管理</title>
     <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c" />
-    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260730a" />
+    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260808a" />
     <style>[v-cloak]{display:none}</style>
   </head>
   <body>
@@ -90,17 +90,41 @@
   <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
       <main class="admin-main ops-page-shell">
         <section class="ops-hero" aria-labelledby="opsPageTitle">
-          <div>
+          <div class="ops-hero-copy">
             <p class="admin-kicker">Operations loop</p>
             <h1 id="opsPageTitle">统一运营中心</h1>
             <p class="ops-hero-lead">把分散的审核、救助、回访、义工服务和医疗档案汇成可分派、可追踪、可复核的工作流。</p>
           </div>
-          <div class="ops-hero-stat" aria-live="polite">
-            <span>开放待办</span>
-            <strong>{{ summary.open != null ? summary.open : workMetrics.open }}</strong>
+          <div v-if="canWork" class="ops-metrics" aria-label="运营待办关键指标" aria-live="polite">
+            <div class="ops-metric">
+              <span>开放待办</span>
+              <strong>{{ summary.open != null ? summary.open : workMetrics.open }}</strong>
+              <small>全业务汇总</small>
+            </div>
+            <div class="ops-metric is-urgent">
+              <span>高优先级</span>
+              <strong>{{ workMetrics.highPriority }}</strong>
+              <small>当前已加载</small>
+            </div>
+            <div class="ops-metric is-warn">
+              <span>未分派</span>
+              <strong>{{ workMetrics.unassigned }}</strong>
+              <small>当前已加载</small>
+            </div>
+            <div class="ops-metric is-urgent">
+              <span>已逾期</span>
+              <strong>{{ workMetrics.overdue }}</strong>
+              <small>当前已加载</small>
+            </div>
+          </div>
+          <div v-else class="ops-hero-access" aria-live="polite">
+            <span>当前账号可用工作区</span>
+            <strong>{{ visibleTabs.length }}</strong>
+            <small>仅显示已授权分区</small>
           </div>
         </section>
 
+        <section class="ops-workspace" aria-label="运营中心工作区">
         <div class="ops-tabs" role="tablist" aria-label="运营中心分区" @keydown="onTabKeydown">
           <button
             v-for="item in visibleTabs"
@@ -133,6 +157,7 @@
         >
           <div class="ops-section-head">
             <div>
+              <p class="admin-kicker">Work queue</p>
               <h2>统一待办</h2>
               <p>系统从待审核领养、凭证、未结救助和逾期回访自动生成；关闭原业务后待办自动收口。</p>
             </div>
@@ -140,13 +165,6 @@
               <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-refresh" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-refresh"></use></svg>
               刷新
             </button>
-          </div>
-
-          <div class="ops-metrics" aria-label="待办指标">
-            <div class="ops-metric"><span>开放</span><strong>{{ workMetrics.open }}</strong></div>
-            <div class="ops-metric is-urgent"><span>高优先级</span><strong>{{ workMetrics.highPriority }}</strong></div>
-            <div class="ops-metric is-warn"><span>未分派</span><strong>{{ workMetrics.unassigned }}</strong></div>
-            <div class="ops-metric is-urgent"><span>已逾期</span><strong>{{ workMetrics.overdue }}</strong></div>
           </div>
 
           <div class="ops-toolbar" role="search">
@@ -235,6 +253,7 @@
         >
           <div class="ops-section-head">
             <div>
+              <p class="admin-kicker">Volunteer service</p>
               <h2>义工任务</h2>
               <p>先发布，再由审核通过的义工报名；管理员确认指派后才能登记服务时长。</p>
             </div>
@@ -369,6 +388,7 @@
         >
           <div class="ops-section-head">
             <div>
+              <p class="admin-kicker">Medical archive</p>
               <h2>动物医疗档案</h2>
               <p>记录体检、疫苗、驱虫、治疗与手术；可见范围决定普通访客、正式领养人或仅管理员可查看。</p>
             </div>
@@ -447,6 +467,7 @@
               </div>
             </div>
           </div>
+        </section>
         </section>
       </main>
     </div>

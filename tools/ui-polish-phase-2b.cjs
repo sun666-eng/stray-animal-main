@@ -401,7 +401,7 @@ function writeReport() {
 
     assert('role-cache-20260730c', roleHtml.includes('admin-workspace.css?v=20260730c'), 'missing');
     assert('perm-cache-20260730c', permHtml.includes('admin-workspace.css?v=20260730c'), 'missing');
-    assert('ops-still-20260730a', opsHtml.includes('admin-workspace.css?v=20260730a'), 'ops version');
+    assert('ops-current-20260808a', opsHtml.includes('admin-workspace.css?v=20260808a'), 'ops version');
     assert('ops-not-20260730c', !opsHtml.includes('admin-workspace.css?v=20260730c') && !opsHtml.includes('admin-workspace.css?v=20260730b'), 'ops bumped');
     assert('css-rbac', css.includes('.rbac-hero') && css.includes('.rbac-perm-picker'), 'css');
     assert(
@@ -1229,7 +1229,7 @@ function writeReport() {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(base + '/page/end/operations.html', { waitUntil: 'domcontentloaded', timeout: 45000 });
     await page.waitForTimeout(400);
-    assert('ops-css-still-30a', cssRequests.some((u) => /v=20260730a/.test(u)), JSON.stringify(cssRequests.filter((u) => /admin-workspace/.test(u))));
+    assert('ops-css-current-0808a', cssRequests.some((u) => /v=20260808a/.test(u)), JSON.stringify(cssRequests.filter((u) => /admin-workspace/.test(u))));
     assert('ops-css-not-30c', !cssRequests.some((u) => /v=20260730c/.test(u)) && !cssRequests.some((u) => /v=20260730b/.test(u)), 'ops 30c/b');
 
     // Non-super simulated both pages
