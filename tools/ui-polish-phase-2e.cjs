@@ -242,8 +242,9 @@ function writeReport() {
     const helpHtml = fs.readFileSync('src/main/resources/static/page/end/help.html', 'utf8');
 
     assert('vol-cache-30i', volHtml.includes('admin-workspace.css?v=20260730i'), 'cache');
-    assert('visit-cache-30i', visitHtml.includes('admin-workspace.css?v=20260730i'), 'cache');
-    assert('help-untouched', helpHtml.includes('20260730g'), 'help');
+    assert('visit-cache-0808e', visitHtml.includes('admin-workspace.css?v=20260808e'), 'cache');
+    assert('visit-command-desk', visitHtml.includes('visit-command-desk') && visitHtml.includes('admin-command-hero') && visitHtml.includes('admin-command-panel'), 'layout');
+    assert('help-untouched-0802a', helpHtml.includes('20260802a'), 'help');
     assert('css-relation-grid', css.includes('.visit-relation-grid'), 'css');
     assert('css-file-label', css.includes('.visit-file-label') && css.includes('min-height: 44px'), 'css');
     assert('visit-removeImage', visitHtml.includes('removeImage:') && !/@click="form\.pic\s*=\s*''"/.test(visitHtml), 'remove');

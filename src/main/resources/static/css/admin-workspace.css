@@ -4044,6 +4044,22 @@ body.agent-history-locked {
   font-size: 15px;
   line-height: 1.75;
 }
+.admin-command-identity {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 16px;
+  padding: 8px 11px;
+  gap: 7px;
+  align-items: center;
+  border-radius: 999px;
+  background: #f0efeb;
+  color: #66655f;
+  font-size: 12px;
+}
+.admin-command-identity strong {
+  color: #171917;
+  font-size: 13px;
+}
 .admin-command-metrics {
   display: grid !important;
   grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));

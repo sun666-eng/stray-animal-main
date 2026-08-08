@@ -6,7 +6,7 @@
     <title>领养后回访 · 归途计划管理</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
     <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c" />
-    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260730i" />
+    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260808e" />
   </head>
   <body>
     <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
@@ -89,15 +89,15 @@
       </header>
       <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
 
-      <main class="admin-main">
-        <section class="admin-hero visit-governance-hero" aria-labelledby="visitAdminTitle">
-          <div>
+      <main class="admin-main admin-command-main visit-command-desk">
+        <section class="admin-hero visit-governance-hero admin-command-hero" aria-labelledby="visitAdminTitle">
+          <div class="admin-command-hero-copy">
             <p class="admin-kicker">Post-adoption follow-up</p>
             <h1 id="visitAdminTitle">领养后回访</h1>
             <p class="visit-governance-lead">回访必须关联已通过的领养关系。编辑时不可更换动物与饲主。健康评分 1–5 仅为运营观察，<strong>不是兽医诊断</strong>。</p>
+            <div class="admin-hero-meta admin-command-identity"><span>当前登录账号</span><strong>{{ user.username }}</strong></div>
           </div>
-          <div class="admin-hero-meta"><span>当前登录账号</span><strong>{{ user.username }}</strong></div>
-          <div class="visit-governance-metrics" aria-label="当前页回访摘要">
+          <div class="visit-governance-metrics admin-command-metrics" aria-label="当前页回访摘要">
             <div class="visit-governance-metric"><span>当前页回访</span><strong>{{ pageCount }}</strong><small>仅当前页 records</small></div>
             <div class="visit-governance-metric is-ok"><span>当前页良好</span><strong>{{ pageGood }}</strong><small>评分 4–5 · 仅当前页</small></div>
             <div class="visit-governance-metric is-pending"><span>当前页需关注</span><strong>{{ pageRisk }}</strong><small>评分 1–2 · 仅当前页</small></div>
@@ -105,17 +105,20 @@
           </div>
         </section>
 
-        <section aria-labelledby="visitListTitle">
-          <div class="admin-section-head">
+        <section class="admin-panel admin-command-panel" aria-labelledby="visitListTitle">
+          <div class="admin-section-head admin-command-panel-head">
             <div>
               <h2 id="visitListTitle">回访记录</h2>
               <p>新增回访请从已通过的领养申请进入。导出走服务端 <code>/api/visit/export</code>，不是当前页前端生成。</p>
             </div>
-            <button class="ui-button is-ghost" type="button" @click="exportRows">
-              <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-download" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-download"></use></svg>导出
-            </button>
+            <div class="admin-command-panel-actions">
+              <span class="admin-command-count">本页 {{ records.length }} 条 · 共 {{ total }} 条</span>
+              <button class="ui-button is-ghost" type="button" @click="exportRows">
+                <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-download" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-download"></use></svg>导出
+              </button>
+            </div>
           </div>
-          <form class="ui-toolbar admin-review-toolbar" role="search" @submit.prevent="load(1)">
+          <form class="ui-toolbar admin-review-toolbar admin-command-toolbar" role="search" @submit.prevent="load(1)">
             <label class="ui-search">
               <span aria-hidden="true">⌕</span>
               <span class="sr-only">按动物名称搜索</span>
