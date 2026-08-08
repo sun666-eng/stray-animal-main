@@ -401,7 +401,8 @@ function writeReport() {
 
     assert('role-cache-20260808i', roleHtml.includes('admin-workspace.css?v=20260808i'), 'missing');
     assert('role-command-desk', roleHtml.includes('role-command-desk') && roleHtml.includes('admin-command-hero') && roleHtml.includes('admin-command-panel'), 'layout');
-    assert('perm-cache-20260730c', permHtml.includes('admin-workspace.css?v=20260730c'), 'missing');
+    assert('perm-cache-20260808j', permHtml.includes('admin-workspace.css?v=20260808j'), 'missing');
+    assert('perm-command-desk', permHtml.includes('permission-command-desk') && permHtml.includes('admin-command-hero') && permHtml.includes('admin-command-panel'), 'layout');
     assert('ops-current-20260808a', opsHtml.includes('admin-workspace.css?v=20260808a'), 'ops version');
     assert('ops-not-20260730c', !opsHtml.includes('admin-workspace.css?v=20260730c') && !opsHtml.includes('admin-workspace.css?v=20260730b'), 'ops bumped');
     assert('css-rbac', css.includes('.rbac-hero') && css.includes('.rbac-perm-picker'), 'css');
@@ -920,7 +921,7 @@ function writeReport() {
     cssRequests.length = 0;
     await page.goto(base + '/page/end/permission.html', { waitUntil: 'domcontentloaded', timeout: 45000 });
     await page.waitForTimeout(700);
-    assert('perm-network-css-30c', cssRequests.some((u) => /admin-workspace\.css\?v=20260730c/.test(u)), JSON.stringify(cssRequests.slice(-3)));
+    assert('perm-network-css-0808j', cssRequests.some((u) => /admin-workspace\.css\?v=20260808j/.test(u)), JSON.stringify(cssRequests.slice(-3)));
     assert('perm-title', /权限治理/.test(await page.locator('h1').innerText()), 'title');
     assert('perm-metrics', (await page.locator('.rbac-metric').count()) >= 3, 'metrics');
     assert('perm-admin-create', (await page.locator('button:has-text("新增")').count()) >= 1, 'create');

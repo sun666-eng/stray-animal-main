@@ -6,7 +6,7 @@
   <title>权限治理 · 归途计划管理</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
   <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c">
-  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260730c">
+  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260808j">
 </head>
 <body>
 <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
@@ -89,20 +89,18 @@
   </header>
   <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
 
-  <main class="admin-main rbac-page">
-    <section class="rbac-hero">
-      <div>
+  <main class="admin-main rbac-page admin-command-main permission-command-desk">
+    <section class="rbac-hero admin-command-hero">
+      <div class="admin-command-hero-copy">
         <p class="admin-kicker">Permission governance</p>
         <h1>权限治理</h1>
         <p class="rbac-hero-lead">权限定义只允许固定 flag 和固定后台路径。客户端路径不会驱动导航。权限定义全局禁止删除。写入最终仅真实超级管理员可执行。</p>
+        <div class="rbac-hero-meta admin-command-identity">
+          <span>当前模式</span>
+          <strong>{{ canWrite ? '可写入' : '只读' }}</strong>
+        </div>
       </div>
-      <div class="rbac-hero-meta">
-        <span>当前模式</span>
-        <strong>{{ canWrite ? '可写入' : '只读' }}</strong>
-      </div>
-    </section>
-
-    <div class="rbac-metrics" aria-label="权限统计">
+      <div class="rbac-metrics admin-command-metrics" aria-label="权限统计">
       <div class="rbac-metric">
         <span>权限总数</span>
         <strong>{{ total }}</strong>
@@ -118,7 +116,8 @@
         <strong>{{ pageActionCount }}</strong>
         <small>当前页无页面路径</small>
       </div>
-    </div>
+      </div>
+    </section>
 
     <div v-if="!canWrite" class="rbac-readonly-banner" role="status">
       当前账号不是真实超级管理员：可查看权限定义，但不能新增或编辑。服务端仍是最终权威。
@@ -128,19 +127,20 @@
       权限定义全局禁止删除，后端对 DELETE 恒返回拒绝。本页不提供删除操作。
     </p>
 
-    <section>
-      <div class="admin-section-head">
+    <section class="admin-panel admin-command-panel">
+      <div class="admin-section-head admin-command-panel-head">
         <div>
           <h2>权限定义</h2>
           <p>修改已被角色引用的权限会被服务端拒绝，避免历史角色 JSON 失真。</p>
         </div>
-        <div>
+        <div class="admin-command-panel-actions">
+          <span class="admin-command-count">本页 {{ records.length }} 条 · 共 {{ total }} 条</span>
           <button v-if="canWrite" class="ui-button is-primary" type="button" @click="openCreate"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-plus" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-plus"></use></svg>新增</button>
           <button class="ui-button is-ghost" type="button" @click="exportRows"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-download" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-download"></use></svg>导出</button>
         </div>
       </div>
 
-      <form class="ui-toolbar admin-review-toolbar" @submit.prevent="load(1)">
+      <form class="ui-toolbar admin-review-toolbar admin-command-toolbar" @submit.prevent="load(1)">
         <label class="ui-search">
           <span>搜索</span>
           <input type="search" v-model.trim="search" maxlength="100" placeholder="按权限名称搜索" autocomplete="off">
