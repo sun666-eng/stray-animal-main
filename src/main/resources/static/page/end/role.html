@@ -6,7 +6,7 @@
   <title>角色治理 · 归途计划管理</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
   <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c">
-  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260730c">
+  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260808i">
 </head>
 <body>
 <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
@@ -89,23 +89,21 @@
   </header>
   <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
 
-  <main class="admin-main rbac-page">
-    <section class="rbac-hero">
-      <div>
+  <main class="admin-main rbac-page admin-command-main role-command-desk">
+    <section class="rbac-hero admin-command-hero">
+      <div class="admin-command-hero-copy">
         <p class="admin-kicker">Role governance</p>
         <h1>角色治理</h1>
         <p class="rbac-hero-lead">
           超级管理员角色（#1）不可修改或删除。志愿者 / 普通用户 / 认证义工（#2–#4）可在契约约束下调整权限。
           自定义角色可自由编辑与删除。权限只接收数据库中已有权限 ID。写入最终仅真实超级管理员可执行。
         </p>
+        <div class="rbac-hero-meta admin-command-identity">
+          <span>当前模式</span>
+          <strong>{{ canWrite ? '可写入' : '只读' }}</strong>
+        </div>
       </div>
-      <div class="rbac-hero-meta">
-        <span>当前模式</span>
-        <strong>{{ canWrite ? '可写入' : '只读' }}</strong>
-      </div>
-    </section>
-
-    <div class="rbac-metrics" aria-label="角色统计">
+      <div class="rbac-metrics admin-command-metrics" aria-label="角色统计">
       <div class="rbac-metric">
         <span>角色总数</span>
         <strong>{{ total }}</strong>
@@ -121,25 +119,27 @@
         <strong>{{ pageCustomCount }}</strong>
         <small>当前页 #5+</small>
       </div>
-    </div>
+      </div>
+    </section>
 
     <div v-if="!canWrite" class="rbac-readonly-banner" role="status">
       当前账号不是真实超级管理员：可查看角色列表，但不能新增、编辑或删除角色。服务端仍是最终权威。
     </div>
 
-    <section>
-      <div class="admin-section-head">
+    <section class="admin-panel admin-command-panel">
+      <div class="admin-section-head admin-command-panel-head">
         <div>
           <h2>角色列表</h2>
           <p>权限变更会影响后台导航与 API 访问，请保持最小授权。普通用户角色必须保留用户闭环权限。</p>
         </div>
-        <div>
+        <div class="admin-command-panel-actions">
+          <span class="admin-command-count">本页 {{ records.length }} 条 · 共 {{ total }} 条</span>
           <button v-if="canWrite" class="ui-button is-primary" type="button" @click="openCreate"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-plus" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-plus"></use></svg>新增</button>
           <button class="ui-button is-ghost" type="button" @click="exportRows"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-download" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-download"></use></svg>导出</button>
         </div>
       </div>
 
-      <form class="ui-toolbar admin-review-toolbar" @submit.prevent="load(1)">
+      <form class="ui-toolbar admin-review-toolbar admin-command-toolbar" @submit.prevent="load(1)">
         <label class="ui-search">
           <span>搜索</span>
           <input type="search" v-model.trim="search" maxlength="100" placeholder="按角色名称搜索" autocomplete="off">

@@ -399,7 +399,8 @@ function writeReport() {
     const css = fs.readFileSync('src/main/resources/static/css/admin-workspace.css', 'utf8');
     const permJava = fs.readFileSync('src/main/java/com/example/service/PermissionService.java', 'utf8');
 
-    assert('role-cache-20260730c', roleHtml.includes('admin-workspace.css?v=20260730c'), 'missing');
+    assert('role-cache-20260808i', roleHtml.includes('admin-workspace.css?v=20260808i'), 'missing');
+    assert('role-command-desk', roleHtml.includes('role-command-desk') && roleHtml.includes('admin-command-hero') && roleHtml.includes('admin-command-panel'), 'layout');
     assert('perm-cache-20260730c', permHtml.includes('admin-workspace.css?v=20260730c'), 'missing');
     assert('ops-current-20260808a', opsHtml.includes('admin-workspace.css?v=20260808a'), 'ops version');
     assert('ops-not-20260730c', !opsHtml.includes('admin-workspace.css?v=20260730c') && !opsHtml.includes('admin-workspace.css?v=20260730b'), 'ops bumped');
@@ -464,9 +465,9 @@ function writeReport() {
     await page.goto(base + '/page/end/role.html', { waitUntil: 'domcontentloaded', timeout: 45000 });
     await page.waitForSelector('h1', { timeout: 15000 });
     await page.waitForTimeout(700);
-    assert('role-network-css-30c', cssRequests.some((u) => /admin-workspace\.css\?v=20260730c/.test(u)), JSON.stringify(cssRequests.slice(-5)));
+    assert('role-network-css-0808i', cssRequests.some((u) => /admin-workspace\.css\?v=20260808i/.test(u)), JSON.stringify(cssRequests.slice(-5)));
     const rolePerf = await page.evaluate(() => performance.getEntriesByType('resource').map((e) => e.name).filter((n) => /admin-workspace/.test(n)));
-    assert('role-perf-css-30c', rolePerf.some((n) => /v=20260730c/.test(n)), JSON.stringify(rolePerf));
+    assert('role-perf-css-0808i', rolePerf.some((n) => /v=20260808i/.test(n)), JSON.stringify(rolePerf));
     assert('role-title', /角色治理/.test(await page.locator('h1').innerText()), 'title');
     assert('role-metrics-3', (await page.locator('.rbac-metric').count()) >= 3, 'metrics');
     assert('role-admin-create-visible', (await page.locator('button:has-text("新增")').count()) >= 1, 'create');
