@@ -12,7 +12,7 @@
       href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>"
     />
     <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c" />
-    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260730k" />
+    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260808k" />
   </head>
   <body>
     <div id="authWait" class="admin-auth-wait" role="status">
@@ -96,24 +96,26 @@
     </div>
   </header>
   <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
-      <main class="admin-main">
-        <section class="admin-hero" aria-labelledby="accountTitle">
-          <div>
+      <main class="admin-main admin-command-main account-command-desk">
+        <section class="admin-hero admin-command-hero" aria-labelledby="accountTitle">
+          <div class="admin-command-hero-copy">
             <p class="admin-kicker">Signed amounts</p>
             <h1 id="accountTitle">资金公示</h1>
             <p>
               可信财务账簿：仅允许追加与冲正，不允许覆盖或物理删除。历史记录不可编辑。历史记录不可物理删除。正数表示收入，负数表示支出；零值会被拒绝。金额保留正负号与两位小数。
             </p>
           </div>
-          <div class="admin-hero-meta">
-            <span>统计范围</span><strong>完整数据集</strong>
+          <div class="account-command-scope admin-command-metrics">
+            <div class="admin-hero-meta">
+              <span>统计范围</span><strong>完整数据集</strong><small>聚合接口 · 非当前页相加</small>
+            </div>
           </div>
         </section>
         <section
-          class="admin-account-summary"
+          class="admin-account-summary admin-panel admin-command-panel"
           aria-labelledby="accountTotalsTitle"
         >
-          <div class="admin-section-head">
+          <div class="admin-section-head admin-command-panel-head">
             <div>
               <h2 id="accountTotalsTitle">全量汇总</h2>
               <p>汇总来自专用聚合接口，不是当前页相加；支出保留负数语义。</p>
@@ -178,19 +180,20 @@
           </div>
           <p class="account-retention-note" role="note">仅允许追加与冲正，不允许覆盖或物理删除。历史记录不可编辑。历史记录不可物理删除。冲正会新增等额反向记录，原记录保留。</p>
 </section>
-        <section class="admin-section" aria-labelledby="accountListTitle">
-          <div class="admin-section-head">
+        <section class="admin-section admin-panel admin-command-panel" aria-labelledby="accountListTitle">
+          <div class="admin-section-head admin-command-panel-head">
             <div>
               <h2 id="accountListTitle">资金记录</h2>
               <p>搜索可匹配标签、经手人或用途详情；每次只读取当前页。</p>
             </div>
-            <div class="account-gov-actions">
+            <div class="account-gov-actions admin-command-panel-actions">
+              <span class="admin-command-count">本页 {{ records.length }} 条 · 共 {{ total }} 条</span>
               <button class="ui-button is-primary" type="button" ref="createBtn" @click="openCreate($event)">新增记录</button>
               <button class="ui-button is-ghost" type="button" @click="exportRows">导出资金记录</button>
             </div>
           </div>
           <form
-            class="ui-toolbar admin-review-toolbar"
+            class="ui-toolbar admin-review-toolbar admin-command-toolbar"
             role="search"
             @submit.prevent="load(1)"
           >
