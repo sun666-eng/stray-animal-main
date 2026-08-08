@@ -6,7 +6,7 @@
   <title>义工申请审核 · 归途计划管理</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
   <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c">
-  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260730i">
+  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260808g">
 </head>
 <body>
 <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
@@ -89,15 +89,15 @@
   </header>
   <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
 
-  <main class="admin-main">
-    <section class="admin-hero volunteer-governance-hero" aria-labelledby="volunteerAdminTitle">
-      <div>
+  <main class="admin-main admin-command-main volunteer-command-desk">
+    <section class="admin-hero volunteer-governance-hero admin-command-hero" aria-labelledby="volunteerAdminTitle">
+      <div class="admin-command-hero-copy">
         <p class="admin-kicker">Volunteer review desk</p>
         <h1 id="volunteerAdminTitle">义工申请审核</h1>
         <p class="volunteer-governance-lead">分页审阅申请资料并作出人类最终决定。列表只请求当前页；角色影响由服务端按审核结果处理，前端不直接写角色。</p>
+        <div class="admin-hero-meta admin-command-identity"><span>当前登录账号</span><strong>{{ user.username }}</strong></div>
       </div>
-      <div class="admin-hero-meta"><span>当前登录账号</span><strong>{{ user.username }}</strong></div>
-      <div class="volunteer-governance-metrics" aria-label="当前页申请状态摘要">
+      <div class="volunteer-governance-metrics admin-command-metrics" aria-label="当前页申请状态摘要">
         <div class="volunteer-governance-metric"><span>当前页申请</span><strong>{{ pageCount }}</strong><small>仅当前页 records</small></div>
         <div class="volunteer-governance-metric is-pending"><span>当前页待审核</span><strong>{{ pagePending }}</strong><small>仅当前页</small></div>
         <div class="volunteer-governance-metric is-ok"><span>当前页已通过</span><strong>{{ pageApproved }}</strong><small>仅当前页</small></div>
@@ -105,14 +105,17 @@
       </div>
     </section>
 
-    <section aria-labelledby="reviewListTitle">
-      <div class="admin-section-head">
+    <section class="admin-panel admin-command-panel" aria-labelledby="reviewListTitle">
+      <div class="admin-section-head admin-command-panel-head">
         <div>
           <h2 id="reviewListTitle">申请记录</h2>
           <p>搜索条件对应后端所在地模糊查询；每页最多 {{ pageSize }} 条。服务端 total 仅用于分页，不在此页冒充全平台状态分布。</p>
         </div>
+        <div class="admin-command-panel-actions">
+          <span class="admin-command-count">本页 {{ records.length }} 条 · 共 {{ total }} 条</span>
+        </div>
       </div>
-      <form class="ui-toolbar admin-review-toolbar" role="search" @submit.prevent="load(1)">
+      <form class="ui-toolbar admin-review-toolbar admin-command-toolbar" role="search" @submit.prevent="load(1)">
         <label class="ui-search">
           <span aria-hidden="true">⌕</span>
           <span class="sr-only">按所在地搜索</span>
