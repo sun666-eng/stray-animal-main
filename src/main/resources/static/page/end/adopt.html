@@ -9,7 +9,7 @@
     <title>领养审核工作台 · 归途计划管理</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
     <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c" />
-    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260730d" />
+    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260808c" />
   </head>
   <body>
     <div id="authWait" class="admin-auth-wait" role="status">
@@ -93,9 +93,9 @@
     </div>
   </header>
   <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
-      <main class="admin-main">
+      <main class="admin-main adopt-governance-main">
         <section class="admin-hero adopt-governance-hero" aria-labelledby="adoptTitle">
-          <div>
+          <div class="adopt-governance-hero-copy">
             <p class="admin-kicker">Adoption review desk</p>
             <h1 id="adoptTitle">领养审核工作台</h1>
             <p class="adopt-governance-lead">
@@ -126,15 +126,19 @@
             </div>
           </div>
         </section>
-        <section aria-labelledby="adoptList">
-          <div class="admin-section-head">
+        <section class="admin-panel adopt-governance-queue" aria-labelledby="adoptList">
+          <div class="admin-section-head adopt-governance-queue-head">
             <div>
+              <p class="admin-kicker">Application queue</p>
               <h2 id="adoptList">领养申请</h2>
               <p>
                 状态文案统一使用 StatusText.adopt；状态 3 保持中性「其他状态」。
               </p>
             </div>
-            <button class="ui-button is-ghost" type="button" @click="exportRows"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-download" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-download"></use></svg>导出</button>
+            <div class="adopt-governance-queue-meta">
+              <span>当前页 {{ records.length }} 条 · 共 {{ total }} 条</span>
+              <button class="ui-button is-ghost" type="button" @click="exportRows"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-download" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-download"></use></svg>导出</button>
+            </div>
           </div>
           <form
             class="ui-toolbar admin-review-toolbar adopt-governance-toolbar"
@@ -162,6 +166,12 @@
               {{ loading ? '查询中…' : '查询' }}
             </button>
           </form>
+          <div class="adopt-governance-status-key" aria-label="申请状态图例">
+            <span><i class="is-pending"></i>待审核</span>
+            <span><i class="is-reserved"></i>已通过待交接</span>
+            <span><i class="is-done"></i>已完成交接</span>
+            <span><i class="is-closed"></i>驳回或取消</span>
+          </div>
           <div
             v-if="message"
             class="adopt-governance-feedback"

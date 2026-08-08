@@ -2311,6 +2311,144 @@
   .adopt-governance-search-mode button { flex: 1; }
 }
 
+/* ===== Admin polish 03: adoption review command desk (scoped) ===== */
+.adopt-governance-main { padding-top: 34px; }
+.adopt-governance .adopt-governance-hero {
+  grid-template-columns: minmax(300px, .68fr) minmax(0, 1.32fr);
+  gap: 24px;
+  align-items: stretch;
+  margin-bottom: 22px;
+  padding: 26px;
+  border: 1px solid var(--ui-line);
+  border-top: 3px solid var(--ui-ink);
+  border-radius: 19px;
+  background: linear-gradient(135deg, #fff 0%, #fbfaf7 68%, #f5f3ee 100%);
+  box-shadow: 0 18px 44px rgba(21, 20, 18, .055);
+}
+.adopt-governance-hero-copy { min-width: 0; align-self: center; }
+.adopt-governance .adopt-governance-hero h1 {
+  font-size: clamp(38px, 4.15vw, 58px);
+  line-height: .96;
+  letter-spacing: -.055em;
+}
+.adopt-governance .adopt-governance-lead {
+  max-width: 44ch;
+  margin-top: 15px;
+  line-height: 1.72;
+}
+.adopt-governance .adopt-governance-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--ui-line);
+  border-radius: 13px;
+  background: var(--ui-line);
+}
+.adopt-governance .adopt-governance-metric {
+  min-height: 132px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 16px 17px;
+  border: 0;
+  border-radius: 0;
+}
+.adopt-governance .adopt-governance-metric strong { margin-top: 17px; font-size: 32px; }
+.adopt-governance .adopt-governance-metric small { max-width: 20ch; margin-top: 8px; line-height: 1.45; }
+.adopt-governance-queue {
+  padding: 22px;
+  border-radius: 18px;
+  box-shadow: 0 16px 36px rgba(21, 20, 18, .04);
+}
+.adopt-governance .adopt-governance-queue-head { align-items: flex-start; margin-bottom: 18px; }
+.adopt-governance-queue-head .admin-kicker {
+  max-width: none;
+  margin: 0 0 8px;
+  color: var(--ui-accent);
+  font-size: 10px;
+  line-height: 1.2;
+}
+.adopt-governance-queue-head h2 { font-size: clamp(25px, 2.25vw, 32px); }
+.adopt-governance-queue-meta {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.adopt-governance-queue-meta > span {
+  padding: 8px 11px;
+  border-radius: 999px;
+  color: #625f59;
+  background: #f0efeb;
+  font-size: 11px;
+  font-weight: 760;
+  white-space: nowrap;
+}
+.adopt-governance .adopt-governance-toolbar {
+  margin-bottom: 14px;
+  padding: 10px;
+  border: 1px solid var(--ui-line);
+  border-radius: 16px;
+  background: #fff;
+}
+.adopt-governance .adopt-governance-toolbar .ui-search {
+  min-height: 48px;
+  border: 0;
+  background: #f3f2ef;
+}
+.adopt-governance .adopt-governance-search-mode { min-height: 48px; padding: 4px; border-radius: 11px; }
+.adopt-governance .adopt-governance-toolbar > .ui-button { min-height: 48px; }
+.adopt-governance-status-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin: 0 0 17px;
+  color: var(--ui-muted);
+  font-size: 11px;
+}
+.adopt-governance-status-key span { display: inline-flex; align-items: center; gap: 7px; }
+.adopt-governance-status-key i { width: 7px; height: 7px; border-radius: 50%; background: #a4a6a1; }
+.adopt-governance-status-key .is-pending { background: var(--ui-warning); }
+.adopt-governance-status-key .is-reserved { background: #c88431; }
+.adopt-governance-status-key .is-done { background: var(--ui-success); }
+.adopt-governance-status-key .is-closed { background: var(--ui-danger); }
+.adopt-governance-queue .admin-record-table { overflow: hidden; border-radius: 13px; }
+.adopt-governance-queue .admin-record-table thead { background: #fbfaf7; }
+.adopt-governance-queue .admin-record-table th { color: #6f6b64; font-size: 11px; letter-spacing: .025em; }
+.adopt-governance-queue .admin-pagination { margin-bottom: 0; }
+@media (max-width: 1100px) {
+  .adopt-governance .adopt-governance-hero { grid-template-columns: 1fr; }
+}
+@media (max-width: 960px) {
+  .adopt-governance .admin-adopt-cards .admin-card-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .adopt-governance .admin-adopt-cards .admin-card-actions .ui-button {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+  }
+}
+@media (max-width: 760px) {
+  .adopt-governance-main { padding-top: 24px; }
+  .adopt-governance .adopt-governance-hero { gap: 19px; padding: 20px; }
+  .adopt-governance .adopt-governance-hero h1 { font-size: clamp(36px, 11vw, 48px); }
+  .adopt-governance .adopt-governance-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .adopt-governance-queue-meta { width: 100%; justify-content: space-between; }
+}
+@media (max-width: 480px) {
+  .adopt-governance .adopt-governance-hero,
+  .adopt-governance .adopt-governance-queue { padding: 17px; border-radius: 15px; }
+  .adopt-governance .adopt-governance-metric { min-height: 116px; padding: 13px; }
+  .adopt-governance .adopt-governance-metric strong { font-size: 28px; }
+  .adopt-governance .adopt-governance-metric small { font-size: 10px; }
+  .adopt-governance-queue-meta { align-items: stretch; flex-direction: column; }
+  .adopt-governance-queue-meta > span { text-align: center; }
+  .adopt-governance-queue-meta .ui-button { width: 100%; min-height: 44px; }
+}
+
 /* ===== Phase 2D: Rescue / Animal governance ===== */
 .help-governance-hero,
 .animal-governance-hero {

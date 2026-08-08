@@ -260,7 +260,10 @@ function writeReport() {
         && !adoptHtml.includes('class="admin-row-actions adopt-governance-actions"')
         && !adoptHtml.includes('class="is-group-label"'),
       'desktop actions must retain the compact pre-Phase-1 row layout');
-    assert('static-cache-30d', adoptHtml.includes('20260730d') && proofHtml.includes('20260730d'), 'cache');
+    assert('static-adopt-cache-0808c', adoptHtml.includes('admin-workspace.css?v=20260808c'), 'cache');
+    assert('static-proof-cache-30d', proofHtml.includes('admin-workspace.css?v=20260730d'), 'cache');
+    assert('static-adopt-command-desk', adoptHtml.includes('adopt-governance-main') && adoptHtml.includes('adopt-governance-queue'), 'command desk');
+    assert('static-adopt-status-key', adoptHtml.includes('adopt-governance-status-key'), 'status key');
     assert('static-css-governance', css.includes('.adopt-governance-hero') && css.includes('.proof-governance-hero'), 'css');
 
     browser = await chromium.launch({ headless: true });
@@ -290,7 +293,10 @@ function writeReport() {
     await page.goto(base + '/page/end/adopt.html', { waitUntil: 'domcontentloaded', timeout: 45000 });
     await page.waitForTimeout(800);
     assert('adopt-fixture-row', (await page.locator('text=UI_AUDIT_2C_CAT').count()) >= 1, 'fixture missing');
-    assert('adopt-network-css-30d', cssRequests.some((u) => /v=20260730d/.test(u)), JSON.stringify(cssRequests.slice(-3)));
+    assert('adopt-network-css-0808c', cssRequests.some((u) => /v=20260808c/.test(u)), JSON.stringify(cssRequests.slice(-3)));
+    assert('adopt-command-desk-mounted', await page.locator('.adopt-governance-main .adopt-governance-queue').count() === 1, 'queue');
+    assert('adopt-metrics-integrated', await page.locator('.adopt-governance-hero > .adopt-governance-metrics').count() === 1, 'metrics');
+    assert('adopt-status-key-mounted', await page.locator('.adopt-governance-status-key').count() === 1, 'status key');
     const fixtureRowBox = await page.locator('.admin-adopt-table tbody tr').first().boundingBox();
     assert('adopt-desktop-row-is-compact', !!fixtureRowBox && fixtureRowBox.height <= 96,
       fixtureRowBox ? `height=${fixtureRowBox.height}` : 'row missing');
@@ -482,6 +488,22 @@ function writeReport() {
       await installAdoptListFixture(page);
       await page.goto(base + '/page/end/adopt.html', { waitUntil: 'domcontentloaded', timeout: 45000 });
       await page.waitForTimeout(600);
+      const listLayout = await page.evaluate(() => ({
+        pageOverflow: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth,
+        cards: Array.from(document.querySelectorAll('.admin-adopt-cards .admin-record-card')).filter((el) => {
+          const style = getComputedStyle(el);
+          const rect = el.getBoundingClientRect();
+          return style.display !== 'none' && rect.width > 0 && rect.height > 0;
+        }).length,
+        queueWidth: (document.querySelector('.adopt-governance-queue') || {}).getBoundingClientRect
+          ? document.querySelector('.adopt-governance-queue').getBoundingClientRect().width
+          : 0
+      }));
+      assert('adopt-list-no-page-hscroll-' + vp.name, listLayout.pageOverflow <= 2, JSON.stringify(listLayout));
+      assert('adopt-list-card-visible-' + vp.name, listLayout.cards >= 1 && listLayout.queueWidth > 0, JSON.stringify(listLayout));
+      if (vp.name === '390x844' || vp.name === '320x700') {
+        await shot(page, '08-adopt-list-' + vp.name, { page: 'adopt', role: 'admin', viewport: vp.name, state: 'list-mobile', goal: '领养列表移动端', routeIntercept: true });
+      }
       // Prefer visible card action on mobile (desktop table buttons are display:none)
       const editVis = page.locator('button:has-text("编辑问卷"):visible').first();
       assert('adopt-edit-visible-' + vp.name, (await editVis.count()) >= 1, 'no visible edit');
