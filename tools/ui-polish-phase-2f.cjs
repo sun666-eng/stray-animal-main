@@ -221,10 +221,11 @@ process.on('unhandledRejection', (err) => {
     const visitHtml = fs.readFileSync('src/main/resources/static/page/end/visit.html', 'utf8');
     const volunteerHtml = fs.readFileSync('src/main/resources/static/page/end/volunteer.html', 'utf8');
 
-    assert('user-cache-30j', userHtml.includes('admin-workspace.css?v=20260730j'), 'cache');
+    assert('user-cache-0808h', userHtml.includes('admin-workspace.css?v=20260808h'), 'cache');
+    assert('user-command-desk', userHtml.includes('user-command-desk') && userHtml.includes('admin-command-hero') && userHtml.includes('admin-command-panel'), 'layout');
     assert('person-cache-30j', personHtml.includes('admin-workspace.css?v=20260730j'), 'cache');
-    assert('visit-untouched-cache', visitHtml.includes('20260730i'), 'visit');
-    assert('vol-untouched-cache', volunteerHtml.includes('20260730i'), 'vol');
+    assert('visit-untouched-cache', visitHtml.includes('20260808e'), 'visit');
+    assert('vol-untouched-cache', volunteerHtml.includes('20260808g'), 'vol');
     assert('user-no-delete-btn', !/askDelete|confirmDelete|deleteItem/.test(userHtml) && !/>删除</.test(userHtml), 'del');
     assert('user-retention-copy', /不支持删除|业务历史需要保留/.test(userHtml), 'ret');
     assert('user-loadseq', userHtml.includes('loadSeq'), 'seq');
@@ -304,7 +305,7 @@ process.on('unhandledRejection', (err) => {
 
     await page.goto(base + '/page/end/user.html', { waitUntil: 'domcontentloaded', timeout: 45000 });
     await page.waitForTimeout(600);
-    assert('user-css-30j', cssReq.some((u) => /v=20260730j/.test(u)), JSON.stringify(cssReq.slice(-2)));
+    assert('user-css-0808h', cssReq.some((u) => /v=20260808h/.test(u)), JSON.stringify(cssReq.slice(-2)));
     assert('user-title', /用户治理/.test(await page.locator('h1').innerText()), 't');
     assert('user-metrics', (await page.locator('.user-governance-metric').count()) >= 4, 'm');
     assert('user-metrics-page-label', /当前页/.test(await page.locator('.user-governance-metrics').innerText()), 'page');

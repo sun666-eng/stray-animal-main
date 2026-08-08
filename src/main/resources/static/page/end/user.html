@@ -6,7 +6,7 @@
     <title>用户治理 · 归途计划管理</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
     <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c" />
-    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260730j" />
+    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260808h" />
   </head>
   <body>
     <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
@@ -89,14 +89,14 @@
       </header>
       <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
 
-      <main class="admin-main">
-        <section class="admin-hero user-governance-hero" aria-labelledby="userGovTitle">
-          <div>
+      <main class="admin-main admin-command-main user-command-desk">
+        <section class="admin-hero user-governance-hero admin-command-hero" aria-labelledby="userGovTitle">
+          <div class="admin-command-hero-copy">
             <p class="admin-kicker">User governance</p>
             <h1 id="userGovTitle">用户治理</h1>
             <p class="user-gov-lead">查看账号、创建或编辑联系方式与角色边界。用户业务历史需要保留，当前版本不支持删除；超级管理员角色不可通过通用接口修改。</p>
           </div>
-          <div class="user-governance-metrics" aria-label="当前页用户指标">
+          <div class="user-governance-metrics admin-command-metrics" aria-label="当前页用户指标">
             <div class="user-governance-metric"><span>当前页用户</span><strong>{{ pageCount }}</strong><small>仅当前页 records</small></div>
             <div class="user-governance-metric"><span>当前页普通账号</span><strong>{{ pageNormalCount }}</strong><small>非超级管理员</small></div>
             <div class="user-governance-metric"><span>当前页超级管理员</span><strong>{{ pageSuperCount }}</strong><small>角色 id=1</small></div>
@@ -104,13 +104,14 @@
           </div>
         </section>
 
-        <section class="user-governance-panel" aria-labelledby="userDirTitle">
-          <div class="admin-section-head">
+        <section class="user-governance-panel admin-panel admin-command-panel" aria-labelledby="userDirTitle">
+          <div class="admin-section-head admin-command-panel-head">
             <div>
               <h2 id="userDirTitle">用户目录</h2>
               <p>指标仅反映当前查询页。密码不在通用管理接口中修改。</p>
             </div>
-            <div class="user-gov-actions">
+            <div class="user-gov-actions admin-command-panel-actions">
+              <span class="admin-command-count">本页 {{ records.length }} 条 · 共 {{ total }} 条</span>
               <button class="ui-button is-primary" type="button" ref="createBtn" @click="openCreate($event)">
                 <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-plus" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-plus"></use></svg>
                 新增用户
@@ -129,7 +130,7 @@
             用户业务历史需要保留，当前版本不支持删除；后续应通过停用状态管理。列表与卡片不提供删除操作。
           </p>
 
-          <form class="ui-toolbar admin-review-toolbar" @submit.prevent="load(1)">
+          <form class="ui-toolbar admin-review-toolbar admin-command-toolbar" @submit.prevent="load(1)">
             <label class="ui-search" for="userSearch">
               <span>搜索</span>
               <input id="userSearch" v-model.trim="search" maxlength="100" placeholder="按用户名搜索" :disabled="loading" />
