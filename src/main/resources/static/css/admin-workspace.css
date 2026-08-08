@@ -4001,3 +4001,196 @@ body.agent-history-locked {
     transition: none;
   }
 }
+
+/* Admin workspace convergence: pages 04-12 share the rescue-desk command language. */
+.admin-main.admin-command-main {
+  padding-top: 34px;
+}
+.admin-command-hero {
+  display: grid;
+  grid-template-columns: minmax(300px, .72fr) minmax(0, 1.28fr);
+  gap: 24px;
+  align-items: stretch;
+  margin-bottom: 22px;
+  padding: 26px;
+  border: 1px solid #deded9;
+  border-top: 3px solid #1b1d1b;
+  border-radius: 19px;
+  background: linear-gradient(135deg, #fff 0%, #fbfaf7 100%);
+  box-shadow: 0 16px 38px rgba(27, 29, 27, .06);
+}
+.admin-command-hero-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+}
+.admin-command-hero .admin-kicker {
+  margin: 0 0 8px;
+  color: #d9351d;
+  letter-spacing: .13em;
+}
+.admin-command-hero h1 {
+  max-width: 780px;
+  margin: 0;
+  font-size: clamp(36px, 4.1vw, 58px);
+  line-height: .98;
+  letter-spacing: -.045em;
+}
+.admin-command-hero-copy > p:not(.admin-kicker) {
+  max-width: 690px;
+  margin: 16px 0 0;
+  color: #706f69;
+  font-size: 15px;
+  line-height: 1.75;
+}
+.admin-command-metrics {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  gap: 1px !important;
+  align-self: stretch;
+  overflow: hidden;
+  border: 1px solid #deded9;
+  border-radius: 15px;
+  background: #deded9;
+}
+.admin-command-metrics > * {
+  display: flex;
+  min-width: 0;
+  min-height: 132px;
+  padding: 19px 17px !important;
+  flex-direction: column;
+  justify-content: center;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+.admin-command-metrics > * > span,
+.admin-command-metrics > * > small {
+  color: #74736d;
+}
+.admin-command-metrics > * > span {
+  font-weight: 700;
+}
+.admin-command-metrics > * > strong {
+  margin: 13px 0 4px;
+  color: #121412;
+  font-size: 31px;
+  line-height: 1;
+  letter-spacing: -.035em;
+}
+.admin-command-metrics > .is-ok > strong {
+  color: #1f7d58;
+}
+.admin-command-metrics > .is-warn > strong {
+  color: #ad7012;
+}
+.admin-command-metrics > .is-danger > strong,
+.admin-command-metrics > .is-closed > strong {
+  color: #c7372c;
+}
+.admin-command-panel {
+  padding: 22px;
+  border: 1px solid #deded9;
+  border-radius: 19px;
+  background: #fff;
+  box-shadow: 0 16px 38px rgba(27, 29, 27, .055);
+}
+.admin-command-panel-head {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.admin-command-panel-head h2 {
+  margin: 4px 0 5px;
+  font-size: clamp(25px, 2.3vw, 34px);
+  letter-spacing: -.025em;
+}
+.admin-command-panel-head p {
+  margin: 0;
+  color: #74736d;
+}
+.admin-command-panel-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.admin-command-count {
+  display: inline-flex;
+  min-height: 34px;
+  padding: 7px 12px;
+  align-items: center;
+  border-radius: 999px;
+  background: #f0efeb;
+  color: #5e5d58;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.admin-command-toolbar {
+  margin-bottom: 14px;
+  padding: 10px;
+  border: 1px solid #e1e1dd;
+  border-radius: 16px;
+  background: #fbfaf7;
+}
+@media (max-width: 1100px) {
+  .admin-command-hero {
+    grid-template-columns: 1fr;
+  }
+  .admin-command-metrics > * {
+    min-height: 112px;
+  }
+}
+@media (max-width: 760px) {
+  .admin-main.admin-command-main {
+    padding-top: 22px;
+  }
+  .admin-command-hero,
+  .admin-command-panel {
+    padding: 18px;
+    border-radius: 16px;
+  }
+  .admin-command-hero h1 {
+    font-size: clamp(34px, 12vw, 48px);
+  }
+  .admin-command-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .admin-command-metrics > * {
+    min-height: 104px;
+    padding: 14px !important;
+  }
+  .admin-command-metrics > * > strong {
+    font-size: 27px;
+  }
+  .admin-command-panel-head {
+    flex-direction: column;
+  }
+  .admin-command-panel-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .admin-command-panel-actions .ui-button {
+    min-height: 44px;
+  }
+}
+@media (max-width: 420px) {
+  .admin-command-hero,
+  .admin-command-panel {
+    padding: 15px;
+  }
+  .admin-command-metrics > * {
+    min-height: 98px;
+    padding: 12px !important;
+  }
+  .admin-command-count {
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -9,7 +9,7 @@
     <title>领养材料治理 · 归途计划管理</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
     <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c" />
-    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260730d" />
+    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260808d" />
   </head>
   <body>
     <div id="authWait" class="admin-auth-wait" role="status">
@@ -93,9 +93,9 @@
     </div>
   </header>
   <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
-      <main class="admin-main">
-        <section class="admin-hero proof-governance-hero" aria-labelledby="proofTitle">
-          <div>
+      <main class="admin-main admin-command-main proof-command-desk">
+        <section class="admin-hero proof-governance-hero admin-command-hero" aria-labelledby="proofTitle">
+          <div class="admin-command-hero-copy">
             <p class="admin-kicker">Adoption materials desk</p>
             <h1 id="proofTitle">领养材料治理</h1>
             <p class="proof-governance-lead">
@@ -103,7 +103,7 @@
               终态材料不可反复审核。
             </p>
           </div>
-          <div class="proof-governance-metrics" aria-label="本页材料状态摘要">
+          <div class="proof-governance-metrics admin-command-metrics" aria-label="本页材料状态摘要">
             <div class="proof-governance-metric">
               <span>接口总数</span>
               <strong>{{ total }}</strong>
@@ -126,21 +126,24 @@
             </div>
           </div>
         </section>
-        <section aria-labelledby="proofList">
-          <div class="admin-section-head">
+        <section class="admin-panel admin-command-panel" aria-labelledby="proofList">
+          <div class="admin-section-head admin-command-panel-head">
             <div>
               <h2 id="proofList">材料记录</h2>
               <p>审核仅允许待审核进入通过或驳回，终态不能反复改写。</p>
             </div>
-            <button
-              class="ui-button is-ghost"
-              type="button"
-              @click="exportRows"
-            ><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-download" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-download"></use></svg>导出
-            </button>
+            <div class="admin-command-panel-actions">
+              <span class="admin-command-count">本页 {{ records.length }} 条 · 共 {{ total }} 条</span>
+              <button
+                class="ui-button is-ghost"
+                type="button"
+                @click="exportRows"
+              ><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-download" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-download"></use></svg>导出
+              </button>
+            </div>
           </div>
           <form
-            class="ui-toolbar admin-review-toolbar proof-governance-toolbar"
+            class="ui-toolbar admin-review-toolbar proof-governance-toolbar admin-command-toolbar"
             role="search"
             @submit.prevent="load(1)"
           >

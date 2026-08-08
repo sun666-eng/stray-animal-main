@@ -261,7 +261,8 @@ function writeReport() {
         && !adoptHtml.includes('class="is-group-label"'),
       'desktop actions must retain the compact pre-Phase-1 row layout');
     assert('static-adopt-cache-0808c', adoptHtml.includes('admin-workspace.css?v=20260808c'), 'cache');
-    assert('static-proof-cache-30d', proofHtml.includes('admin-workspace.css?v=20260730d'), 'cache');
+    assert('static-proof-cache-0808d', proofHtml.includes('admin-workspace.css?v=20260808d'), 'cache');
+    assert('static-proof-command-desk', proofHtml.includes('proof-command-desk') && proofHtml.includes('admin-command-hero') && proofHtml.includes('admin-command-panel'), 'layout');
     assert('static-adopt-command-desk', adoptHtml.includes('adopt-governance-main') && adoptHtml.includes('adopt-governance-queue'), 'command desk');
     assert('static-adopt-status-key', adoptHtml.includes('adopt-governance-status-key'), 'status key');
     assert('static-css-governance', css.includes('.adopt-governance-hero') && css.includes('.proof-governance-hero'), 'css');
