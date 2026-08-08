@@ -9,7 +9,7 @@
     <title>公告管理 · 归途计划管理</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
     <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c" />
-    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260730k" />
+    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260808l" />
   </head>
   <body>
     <div id="authWait" class="admin-auth-wait" role="status">
@@ -93,34 +93,35 @@
     </div>
   </header>
   <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
-      <main class="admin-main">
-        <section class="admin-hero" aria-labelledby="noticeTitle">
-          <div>
+      <main class="admin-main admin-command-main notice-command-desk">
+        <section class="admin-hero admin-command-hero" aria-labelledby="noticeTitle">
+          <div class="admin-command-hero-copy">
             <p class="admin-kicker">Public notices</p>
             <h1 id="noticeTitle">公告管理</h1>
             <p>
               发布编辑台：内容为纯文本，保存后立即公开。当前数据模型没有草稿、定时发布和版本冲突保护。
             </p>
           </div>
-          <div class="notice-governance-metrics" aria-label="公告摘要">
+          <div class="notice-governance-metrics admin-command-metrics" aria-label="公告摘要">
             <div class="notice-governance-metric"><span>当前页公告</span><strong>{{ pageCount }}</strong><small>仅当前页</small></div>
             <div class="notice-governance-metric"><span>总公告数</span><strong>{{ total }}</strong><small>服务端 total</small></div>
             <div class="notice-governance-metric"><span>发布方式</span><strong>立即公开</strong><small>无草稿/定时</small></div>
           </div>
         </section>
-        <section aria-labelledby="noticeListTitle">
-          <div class="admin-section-head">
+        <section class="admin-panel admin-command-panel" aria-labelledby="noticeListTitle">
+          <div class="admin-section-head admin-command-panel-head">
             <div>
               <h2 id="noticeListTitle">公开公告</h2>
               <p>分页读取当前结果，搜索仅匹配公告标题。</p>
             </div>
-            <div class="notice-gov-actions">
+            <div class="notice-gov-actions admin-command-panel-actions">
+              <span class="admin-command-count">本页 {{ records.length }} 条 · 共 {{ total }} 条</span>
               <button class="ui-button is-primary" type="button" ref="createBtn" @click="openCreate($event)">发布公告</button>
               <button class="ui-button is-ghost" type="button" @click="exportRows">导出公告</button>
             </div>
           </div>
           <form
-            class="ui-toolbar admin-review-toolbar"
+            class="ui-toolbar admin-review-toolbar admin-command-toolbar"
             role="search"
             @submit.prevent="load(1)"
           >

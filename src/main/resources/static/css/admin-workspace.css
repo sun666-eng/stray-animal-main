@@ -4210,3 +4210,40 @@ body.agent-history-locked {
     justify-content: center;
   }
 }
+@media (max-width: 760px) and (max-height: 520px) {
+  .admin-command-hero {
+    gap: 12px;
+    padding: 14px 16px;
+  }
+  .admin-command-hero h1 {
+    font-size: 34px;
+  }
+  .admin-command-hero-copy > p:not(.admin-kicker) {
+    margin-top: 8px;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .admin-command-hero .admin-kicker {
+    margin-bottom: 4px;
+    font-size: 11px;
+  }
+  .admin-command-identity {
+    margin-top: 8px;
+    padding: 5px 9px;
+  }
+  .admin-command-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .admin-command-metrics > * {
+    min-height: 76px;
+    padding: 9px !important;
+  }
+  .admin-command-metrics > * > span,
+  .admin-command-metrics > * > small {
+    font-size: 9px;
+  }
+  .admin-command-metrics > * > strong {
+    margin: 6px 0 2px;
+    font-size: 21px;
+  }
+}
