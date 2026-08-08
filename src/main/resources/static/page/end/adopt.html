@@ -212,8 +212,7 @@
                       >
                     </td>
                     <td>
-                      <div class="admin-row-actions adopt-governance-actions">
-                        <span class="is-group-label">查看 / 辅助</span>
+                      <div class="admin-row-actions" aria-label="领养申请操作">
                         <button type="button" @click="openDetail(item, $event)">详情</button>
                         <button
                           v-if="canUseAgent"
@@ -229,7 +228,6 @@
                           class="is-primary"
                           @click="openEdit(item, $event)"
                         >编辑问卷</button>
-                        <span class="is-group-label">流程</span>
                         <button
                           v-if="[0,3].includes(Number(item.vstate))"
                           type="button"
@@ -257,7 +255,6 @@
                           type="button"
                           @click="askAction(item,'reopen', $event)"
                         >重新打开</button>
-                        <span class="is-group-label">风险</span>
                         <button
                           v-if="[0,3].includes(Number(item.vstate))"
                           type="button"
@@ -294,7 +291,7 @@
                     >{{ stateText(item.vstate) }}</span
                   >
                 </div>
-                <div class="admin-card-actions adopt-governance-actions">
+                <div class="admin-card-actions" aria-label="领养申请操作">
                   <button class="ui-button is-ghost" type="button" @click="openDetail(item, $event)">详情</button>
                   <button
                     v-if="canUseAgent"

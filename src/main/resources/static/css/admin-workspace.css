@@ -2404,16 +2404,176 @@
   flex-direction: column;
 }
 .help-governance-priority-urgent { color: #c0392b; font-weight: 750; }
+
+/* Rescue desk: one compact command band, then two aligned work surfaces. */
+.help-governance-main { padding-top: 34px; }
+.help-governance-hero {
+  grid-template-columns: minmax(270px, .62fr) minmax(0, 1.38fr);
+  align-items: stretch;
+  gap: 24px;
+  margin-bottom: 24px;
+  padding: 24px 26px;
+  overflow: hidden;
+  border: 1px solid var(--ui-line);
+  border-top: 3px solid #191b19;
+  border-radius: 18px;
+  background: linear-gradient(112deg, #fff 0%, #fff 52%, #faf9f5 100%);
+  box-shadow: 0 18px 42px rgba(24, 27, 24, .045);
+}
+.help-governance-hero > div:first-child {
+  align-self: center;
+  min-width: 0;
+}
+.help-governance-hero h1 {
+  font-size: clamp(32px, 3.2vw, 46px);
+  line-height: 1.04;
+  letter-spacing: -.055em;
+}
+.help-governance-lead {
+  max-width: 40ch;
+  margin-top: 12px;
+}
+.help-governance-metrics {
+  align-self: stretch;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--ui-line);
+  border-radius: 13px;
+  background: var(--ui-line);
+}
+.help-governance-metric {
+  min-width: 0;
+  min-height: 92px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 13px 14px;
+  border: 0;
+  border-radius: 0;
+  background: rgba(255, 255, 255, .96);
+}
+.help-governance-metric strong {
+  margin-top: 8px;
+  font-size: 25px;
+  font-variant-numeric: tabular-nums;
+}
+.help-governance-metric small { margin-top: 5px; white-space: nowrap; }
+.help-governance-layout {
+  --help-work-surface-height: min(720px, calc(100vh - 110px));
+  grid-template-columns: minmax(0, 1.58fr) minmax(360px, .62fr);
+  gap: 22px;
+  align-items: stretch;
+}
+.help-governance-ticket-panel {
+  height: var(--help-work-surface-height);
+  display: flex;
+  flex-direction: column;
+  padding: 21px 22px 22px;
+  overflow: hidden;
+  box-shadow: 0 15px 34px rgba(24, 27, 24, .035);
+}
+.help-governance-ticket-panel .admin-section-head {
+  align-items: center;
+  margin-bottom: 16px;
+}
+.help-governance-ticket-panel .admin-section-head .admin-kicker,
+.help-governance-chat .ui-rescue-chat-head .admin-kicker {
+  max-width: none;
+  margin: 0 0 7px;
+  color: var(--ui-accent-strong);
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: .14em;
+}
+.help-governance-page-count {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: #5e625d;
+  background: #f0f1ed;
+  font-size: 11px;
+  font-weight: 720;
+  white-space: nowrap;
+}
+.help-governance-ticket-panel .admin-review-toolbar { margin-bottom: 12px; }
+.help-governance-ticket-panel .admin-status-key { margin: 0 2px 14px; }
+.help-governance-ticket-panel .admin-help-table {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  border-radius: 12px;
+  scrollbar-color: #b8b5ad transparent;
+  scrollbar-width: thin;
+}
+.help-governance-ticket-panel .admin-pagination { flex: 0 0 auto; }
+.help-governance-chat {
+  height: var(--help-work-surface-height);
+  max-height: none;
+  padding: 0;
+  overflow: hidden;
+  border-top: 3px solid var(--ui-accent-strong);
+  box-shadow: 0 18px 38px rgba(24, 27, 24, .05);
+}
+.help-governance-chat .ui-rescue-chat-head {
+  flex: 0 0 auto;
+  align-items: flex-start;
+  padding: 20px 20px 16px;
+  background: #fbfaf6;
+}
+.help-governance-chat .ui-rescue-chat-head h2 {
+  margin: 0;
+  font-size: clamp(21px, 1.75vw, 27px);
+  line-height: 1.08;
+  letter-spacing: -.035em;
+}
+.help-governance-chat .ui-rescue-chat-head p:last-child {
+  max-width: 34ch;
+  margin-top: 7px;
+}
+.help-governance-chat .ui-chat-notice {
+  flex: 0 0 auto;
+  margin: 12px 16px 0;
+  padding: 10px 12px;
+}
+.help-governance-chat .ui-chat-messages {
+  flex: 1 1 auto;
+  min-height: 220px;
+  height: auto;
+  padding: 16px;
+}
+.help-governance-chat .ui-chat-compose {
+  flex: 0 0 auto;
+  padding: 13px 16px 16px;
+  background: #fbfaf6;
+}
+.help-governance-chat .ui-chat-compose textarea { min-height: 64px; }
 .animal-governance-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+@media (max-width: 1280px) {
+  .help-governance-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .help-governance-metric { min-height: 78px; }
+}
 @media (max-width: 960px) {
   .help-governance-hero,
   .animal-governance-hero,
   .help-governance-layout { grid-template-columns: 1fr; }
-  .help-governance-chat { position: static; max-height: none; }
+  .help-governance-hero { padding: 22px; }
+  .help-governance-ticket-panel { height: auto; }
+  .help-governance-ticket-panel .admin-help-table { flex: initial; }
+  .help-governance-chat { position: static; height: auto; max-height: none; }
+  .help-governance-chat .ui-chat-messages { height: 380px; }
 }
 @media (max-width: 640px) {
   .help-governance-metrics,
   .animal-governance-metrics { grid-template-columns: 1fr 1fr; }
+  .help-governance-main { padding-top: 24px; }
+  .help-governance-hero { gap: 18px; padding: 19px; border-radius: 15px; }
+  .help-governance-hero h1 { font-size: 36px; }
+  .help-governance-metric { min-height: 76px; padding: 11px 12px; }
+  .help-governance-ticket-panel { padding: 18px 14px; }
+  .help-governance-page-count { align-self: flex-start; }
+  .help-governance-chat .ui-rescue-chat-head { padding: 18px 16px 15px; }
+  .help-governance-chat .ui-chat-messages { height: 340px; }
   .help-governance-context,
   .animal-governance-context { grid-template-columns: 1fr; }
 }

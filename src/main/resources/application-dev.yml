@@ -16,8 +16,10 @@ app:
   ai:
     # 本地联调假 LLM（http://127.0.0.1:18080/v1）；生产禁止
     allow-loopback-personal-config: true
-    # Clash Fake-IP 仅开发可选；生产禁止。默认 false，需时显式 true
-    allow-proxy-synthetic-dns: ${AI_ALLOW_PROXY_SYNTHETIC_DNS:false}
+    # Clash/TUN 常把公网域名解析到 RFC 2544 Fake-IP（198.18.0.0/15）。
+    # dev 默认兼容，避免应用或终端重启后临时环境变量丢失；可显式设为 false 收紧。
+    # 该例外只接受“域名解析结果”，直接填写 198.18.x.x 仍拒绝；prod 也强制为 false。
+    allow-proxy-synthetic-dns: ${AI_ALLOW_PROXY_SYNTHETIC_DNS:true}
   password:
     # 开发允许明文登录并自动升级 BCrypt（A2）
     allow-plaintext-login: true

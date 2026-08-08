@@ -1460,3 +1460,14 @@ GPT 确认焦点已过；真实 390×844 复现搜索区空白：
 | 提交/推送/main/4D | **否** |
 
 权威证据（gitignored）：`D:\Documents\日期归档\2026\2026.4.7\Myproject\stray-animal-main\output\playwright\release-phase-4c\runs\E2E4C_20260801T160823Z_84A8E0\PHASE-4C-REPORT.md`
+
+---
+
+## Phase 4D round2 — go-live rehearsal (uncommitted)
+
+| 项 | 值 |
+|----|-----|
+| formalRunId | `E2E4D_20260802T075148Z_E0F36B` |
+| candidate | `4575506c86046dfa5aa0532bc87f35f65f73a5150fb222c690732b642dbafa0e` |
+| rollback | `dd947b86886bf11cc828d00893d39a3d5d9d71e71a7827d581dc7a4807d1d1b6` |
+| formal profiles | prod ×3 |

@@ -135,8 +135,13 @@ class DeploymentProfileGuardTest {
     void productionYamlPinsAiSafetyAndJdbcTimeouts() throws Exception {
         String yaml = new String(Files.readAllBytes(
                 Paths.get("src/main/resources/application-prod.yml")), StandardCharsets.UTF_8);
+        String devYaml = new String(Files.readAllBytes(
+                Paths.get("src/main/resources/application-dev.yml")), StandardCharsets.UTF_8);
 
         assertEquals(1, count(yaml, "allow-loopback-personal-config: false"));
+        assertEquals(1, count(yaml, "allow-proxy-synthetic-dns: false"));
+        assertEquals(1, count(devYaml,
+                "allow-proxy-synthetic-dns: ${AI_ALLOW_PROXY_SYNTHETIC_DNS:true}"));
         assertEquals(1, count(yaml, "config-encryption-key: ${AI_CONFIG_ENCRYPTION_KEY:}"));
         assertEquals(1, count(yaml, "connectTimeout=5000&socketTimeout=60000"));
         assertEquals(1, count(yaml, "${DB_NAME:}"));

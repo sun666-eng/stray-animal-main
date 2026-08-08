@@ -255,7 +255,7 @@ function writeReport() {
     const css = fs.readFileSync('src/main/resources/static/css/admin-workspace.css', 'utf8');
     const adoptHtml = fs.readFileSync('src/main/resources/static/page/end/adopt.html', 'utf8');
 
-    assert('help-cache-30g', helpHtml.includes('admin-workspace.css?v=20260730g'), 'cache');
+    assert('help-cache-0802a', helpHtml.includes('admin-workspace.css?v=20260802a'), 'cache');
     assert('animal-cache-30g', animalHtml.includes('admin-workspace.css?v=20260730g'), 'cache');
     assert('adopt-untouched-30d', adoptHtml.includes('20260730d'), 'adopt cache');
     assert('css-help-gov', css.includes('.help-governance-hero'), 'css');
@@ -337,12 +337,35 @@ function writeReport() {
     });
     await page.goto(base + '/page/end/help.html', { waitUntil: 'domcontentloaded', timeout: 45000 });
     await page.waitForTimeout(800);
-    assert('help-css-30g', cssReq.some((u) => /v=20260730g/.test(u)), JSON.stringify(cssReq.slice(-2)));
+    assert('help-css-0802a', cssReq.some((u) => /v=20260802a/.test(u)), JSON.stringify(cssReq.slice(-2)));
     assert('help-title', /救助处置/.test(await page.locator('h1').innerText()), 'title');
     assert('help-metrics', (await page.locator('.help-governance-metric').count()) >= 5, 'metrics');
     assert('help-fixture-pending', (await page.locator('text=UI_2D_HELP_PENDING').count()) >= 1, 'pending');
     assert('help-fixture-urgent', (await page.locator('text=UI_2D_HELP_URGENT').count()) >= 1, 'urgent');
     assert('help-public-chat', /公共|全局/.test(await page.locator('#adminCommunityTitle').innerText()), 'chat');
+    const helpLayout = await page.evaluate(() => {
+      const title = document.querySelector('#helpAdminTitle').getBoundingClientRect();
+      const hero = document.querySelector('.help-governance-hero').getBoundingClientRect();
+      const list = document.querySelector('.help-governance-ticket-panel').getBoundingClientRect();
+      const chat = document.querySelector('.help-governance-chat').getBoundingClientRect();
+      const metricsEl = document.querySelector('.help-governance-metrics');
+      return {
+        titleOffset: Math.round(title.top - hero.top),
+        heroHeight: Math.round(hero.height),
+        worktopDelta: Math.round(Math.abs(list.top - chat.top)),
+        workSurfaceHeightDelta: Math.round(Math.abs(list.height - chat.height)),
+        ticketOverflowY: getComputedStyle(document.querySelector('.admin-help-table')).overflowY,
+        metricOverflow: Math.max(0, Math.round(metricsEl.scrollWidth - metricsEl.clientWidth)),
+        pageOverflow: Math.max(0, Math.round(document.documentElement.scrollWidth - document.documentElement.clientWidth))
+      };
+    });
+    recordStrictRuntimeProbe('help-desktop-layout', helpLayout);
+    assert('help-title-near-hero-top', helpLayout.titleOffset < 95, JSON.stringify(helpLayout));
+    assert('help-hero-compact', helpLayout.heroHeight < 260, JSON.stringify(helpLayout));
+    assert('help-work-surfaces-aligned', helpLayout.worktopDelta <= 2, JSON.stringify(helpLayout));
+    assert('help-work-surfaces-equal-height', helpLayout.workSurfaceHeightDelta <= 2, JSON.stringify(helpLayout));
+    assert('help-ticket-table-scrolls-inside', /auto|scroll/.test(helpLayout.ticketOverflowY), JSON.stringify(helpLayout));
+    assert('help-desktop-no-overflow', helpLayout.metricOverflow <= 1 && helpLayout.pageOverflow <= 2, JSON.stringify(helpLayout));
     await shot(page, '01-help-desktop', { page: 'help', role: 'admin', viewport: '1440x900', state: 'fixture', goal: '救助桌面' });
 
     // Detail + esc

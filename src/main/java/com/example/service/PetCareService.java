@@ -373,6 +373,9 @@ public class PetCareService {
             return value;
         } catch (IllegalArgumentException e) {
             String detail = e.getMessage() == null ? "" : e.getMessage();
+            if (detail.contains("proxy synthetic")) {
+                throw new CustomException("400", "个人 Base URL 的域名解析为代理 Fake-IP；开发环境请启用 Fake-IP 兼容，生产环境请为该域名使用真实公网 DNS");
+            }
             if (detail.contains("non-public") || detail.contains("DNS") || detail.contains("resolves")) {
                 throw new CustomException("400", "个人 Base URL 解析到非公网地址，已拒绝（SSRF 防护）");
             }
@@ -401,6 +404,9 @@ public class PetCareService {
                 throw new IllegalArgumentException("AI endpoint DNS returned no address");
             }
             for (InetAddress address : addresses) {
+                if (isProxySyntheticAddress(address) && !this.allowProxySyntheticDns) {
+                    throw new IllegalArgumentException("AI endpoint resolves to a proxy synthetic address");
+                }
                 if (isUnsafeResolvedAddress(address, this.allowProxySyntheticDns)) {
                     throw new IllegalArgumentException("AI endpoint resolves to a non-public address");
                 }

@@ -215,6 +215,7 @@ class PetCareServiceTest {
                     "must reject DNS private host=" + host);
             assertEquals("400", ex.getCode());
             assertTrue(ex.getMsg().contains("非公网") || ex.getMsg().contains("SSRF")
+                    || ex.getMsg().contains("Fake-IP")
                     || ex.getMsg().contains("公网 HTTPS"), ex.getMsg());
         }
         // 确认解析器被调用且不会因“连接失败”而通过：无 HTTP 客户端参与
@@ -234,13 +235,23 @@ class PetCareServiceTest {
         InetAddress fakeIp = InetAddress.getByName("198.18.0.26");
         service.setHostResolver(h -> new InetAddress[]{fakeIp});
         // 默认关闭：拒绝
-        assertThrows(CustomException.class, () -> service.createAiConfig(
+        CustomException disabled = assertThrows(CustomException.class, () -> service.createAiConfig(
                 true, "https://via-clash.example/v1", "model", "secret", null));
+        assertTrue(disabled.getMsg().contains("Fake-IP"), disabled.getMsg());
         // 显式 dev flag：允许 198.18 解析结果
         service.setAllowProxySyntheticDns(true);
         PetCareService.AiConnectionConfig cfg = service.createAiConfig(
                 true, "https://via-clash.example/v1", "model", "secret", null);
         assertEquals("https://via-clash.example/v1", cfg.getBaseUrl());
+
+        // 放行只适用于 hostname 的 DNS 结果；直接填写保留地址仍必须拒绝。
+        assertThrows(CustomException.class, () -> service.createAiConfig(
+                true, "https://198.18.0.26/v1", "model", "secret", null));
+
+        // 开启 Fake-IP 兼容不能顺带放行普通私网解析结果。
+        service.setHostResolver(h -> new InetAddress[]{InetAddress.getByName("10.20.30.40")});
+        assertThrows(CustomException.class, () -> service.createAiConfig(
+                true, "https://internal.example/v1", "model", "secret", null));
         service.setAllowProxySyntheticDns(false);
     }
 }

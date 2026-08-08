@@ -6,7 +6,7 @@
   <title>救助处置工作台 · 归途计划管理</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
   <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c">
-  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260730g">
+  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260802a">
 </head>
 <body>
 <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
@@ -89,15 +89,15 @@
   </header>
   <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
 
-  <main class="admin-main">
+  <main class="admin-main help-governance-main">
     <section class="admin-hero help-governance-hero" aria-labelledby="helpAdminTitle">
       <div>
         <p class="admin-kicker">Rescue desk</p>
         <h1 id="helpAdminTitle">救助处置工作台</h1>
-        <p class="help-governance-lead">分页处理正式救助工单；下方为已认证全局救助社区聊天室，不是私人会话，也不是申请人私聊。</p>
+        <p class="help-governance-lead">集中处理正式救助工单，并同步查看已认证用户共享的全局救助社区动态。</p>
       </div>
       <div class="help-governance-metrics" aria-label="工单状态摘要">
-        <div class="help-governance-metric"><span>接口总数</span><strong>{{ total }}</strong><small>服务端 total</small></div>
+        <div class="help-governance-metric"><span>工单总数</span><strong>{{ total }}</strong><small>全部分页</small></div>
         <div class="help-governance-metric is-pending"><span>本页待处理</span><strong>{{ pagePending }}</strong><small>仅当前页</small></div>
         <div class="help-governance-metric is-pending"><span>本页处理中</span><strong>{{ pageWorking }}</strong><small>仅当前页</small></div>
         <div class="help-governance-metric is-urgent"><span>本页紧急</span><strong>{{ pageUrgent }}</strong><small>priority=2 · 本页</small></div>
@@ -107,8 +107,8 @@
     </section>
 
     <div class="admin-help-layout help-governance-layout">
-      <section class="admin-help-list" aria-labelledby="helpListTitle">
-        <div class="admin-section-head"><div><h2 id="helpListTitle">正式救助工单</h2><p>每次只读取当前页；处理状态与回复经专用管理接口更新。</p></div></div>
+      <section class="admin-panel admin-help-list help-governance-ticket-panel" aria-labelledby="helpListTitle">
+        <div class="admin-section-head"><div><p class="admin-kicker">Ticket queue</p><h2 id="helpListTitle">正式救助工单</h2><p>每次只读取当前页；处理状态与回复经专用管理接口更新。</p></div><span class="help-governance-page-count">当前页 {{ records.length }} 条 · 共 {{ total }} 条</span></div>
         <form class="ui-toolbar admin-review-toolbar" role="search" @submit.prevent="load(1)"><label class="ui-search"><span aria-hidden="true">搜索</span><span class="sr-only">按求助标题搜索</span><input v-model.trim="search" type="search" maxlength="100" autocomplete="off" placeholder="按求助标题搜索"></label><button class="ui-button is-dark" type="submit" :class="{'is-loading':loading}" :disabled="loading" :aria-busy="loading?'true':'false'"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-search" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-search"></use></svg>{{ loading?'查询中…':'查询' }}</button><button v-if="search" class="ui-button is-ghost" type="button" @click="resetSearch">清除</button></form>
         <div class="admin-status-key" aria-label="救助状态说明"><span><i class="is-pending"></i>待处理</span><span><i></i>处理中</span><span><i class="is-done"></i>已完成</span><span><i class="is-closed"></i>已关闭</span></div>
         <div v-if="message" class="help-governance-feedback" :class="{'is-error':messageType==='error','is-success':messageType==='success'}" :role="messageType==='error'?'alert':'status'" aria-live="polite">{{ message }}</div>
@@ -123,7 +123,7 @@
       </section>
 
       <aside class="admin-panel admin-help-chat help-governance-chat" aria-labelledby="adminCommunityTitle">
-        <div class="ui-rescue-chat-head"><div><h2 id="adminCommunityTitle">已认证全局救助社区聊天室</h2><p>已认证用户共享的全局公共房间 · 不是私人会话 · 非申请人私聊</p></div><span class="ui-connection" :class="connectionClass" aria-live="polite">{{ connectionText }}</span></div>
+        <div class="ui-rescue-chat-head"><div><p class="admin-kicker">Community signal</p><h2 id="adminCommunityTitle">已认证全局救助社区聊天室</h2><p>所有已认证用户共享 · 不是私人会话 · 非申请人私聊</p></div><span class="ui-connection" :class="connectionClass" aria-live="polite">{{ connectionText }}</span></div>
         <div class="ui-chat-notice" role="note">消息经 HTTP 保存；页面可见时每 10 秒轮询最近消息。</div>
         <div ref="chatBox" class="ui-chat-messages" aria-live="polite" aria-relevant="additions text">
           <div v-if="historyLoading" class="ui-chat-empty" role="status">正在读取最近的社区消息...</div>

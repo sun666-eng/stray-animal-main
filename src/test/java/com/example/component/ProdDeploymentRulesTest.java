@@ -61,6 +61,16 @@ class ProdDeploymentRulesTest {
         assertDoesNotThrow(() -> ProdDeploymentRules.validate(productionEnvironment()));
     }
 
+    @Test
+    void productionRejectsProxySyntheticDnsOverride() {
+        MockEnvironment environment = productionEnvironment();
+        environment.setProperty("app.ai.allow-proxy-synthetic-dns", "true");
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> ProdDeploymentRules.validate(environment));
+        assertTrue(ex.getMessage().contains("allow-proxy-synthetic-dns=false"));
+    }
+
     private MockEnvironment productionEnvironment() {
         MockEnvironment environment = new MockEnvironment();
         environment.setActiveProfiles("prod");

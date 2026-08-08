@@ -255,6 +255,11 @@ function writeReport() {
     assert('static-proof-focus-dialog-error', proofHtml.includes('focusDialogError'), 'focus err');
     assert('static-adopt-no-workspace-keyup-esc', !/v-cloak\s+@keyup\.esc/.test(adoptHtml) && !adoptHtml.includes('@keyup.esc="closeTopLayer"'), 'workspace esc removed');
     assert('static-proof-no-workspace-keyup-esc', !proofHtml.includes('@keyup.esc="closeTopLayer"'), 'workspace esc removed');
+    assert('static-adopt-compact-row-actions',
+      adoptHtml.includes('class="admin-row-actions" aria-label="领养申请操作"')
+        && !adoptHtml.includes('class="admin-row-actions adopt-governance-actions"')
+        && !adoptHtml.includes('class="is-group-label"'),
+      'desktop actions must retain the compact pre-Phase-1 row layout');
     assert('static-cache-30d', adoptHtml.includes('20260730d') && proofHtml.includes('20260730d'), 'cache');
     assert('static-css-governance', css.includes('.adopt-governance-hero') && css.includes('.proof-governance-hero'), 'css');
 
@@ -286,6 +291,12 @@ function writeReport() {
     await page.waitForTimeout(800);
     assert('adopt-fixture-row', (await page.locator('text=UI_AUDIT_2C_CAT').count()) >= 1, 'fixture missing');
     assert('adopt-network-css-30d', cssRequests.some((u) => /v=20260730d/.test(u)), JSON.stringify(cssRequests.slice(-3)));
+    const fixtureRowBox = await page.locator('.admin-adopt-table tbody tr').first().boundingBox();
+    assert('adopt-desktop-row-is-compact', !!fixtureRowBox && fixtureRowBox.height <= 96,
+      fixtureRowBox ? `height=${fixtureRowBox.height}` : 'row missing');
+    assert('adopt-desktop-actions-have-no-group-headings',
+      await page.locator('.admin-adopt-table .is-group-label').count() === 0,
+      'group headings reintroduced');
     await shot(page, '01-adopt-desktop', { page: 'adopt', role: 'admin', viewport: '1440x900', state: 'fixture-list', goal: '领养桌面 fixture', routeIntercept: true });
 
     // Mode switch no request
