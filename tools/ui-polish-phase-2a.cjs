@@ -298,7 +298,7 @@ const SAMPLE_MEDICAL = [
 
     // Operations workspace refresh cache bust
     const htmlContent = fs.readFileSync('src/main/resources/static/page/end/operations.html', 'utf8');
-    assert('cache-bust-20260808a', htmlContent.includes('admin-workspace.css?v=20260808a'), 'missing new version');
+    assert('cache-bust-20260809p', htmlContent.includes('admin-workspace.css?v=20260809p'), 'missing new version');
     assert('cache-bust-no-20260730a', !htmlContent.includes('admin-workspace.css?v=20260730a'), 'old version still present');
   }
 
@@ -333,13 +333,13 @@ const SAMPLE_MEDICAL = [
   await page.waitForSelector('[role="tablist"]', { timeout: 15000 });
   await page.waitForTimeout(700);
 
-  // Cache-bust: browser must actually request CSS with v=20260808a (not the prior operations version)
-  const cssHitNew = cssRequests.filter((u) => /admin-workspace\.css\?v=20260808a/i.test(u));
+  // Cache-bust: browser must actually request CSS with v=20260809p (not the prior operations version)
+  const cssHitNew = cssRequests.filter((u) => /admin-workspace\.css\?v=20260809p/i.test(u));
   const cssHitOld = cssRequests.filter((u) => /admin-workspace\.css\?v=20260730a/i.test(u));
   assert(
-    'cache-bust-network-20260808a',
+    'cache-bust-network-20260809p',
     cssHitNew.length >= 1,
-    'no network request for admin-workspace.css?v=20260808a; seen=' + JSON.stringify(cssRequests)
+    'no network request for admin-workspace.css?v=20260809p; seen=' + JSON.stringify(cssRequests)
   );
   assert(
     'cache-bust-network-no-20260730a',
@@ -357,9 +357,9 @@ const SAMPLE_MEDICAL = [
     }
   });
   assert(
-    'cache-bust-performance-20260808a',
-    perfCss.some((n) => /admin-workspace\.css\?v=20260808a/i.test(n)),
-    'performance resources missing v=20260808a; seen=' + JSON.stringify(perfCss)
+    'cache-bust-performance-20260809p',
+    perfCss.some((n) => /admin-workspace\.css\?v=20260809p/i.test(n)),
+    'performance resources missing v=20260809p; seen=' + JSON.stringify(perfCss)
   );
 
   const workspaceLayout = await page.evaluate(() => {

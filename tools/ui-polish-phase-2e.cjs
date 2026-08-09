@@ -241,11 +241,11 @@ function writeReport() {
     const suiteSrc = fs.readFileSync('tools/ui-polish-phase-2e.cjs', 'utf8');
     const helpHtml = fs.readFileSync('src/main/resources/static/page/end/help.html', 'utf8');
 
-    assert('vol-cache-0808g', volHtml.includes('admin-workspace.css?v=20260808g'), 'cache');
+    assert('vol-cache-0808g', volHtml.includes('admin-workspace.css?v=20260809p'), 'cache');
     assert('vol-command-desk', volHtml.includes('volunteer-command-desk') && volHtml.includes('admin-command-hero') && volHtml.includes('admin-command-panel'), 'layout');
-    assert('visit-cache-0808e', visitHtml.includes('admin-workspace.css?v=20260808e'), 'cache');
+    assert('visit-cache-0808e', visitHtml.includes('admin-workspace.css?v=20260809p'), 'cache');
     assert('visit-command-desk', visitHtml.includes('visit-command-desk') && visitHtml.includes('admin-command-hero') && visitHtml.includes('admin-command-panel'), 'layout');
-    assert('help-untouched-0802a', helpHtml.includes('20260802a'), 'help');
+    assert('help-untouched-0802a', helpHtml.includes('20260809p'), 'help');
     assert('css-relation-grid', css.includes('.visit-relation-grid'), 'css');
     assert('css-file-label', css.includes('.visit-file-label') && css.includes('min-height: 44px'), 'css');
     assert('visit-removeImage', visitHtml.includes('removeImage:') && !/@click="form\.pic\s*=\s*''"/.test(visitHtml), 'remove');
@@ -308,7 +308,7 @@ function writeReport() {
     });
     await page.goto(base + '/page/end/volunteer.html', { waitUntil: 'domcontentloaded', timeout: 45000 });
     await page.waitForTimeout(600);
-    assert('vol-css-0808g', cssReq.some((u) => /v=20260808g/.test(u)), JSON.stringify(cssReq.slice(-2)));
+    assert('vol-css-0808g', cssReq.some((u) => /v=20260809p/.test(u)), JSON.stringify(cssReq.slice(-2)));
     assert('vol-title', /义工申请审核/.test(await page.locator('h1').innerText()), 't');
     assert('vol-metrics', (await page.locator('.volunteer-governance-metric').count()) >= 4, 'm');
     assert('vol-fixture', (await page.locator('text=UI_2E_VOL_PENDING').count()) >= 1, 'f');

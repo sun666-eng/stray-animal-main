@@ -8,8 +8,8 @@
     />
     <title>动物档案治理 · 归途计划管理</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-    <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c" />
-    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260808f" />
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260809p" />
+    <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260809p" />
   </head>
   <body>
     <div id="authWait" class="admin-auth-wait" role="status">
@@ -40,7 +40,7 @@
                   aria-haspopup="true"
                   @click.stop="toggleMore">
             更多
-            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down"></use></svg>
+            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260809p#icon-chevron-down" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-chevron-down"></use></svg>
           </button>
           <div id="adminNavMoreMenu" class="admin-nav-more-menu" role="menu" :hidden="!moreOpen">
             <a v-for="item in desktopNav.more" :key="'more-'+item.flag" role="menuitem"
@@ -56,7 +56,7 @@
                 aria-controls="adminMobileNav"
                 :aria-label="mobileOpen ? '关闭管理导航' : '打开管理导航'"
                 @click.stop="toggleMobile">
-          <span aria-hidden="true"><svg class="ui-icon ui-icon-lg" aria-hidden="true" focusable="false" v-if="mobileOpen"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg><svg class="ui-icon ui-icon-lg" aria-hidden="true" focusable="false" v-else><use href="/icons/ui-icons.svg?v=20260729c#icon-menu" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-menu"></use></svg></span>
+          <span aria-hidden="true"><svg class="ui-icon ui-icon-lg" aria-hidden="true" focusable="false" v-if="mobileOpen"><use href="/icons/ui-icons.svg?v=20260809p#icon-close" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-close"></use></svg><svg class="ui-icon ui-icon-lg" aria-hidden="true" focusable="false" v-else><use href="/icons/ui-icons.svg?v=20260809p#icon-menu" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-menu"></use></svg></span>
         </button>
         <div class="ui-account">
           <button class="ui-account-trigger admin-account-trigger" type="button"
@@ -65,7 +65,7 @@
                   @click.stop="toggleAccount">
             <img class="admin-account-photo" :src="avatarUrl(user.avatar)" alt="" @error="avatarFallback">
             <span class="ui-account-name">{{ user.username }}</span>
-            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down"></use></svg>
+            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260809p#icon-chevron-down" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-chevron-down"></use></svg>
           </button>
           <div id="adminAccountMenu" class="ui-account-menu admin-account-menu" :hidden="!accountOpen" @click.stop>
             <a href="/page/end/person.html">个人资料</a>
@@ -254,7 +254,7 @@
                           class="is-danger"
                           type="button"
                           @click="askDelete(item, $event)"
-                        ><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-trash" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-trash"></use></svg>删除
+                        ><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260809p#icon-trash" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-trash"></use></svg>删除
                         </button>
                       </div>
                     </td>
@@ -356,7 +356,7 @@
               <span>动物 #{{ detailItem.id }}</span>
               <h2 id="animalDetailTitle">{{ detailItem.tname || '未命名' }}</h2>
             </div>
-            <button class="admin-dialog-close" ref="detailClose" type="button" aria-label="关闭动物详情" @click="closeDetail" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button>
+            <button class="admin-dialog-close" ref="detailClose" type="button" aria-label="关闭动物详情" @click="closeDetail" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260809p#icon-close" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button>
           </div>
           <dl class="admin-detail-grid">
             <div>
@@ -423,7 +423,7 @@
                 {{ form.id ? '编辑动物档案' : '新增动物档案' }}
               </h2>
             </div>
-            <button class="admin-dialog-close" type="button" aria-label="取消编辑" @click="cancelEdit" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button>
+            <button class="admin-dialog-close" type="button" aria-label="取消编辑" @click="cancelEdit" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260809p#icon-close" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button>
           </div>
           <form class="admin-edit-form" @submit.prevent="save">
             <div class="admin-form-grid">
@@ -612,7 +612,7 @@
               <span>最多 500 行 / 10MB</span>
               <h2 id="animalImportTitle">批量导入动物</h2>
             </div>
-            <button class="admin-dialog-close" type="button" aria-label="关闭导入" @click="closeImport" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button>
+            <button class="admin-dialog-close" type="button" aria-label="关闭导入" @click="closeImport" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260809p#icon-close" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button>
           </div>
           <div class="admin-import-body">
             <p>
@@ -685,7 +685,7 @@
     </div>
     <script src="../../js/jquery.min.js"></script>
     <script src="../../js/auth-session.js?v=20260728"></script>
-    <script src="../../js/admin-auth.js?v=20260729c"></script>
+    <script src="../../js/admin-auth.js?v=20260809p"></script>
     <script src="../../js/vue.min.js"></script>
     <script>
       (function () {

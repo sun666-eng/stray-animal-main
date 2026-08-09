@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>义工申请审核 · 归途计划管理</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-  <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c">
-  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260808g">
+  <link rel="stylesheet" href="../../css/product-ui.css?v=20260809p">
+  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260809p">
 </head>
 <body>
 <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
@@ -35,7 +35,7 @@
                   aria-haspopup="true"
                   @click.stop="toggleMore">
             更多
-            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down"></use></svg>
+            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260809p#icon-chevron-down" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-chevron-down"></use></svg>
           </button>
           <div id="adminNavMoreMenu" class="admin-nav-more-menu" role="menu" :hidden="!moreOpen">
             <a v-for="item in desktopNav.more" :key="'more-'+item.flag" role="menuitem"
@@ -51,7 +51,7 @@
                 aria-controls="adminMobileNav"
                 :aria-label="mobileOpen ? '关闭管理导航' : '打开管理导航'"
                 @click.stop="toggleMobile">
-          <span aria-hidden="true"><svg class="ui-icon ui-icon-lg" aria-hidden="true" focusable="false" v-if="mobileOpen"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg><svg class="ui-icon ui-icon-lg" aria-hidden="true" focusable="false" v-else><use href="/icons/ui-icons.svg?v=20260729c#icon-menu" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-menu"></use></svg></span>
+          <span aria-hidden="true"><svg class="ui-icon ui-icon-lg" aria-hidden="true" focusable="false" v-if="mobileOpen"><use href="/icons/ui-icons.svg?v=20260809p#icon-close" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-close"></use></svg><svg class="ui-icon ui-icon-lg" aria-hidden="true" focusable="false" v-else><use href="/icons/ui-icons.svg?v=20260809p#icon-menu" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-menu"></use></svg></span>
         </button>
         <div class="ui-account">
           <button class="ui-account-trigger admin-account-trigger" type="button"
@@ -60,7 +60,7 @@
                   @click.stop="toggleAccount">
             <img class="admin-account-photo" :src="avatarUrl(user.avatar)" alt="" @error="avatarFallback">
             <span class="ui-account-name">{{ user.username }}</span>
-            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down"></use></svg>
+            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260809p#icon-chevron-down" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-chevron-down"></use></svg>
           </button>
           <div id="adminAccountMenu" class="ui-account-menu admin-account-menu" :hidden="!accountOpen" @click.stop>
             <a href="/page/end/person.html">个人资料</a>
@@ -121,7 +121,7 @@
           <span class="sr-only">按所在地搜索</span>
           <input id="volunteerSearch" v-model.trim="search" type="search" maxlength="120" placeholder="按所在地搜索">
         </label>
-        <button class="ui-button is-dark" type="submit" :disabled="loading"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-search" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-search"></use></svg>查询</button>
+        <button class="ui-button is-dark" type="submit" :disabled="loading"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260809p#icon-search" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-search"></use></svg>查询</button>
         <button v-if="search" class="ui-button is-ghost" type="button" @click="resetSearch">清除</button>
       </form>
       <div class="admin-status-key" aria-label="审核状态说明">
@@ -170,7 +170,7 @@
                 <td><span class="ui-badge" :class="badgeClass(item.vstate)">{{ stateText(item.vstate) }}</span></td>
                 <td>
                   <div class="admin-row-actions">
-                    <button type="button" @click="openDetail(item, $event)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-eye" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-eye"></use></svg>详情</button>
+                    <button type="button" @click="openDetail(item, $event)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260809p#icon-eye" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-eye"></use></svg>详情</button>
                     <button type="button" class="is-primary" @click="openAudit(item, $event)">审核</button>
                   </div>
                 </td>
@@ -189,7 +189,7 @@
               <span class="ui-badge" :class="badgeClass(item.vstate)">{{ stateText(item.vstate) }}</span>
             </div>
             <div class="admin-card-actions">
-              <button class="ui-button is-ghost" type="button" @click="openDetail(item, $event)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-eye" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-eye"></use></svg>查看详情</button>
+              <button class="ui-button is-ghost" type="button" @click="openDetail(item, $event)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260809p#icon-eye" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-eye"></use></svg>查看详情</button>
               <button class="ui-button is-dark" type="button" @click="openAudit(item, $event)">审核状态</button>
             </div>
           </article>
@@ -199,9 +199,9 @@
       <div v-if="!loading&&!loadError&&totalPages>1" class="ui-pagination admin-pagination">
         <span>第 {{ pageNum }} 页，共 {{ total }} 条记录（服务端 total）</span>
         <div class="ui-page-buttons">
-          <button type="button" :disabled="pageNum===1" aria-label="上一页" @click="load(pageNum-1)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-left" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-left"></use></svg><span class="sr-only">上一页</span></button>
+          <button type="button" :disabled="pageNum===1" aria-label="上一页" @click="load(pageNum-1)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260809p#icon-chevron-left" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-chevron-left"></use></svg><span class="sr-only">上一页</span></button>
           <button v-for="page in pages" :key="page" type="button" :class="{'is-current':page===pageNum}" :aria-current="page===pageNum?'page':null" @click="load(page)">{{ page }}</button>
-          <button type="button" :disabled="pageNum===totalPages" aria-label="下一页" @click="load(pageNum+1)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-right" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-right"></use></svg><span class="sr-only">下一页</span></button>
+          <button type="button" :disabled="pageNum===totalPages" aria-label="下一页" @click="load(pageNum+1)"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260809p#icon-chevron-right" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-chevron-right"></use></svg><span class="sr-only">下一页</span></button>
         </div>
       </div>
     </section>
@@ -211,7 +211,7 @@
     <section class="admin-dialog admin-detail-dialog volunteer-governance-dialog" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
       <div class="admin-dialog-head">
         <div><span>申请 #{{ detailItem.id }}</span><h2 id="detailTitle">{{ detailItem.name || '未填写姓名' }}</h2></div>
-        <button class="admin-dialog-close" ref="detailClose" type="button" aria-label="关闭申请详情" @click="closeDetail" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button>
+        <button class="admin-dialog-close" ref="detailClose" type="button" aria-label="关闭申请详情" @click="closeDetail" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260809p#icon-close" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button>
       </div>
       <div class="admin-dialog-body">
         <div class="volunteer-detail-group">
@@ -264,7 +264,7 @@
           <span>申请 #{{ auditItem.id }} · 当前 {{ stateText(auditItem.vstate) }}</span>
           <h2 id="auditTitle">人类最终决定 · {{ auditItem.name || '该申请' }}</h2>
         </div>
-        <button class="admin-dialog-close" type="button" :disabled="auditSaving" aria-label="取消审核" @click="cancelAudit" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button>
+        <button class="admin-dialog-close" type="button" :disabled="auditSaving" aria-label="取消审核" @click="cancelAudit" title="关闭"><span class="admin-dialog-close-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260809p#icon-close" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-close"></use></svg></span><span class="admin-dialog-close-text">关闭</span></button>
       </div>
       <fieldset class="admin-audit-options" :disabled="auditSaving">
         <legend>选择目标状态</legend>
@@ -292,7 +292,7 @@
 </div>
 <script src="../../js/jquery.min.js"></script>
 <script src="../../js/auth-session.js?v=20260728"></script>
-<script src="../../js/admin-auth.js?v=20260729c"></script>
+<script src="../../js/admin-auth.js?v=20260809p"></script>
 <script src="../../js/vue.min.js"></script>
 <script>
 (function () {

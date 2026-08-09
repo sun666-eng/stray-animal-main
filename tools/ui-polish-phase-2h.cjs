@@ -159,8 +159,8 @@ function writeReport() {
     const css = fs.readFileSync('src/main/resources/static/css/admin-workspace.css', 'utf8');
     const suiteSrc = fs.readFileSync('tools/ui-polish-phase-2h.cjs', 'utf8');
 
-    assert('index-cache-0808b', indexHtml.includes('admin-workspace.css?v=20260808b'), 'cache');
-    assert('agent-cache-0809n', agentHtml.includes('admin-workspace.css?v=20260809n'), 'cache');
+    assert('index-cache-0808b', indexHtml.includes('admin-workspace.css?v=20260809p'), 'cache');
+    assert('agent-cache-0809n', agentHtml.includes('admin-workspace.css?v=20260809p'), 'cache');
     assert('css-agent-width-aligned', css.includes('.admin-agent-main { width: min(1420px, calc(100% - 48px)); }'), 'width');
     assert('index-dashboard-class', indexHtml.includes('dashboard-home'), 'cls');
     assert('index-dashboard-command-layout', indexHtml.includes('dashboard-home-layout') && indexHtml.includes('dashboard-command-panel'), 'layout');

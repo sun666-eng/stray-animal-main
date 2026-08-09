@@ -437,9 +437,9 @@ process.on('unhandledRejection', (err) => {
     // --- static gates ---
     staticScanHtml(accountHtml, 'account-static');
     staticScanHtml(noticeHtml, 'notice-static');
-    assert('account-cache-0808k', accountHtml.includes('admin-workspace.css?v=20260808k'), 'cache');
+    assert('account-cache-0808k', accountHtml.includes('admin-workspace.css?v=20260809p'), 'cache');
     assert('account-command-desk', accountHtml.includes('account-command-desk') && accountHtml.includes('admin-command-hero') && accountHtml.includes('admin-command-panel'), 'layout');
-    assert('notice-cache-0808l', noticeHtml.includes('admin-workspace.css?v=20260808l'), 'cache');
+    assert('notice-cache-0808l', noticeHtml.includes('admin-workspace.css?v=20260809p'), 'cache');
     assert('notice-command-desk', noticeHtml.includes('notice-command-desk') && noticeHtml.includes('admin-command-hero') && noticeHtml.includes('admin-command-panel'), 'layout');
     assert('account-createFocusTrap', accountHtml.includes('createFocusTrap'), 'trap');
     assert('notice-createFocusTrap', noticeHtml.includes('createFocusTrap'), 'trap');

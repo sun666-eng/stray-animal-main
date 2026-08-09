@@ -255,10 +255,10 @@ function writeReport() {
     const css = fs.readFileSync('src/main/resources/static/css/admin-workspace.css', 'utf8');
     const adoptHtml = fs.readFileSync('src/main/resources/static/page/end/adopt.html', 'utf8');
 
-    assert('help-cache-0802a', helpHtml.includes('admin-workspace.css?v=20260802a'), 'cache');
-    assert('animal-cache-0808f', animalHtml.includes('admin-workspace.css?v=20260808f'), 'cache');
+    assert('help-cache-0802a', helpHtml.includes('admin-workspace.css?v=20260809p'), 'cache');
+    assert('animal-cache-0808f', animalHtml.includes('admin-workspace.css?v=20260809p'), 'cache');
     assert('animal-command-desk', animalHtml.includes('animal-command-desk') && animalHtml.includes('admin-command-hero') && animalHtml.includes('admin-command-panel'), 'layout');
-    assert('adopt-untouched-0808c', adoptHtml.includes('20260808c'), 'adopt cache');
+    assert('adopt-untouched-0808c', adoptHtml.includes('20260809p'), 'adopt cache');
     assert('css-help-gov', css.includes('.help-governance-hero'), 'css');
     assert('css-animal-gov', css.includes('.animal-governance-hero'), 'css');
     assert('css-admin-segmented', /\.admin-segmented\s*\{/.test(css) && /\.admin-segmented\s*>\s*button\.is-active/.test(css.replace(/\s+/g, ' ')), 'segmented css');
@@ -338,7 +338,7 @@ function writeReport() {
     });
     await page.goto(base + '/page/end/help.html', { waitUntil: 'domcontentloaded', timeout: 45000 });
     await page.waitForTimeout(800);
-    assert('help-css-0802a', cssReq.some((u) => /v=20260802a/.test(u)), JSON.stringify(cssReq.slice(-2)));
+    assert('help-css-0802a', cssReq.some((u) => /v=20260809p/.test(u)), JSON.stringify(cssReq.slice(-2)));
     assert('help-title', /救助处置/.test(await page.locator('h1').innerText()), 'title');
     assert('help-metrics', (await page.locator('.help-governance-metric').count()) >= 5, 'metrics');
     assert('help-fixture-pending', (await page.locator('text=UI_2D_HELP_PENDING').count()) >= 1, 'pending');

@@ -399,11 +399,11 @@ function writeReport() {
     const css = fs.readFileSync('src/main/resources/static/css/admin-workspace.css', 'utf8');
     const permJava = fs.readFileSync('src/main/java/com/example/service/PermissionService.java', 'utf8');
 
-    assert('role-cache-20260808i', roleHtml.includes('admin-workspace.css?v=20260808i'), 'missing');
+    assert('role-cache-20260809p', roleHtml.includes('admin-workspace.css?v=20260809p'), 'missing');
     assert('role-command-desk', roleHtml.includes('role-command-desk') && roleHtml.includes('admin-command-hero') && roleHtml.includes('admin-command-panel'), 'layout');
-    assert('perm-cache-20260808j', permHtml.includes('admin-workspace.css?v=20260808j'), 'missing');
+    assert('perm-cache-20260809p', permHtml.includes('admin-workspace.css?v=20260809p'), 'missing');
     assert('perm-command-desk', permHtml.includes('permission-command-desk') && permHtml.includes('admin-command-hero') && permHtml.includes('admin-command-panel'), 'layout');
-    assert('ops-current-20260808a', opsHtml.includes('admin-workspace.css?v=20260808a'), 'ops version');
+    assert('ops-current-20260809p', opsHtml.includes('admin-workspace.css?v=20260809p'), 'ops version');
     assert('ops-not-20260730c', !opsHtml.includes('admin-workspace.css?v=20260730c') && !opsHtml.includes('admin-workspace.css?v=20260730b'), 'ops bumped');
     assert('css-rbac', css.includes('.rbac-hero') && css.includes('.rbac-perm-picker'), 'css');
     assert(
@@ -466,9 +466,9 @@ function writeReport() {
     await page.goto(base + '/page/end/role.html', { waitUntil: 'domcontentloaded', timeout: 45000 });
     await page.waitForSelector('h1', { timeout: 15000 });
     await page.waitForTimeout(700);
-    assert('role-network-css-0808i', cssRequests.some((u) => /admin-workspace\.css\?v=20260808i/.test(u)), JSON.stringify(cssRequests.slice(-5)));
+    assert('role-network-css-0808i', cssRequests.some((u) => /admin-workspace\.css\?v=20260809p/.test(u)), JSON.stringify(cssRequests.slice(-5)));
     const rolePerf = await page.evaluate(() => performance.getEntriesByType('resource').map((e) => e.name).filter((n) => /admin-workspace/.test(n)));
-    assert('role-perf-css-0808i', rolePerf.some((n) => /v=20260808i/.test(n)), JSON.stringify(rolePerf));
+    assert('role-perf-css-0808i', rolePerf.some((n) => /v=20260809p/.test(n)), JSON.stringify(rolePerf));
     assert('role-title', /角色治理/.test(await page.locator('h1').innerText()), 'title');
     assert('role-metrics-3', (await page.locator('.rbac-metric').count()) >= 3, 'metrics');
     assert('role-admin-create-visible', (await page.locator('button:has-text("新增")').count()) >= 1, 'create');
@@ -921,7 +921,7 @@ function writeReport() {
     cssRequests.length = 0;
     await page.goto(base + '/page/end/permission.html', { waitUntil: 'domcontentloaded', timeout: 45000 });
     await page.waitForTimeout(700);
-    assert('perm-network-css-0808j', cssRequests.some((u) => /admin-workspace\.css\?v=20260808j/.test(u)), JSON.stringify(cssRequests.slice(-3)));
+    assert('perm-network-css-0808j', cssRequests.some((u) => /admin-workspace\.css\?v=20260809p/.test(u)), JSON.stringify(cssRequests.slice(-3)));
     assert('perm-title', /权限治理/.test(await page.locator('h1').innerText()), 'title');
     assert('perm-metrics', (await page.locator('.rbac-metric').count()) >= 3, 'metrics');
     assert('perm-admin-create', (await page.locator('button:has-text("新增")').count()) >= 1, 'create');
@@ -1231,7 +1231,7 @@ function writeReport() {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(base + '/page/end/operations.html', { waitUntil: 'domcontentloaded', timeout: 45000 });
     await page.waitForTimeout(400);
-    assert('ops-css-current-0808a', cssRequests.some((u) => /v=20260808a/.test(u)), JSON.stringify(cssRequests.filter((u) => /admin-workspace/.test(u))));
+    assert('ops-css-current-0808a', cssRequests.some((u) => /v=20260809p/.test(u)), JSON.stringify(cssRequests.filter((u) => /admin-workspace/.test(u))));
     assert('ops-css-not-30c', !cssRequests.some((u) => /v=20260730c/.test(u)) && !cssRequests.some((u) => /v=20260730b/.test(u)), 'ops 30c/b');
 
     // Non-super simulated both pages

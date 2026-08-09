@@ -6,8 +6,8 @@
   <meta name="description" content="管理员 AI Agent 与受控自动审核工作台">
   <title>AI 管理助手 · 归途计划管理</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-  <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c">
-  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260809n">
+  <link rel="stylesheet" href="../../css/product-ui.css?v=20260809p">
+  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260809p">
 </head>
 <body>
 <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
@@ -36,7 +36,7 @@
                   aria-haspopup="true"
                   @click.stop="toggleMore">
             更多
-            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down"></use></svg>
+            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260809p#icon-chevron-down" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-chevron-down"></use></svg>
           </button>
           <div id="adminNavMoreMenu" class="admin-nav-more-menu" role="menu" :hidden="!moreOpen">
             <a v-for="item in desktopNav.more" :key="'more-'+item.flag" role="menuitem"
@@ -52,7 +52,7 @@
                 aria-controls="adminMobileNav"
                 :aria-label="mobileOpen ? '关闭管理导航' : '打开管理导航'"
                 @click.stop="toggleMobile">
-          <span aria-hidden="true"><svg class="ui-icon ui-icon-lg" aria-hidden="true" focusable="false" v-if="mobileOpen"><use href="/icons/ui-icons.svg?v=20260729c#icon-close" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-close"></use></svg><svg class="ui-icon ui-icon-lg" aria-hidden="true" focusable="false" v-else><use href="/icons/ui-icons.svg?v=20260729c#icon-menu" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-menu"></use></svg></span>
+          <span aria-hidden="true"><svg class="ui-icon ui-icon-lg" aria-hidden="true" focusable="false" v-if="mobileOpen"><use href="/icons/ui-icons.svg?v=20260809p#icon-close" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-close"></use></svg><svg class="ui-icon ui-icon-lg" aria-hidden="true" focusable="false" v-else><use href="/icons/ui-icons.svg?v=20260809p#icon-menu" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-menu"></use></svg></span>
         </button>
         <div class="ui-account">
           <button class="ui-account-trigger admin-account-trigger" type="button"
@@ -61,7 +61,7 @@
                   @click.stop="toggleAccount">
             <img class="admin-account-photo" :src="avatarUrl(user.avatar)" alt="" @error="avatarFallback">
             <span class="ui-account-name">{{ user.username }}</span>
-            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-chevron-down"></use></svg>
+            <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260809p#icon-chevron-down" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-chevron-down"></use></svg>
           </button>
           <div id="adminAccountMenu" class="ui-account-menu admin-account-menu" :hidden="!accountOpen" @click.stop>
             <a href="/page/end/person.html">个人资料</a>
@@ -121,7 +121,7 @@
         </div>
         <button class="admin-agent-new" type="button" @click="newConversation"><span aria-hidden="true">＋</span> 新对话</button>
         <label class="admin-agent-history-search">
-          <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-search" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-search"></use></svg>
+          <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260809p#icon-search" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-search"></use></svg>
           <input v-model.trim="historyQuery" type="search" maxlength="80" placeholder="搜索会话" aria-label="搜索管理会话" autocomplete="off">
         </label>
         <div v-if="historyLoading" class="admin-agent-history-empty">正在读取会话…</div>
@@ -134,7 +134,7 @@
             </button>
             <div class="admin-agent-history-actions">
               <button type="button" @click="openRename(item, $event)" aria-label="修改会话标题">改名</button>
-              <button class="is-danger" type="button" @click="openDelete(item, $event)" aria-label="删除会话"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-trash" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-trash"></use></svg>删除</button>
+              <button class="is-danger" type="button" @click="openDelete(item, $event)" aria-label="删除会话"><svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260809p#icon-trash" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-trash"></use></svg>删除</button>
             </div>
           </article>
         </div>
@@ -385,7 +385,7 @@
   </div>
 
 </div>
-<script src="../../js/jquery.min.js"></script><script src="../../js/auth-session.js?v=20260728"></script><script src="../../js/admin-auth.js?v=20260729c"></script><script src="../../js/vue.min.js"></script><script src="../../js/admin-agent-markdown.js?v=20260728b"></script>
+<script src="../../js/jquery.min.js"></script><script src="../../js/auth-session.js?v=20260728"></script><script src="../../js/admin-auth.js?v=20260809p"></script><script src="../../js/vue.min.js"></script><script src="../../js/admin-agent-markdown.js?v=20260728b"></script>
 <script>
 (function(){'use strict';
   Vue.component('agent-rich-inline',{functional:true,props:{parts:{type:Array,default:function(){return[];}}},render:function(h,context){return h('span',{class:'admin-agent-rich-inline'},context.props.parts.map(function(part,index){var tag=part.type==='strong'?'strong':(part.type==='code'?'code':'span');return h(tag,{key:index},[part.text||'']);}));}});

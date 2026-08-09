@@ -260,8 +260,8 @@ function writeReport() {
         && !adoptHtml.includes('class="admin-row-actions adopt-governance-actions"')
         && !adoptHtml.includes('class="is-group-label"'),
       'desktop actions must retain the compact pre-Phase-1 row layout');
-    assert('static-adopt-cache-0808c', adoptHtml.includes('admin-workspace.css?v=20260808c'), 'cache');
-    assert('static-proof-cache-0808d', proofHtml.includes('admin-workspace.css?v=20260808d'), 'cache');
+    assert('static-adopt-cache-0808c', adoptHtml.includes('admin-workspace.css?v=20260809p'), 'cache');
+    assert('static-proof-cache-0808d', proofHtml.includes('admin-workspace.css?v=20260809p'), 'cache');
     assert('static-proof-command-desk', proofHtml.includes('proof-command-desk') && proofHtml.includes('admin-command-hero') && proofHtml.includes('admin-command-panel'), 'layout');
     assert('static-adopt-command-desk', adoptHtml.includes('adopt-governance-main') && adoptHtml.includes('adopt-governance-queue'), 'command desk');
     assert('static-adopt-status-key', adoptHtml.includes('adopt-governance-status-key'), 'status key');
@@ -294,7 +294,7 @@ function writeReport() {
     await page.goto(base + '/page/end/adopt.html', { waitUntil: 'domcontentloaded', timeout: 45000 });
     await page.waitForTimeout(800);
     assert('adopt-fixture-row', (await page.locator('text=UI_AUDIT_2C_CAT').count()) >= 1, 'fixture missing');
-    assert('adopt-network-css-0808c', cssRequests.some((u) => /v=20260808c/.test(u)), JSON.stringify(cssRequests.slice(-3)));
+    assert('adopt-network-css-0808c', cssRequests.some((u) => /v=20260809p/.test(u)), JSON.stringify(cssRequests.slice(-3)));
     assert('adopt-command-desk-mounted', await page.locator('.adopt-governance-main .adopt-governance-queue').count() === 1, 'queue');
     assert('adopt-metrics-integrated', await page.locator('.adopt-governance-hero > .adopt-governance-metrics').count() === 1, 'metrics');
     assert('adopt-status-key-mounted', await page.locator('.adopt-governance-status-key').count() === 1, 'status key');

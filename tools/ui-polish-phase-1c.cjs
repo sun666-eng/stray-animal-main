@@ -192,7 +192,7 @@ async function measurePage(page) {
 }
 
 async function checkSprite(request) {
-  const res = await request.get(base + '/icons/ui-icons.svg?v=20260729c');
+  const res = await request.get(base + '/icons/ui-icons.svg?v=20260809p');
   const status = res.status();
   const body = await res.text();
   const ids = [...body.matchAll(/id="(icon-[\w-]+)"/g)].map((m) => m[1]);
