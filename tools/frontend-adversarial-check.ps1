@@ -133,7 +133,7 @@ Assert-True ($frontShellScript -match 'ui-front-mobile-toggle' -and $frontShellS
 $shellPages = @($pages | Where-Object { $_.Path -notmatch '/(login|register)\.html$' -and -not $_.Workspace })
 foreach ($page in $shellPages) {
     $html = Read-Utf8 (Join-Path $staticRoot $page.Path)
-    Assert-True ($html -match '<front-site-header\s+:user="user"' -and $html -match '<front-site-footer>' -and $html -match 'front-shell\.js\?v=20260809u1a') "$($page.Path): shared public header and verified footer shell"
+    Assert-True ($html -match '<front-site-header\s+:user="user"' -and $html -match '<front-site-footer>' -and $html -match 'front-shell\.js\?v=20260809u2') "$($page.Path): shared public header and verified footer shell"
 }
 
 $homeHtml = Read-Utf8 (Join-Path $staticRoot "page/front/index.html")
@@ -158,7 +158,7 @@ Assert-True ($productCss -match '@media\s*\(max-width:\s*960px\)[\s\S]*?\.ui-det
 
 foreach ($protectedHeaderPage in @("page/front/adopt_apply.html", "page/front/my_adopt.html", "page/front/adopt_proof.html", "page/front/volunteer_apply.html", "page/front/my_volunteer.html", "page/front/rescue_apply.html", "page/front/my_rescue.html", "page/front/pet_care.html")) {
     $html = Read-Utf8 (Join-Path $staticRoot $protectedHeaderPage)
-    Assert-True ($html -match '<front-site-header\s+:user="user"' -and $html -match 'front-shell\.js\?v=20260809u1a' -and $frontShellScript -match 'ui-front-mobile-toggle' -and $frontShellScript -match 'ui-front-drawer') "${protectedHeaderPage}: protected mobile navigation remains available"
+    Assert-True ($html -match '<front-site-header\s+:user="user"' -and $html -match 'front-shell\.js\?v=20260809u2' -and $frontShellScript -match 'ui-front-mobile-toggle' -and $frontShellScript -match 'ui-front-drawer') "${protectedHeaderPage}: protected mobile navigation remains available"
 }
 
 $registerHtml = Read-Utf8 (Join-Path $staticRoot "page/front/register.html")

@@ -105,7 +105,7 @@ async function installFixtures(page) {
       await fulfill(result({ id: '43', username: '121212', name: '121212' })); return;
     }
     if (method === 'GET' && pathname === '/api/dashboard/home-stats') {
-      await fulfill(result({ availableAnimals: 4, adoptedAnimals: 17, approvedVolunteers: 9 })); return;
+      await fulfill(result({ availableAnimals: 4, adoptedAnimals: 17, monthlyRescues: 12, approvedVolunteers: 9 })); return;
     }
     if (method === 'GET' && pathname === '/api/animal/page1') {
       const name = (url.searchParams.get('name') || '').trim();
@@ -200,7 +200,11 @@ async function run() {
       assert(`home-${viewport.name}-legacy-overlay-removed`, await page.locator('.ui-home-float').count() === 0, 'legacy overlay absent');
       const heroSrc = await page.locator('.ui-home-photo img').getAttribute('src');
       assert(`home-${viewport.name}-real-tpic`, (heroSrc || '').includes('/api/files/real-photo-10013'), heroSrc);
-      assert(`home-${viewport.name}-metric`, (await page.locator('.ui-trust-item').allTextContents()).join('|').includes('4'), 'metric');
+      const homeMetrics = (await page.locator('.ui-trust-item').allTextContents()).join('|');
+      assert(`home-${viewport.name}-metric-count`, await page.locator('.ui-trust-item').count() === 4, 'four metrics');
+      assert(`home-${viewport.name}-monthly-rescue`, homeMetrics.includes('本月救助') && homeMetrics.includes('12'), homeMetrics);
+      const homeSections = await page.locator('.ui-home-section').allTextContents();
+      assert(`home-${viewport.name}-animals-before-services`, homeSections[0].includes('正在等家的它们') && homeSections[1].includes('我的服务'), homeSections.map((text) => text.trim().slice(0, 20)).join('|'));
       await noOverflow(page, `home-${viewport.name}-no-overflow`);
       await screenshot(page, `home-${viewport.name}`);
 

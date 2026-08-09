@@ -771,7 +771,7 @@ const tinyPng = Buffer.from(
 
     assert('no-window-confirm', !/window\.confirm|window\.alert|window\.prompt/.test(tasksHtml), 'confirm');
     assert('tasks-withdraw-dialog', tasksHtml.includes('taskWithdrawTitle') && tasksHtml.includes('role="dialog"'), 'dialog');
-    assert('cache-u1', applyHtml.includes('v=20260809u1a') && mineHtml.includes('v=20260809u1a') && tasksHtml.includes('v=20260809u1a'), 'cache');
+    assert('cache-u2', applyHtml.includes('v=20260809u2') && mineHtml.includes('v=20260809u2') && tasksHtml.includes('v=20260809u2'), 'cache');
     assert('self-no-best-effort', !/bestEffort:\s*true/.test(suiteSrc), 'be');
     assert('self-no-vm-bypass', !/__vue__\.(load|signup|withdraw|cleanupPageStage|blocked\s*=)/.test(suiteSrc), 'no-vm');
     assert('self-no-global-aborted-whitelist', !/ERR_ABORTED\/i\.test/.test(suiteSrc) || suiteSrc.includes('isRegisteredAbort'), 'abort');

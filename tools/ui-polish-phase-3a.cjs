@@ -44,7 +44,7 @@ const FAVORITES_PETCARE_PAGES = new Set([
   'favorites.html', 'pet_care.html'
 ]);
 function expectedProductCache(file) {
-  return '20260809u1a';
+  return '20260809u2';
 }
 const VIEWPORTS = [
   { name: '1440x900', width: 1440, height: 900 },
@@ -248,8 +248,8 @@ async function visitPage(context, file, viewport, role, ids) {
         clientWidth: document.documentElement.clientWidth,
         headerInside: !!rect && rect.left >= -1 && rect.right <= innerWidth + 1,
         productCache: cssResources.some((url) => url.includes(`product-ui.css?v=${productCacheVersion}`)),
-        shellCache: cssResources.some((url) => /front-shell\.js\?v=20260809u1a/.test(url)),
-        workspaceCache: cssResources.some((url) => /user-workspace\.js\?v=20260809u1a/.test(url)),
+        shellCache: cssResources.some((url) => /front-shell\.js\?v=20260809u2/.test(url)),
+        workspaceCache: cssResources.some((url) => /user-workspace\.js\?v=20260809u2/.test(url)),
         unresolved: document.querySelectorAll('front-site-header, front-site-footer').length,
         mainCount: document.querySelectorAll('main').length
       };
@@ -304,8 +304,8 @@ async function staticAudit() {
       'shared footer after main');
     const productCacheVersion = expectedProductCache(file);
     assert(`${prefix}-css-cache`, new RegExp(`product-ui\\.css\\?v=${productCacheVersion}`).test(html), productCacheVersion);
-    assert(`${prefix}-workspace-cache`, (html.match(/user-workspace\.js\?v=20260809u1a/g) || []).length === 1, 'workspace');
-    assert(`${prefix}-shell-cache`, (html.match(/front-shell\.js\?v=20260809u1a/g) || []).length === 1, 'shell');
+    assert(`${prefix}-workspace-cache`, (html.match(/user-workspace\.js\?v=20260809u2/g) || []).length === 1, 'workspace');
+    assert(`${prefix}-shell-cache`, (html.match(/front-shell\.js\?v=20260809u2/g) || []).length === 1, 'shell');
     assert(`${prefix}-user-binding`, /<front-site-header\s+:user="user"/.test(html) && /\buser\s*:/.test(html), 'reactive user');
   }
   for (const file of ['login.html', 'register.html']) {

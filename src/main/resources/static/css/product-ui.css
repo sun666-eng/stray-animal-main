@@ -3334,7 +3334,7 @@ body.ui-adoption-dialog-open {
 .ui-public-home .ui-home-actions { margin-top: 28px; }
 .ui-public-home .ui-trust-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-top: 44px;
   border: 1px solid var(--ui-line);
   border-radius: 18px;
