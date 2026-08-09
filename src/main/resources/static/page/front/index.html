@@ -6,7 +6,7 @@
     <meta name="description" content="归途计划流浪动物领养、救助与透明公示平台">
     <title>归途计划 · 让每个生命都被认真对待</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-    <link rel="stylesheet" href="../../css/product-ui.css?v=20260809u1">
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260809u1a">
 </head>
 <body class="ui-public-discovery-page ui-public-home-page ui-u1-discovery">
 <div id="app" v-cloak>
@@ -18,22 +18,36 @@
             <div class="ui-home-intro">
                 <p class="ui-eyebrow">ADOPT · RESCUE · CARE</p>
                 <h1 id="homeHeroTitle" class="ui-home-title">让每个生命，<br>都被认真对待。</h1>
-                <p class="ui-home-lead">{{ user ? ('欢迎回来，' + user.username + '。从下方服务入口继续领养、救助或义工申请。') : '发现需要帮助的动物，了解正在等待领养的它们，并持续看到每一次善意的真实去向。' }}</p>
+                <p class="ui-home-lead">{{ user ? ('欢迎回来，' + user.username + '。从领养、救助到长期照顾，把每一次行动连接成可以看见的改变。') : '从领养、救助到长期照顾，把每一次行动连接成可以看见的改变。' }}</p>
                 <div class="ui-home-actions">
                     <a class="ui-button is-primary" href="./animal_browse.html">浏览待领养动物</a>
                     <a class="ui-button is-ghost" :href="user ? './rescue_apply.html' : './login.html?redirect=' + encodeURIComponent('/page/front/rescue_apply.html')">{{ user ? '发起救助' : '登录后使用服务' }}</a>
                 </div>
                 <div class="ui-trust-row" :aria-busy="String(statsLoading)" aria-live="polite" aria-label="平台实时概览">
-                    <div class="ui-trust-item"><strong>{{ statsLoading?'—':stats.adoptedAnimals }}</strong><span>已找到新家</span></div>
-                    <div class="ui-trust-item"><strong>{{ statsLoading?'—':stats.approvedVolunteers }}</strong><span>已认证志愿者</span></div>
-                    <div class="ui-trust-item"><strong>{{ statsLoading?'—':stats.availableAnimals }}</strong><span>正在等待领养</span></div>
+                    <div class="ui-trust-item"><strong>{{ statsLoading?'—':stats.adoptedAnimals }}</strong><span>找到新家</span></div>
+                    <div class="ui-trust-item"><strong>{{ statsLoading?'—':stats.availableAnimals }}</strong><span>开放档案</span></div>
+                    <div class="ui-trust-item"><strong>{{ statsLoading?'—':stats.approvedVolunteers }}</strong><span>志愿参与</span></div>
                 </div>
                 <div v-if="statsError" class="ui-inline-status is-error" role="status">
                     <span>统计数据暂时不可用，不影响浏览和申请。</span>
                     <button type="button" @click="loadStats">重试</button>
                 </div>
             </div>
-            <div class="ui-home-visual" aria-label="本期推荐动物"><div class="ui-home-photo"><img :src="heroImage" :alt="heroAnimal?displayName(heroAnimal)+'的照片':'等待领养动物的视觉占位图'" @error="imageFallback"><div class="ui-home-float"><small>本期档案</small><strong>{{ heroAnimal?displayName(heroAnimal):'等待一个家' }}</strong><span v-if="heroAnimal">{{ heroAnimal.ttype||'类型待确认' }} · {{ heroAnimal.tsex||'性别待确认' }} · {{ formatAge(heroAnimal.tbirthday) }}<br>编号 #{{ heroAnimal.id }} · {{ animalStateText(heroAnimal.tstate) }}</span><span v-else>动物资料正在更新，欢迎查看完整待领养列表。</span><a v-if="heroAnimal" :href="detailUrl(heroAnimal.id)">查看完整档案 →</a></div></div></div>
+            <article class="ui-home-profile-card" aria-label="本期推荐动物">
+                <div class="ui-home-photo"><img :src="heroImage" :alt="heroAnimal?displayName(heroAnimal)+'的照片':'等待领养动物的视觉占位图'" @error="imageFallback"></div>
+                <div class="ui-home-profile-body">
+                    <div>
+                        <small>本期档案</small>
+                        <strong>{{ heroAnimal ? (displayName(heroAnimal) + ' · ' + formatAge(heroAnimal.tbirthday)) : '等待一个家' }}</strong>
+                    </div>
+                    <div class="ui-home-profile-foot">
+                        <span v-if="heroAnimal" class="ui-badge" :class="animalBadgeClass(heroAnimal.tstate)">{{ animalStateText(heroAnimal.tstate) }}</span>
+                        <span v-else>动物资料正在更新</span>
+                        <a v-if="heroAnimal" :href="detailUrl(heroAnimal.id)">查看完整档案 →</a>
+                        <a v-else href="./animal_browse.html">查看公开档案 →</a>
+                    </div>
+                </div>
+            </article>
         </section>
 
         <section v-if="user" class="ui-home-section is-light" aria-labelledby="memberServicesTitle">
@@ -76,8 +90,8 @@
 </div>
 <script src="../../js/jquery.min.js"></script>
 <script src="../../js/vue.min.js"></script>
-<script src="../../js/user-workspace.js?v=20260809u1"></script>
-<script src="../../js/front-shell.js?v=20260809u1"></script>
+<script src="../../js/user-workspace.js?v=20260809u1a"></script>
+<script src="../../js/front-shell.js?v=20260809u1a"></script>
 <script src="../../js/auth-session.js?v=20260728"></script>
 <script src="../../js/status-text.js?v=20260728"></script>
 <script>

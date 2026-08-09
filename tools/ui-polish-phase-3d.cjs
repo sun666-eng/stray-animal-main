@@ -443,8 +443,8 @@ async function staticAudit() {
   for (const file of PAGES) {
     const html = fs.readFileSync(path.join(root, 'page/front', file), 'utf8');
     assert(`static-${file}-viewport`, /width=device-width/.test(html), 'responsive viewport');
-    assert(`static-${file}-cache`, /product-ui\.css\?v=20260809u1/.test(html), 'front cache');
-    assert(`static-${file}-shell-cache`, /front-shell\.js\?v=20260809u1/.test(html), 'shared shell retained');
+    assert(`static-${file}-cache`, /product-ui\.css\?v=20260809u1a/.test(html), 'front cache');
+    assert(`static-${file}-shell-cache`, /front-shell\.js\?v=20260809u1a/.test(html), 'shared shell retained');
     assert(`static-${file}-auth`, /requireAuth:\s*true/.test(html), 'authoritative auth');
     assert(`static-${file}-no-native-dialog`, !/\b(?:alert|confirm|prompt)\s*\(/.test(html), 'no native dialog');
     assert(`static-${file}-no-unsafe-html`, !/v-html|innerHTML\s*=/.test(html), 'no unsafe HTML sink');
@@ -514,7 +514,7 @@ async function matrix(browser) {
       const stylesheets = await page.evaluate(() => performance.getEntriesByType('resource')
         .map((row) => row.name).filter((name) => name.includes('product-ui.css')));
       assert(`matrix-${file}-${viewport.name}-cache`,
-        stylesheets.some((name) => name.includes('v=20260809u1')),
+        stylesheets.some((name) => name.includes('v=20260809u1a')),
         JSON.stringify(stylesheets));
       if (viewport.name === '1440x900' || viewport.name === '390x844') {
         const fileName = `${safeName(file)}-${viewport.name}.png`;

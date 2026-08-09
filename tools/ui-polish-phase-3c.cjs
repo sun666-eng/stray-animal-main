@@ -460,7 +460,7 @@ async function pageGeometry(page) {
       clientWidth: document.documentElement.clientWidth,
       offenders,
       touch,
-      cache: performance.getEntriesByType('resource').some((entry) => entry.name.includes('product-ui.css?v=20260809u1')),
+      cache: performance.getEntriesByType('resource').some((entry) => entry.name.includes('product-ui.css?v=20260809u1a')),
       namespace: document.body.classList.contains('ui-user-adoption-page'),
       header: document.querySelectorAll('.ui-front-header').length,
       footer: document.querySelectorAll('.ui-front-footer').length
@@ -522,9 +522,9 @@ async function staticAudit() {
   for (const file of PAGES) {
     const html = fs.readFileSync(path.join(pageDir, file), 'utf8');
     const prefix = `static-${safeName(file)}`;
-    assert(`${prefix}-cache`, /product-ui\.css\?v=20260809u1/.test(html), '20260809u1');
+    assert(`${prefix}-cache`, /product-ui\.css\?v=20260809u1a/.test(html), '20260809u1a');
     assert(`${prefix}-namespace`, /ui-user-adoption-page/.test(html), 'body namespace');
-    assert(`${prefix}-shell`, /front-shell\.js\?v=20260809u1/.test(html) && /user-workspace\.js\?v=20260809u1/.test(html), 'shared shell');
+    assert(`${prefix}-shell`, /front-shell\.js\?v=20260809u1a/.test(html) && /user-workspace\.js\?v=20260809u1a/.test(html), 'shared shell');
     assert(`${prefix}-auth-before-vue`, html.indexOf('AuthSession.bootstrap') < html.indexOf("el: '#app'"), 'bootstrap before Vue');
     assert(`${prefix}-no-native-dialog`, !/(?:window\.)?(?:alert|confirm|prompt)\s*\(/.test(html), 'no native dialog');
     assert(`${prefix}-no-inline-style`, !/\sstyle\s*=/i.test(html), 'no inline style');

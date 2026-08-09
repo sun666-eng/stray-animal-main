@@ -342,7 +342,7 @@ async function matrixVisit(context, file, viewport) {
         overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
         scrollWidth: document.documentElement.scrollWidth,
         clientWidth: document.documentElement.clientWidth,
-        cache: resources.some((url) => /product-ui\.css\?v=20260809u1/.test(url)),
+        cache: resources.some((url) => /product-ui\.css\?v=20260809u1a/.test(url)),
         searchHeight: searchRect ? searchRect.height : 0,
         targets: criticalTargets,
         contentEscapes,
@@ -565,7 +565,7 @@ async function realReadOnlySmoke(browser) {
 function staticChecks() {
   for (const file of PAGES) {
     const source = fs.readFileSync(path.resolve('src/main/resources/static/page/front', file), 'utf8');
-    assert(`static-${safeName(file)}-cache`, /product-ui\.css\?v=20260809u1/.test(source), 'front cache');
+    assert(`static-${safeName(file)}-cache`, /product-ui\.css\?v=20260809u1a/.test(source), 'front cache');
     assert(`static-${safeName(file)}-shell`, /front-site-header/.test(source) && /front-site-footer/.test(source), 'Phase 3A shell retained');
     assert(`static-${safeName(file)}-body-class`, /ui-public-discovery-page/.test(source), 'Phase 3B namespace');
     assert(`static-${safeName(file)}-no-native-dialogs`, !/\b(?:alert|confirm|prompt)\s*\(/.test(source), 'no native dialog');

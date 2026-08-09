@@ -9,7 +9,7 @@
     throw new Error('front-shell.js requires Vue and user-workspace.js');
   }
 
-  var ICON_SPRITE = '/icons/ui-icons.svg?v=20260809u1';
+  var ICON_SPRITE = '/icons/ui-icons.svg?v=20260809u1a';
 
   function icon(id, className) {
     return '<svg class="' + (className || 'ui-icon') + '" aria-hidden="true" focusable="false">'

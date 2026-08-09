@@ -196,6 +196,8 @@ async function run() {
       await page.goto(`${base}/page/front/index.html`, { waitUntil: 'domcontentloaded' });
       await waitReady(page, '[data-front-surface="discovery-home"] .ui-animal-card');
       assert(`home-${viewport.name}-surface`, await page.locator('[data-front-surface="discovery-home"]').count() === 1, 'surface');
+      assert(`home-${viewport.name}-profile-card`, await page.locator('.ui-home-profile-card .ui-home-profile-body').count() === 1, 'profile card');
+      assert(`home-${viewport.name}-legacy-overlay-removed`, await page.locator('.ui-home-float').count() === 0, 'legacy overlay absent');
       const heroSrc = await page.locator('.ui-home-photo img').getAttribute('src');
       assert(`home-${viewport.name}-real-tpic`, (heroSrc || '').includes('/api/files/real-photo-10013'), heroSrc);
       assert(`home-${viewport.name}-metric`, (await page.locator('.ui-trust-item').allTextContents()).join('|').includes('4'), 'metric');

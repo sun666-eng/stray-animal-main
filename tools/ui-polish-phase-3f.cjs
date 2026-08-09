@@ -693,12 +693,12 @@ async function ensureHistoryVisible(page) {
 
     assert('no-window-confirm-favorites', !/window\.confirm|window\.alert|window\.prompt/.test(favHtml), 'fav');
     assert('no-window-confirm-petcare', !/window\.confirm|window\.alert|window\.prompt/.test(careHtml), 'care');
-    assert('cache-u1-favorites', favHtml.includes('v=20260809u1'), 'fav-cache');
-    assert('cache-u1-petcare', careHtml.includes('v=20260809u1'), 'care-cache');
-    assert('shell-cache-favorites', favHtml.includes('front-shell.js?v=20260809u1'), 'shell-f');
-    assert('shell-cache-petcare', careHtml.includes('front-shell.js?v=20260809u1'), 'shell-c');
-    assert('workspace-cache-favorites', favHtml.includes('user-workspace.js?v=20260809u1'), 'ws-f');
-    assert('workspace-cache-petcare', careHtml.includes('user-workspace.js?v=20260809u1'), 'ws-c');
+    assert('cache-u1-favorites', favHtml.includes('v=20260809u1a'), 'fav-cache');
+    assert('cache-u1-petcare', careHtml.includes('v=20260809u1a'), 'care-cache');
+    assert('shell-cache-favorites', favHtml.includes('front-shell.js?v=20260809u1a'), 'shell-f');
+    assert('shell-cache-petcare', careHtml.includes('front-shell.js?v=20260809u1a'), 'shell-c');
+    assert('workspace-cache-favorites', favHtml.includes('user-workspace.js?v=20260809u1a'), 'ws-f');
+    assert('workspace-cache-petcare', careHtml.includes('user-workspace.js?v=20260809u1a'), 'ws-c');
     assert('favorites-workspace-root', favHtml.includes('favorites-workspace'), 'root');
     assert('petcare-workspace-root', careHtml.includes('petcare-workspace'), 'root');
     assert('favorites-dialog-role', favHtml.includes('role="dialog"') && favHtml.includes('favoritesConfirmTitle'), 'dlg');

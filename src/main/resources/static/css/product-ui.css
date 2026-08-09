@@ -3302,10 +3302,32 @@ body.ui-adoption-dialog-open {
 .ui-u1-discovery .ui-page-head-row { align-items: flex-end; }
 
 .ui-public-home .ui-home-hero {
+  position: relative;
+  z-index: 1;
   min-height: 650px;
   padding-top: 72px;
   padding-bottom: 72px;
   align-items: center;
+}
+.ui-public-home {
+  position: relative;
+  isolation: isolate;
+}
+.ui-public-home .ui-home-hero::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+  border-bottom: 1px solid var(--ui-line);
+  background-color: #fffefb;
+  background-image:
+    linear-gradient(rgba(17,18,17,.075) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17,18,17,.075) 1px, transparent 1px);
+  background-size: 78px 78px;
 }
 .ui-public-home .ui-home-intro { min-width: 0; }
 .ui-public-home .ui-home-lead { max-width: 670px; font-size: 16px; }
@@ -3332,14 +3354,62 @@ body.ui-adoption-dialog-open {
 .ui-public-home .ui-trust-item:last-child { border-right: 0; }
 .ui-public-home .ui-trust-item strong { order: 2; margin-top: 5px; font-size: 29px; }
 .ui-public-home .ui-trust-item span { order: 1; color: var(--ui-muted); font-size: 12px; }
-.ui-public-home .ui-home-photo {
+.ui-public-home .ui-home-profile-card {
+  min-width: 0;
   overflow: hidden;
   border: 1px solid var(--ui-line);
   border-radius: 22px;
-  background: #d8d8d2;
+  background: #fffefb;
+  box-shadow: 0 24px 70px rgba(17,18,17,.10);
 }
-.ui-public-home .ui-home-photo img { min-height: 520px; object-fit: cover; }
-.ui-public-home .ui-home-float { right: 26px; bottom: 26px; left: 26px; padding: 24px 26px; }
+.ui-public-home .ui-home-photo {
+  overflow: hidden;
+  min-height: 360px;
+  border: 0;
+  border-bottom: 1px solid var(--ui-line);
+  border-radius: 0;
+  background: #d8d8d2;
+  box-shadow: none;
+}
+.ui-public-home .ui-home-photo img { min-height: 360px; height: 360px; object-fit: cover; }
+.ui-home-profile-body {
+  display: flex;
+  min-height: 142px;
+  padding: 24px 26px 22px;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 22px;
+}
+.ui-home-profile-body small {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--ui-accent-strong);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .16em;
+}
+.ui-home-profile-body > div > strong {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 25px;
+  letter-spacing: -.035em;
+}
+.ui-home-profile-foot {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+.ui-home-profile-foot > a {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--ui-ink);
+  font-size: 12px;
+  font-weight: 850;
+  text-decoration: none;
+}
 .ui-public-home .ui-home-section { padding-top: 56px; padding-bottom: 64px; }
 .ui-public-home .ui-section-head h2 { font-size: clamp(31px, 3.3vw, 46px); letter-spacing: -.05em; }
 .ui-public-home .ui-animal-card,
@@ -3503,13 +3573,16 @@ body.ui-adoption-dialog-open {
   .ui-u1-discovery .ui-page-head .ui-container { padding-bottom: 30px; }
   .ui-u1-discovery .ui-page-head h1 { font-size: 42px; }
   .ui-public-home .ui-home-hero { min-height: 0; padding-top: 44px; padding-bottom: 48px; }
+  .ui-public-home .ui-home-hero::after { background-size: 56px 56px; }
   .ui-public-home .ui-home-title { font-size: 49px; }
   .ui-public-home .ui-home-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .ui-public-home .ui-trust-row { grid-template-columns: repeat(2,1fr); }
   .ui-public-home .ui-trust-item:nth-child(2) { border-right: 0; }
   .ui-public-home .ui-trust-item:nth-child(n+3) { border-top: 1px solid var(--ui-line); }
-  .ui-public-home .ui-home-photo img { min-height: 390px; }
-  .ui-public-home .ui-home-float { right: 14px; bottom: 14px; left: 14px; padding: 19px; }
+  .ui-public-home .ui-home-photo,
+  .ui-public-home .ui-home-photo img { min-height: 330px; height: 330px; }
+  .ui-home-profile-body { min-height: 132px; padding: 20px; }
+  .ui-home-profile-foot { align-items: flex-start; flex-direction: column; gap: 8px; }
   .ui-public-home .ui-home-section { padding-top: 42px; padding-bottom: 48px; }
   .ui-public-catalog .ui-animal-catalog { padding-top: 20px; }
   .ui-public-catalog .ui-card-grid { grid-template-columns: 1fr; }
