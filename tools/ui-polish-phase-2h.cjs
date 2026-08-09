@@ -21,6 +21,8 @@ const VAL = 'phase2h';
 const EH = { [HDR]: VAL };
 const VIEWPORTS = [
   { name: '1440x900', width: 1440, height: 900 },
+  { name: '1366x768', width: 1366, height: 768 },
+  { name: '1280x720', width: 1280, height: 720 },
   { name: '1280x800', width: 1280, height: 800 },
   { name: '768x1024', width: 768, height: 1024 },
   { name: '390x844', width: 390, height: 844 },
@@ -31,8 +33,8 @@ const results = {
   startedAt: new Date().toISOString(),
   base,
   phase2gBaseline: 'c1b6853c506417ba516344195eb2a577bd8f5031',
-  page13Baseline: 'e13b6ce',
-  branch: 'codex/admin-ui-polish-13-ai-agent-workbench-20260808',
+  page13Baseline: '6cac49a',
+  branch: 'codex/admin-ui-consistency-pass-20260809',
   checks: [], failures: [], screenshots: [], writeRequestLog: [], controlledRequestAudit: [],
   holdGateExecutions: {}, conversationRaceAudit: null, newConversationRaceAudit: null,
   requestCountAudit: {}, roleMatrix: {},
@@ -181,13 +183,16 @@ function writeReport() {
     assert('agent-clear-dialog', agentHtml.includes('agentClearTitle'), 'clear');
     assert('agent-command-desk', agentHtml.includes('agent-command-desk') && agentHtml.includes('admin-command-metrics'), 'command');
     assert('agent-context-control', agentHtml.includes('admin-agent-context') && agentHtml.includes('上下文与操作'), 'context');
-    assert('agent-live-visual-truthful', agentHtml.includes('admin-agent-live-visual') && agentHtml.includes('不是模型生成内容'), 'live');
-    assert('agent-history-search', agentHtml.includes('historyQuery') && agentHtml.includes('filteredConversations'), 'search');
+    assert('agent-no-temporally-misleading-live-visual', !agentHtml.includes('admin-agent-live-visual') && !agentHtml.includes('metricBarWidth'), 'live-removed');
+    assert('agent-history-search', agentHtml.includes('historyQuery') && agentHtml.includes('filteredConversations') && agentHtml.includes('仅筛选当前已加载会话'), 'search');
+    assert('agent-overview-timestamp', agentHtml.includes('overviewUpdatedAt') && agentHtml.includes('系统概览更新于'), 'overview-time');
+    assert('agent-guarded-run-ready', agentHtml.includes('automationRunReady') && agentHtml.includes('受控运行前需完成两项确认'), 'guarded-ready');
     assert('css-dashboard-home', css.includes('.dashboard-home-hero'), 'css');
     assert('css-dashboard-layout', css.includes('.dashboard-home-layout') && css.includes('.dashboard-route-grid'), 'css-layout');
     assert('css-dashboard-scoped-mobile', css.includes('.dashboard-home-metric-band') && css.includes('@media (max-width: 480px)'), 'css-mobile');
     assert('css-agent-scrim', css.includes('.admin-agent-history-scrim'), 'css');
-    assert('css-agent-command-desk', css.includes('.agent-command-desk .admin-agent-layout') && css.includes('.admin-agent-live-grid'), 'css-command');
+    assert('css-agent-command-desk', css.includes('.agent-command-desk .admin-agent-layout') && css.includes('@media (max-width: 1380px)'), 'css-command');
+    assert('css-agent-no-dead-live-chart', !css.includes('.admin-agent-live-grid') && !css.includes('.admin-agent-live-visual'), 'css-live-removed');
     assert('self-no-best-effort', !/bestEffort:\s*true/.test(suiteSrc), 'be');
     assert('self-no-true-assert', !/assert\s*\(\s*['"][^'"]+['"]\s*,\s*true\s*,/.test(suiteSrc), 'true');
 
@@ -654,7 +659,15 @@ function writeReport() {
     const agentWorkspaceWidth = await page.evaluate(() => document.querySelector('#workspace').getBoundingClientRect().width);
     assert('agent-main-width-aligned', !!agentMainBox && agentMainBox.width <= 1420 && Math.abs(agentMainBox.x - (agentWorkspaceWidth - agentMainBox.width) / 2) <= 1, JSON.stringify({ agentMainBox, agentWorkspaceWidth }));
     assert('agent-metrics-inside-command-hero', (await page.locator('.admin-agent-hero .admin-agent-metrics').count()) === 1, 'hero-metrics');
+    assert('agent-overview-update-visible', /系统概览更新于/.test(await page.locator('.admin-agent-overview-stamp').innerText()), 'overview-stamp');
+    assert('agent-pending-metric-warns', await page.locator('.admin-agent-metric').first().evaluate((el) => el.classList.contains('is-warn')), 'pending-tone');
+    assert('agent-available-animal-positive-ok', await page.locator('.admin-agent-metric').last().evaluate((el) => el.classList.contains('is-ok')), 'animal-tone');
+    await page.evaluate(() => { document.querySelector('#workspace').__vue__.overview.available_animals = 0; });
+    await page.waitForTimeout(30);
+    assert('agent-available-animal-zero-warns', await page.locator('.admin-agent-metric').last().evaluate((el) => el.classList.contains('is-warn')), 'animal-zero-tone');
+    await page.evaluate(() => { document.querySelector('#workspace').__vue__.overview.available_animals = 4; });
     assert('agent-context-cards-visible', (await page.locator('.admin-agent-context-card').count()) === 3, 'context-cards');
+    assert('agent-history-scope-honest', /最多\s*50/.test(await page.locator('.admin-agent-history-scope').innerText()), 'history-scope');
     await page.fill('.admin-agent-history-search input', 'CONV_B');
     assert('agent-history-search-filters', (await page.locator('.admin-agent-history-item').count()) === 1, 'filtered');
     await page.fill('.admin-agent-history-search input', '');
@@ -756,10 +769,8 @@ function writeReport() {
     assert('agent-race-stays-B', Number(after.id) === 102 && !after.hasLateA, JSON.stringify(results.conversationRaceAudit));
     await shot(page, '09-agent-history', { page: 'admin_agent', state: 'history' });
     assert('agent-markdown-table', (await page.locator('.admin-agent-answer-table table').count()) >= 1, 'table');
-    assert('agent-live-visual-one', (await page.locator('.admin-agent-live-visual').count()) === 1, 'live-one');
-    assert('agent-live-visual-source', /不是模型生成内容/.test(await page.locator('.admin-agent-live-visual').innerText()), 'live-source');
-    const liveWidths = await page.locator('.admin-agent-live-grid b').evaluateAll((nodes) => nodes.map((node) => parseFloat(node.style.width)));
-    assert('agent-live-visual-widths-valid', liveWidths.length === 5 && liveWidths.every((value) => Number.isFinite(value) && value >= 0 && value <= 100), JSON.stringify(liveWidths));
+    assert('agent-no-duplicate-live-visual', (await page.locator('.admin-agent-live-visual').count()) === 0, 'no-live');
+    assert('agent-evidence-is-turn-scoped', /本次回答读取：待办概览/.test(await page.locator('.admin-agent-evidence-line').innerText()) && /回答生成时的文字为准/.test(await page.locator('.admin-agent-evidence-line').innerText()), 'turn-evidence');
     await shot(page, '10-agent-markdown-table', { page: 'admin_agent', state: 'markdown' });
 
     // A open hold → newConversation → late A must not restore
@@ -1676,6 +1687,15 @@ function writeReport() {
       await page.waitForTimeout(60);
       const ox = await overflowX(page);
       assert('agent-vp-' + vp.name + '-no-x', !ox.overflow, JSON.stringify(ox));
+      if (vp.name === '1366x768' || vp.name === '1280x720' || vp.name === '1280x800') {
+        const mediumLayout = await page.evaluate(() => {
+          const chat = document.querySelector('.admin-agent-chat').getBoundingClientRect();
+          const context = document.querySelector('.admin-agent-context').getBoundingClientRect();
+          return { chatBottom: chat.bottom, contextTop: context.top, contextWidth: context.width };
+        });
+        assert('agent-vp-' + vp.name + '-context-below-chat', mediumLayout.contextTop >= mediumLayout.chatBottom - 2 && mediumLayout.contextWidth > 600, JSON.stringify(mediumLayout));
+      }
+      if (vp.name === '1366x768') await shot(page, '17-agent-1366', { page: 'admin_agent', viewport: vp.name, state: 'medium' });
       if (vp.name === '390x844' || vp.name === '320x700') {
         const dlg = await page.evaluate(() => {
           const vm = document.querySelector('#workspace').__vue__;
@@ -1687,7 +1707,7 @@ function writeReport() {
         assert('agent-mobile-main-no-dialogs-' + vp.name,
           !dlg.configOpen && !dlg.automationOpen && !dlg.renameOpen && !dlg.deleteOpen && !dlg.clearOpen,
           JSON.stringify(dlg));
-        await shot(page, vp.name === '390x844' ? '17-agent-390' : '18-agent-320', {
+        await shot(page, vp.name === '390x844' ? '18-agent-390' : '19-agent-320', {
           page: 'admin_agent', viewport: vp.name, state: 'main'
         });
       }
@@ -1699,7 +1719,7 @@ function writeReport() {
     assert('agent-history-drawer-open', await page.evaluate(() => !!document.querySelector('#workspace').__vue__.historyOpen), 'open');
     const drawerBox = await page.locator('#agentHistoryPanel').boundingBox();
     assert('agent-history-drawer-visible', !!drawerBox && drawerBox.x >= 0 && drawerBox.y >= 0 && drawerBox.y < 100 && drawerBox.width <= 390 && drawerBox.height > 400, JSON.stringify(drawerBox));
-    await shot(page, '19-agent-history-drawer-390', { page: 'admin_agent', state: 'history-drawer' });
+    await shot(page, '20-agent-history-drawer-390', { page: 'admin_agent', state: 'history-drawer' });
     await page.evaluate(() => document.querySelector('#workspace').__vue__.closeHistory());
 
     // Illegal stats + barWidth on dashboard

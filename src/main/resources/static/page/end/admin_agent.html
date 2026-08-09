@@ -90,7 +90,7 @@
   </header>
   <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
 
-  <main class="admin-main admin-agent-main admin-command-main agent-command-desk">
+  <main class="admin-main admin-agent-main admin-command-main agent-command-desk" data-workspace-variant="agent">
     <section class="admin-agent-hero admin-command-hero" aria-labelledby="agentTitle">
       <div class="admin-command-hero-copy">
         <p class="admin-kicker">ADMIN OPERATIONS AGENT</p>
@@ -102,10 +102,13 @@
           <button v-if="status.canConfigure" class="ui-button is-dark" type="button" @click="openConfig($event)">配置平台模型</button>
         </div>
       </div>
-      <div class="admin-agent-metrics admin-command-metrics" aria-label="当前待办概览">
-        <article v-for="card in metricCards" :key="card.key" class="admin-agent-metric" :class="metricTone(card)">
-          <span>{{ card.label }}</span><strong>{{ overviewLoading ? '—' : card.value }}</strong><small>{{ card.note }}</small>
-        </article>
+      <div class="admin-agent-overview">
+        <div class="admin-agent-metrics admin-command-metrics" aria-label="当前待办概览">
+          <article v-for="card in metricCards" :key="card.key" class="admin-agent-metric" :class="metricTone(card)">
+            <span>{{ card.label }}</span><strong>{{ overviewLoading ? '—' : card.value }}</strong><small>{{ card.note }}</small>
+          </article>
+        </div>
+        <p class="admin-agent-overview-stamp" aria-live="polite">{{ overviewLoading ? '正在更新系统概览…' : (overviewUpdatedAt ? '系统概览更新于 ' + timeLabel(overviewUpdatedAt) : '系统概览暂未更新') }}</p>
       </div>
     </section>
 
@@ -116,17 +119,18 @@
     <section class="admin-agent-layout" aria-label="管理员 AI 工作区">
       <aside id="agentHistoryPanel" class="admin-agent-history" :class="{'is-open':historyOpen}" aria-label="个人会话历史">
         <div class="admin-agent-history-head">
-          <div><span>CONVERSATIONS</span><strong>我的管理会话</strong></div>
+          <div><span>会话历史</span><strong>我的管理会话</strong></div>
           <button class="admin-agent-mobile-close" type="button" aria-label="关闭会话列表" @click="closeHistory()">×</button>
         </div>
         <button class="admin-agent-new" type="button" @click="newConversation"><span aria-hidden="true">＋</span> 新对话</button>
         <label class="admin-agent-history-search">
           <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260809p#icon-search" xlink:href="/icons/ui-icons.svg?v=20260809p#icon-search"></use></svg>
-          <input v-model.trim="historyQuery" type="search" maxlength="80" placeholder="搜索会话" aria-label="搜索管理会话" autocomplete="off">
+          <input v-model.trim="historyQuery" type="search" maxlength="80" placeholder="筛选已加载会话" aria-label="筛选当前已加载的管理会话" aria-describedby="agentHistoryScope" autocomplete="off">
         </label>
+        <small id="agentHistoryScope" class="admin-agent-history-scope">仅筛选当前已加载会话，最多 50 个</small>
         <div v-if="historyLoading" class="admin-agent-history-empty">正在读取会话…</div>
         <div v-else-if="!conversations.length" class="admin-agent-history-empty">还没有管理会话。首次提问后会自动保存。</div>
-        <div v-else-if="!filteredConversations.length" class="admin-agent-history-empty">没有匹配的会话。换个关键词试试。</div>
+        <div v-else-if="!filteredConversations.length" class="admin-agent-history-empty">当前已加载会话中没有匹配项。换个关键词试试。</div>
         <div v-else class="admin-agent-history-list">
           <article v-for="item in filteredConversations" :key="item.id" class="admin-agent-history-item" :class="{'is-active':String(item.id)===String(activeConversationId)}">
             <button class="admin-agent-history-open" type="button" @click="openConversation(item.id)">
@@ -144,7 +148,7 @@
       <section class="admin-agent-chat" aria-labelledby="conversationTitle">
         <header class="admin-agent-chat-head">
           <button class="admin-agent-history-toggle" type="button" @click="openHistory($event)" :aria-expanded="String(historyOpen)" aria-controls="agentHistoryPanel" aria-label="打开会话列表">☰</button>
-          <div><span>{{ activeConversationId ? 'ACTIVE CONVERSATION' : 'NEW CONVERSATION' }}</span><h2 id="conversationTitle">{{ activeTitle || '新对话' }}</h2></div>
+          <div><span>{{ activeConversationId ? '当前会话' : '新建会话' }}</span><h2 id="conversationTitle">{{ activeTitle || '新对话' }}</h2></div>
           <span class="admin-agent-readonly-badge">只读分析</span>
         </header>
 
@@ -163,19 +167,7 @@
               <div>
                 <span>AI 管理助手 · {{ timeLabel(turn.completedAt) }}</span>
                 <agent-rich-answer :text="turn.answer"></agent-rich-answer>
-                <small v-if="toolLabels(turn).length" class="admin-agent-evidence-line">读取：{{ toolLabels(turn).join('、') }}</small>
-                <section v-if="isLatestTurn(turn) && numericMetricCards.length" class="admin-agent-live-visual" aria-label="当前实时运营概览">
-                  <header>
-                    <div><span>LIVE OPERATIONS SNAPSHOT</span><h3>当前实时运营概览</h3></div>
-                    <small>来自系统概览接口 · 不是模型生成内容</small>
-                  </header>
-                  <div class="admin-agent-live-grid">
-                    <article v-for="card in numericMetricCards" :key="'live-'+card.key">
-                      <div><strong>{{ card.label }}</strong><span>{{ card.value }}</span></div>
-                      <i aria-hidden="true"><b :style="{width:metricBarWidth(card)+'%'}"></b></i>
-                    </article>
-                  </div>
-                </section>
+                <small v-if="toolLabels(turn).length" class="admin-agent-evidence-line">本次回答读取：{{ toolLabels(turn).join('、') }} · 数据以回答生成时的文字为准</small>
               </div>
             </article>
           </template>
@@ -192,7 +184,7 @@
       </section>
 
       <aside class="admin-agent-safety admin-agent-context" aria-label="上下文与操作控制">
-        <div class="admin-agent-context-head"><p class="admin-kicker">CONTEXT &amp; CONTROL</p><h2>上下文与操作</h2><p>看清 Agent 当前能读取什么、不能写入什么，再决定下一步。</p></div>
+        <div class="admin-agent-context-head"><p class="admin-kicker">操作边界</p><h2>上下文与操作</h2><p>看清 Agent 当前能读取什么、不能写入什么，再决定下一步。</p></div>
 
         <section class="admin-agent-context-card is-scope" aria-labelledby="agentScopeTitle">
           <div class="admin-agent-context-title"><span aria-hidden="true">01</span><h3 id="agentScopeTitle">本次读取范围</h3></div>
@@ -225,7 +217,7 @@
   <div v-if="automationOpen" class="admin-dialog-backdrop" role="presentation" @click.self="onBackdropAutomation">
     <section class="admin-dialog admin-agent-automation-dialog" role="dialog" aria-modal="true" aria-labelledby="automationTitle">
       <div class="admin-dialog-head admin-agent-automation-head">
-        <div><span>HUMAN-CONTROLLED AUTOMATION</span><h2 id="automationTitle">受控自动审核</h2><p>由超级管理员手动启动的小批量审核。没有定时后台任务，也不会自动驳回。</p></div>
+        <div><span>人工受控自动化</span><h2 id="automationTitle">受控自动审核</h2><p>由超级管理员手动启动的小批量审核。没有定时后台任务，也不会自动驳回。</p></div>
         <button class="admin-dialog-close" type="button" :disabled="automationBusy" @click="closeAutomation"><span aria-hidden="true">×</span><span class="ui-sr-only">关闭</span></button>
       </div>
       <div class="admin-dialog-body admin-agent-automation-body">
@@ -233,7 +225,7 @@
         <template v-else>
           <section class="admin-agent-automation-command" aria-label="自动审核配置">
             <div class="admin-agent-automation-command-main">
-              <p class="admin-kicker">CONTROL PLANE</p>
+              <p class="admin-kicker">运行边界</p>
               <h3>先选运行边界，再决定是否开启</h3>
               <p>关闭总开关会立即阻止新的运行；正在写入的单条记录也会在事务内再次检查开关。</p>
             </div>
@@ -266,7 +258,7 @@
           </div>
 
           <section v-if="automationForm.enabled&&automationForm.mode==='guarded'" class="admin-agent-guarded-confirm" aria-labelledby="guardedConfirmTitle">
-            <div><span>WRITE BOUNDARY</span><h3 id="guardedConfirmTitle">受控写入需要明确确认</h3><p>以下确认不会赋予模型写工具。状态改变由服务端规则引擎在事务内完成。</p></div>
+            <div><span>写入边界</span><h3 id="guardedConfirmTitle">受控写入需要明确确认</h3><p>以下确认不会赋予模型写工具。状态改变由服务端规则引擎在事务内完成。</p></div>
             <div class="admin-agent-guarded-checks">
               <label><input v-model="automationForm.acknowledgeNoAutoReject" type="checkbox" :disabled="automationBusy"><span>我确认系统绝不自动驳回；不符合自动通过条件的申请全部进入人工复核。</span></label>
               <label><input v-model="automationForm.acknowledgeHumanFallback" type="checkbox" :disabled="automationBusy"><span>我理解受控自动通过会改变申请与动物状态，并已接受小批量范围。</span></label>
@@ -277,7 +269,7 @@
           <div v-if="automationError||automationMessage" class="admin-agent-automation-feedback" :class="{'is-error':automationError}" role="status"><strong>{{ automationError ? '操作未完成' : '控制状态' }}</strong><span>{{ automationError || automationMessage }}</span></div>
 
           <section class="admin-agent-automation-runs" aria-labelledby="automationRunsTitle">
-            <div class="admin-agent-automation-section-head"><div><p class="admin-kicker">RUN LEDGER</p><h3 id="automationRunsTitle">最近运行与逐条证据</h3></div><span>所有记录均不含电话、地址与完整问卷</span></div>
+            <div class="admin-agent-automation-section-head"><div><p class="admin-kicker">运行账本</p><h3 id="automationRunsTitle">最近运行与逐条证据</h3></div><span>所有记录均不含电话、地址与完整问卷</span></div>
             <div v-if="!automationRuns.length" class="admin-agent-automation-empty">还没有 自动审核运行记录。建议先保存影子模式并手动运行一次。</div>
             <div v-else class="admin-agent-run-list">
               <button v-for="run in automationRuns" :key="run.id" type="button" class="admin-agent-run-row" :class="{'is-active':automationCurrent&&String(automationCurrent.run.id)===String(run.id)}" @click="loadAutomationRun(run.id)">
@@ -297,9 +289,9 @@
         </template>
       </div>
       <div class="admin-dialog-actions admin-agent-automation-actions">
-        <span>超级管理员专用 · 每次最多 3 份 · 自动驳回 0</span>
+        <span>{{ automationRunHint }}</span>
         <button class="ui-button is-ghost" type="button" :disabled="automationBusy||automationLoading||!automationDirty" @click="saveAutomation">{{ automationSaving ? '正在保存…' : '保存控制设置' }}</button>
-        <button class="ui-button is-primary" type="button" :disabled="automationBusy||automationLoading||automationDirty||!automationForm.enabled||!status.connected" @click="runAutomation">{{ automationRunning ? '正在逐条审核…' : '手动运行一次' }}</button>
+        <button class="ui-button is-primary" type="button" :disabled="automationBusy||automationLoading||!automationRunReady" @click="runAutomation">{{ automationRunning ? '正在逐条审核…' : '手动运行一次' }}</button>
       </div>
     </section>
   </div>
@@ -437,7 +429,7 @@
       moreOpen:false,mobileOpen:false,accountOpen:false,historyOpen:false,
       pageError:'',statusLoading:true,statusSeq:0,overviewSeq:0,historySeq:0,conversationSeq:0,configSeq:0,
       status:{configured:false,enabled:false,apiKeyConfigured:false,canConfigure:false,connected:false,connectionStatus:'untested',connectionMessage:'',baseUrl:'',model:'',apiKeyHint:''},
-      overviewLoading:true,overview:{},
+      overviewLoading:true,overview:{},overviewUpdatedAt:null,
       historyLoading:true,conversationLoading:false,conversations:[],historyQuery:'',activeConversationId:null,activeTitle:'',turns:[],
       draft:'',asking:false,askError:'',
       configOpen:false,saving:false,testing:false,configError:'',configMessage:'',showApiKey:false,
@@ -457,6 +449,8 @@
       automationDirty:function(){return JSON.stringify([!!this.automationForm.enabled,this.automationForm.mode,Number(this.automationForm.maxBatch)])!==this.automationSavedSignature;},
       automationPhraseState:function(){var value=(this.automationForm.confirmationText||'').trim();if(!value)return'empty';return value===this.automationGuardedPhrase?'match':'mismatch';},
       automationPhraseHint:function(){var value=(this.automationForm.confirmationText||'').trim();if(!value)return'这是受控写入确认，需完整输入上方短语。';if(value===this.automationGuardedPhrase)return'确认短语一致，可以保存。';if(value==='启动受控自动通过')return'你输入的是“启动”；第 2 个字应为“用”，请改为“启用”。';return'确认短语不一致，请对照上方内容逐字检查。';},
+      automationRunReady:function(){if(!this.automationForm.enabled||this.status.connected!==true||this.automationDirty)return false;if(this.automationForm.mode!=='guarded')return true;return !!(this.automationForm.acknowledgeNoAutoReject&&this.automationForm.acknowledgeHumanFallback&&this.automationPhraseState==='match');},
+      automationRunHint:function(){if(this.automationForm.mode==='guarded'&&this.automationForm.enabled&&!this.automationRunReady)return'受控运行前需完成两项确认并输入确认短语';return'超级管理员专用 · 每次最多 3 份 · 自动驳回 0';},
       statusLabel:function(){
         if(this.statusLoading)return'状态读取中';
         if(this.status.connected===true)return'AI Agent 已连接';
@@ -490,12 +484,6 @@
         return this.conversations.filter(function(item){
           return [item.title,item.preview].some(function(value){return String(value||'').toLowerCase().indexOf(q)>=0;});
         });
-      },
-      numericMetricCards:function(){
-        return this.metricCards.filter(function(card){return typeof card.value==='number'&&isFinite(card.value);});
-      },
-      numericMetricMax:function(){
-        return Math.max.apply(Math,[1].concat(this.numericMetricCards.map(function(card){return card.value;})));
       }
     },
     created:function(){
@@ -539,9 +527,7 @@
       api:function(options){return $.ajax(Object.assign({contentType:'application/json;charset=UTF-8',cache:false},options));},
       messageOf:function(res,xhr){if(res&&res.msg)return res.msg;if(xhr&&xhr.responseJSON&&xhr.responseJSON.msg)return xhr.responseJSON.msg;if(xhr&&xhr.status===401)return'登录已失效，请重新登录。';if(xhr&&xhr.status===403)return'当前账号无权执行该操作。';if(xhr&&xhr.status===409)return'请求冲突，请稍后重试。';if(xhr&&xhr.status>=500)return'服务暂时不可用。';return'请求失败，请稍后重试。';},
       metric:function(value){if(value===null||typeof value==='undefined')return'无权限';var n=Number(value);return isFinite(n)&&n>=0?n:'不可用';},
-      metricTone:function(card){if(typeof card.value!=='number')return'is-locked';if(card.key==='animal')return'is-ok';return card.value>0?'is-warn':'is-ok';},
-      metricBarWidth:function(card){return Math.max(card.value>0?8:0,Math.round((Number(card.value||0)/this.numericMetricMax)*100));},
-      isLatestTurn:function(turn){return !!(turn&&this.turns.length&&turn===this.turns[this.turns.length-1]);},
+      metricTone:function(card){if(typeof card.value!=='number')return'is-locked';if(card.key==='animal')return card.value>0?'is-ok':'is-warn';return card.value>0?'is-warn':'is-ok';},
       avatarUrl:function(v){return AdminWorkspace.avatarUrl(v);},
       avatarFallback:function(e){AdminWorkspace.avatarFallback(e);},
       logout:function(){AuthSession.logout();},
@@ -581,7 +567,7 @@
         var vm=this,seq=++vm.overviewSeq;vm.overviewLoading=true;
         vm.api({url:'/api/admin-agent/overview',type:'GET'}).done(function(res){
           if(seq!==vm.overviewSeq)return;
-          if(res&&res.code==='0'&&res.data)vm.overview=res.data;
+          if(res&&res.code==='0'&&res.data){vm.overview=res.data;vm.overviewUpdatedAt=new Date().toISOString();}
         }).fail(function(){/* overview failure is non-fatal for chat */}).always(function(){if(seq===vm.overviewSeq)vm.overviewLoading=false;});
       },
       loadConversations:function(){

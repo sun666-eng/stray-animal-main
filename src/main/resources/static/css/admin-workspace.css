@@ -4260,6 +4260,18 @@ body.agent-history-locked {
 .agent-command-desk .admin-agent-metrics {
   margin: 0;
 }
+.admin-agent-overview {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+.admin-agent-overview-stamp {
+  margin: 8px 2px 0;
+  color: #777670;
+  font-size: 10px;
+  line-height: 1.45;
+  text-align: right;
+}
 .agent-command-desk .admin-agent-metric.is-locked {
   background: #f5f4f1 !important;
 }
@@ -4269,7 +4281,7 @@ body.agent-history-locked {
 }
 .agent-command-desk .admin-agent-layout {
   grid-template-columns: minmax(235px, 270px) minmax(520px, 1fr) minmax(280px, 320px);
-  min-height: 740px;
+  min-height: clamp(620px, calc(100dvh - 180px), 740px);
   margin-bottom: 64px;
   border-radius: 19px;
   box-shadow: 0 18px 46px rgba(27, 29, 27, .065);
@@ -4320,8 +4332,15 @@ body.agent-history-locked {
   border-color: #1b1d1b;
   box-shadow: 0 0 0 3px rgba(27, 29, 27, .07);
 }
+.admin-agent-history-scope {
+  display: block;
+  margin: -4px 20px 11px;
+  color: #85847e;
+  font-size: 9px;
+  line-height: 1.45;
+}
 .agent-command-desk .admin-agent-history-list {
-  max-height: 576px;
+  max-height: clamp(360px, calc(100dvh - 330px), 576px);
 }
 .agent-command-desk .admin-agent-history-item.is-active {
   border-color: #d7d6d1;
@@ -4336,7 +4355,7 @@ body.agent-history-locked {
   background: linear-gradient(110deg, #fff 0%, #fbfaf7 100%);
 }
 .agent-command-desk .admin-agent-messages {
-  max-height: 610px;
+  max-height: clamp(360px, calc(100dvh - 350px), 610px);
   padding: 26px 26px 18px;
 }
 .agent-command-desk .admin-agent-message {
@@ -4349,73 +4368,6 @@ body.agent-history-locked {
   background: #edf7f1;
   color: #27724f !important;
   font-weight: 750;
-}
-.admin-agent-live-visual {
-  margin-top: 12px;
-  padding: 16px;
-  border: 1px solid #dcded8;
-  border-top: 3px solid #1b1d1b;
-  border-radius: 13px;
-  background: #fff;
-}
-.admin-agent-live-visual > header {
-  display: flex;
-  gap: 14px;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 14px;
-}
-.admin-agent-live-visual > header span {
-  color: #d9351d !important;
-  font-size: 9px !important;
-  font-weight: 850;
-  letter-spacing: .14em !important;
-}
-.admin-agent-live-visual > header h3 {
-  margin: 4px 0 0;
-  font-size: 17px;
-  letter-spacing: -.02em;
-}
-.admin-agent-live-visual > header small {
-  max-width: 190px;
-  margin: 0;
-  color: #75746f;
-  font-size: 9px;
-  line-height: 1.45;
-  text-align: right;
-}
-.admin-agent-live-grid {
-  display: grid;
-  gap: 10px;
-}
-.admin-agent-live-grid article > div {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-}
-.admin-agent-live-grid strong {
-  font-size: 11px;
-}
-.admin-agent-live-grid article > div > span {
-  color: #191b19 !important;
-  font-size: 15px !important;
-  font-weight: 850;
-  letter-spacing: -.02em !important;
-}
-.admin-agent-live-grid i {
-  display: block;
-  height: 7px;
-  margin-top: 5px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: #ecece8;
-}
-.admin-agent-live-grid b {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #d9351d, #ee6b51);
 }
 .agent-command-desk .admin-agent-composer {
   position: relative;
@@ -4559,7 +4511,7 @@ body.agent-history-locked {
 .agent-command-desk .admin-agent-safety-note {
   margin-top: auto;
 }
-@media (max-width: 1240px) {
+@media (max-width: 1380px) {
   .agent-command-desk .admin-agent-layout {
     grid-template-columns: minmax(235px, 270px) minmax(0, 1fr);
   }
@@ -4572,6 +4524,15 @@ body.agent-history-locked {
   }
   .agent-command-desk .admin-agent-safety-note {
     margin: 0;
+  }
+}
+@media (max-width: 1100px) {
+  .agent-command-desk .admin-agent-context {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .admin-agent-context-head,
+  .agent-command-desk .admin-agent-safety-note {
+    grid-column: 1 / -1;
   }
 }
 @media (max-width: 900px) {
@@ -4625,13 +4586,6 @@ body.agent-history-locked {
   .agent-command-desk .admin-agent-context > * {
     grid-column: 1;
   }
-  .admin-agent-live-visual > header {
-    flex-direction: column;
-  }
-  .admin-agent-live-visual > header small {
-    max-width: none;
-    text-align: left;
-  }
 }
 @media (max-width: 760px) and (max-height: 520px) {
   .agent-command-desk .admin-agent-hero-actions {
@@ -4649,8 +4603,101 @@ body.agent-history-locked {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .admin-agent-live-grid b,
   .admin-agent-history-search {
     transition: none;
+  }
+}
+
+/* Profile command desk: same editorial contract, profile-specific composition. */
+.person-command-desk .person-governance-hero {
+  margin-bottom: 24px;
+}
+.person-command-desk .person-governance-metrics {
+  align-self: stretch;
+}
+.person-command-desk .person-governance-metric strong {
+  font-size: clamp(18px, 1.65vw, 24px);
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+.person-command-desk .person-governance-layout {
+  gap: 24px;
+  margin-bottom: 72px;
+}
+.person-command-desk .person-identity-card,
+.person-command-desk .person-form-card {
+  padding: 26px;
+  border-color: #deded9;
+  border-radius: 17px;
+  background: #fff;
+  box-shadow: 0 16px 38px rgba(27, 29, 27, .055);
+}
+.person-command-desk .person-identity-card {
+  border-top: 3px solid #1b1d1b;
+}
+.person-command-desk .person-form-card {
+  border-top: 3px solid #d9351d;
+}
+.person-command-desk .person-identity-card .admin-profile-avatar {
+  width: 124px;
+  height: 124px;
+  margin: 0 auto 17px;
+  border: 5px solid #f0efeb;
+  box-shadow: 0 0 0 1px #d9d8d2;
+}
+.person-command-desk .person-identity-card > h2 {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.1;
+  letter-spacing: -.035em;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.person-command-desk .person-identity-note {
+  max-width: 34ch;
+  margin: 11px auto 22px;
+  color: #74736d;
+  line-height: 1.65;
+  text-align: center;
+}
+.person-command-desk .person-avatar-field {
+  padding-top: 19px;
+  border-top: 1px solid #e3e2dd;
+}
+.person-command-desk .person-file-label {
+  min-height: 54px;
+  border-color: #c9c8c1;
+  background: #fbfaf7;
+}
+.person-command-desk .person-form-card .admin-section-head {
+  margin-bottom: 22px;
+  padding-bottom: 17px;
+  border-bottom: 1px solid #e3e2dd;
+}
+.person-command-desk .person-security-note {
+  border-left-color: #1b1d1b;
+  background: #f5f4f1;
+}
+@media (min-width: 900px) {
+  .person-command-desk .person-governance-layout {
+    grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  }
+  .person-command-desk .person-identity-card {
+    position: sticky;
+    top: 106px;
+  }
+}
+@media (max-width: 900px) {
+  .person-command-desk .person-identity-card {
+    position: static;
+  }
+}
+@media (max-width: 600px) {
+  .person-command-desk .person-governance-metrics {
+    grid-template-columns: 1fr;
+  }
+  .person-command-desk .person-identity-card,
+  .person-command-desk .person-form-card {
+    padding: 20px;
   }
 }

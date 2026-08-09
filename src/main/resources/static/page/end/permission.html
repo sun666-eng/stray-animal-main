@@ -89,11 +89,11 @@
   </header>
   <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
 
-  <main class="admin-main rbac-page admin-command-main permission-command-desk">
-    <section class="rbac-hero admin-command-hero">
+  <main class="admin-main rbac-page admin-command-main permission-command-desk" data-workspace-variant="command">
+    <section class="rbac-hero admin-command-hero" aria-labelledby="permissionPageTitle">
       <div class="admin-command-hero-copy">
         <p class="admin-kicker">Permission governance</p>
-        <h1>权限治理</h1>
+        <h1 id="permissionPageTitle">权限治理</h1>
         <p class="rbac-hero-lead">权限定义只允许固定 flag 和固定后台路径。客户端路径不会驱动导航。权限定义全局禁止删除。写入最终仅真实超级管理员可执行。</p>
         <div class="rbac-hero-meta admin-command-identity">
           <span>当前模式</span>

@@ -7,7 +7,7 @@ const { chromium } = require('playwright-core');
 
 const root = path.resolve(__dirname, '..');
 const staticRoot = path.join(root, 'src/main/resources/static');
-const outputDir = path.join(root, 'output/playwright');
+const outputDir = path.join(root, 'output/playwright/admin-ui-consistency');
 const baseUrl = 'http://phase3c.test';
 
 const status = {
@@ -38,6 +38,7 @@ function mime(file) {
   if (file.endsWith('.css')) return 'text/css; charset=utf-8';
   if (file.endsWith('.js')) return 'application/javascript; charset=utf-8';
   if (file.endsWith('.html')) return 'text/html; charset=utf-8';
+  if (file.endsWith('.svg')) return 'image/svg+xml; charset=utf-8';
   return 'application/octet-stream';
 }
 
@@ -46,13 +47,13 @@ async function installRoutes(page, captured) {
     const request = route.request();
     const url = new URL(request.url());
     const pathname = url.pathname;
-    if (pathname === '/page/end/admin_agent.html' || pathname.startsWith('/css/') || pathname.startsWith('/js/')) {
+    if (pathname === '/page/end/admin_agent.html' || pathname === '/page/end/person.html' || pathname.startsWith('/css/') || pathname.startsWith('/js/') || pathname.startsWith('/icons/')) {
       const file = path.join(staticRoot, pathname.replace(/^\//, ''));
       if (fs.existsSync(file)) return route.fulfill({ status: 200, contentType: mime(file), body: fs.readFileSync(file) });
     }
     let data = null;
     if (pathname === '/api/user/me') {
-      data = { id: 1, username: 'admin', avatar: '', role: [{ id: 1 }], permission: [
+      data = { id: 1, username: 'admin', phone: '13800000000', email: 'admin@example.test', avatar: '', role: [{ id: 1 }], permission: [
         { flag: 'admin_agent', path: '/page/end/admin_agent.html' },
         { flag: 'adopt', path: '/page/end/adopt.html' }, { flag: 'animal', path: '/page/end/animal.html' }
       ] };
@@ -94,6 +95,22 @@ async function runViewport(browser, viewport, name, exercise) {
   page.on('pageerror', error => errors.push(error.message));
   await installRoutes(page, captured);
   await page.goto(`${baseUrl}/page/end/admin_agent.html`, { waitUntil: 'domcontentloaded' });
+  await page.getByRole('heading', { name: 'AI 管理助手' }).waitFor();
+  await page.locator('.admin-agent-overview-stamp').getByText(/系统概览更新于/).waitFor();
+  assert.equal(await page.locator('.admin-agent-metric').count(), 5);
+  assert.equal(await page.locator('.admin-agent-live-visual').count(), 0);
+  assert.match(await page.locator('.admin-agent-history-scope').innerText(), /当前已加载会话.*50/);
+  assert.equal(await page.locator('.admin-agent-metric').filter({ hasText: '待审领养' }).getAttribute('class').then(v => v.includes('is-warn')), true);
+  assert.equal(await page.locator('.admin-agent-metric').filter({ hasText: '可用动物档案' }).getAttribute('class').then(v => v.includes('is-ok')), true);
+  const chatBox = await page.locator('.admin-agent-chat').boundingBox();
+  const contextBox = await page.locator('.admin-agent-context').boundingBox();
+  assert.ok(chatBox && contextBox);
+  if (viewport.width > 1380) {
+    assert.equal(contextBox.x > chatBox.x + chatBox.width - 2, true);
+  } else {
+    assert.equal(contextBox.y >= chatBox.y + chatBox.height - 2, true);
+  }
+  await page.screenshot({ path: path.join(outputDir, name.replace(/\.png$/, '-workspace.png')), fullPage: true });
   const open = page.getByRole('button', { name: /受控自动审核/ });
   await open.waitFor();
   await open.click();
@@ -113,24 +130,34 @@ async function runViewport(browser, viewport, name, exercise) {
     assert.equal(await run.isDisabled(), true);
 
     await save.click();
-    await page.getByText('启用受控模式前必须确认两项安全边界').waitFor();
+    await page.getByText('请确认：系统绝不自动驳回。').waitFor();
+    assert.equal(captured.configCalls, 0);
     await page.locator('.admin-agent-guarded-checks input[type="checkbox"]').nth(0).check();
     await page.locator('.admin-agent-guarded-checks input[type="checkbox"]').nth(1).check();
     await page.locator('#automationPhrase').fill('启动受控自动通过');
     await save.click();
     await page.getByText(/第 2 个字应为“用”/).first().waitFor();
-    assert.equal(captured.configCalls, 1);
+    assert.equal(captured.configCalls, 0);
     assert.equal(await page.locator('#automationPhrase').getAttribute('aria-invalid'), 'true');
     await page.locator('#automationPhrase').fill('启用受控自动通过');
     await page.getByText('确认短语一致，可以保存。').waitFor();
     await save.click();
     await page.getByText('控制设置已保存').waitFor();
+    assert.equal(await run.isDisabled(), true);
+    await page.getByText('受控运行前需完成两项确认并输入确认短语').waitFor();
+    await page.locator('.admin-agent-guarded-checks input[type="checkbox"]').nth(0).check();
+    await page.locator('.admin-agent-guarded-checks input[type="checkbox"]').nth(1).check();
+    await page.locator('#automationPhrase').fill('启用受控自动通过');
     assert.equal(await run.isEnabled(), true);
     await run.click();
-    await page.getByText(/本批次完成：自动通过 1，转人工 1，自动驳回 0/).waitFor();
+    await page.waitForFunction(() => {
+      const vm = document.querySelector('#workspace') && document.querySelector('#workspace').__vue__;
+      return vm && vm.automationRunning === false;
+    });
+    assert.match(await page.locator('.admin-agent-automation-feedback').innerText(), /本批次完成：自动通过 1，转人工 1，自动驳回 0/);
     await page.getByText('动物 #10011 · 申请人 #43').waitFor();
 
-    assert.equal(captured.configCalls, 2);
+    assert.equal(captured.configCalls, 1);
     assert.equal(captured.configBody.mode, 'guarded');
     assert.equal(captured.configBody.maxBatch, 2);
     assert.equal(captured.runCalls, 1);
@@ -146,13 +173,39 @@ async function runViewport(browser, viewport, name, exercise) {
   await page.close();
 }
 
+async function runPersonViewport(browser, viewport, name) {
+  const page = await browser.newPage({ viewport });
+  const captured = { configCalls: 0, runCalls: 0, directAuditCalls: 0, configBody: null, runBody: null };
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await installRoutes(page, captured);
+  await page.goto(`${baseUrl}/page/end/person.html`, { waitUntil: 'domcontentloaded' });
+  await page.getByRole('heading', { name: '个人资料' }).waitFor();
+  assert.equal(await page.locator('main[data-workspace-variant="profile"]').count(), 1);
+  assert.equal(await page.locator('.person-governance-metric').count(), 2);
+  const identity = await page.locator('.person-identity-card').boundingBox();
+  const form = await page.locator('.person-form-card').boundingBox();
+  assert.ok(identity && form);
+  if (viewport.width >= 900) assert.equal(form.x > identity.x + identity.width - 2, true);
+  else assert.equal(form.y >= identity.y + identity.height - 2, true);
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1), true);
+  assert.deepEqual(errors, []);
+  await page.screenshot({ path: path.join(outputDir, name), fullPage: true });
+  await page.close();
+}
+
 (async () => {
   fs.mkdirSync(outputDir, { recursive: true });
   const browser = await chromium.launch({ headless: true });
   try {
     await runViewport(browser, { width: 1440, height: 1000 }, 'admin-agent-phase3c-desktop.png', true);
+    await runViewport(browser, { width: 1366, height: 768 }, 'admin-agent-consistency-1366.png', false);
+    await runViewport(browser, { width: 1280, height: 720 }, 'admin-agent-consistency-1280.png', false);
     await runViewport(browser, { width: 912, height: 1326 }, 'admin-agent-phase3c-tablet.png', false);
     await runViewport(browser, { width: 390, height: 844 }, 'admin-agent-phase3c-mobile.png', false);
+    await runPersonViewport(browser, { width: 1440, height: 900 }, 'admin-person-consistency-desktop.png');
+    await runPersonViewport(browser, { width: 1024, height: 768 }, 'admin-person-consistency-tablet.png');
+    await runPersonViewport(browser, { width: 390, height: 844 }, 'admin-person-consistency-mobile.png');
     console.log('admin-agent-phase3c-ui: PASS');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exit(1); });

@@ -54,4 +54,5 @@ node_modules/
 .playwright-cli/
 scratchpad/
 latest
+/debug.log
 tools/adopt-questionnaire-artifacts/

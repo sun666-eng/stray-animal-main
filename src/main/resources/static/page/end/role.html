@@ -89,11 +89,11 @@
   </header>
   <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
 
-  <main class="admin-main rbac-page admin-command-main role-command-desk">
-    <section class="rbac-hero admin-command-hero">
+  <main class="admin-main rbac-page admin-command-main role-command-desk" data-workspace-variant="command">
+    <section class="rbac-hero admin-command-hero" aria-labelledby="rolePageTitle">
       <div class="admin-command-hero-copy">
         <p class="admin-kicker">Role governance</p>
-        <h1>角色治理</h1>
+        <h1 id="rolePageTitle">角色治理</h1>
         <p class="rbac-hero-lead">
           超级管理员角色（#1）不可修改或删除。志愿者 / 普通用户 / 认证义工（#2–#4）可在契约约束下调整权限。
           自定义角色可自由编辑与删除。权限只接收数据库中已有权限 ID。写入最终仅真实超级管理员可执行。

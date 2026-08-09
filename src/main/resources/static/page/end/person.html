@@ -89,16 +89,16 @@
       </header>
       <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
 
-      <main class="admin-main">
-        <section class="admin-hero person-governance-hero" aria-labelledby="profileTitle">
-          <div>
+      <main class="admin-main admin-command-main person-command-desk" data-workspace-variant="profile">
+        <section class="admin-hero person-governance-hero admin-command-hero" aria-labelledby="profileTitle">
+          <div class="admin-command-hero-copy">
             <p class="admin-kicker">Account profile</p>
             <h1 id="profileTitle">个人资料</h1>
             <p>读取当前账号 → 修改联系方式与头像 → 校验 → 保存 → 同步会话显示。此处不能修改密码。</p>
           </div>
-          <div class="person-governance-metrics" aria-label="资料状态">
-            <div class="person-governance-metric"><span>资料状态</span><strong>{{ dirty ? '有未保存修改' : '已同步' }}</strong><small>相对当前会话</small></div>
-            <div class="person-governance-metric"><span>头像暂存</span><strong>{{ stagedAvatarFlag ? '待保存' : '无' }}</strong><small>上传后需点保存</small></div>
+          <div class="person-governance-metrics admin-command-metrics" aria-label="资料状态">
+            <div class="person-governance-metric" :class="dirty ? 'is-warn' : 'is-ok'"><span>资料状态</span><strong>{{ dirty ? '有未保存修改' : '已同步' }}</strong><small>相对当前会话</small></div>
+            <div class="person-governance-metric" :class="stagedAvatarFlag ? 'is-warn' : 'is-ok'"><span>头像暂存</span><strong>{{ stagedAvatarFlag ? '待保存' : '无' }}</strong><small>上传后需点保存</small></div>
           </div>
         </section>
 
