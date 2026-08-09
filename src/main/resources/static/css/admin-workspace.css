@@ -546,7 +546,7 @@
 }
 
 /* Administrator AI Agent — deliberately distinct from destructive admin workflows. */
-.admin-agent-main { width: min(1880px, calc(100% - 64px)); }
+.admin-agent-main { width: min(1420px, calc(100% - 48px)); }
 .admin-agent-hero { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 36px; align-items: end; padding: 50px 0 32px; border-bottom: 1px solid var(--ui-line); }
 .admin-agent-hero h1 { margin: 7px 0 10px; font-size: clamp(42px,5vw,72px); line-height: .98; letter-spacing: -.055em; }
 .admin-agent-hero p:not(.admin-kicker) { max-width: 850px; margin: 0; color: var(--ui-muted); font-size: 15px; line-height: 1.75; }
@@ -4245,5 +4245,412 @@ body.agent-history-locked {
   .admin-command-metrics > * > strong {
     margin: 6px 0 2px;
     font-size: 21px;
+  }
+}
+
+/* Page 13 · AI operations workbench: evidence-led, human-controlled, never decorative data. */
+.agent-command-desk .admin-agent-hero {
+  grid-template-columns: minmax(360px, .78fr) minmax(0, 1.22fr);
+  align-items: stretch;
+}
+.agent-command-desk .admin-agent-hero-actions {
+  margin-top: 20px;
+  justify-content: flex-start;
+}
+.agent-command-desk .admin-agent-metrics {
+  margin: 0;
+}
+.agent-command-desk .admin-agent-metric.is-locked {
+  background: #f5f4f1 !important;
+}
+.agent-command-desk .admin-agent-metric.is-locked strong {
+  color: #86857f;
+  font-size: 18px;
+}
+.agent-command-desk .admin-agent-layout {
+  grid-template-columns: minmax(235px, 270px) minmax(520px, 1fr) minmax(280px, 320px);
+  min-height: 740px;
+  margin-bottom: 64px;
+  border-radius: 19px;
+  box-shadow: 0 18px 46px rgba(27, 29, 27, .065);
+}
+.agent-command-desk .admin-agent-history,
+.agent-command-desk .admin-agent-context {
+  background:
+    repeating-linear-gradient(0deg, transparent 0, transparent 27px, rgba(24, 26, 24, .025) 28px),
+    #fbfaf7;
+}
+.agent-command-desk .admin-agent-history-head,
+.agent-command-desk .admin-agent-chat-head {
+  min-height: 82px;
+}
+.agent-command-desk .admin-agent-new {
+  margin: 16px 16px 10px;
+}
+.admin-agent-history-search {
+  display: grid;
+  min-height: 44px;
+  margin: 0 16px 12px;
+  padding: 0 12px;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  border: 1px solid #deded9;
+  border-radius: 12px;
+  background: #fff;
+}
+.admin-agent-history-search .ui-icon {
+  width: 16px;
+  height: 16px;
+  color: #777872;
+}
+.admin-agent-history-search input {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  color: #191b19;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+}
+.admin-agent-history-search:focus-within {
+  border-color: #1b1d1b;
+  box-shadow: 0 0 0 3px rgba(27, 29, 27, .07);
+}
+.agent-command-desk .admin-agent-history-list {
+  max-height: 576px;
+}
+.agent-command-desk .admin-agent-history-item.is-active {
+  border-color: #d7d6d1;
+  box-shadow: inset 3px 0 0 #d9351d;
+}
+.agent-command-desk .admin-agent-chat {
+  grid-template-rows: auto minmax(430px, 1fr) auto auto;
+  background: #fff;
+}
+.agent-command-desk .admin-agent-chat-head {
+  position: relative;
+  background: linear-gradient(110deg, #fff 0%, #fbfaf7 100%);
+}
+.agent-command-desk .admin-agent-messages {
+  max-height: 610px;
+  padding: 26px 26px 18px;
+}
+.agent-command-desk .admin-agent-message {
+  max-width: 96%;
+}
+.admin-agent-evidence-line {
+  width: fit-content;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: #edf7f1;
+  color: #27724f !important;
+  font-weight: 750;
+}
+.admin-agent-live-visual {
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid #dcded8;
+  border-top: 3px solid #1b1d1b;
+  border-radius: 13px;
+  background: #fff;
+}
+.admin-agent-live-visual > header {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.admin-agent-live-visual > header span {
+  color: #d9351d !important;
+  font-size: 9px !important;
+  font-weight: 850;
+  letter-spacing: .14em !important;
+}
+.admin-agent-live-visual > header h3 {
+  margin: 4px 0 0;
+  font-size: 17px;
+  letter-spacing: -.02em;
+}
+.admin-agent-live-visual > header small {
+  max-width: 190px;
+  margin: 0;
+  color: #75746f;
+  font-size: 9px;
+  line-height: 1.45;
+  text-align: right;
+}
+.admin-agent-live-grid {
+  display: grid;
+  gap: 10px;
+}
+.admin-agent-live-grid article > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.admin-agent-live-grid strong {
+  font-size: 11px;
+}
+.admin-agent-live-grid article > div > span {
+  color: #191b19 !important;
+  font-size: 15px !important;
+  font-weight: 850;
+  letter-spacing: -.02em !important;
+}
+.admin-agent-live-grid i {
+  display: block;
+  height: 7px;
+  margin-top: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #ecece8;
+}
+.admin-agent-live-grid b {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #d9351d, #ee6b51);
+}
+.agent-command-desk .admin-agent-composer {
+  position: relative;
+  padding: 16px 22px 18px;
+  background: #fbfaf7;
+  box-shadow: 0 -12px 26px rgba(27, 29, 27, .035);
+}
+.agent-command-desk .admin-agent-composer textarea {
+  min-height: 86px;
+  background: #fff;
+}
+.agent-command-desk .admin-agent-context {
+  display: flex;
+  padding: 22px 18px;
+  gap: 14px;
+  flex-direction: column;
+  border-left: 1px solid #deded9;
+}
+.admin-agent-context-head {
+  padding: 0 2px 4px;
+}
+.admin-agent-context-head h2 {
+  margin: 5px 0 7px !important;
+  font-size: 23px !important;
+  letter-spacing: -.03em;
+}
+.admin-agent-context-head > p:last-child {
+  margin: 0;
+  color: #73726d;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.admin-agent-context-card {
+  padding: 15px;
+  border: 1px solid #dfded9;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, .92);
+}
+.admin-agent-context-card.is-automation {
+  border-color: #efb4a9;
+  border-top: 3px solid #d9351d;
+}
+.admin-agent-context-title {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.admin-agent-context-title > span {
+  display: grid;
+  width: 31px;
+  height: 31px;
+  flex: 0 0 31px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: #191b19;
+  font-family: Georgia, serif;
+  font-size: 10px;
+  font-weight: 800;
+}
+.admin-agent-context-card.is-automation .admin-agent-context-title > span {
+  background: #d9351d;
+}
+.admin-agent-context-title h3 {
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: -.015em;
+}
+.admin-agent-context-card dl {
+  margin: 13px 0 0;
+}
+.admin-agent-context-card dl > div {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 9px 0;
+  border-top: 1px solid #e5e4df;
+}
+.admin-agent-context-card dt,
+.admin-agent-context-card dd {
+  margin: 0;
+  font-size: 10px;
+}
+.admin-agent-context-card dt {
+  color: #777670;
+}
+.admin-agent-context-card dd {
+  color: #202220;
+  font-weight: 800;
+  text-align: right;
+}
+.admin-agent-context-card > p {
+  margin: 12px 0 0;
+  color: #676761;
+  font-size: 10px;
+  line-height: 1.6;
+}
+.admin-agent-boundary-tags {
+  display: flex;
+  margin-top: 12px;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.admin-agent-boundary-tags span {
+  padding: 5px 7px;
+  border-radius: 999px;
+  color: #8b2d1e;
+  background: #fff0ec;
+  font-size: 9px;
+  font-weight: 800;
+}
+.admin-agent-context-card .ui-button {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 13px;
+  justify-content: center;
+  font-size: 11px;
+}
+.admin-agent-context-prompts {
+  display: grid;
+  gap: 7px;
+  margin-top: 12px;
+}
+.admin-agent-context-prompts button {
+  min-height: 42px;
+  padding: 9px 10px;
+  border: 1px solid #e0dfda;
+  border-radius: 9px;
+  color: #2d2e2b;
+  background: #fbfaf7;
+  font: inherit;
+  font-size: 10px;
+  line-height: 1.45;
+  text-align: left;
+}
+.admin-agent-context-prompts button:hover,
+.admin-agent-context-prompts button:focus-visible {
+  border-color: #1b1d1b;
+  background: #fff;
+}
+.agent-command-desk .admin-agent-safety-note {
+  margin-top: auto;
+}
+@media (max-width: 1240px) {
+  .agent-command-desk .admin-agent-layout {
+    grid-template-columns: minmax(235px, 270px) minmax(0, 1fr);
+  }
+  .agent-command-desk .admin-agent-context {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(190px, .75fr) repeat(3, minmax(0, 1fr));
+    border-top: 1px solid #deded9;
+    border-left: 0;
+  }
+  .agent-command-desk .admin-agent-safety-note {
+    margin: 0;
+  }
+}
+@media (max-width: 900px) {
+  .agent-command-desk .admin-agent-hero {
+    grid-template-columns: 1fr;
+  }
+  .agent-command-desk .admin-agent-layout {
+    grid-template-columns: 1fr;
+  }
+  .agent-command-desk .admin-agent-history {
+    position: fixed;
+    inset: 68px auto 0 0;
+    z-index: 50;
+    width: min(340px, 90vw);
+    max-height: calc(100dvh - 68px);
+    overflow: hidden;
+  }
+  .agent-command-desk .admin-agent-history-list {
+    max-height: none;
+  }
+  .agent-command-desk .admin-agent-context {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .admin-agent-context-head,
+  .agent-command-desk .admin-agent-safety-note {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 600px) {
+  .agent-command-desk .admin-agent-metrics {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid #deded9;
+    border-radius: 13px;
+    background: #deded9;
+  }
+  .agent-command-desk .admin-agent-metric {
+    min-width: 0;
+    border: 0;
+    border-radius: 0;
+  }
+  .agent-command-desk .admin-agent-metric:last-child {
+    grid-column: 1 / -1;
+  }
+  .agent-command-desk .admin-agent-context {
+    grid-template-columns: 1fr;
+    padding: 18px 15px;
+  }
+  .agent-command-desk .admin-agent-context > * {
+    grid-column: 1;
+  }
+  .admin-agent-live-visual > header {
+    flex-direction: column;
+  }
+  .admin-agent-live-visual > header small {
+    max-width: none;
+    text-align: left;
+  }
+}
+@media (max-width: 760px) and (max-height: 520px) {
+  .agent-command-desk .admin-agent-hero-actions {
+    margin-top: 10px;
+  }
+  .agent-command-desk .admin-agent-hero-actions .ui-button,
+  .agent-command-desk .admin-agent-state {
+    min-height: 38px;
+  }
+  .agent-command-desk .admin-agent-layout {
+    min-height: 560px;
+  }
+  .agent-command-desk .admin-agent-chat {
+    grid-template-rows: auto minmax(280px, 1fr) auto auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-agent-live-grid b,
+  .admin-agent-history-search {
+    transition: none;
   }
 }

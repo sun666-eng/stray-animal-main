@@ -7,7 +7,7 @@
   <title>AI 管理助手 · 归途计划管理</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
   <link rel="stylesheet" href="../../css/product-ui.css?v=20260729c">
-  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260731a">
+  <link rel="stylesheet" href="../../css/admin-workspace.css?v=20260809n">
 </head>
 <body>
 <div id="authWait" class="admin-auth-wait" role="status">正在验证登录状态...</div>
@@ -90,29 +90,28 @@
   </header>
   <button type="button" class="admin-nav-scrim" aria-label="关闭导航菜单" @click="closeMenus"></button>
 
-  <main class="admin-main admin-agent-main">
-    <section class="admin-agent-hero" aria-labelledby="agentTitle">
-      <div>
+  <main class="admin-main admin-agent-main admin-command-main agent-command-desk">
+    <section class="admin-agent-hero admin-command-hero" aria-labelledby="agentTitle">
+      <div class="admin-command-hero-copy">
         <p class="admin-kicker">ADMIN OPERATIONS AGENT</p>
         <h1 id="agentTitle">AI 管理助手</h1>
         <p>从当前账号获准查看的数据中汇总待办、检查资料并生成审核建议。受控自动审核仅由超级管理员手动运行，绝不自动驳回。</p>
+        <div class="admin-agent-hero-actions">
+          <span class="admin-agent-state" :class="statusClass"><i aria-hidden="true"></i>{{ statusLabel }}</span>
+          <button v-if="status.canConfigure" class="ui-button is-ghost admin-agent-automation-open" type="button" @click="openAutomation($event)"><span aria-hidden="true">◎</span> 受控自动审核</button>
+          <button v-if="status.canConfigure" class="ui-button is-dark" type="button" @click="openConfig($event)">配置平台模型</button>
+        </div>
       </div>
-      <div class="admin-agent-hero-actions">
-        <span class="admin-agent-state" :class="statusClass"><i aria-hidden="true"></i>{{ statusLabel }}</span>
-        <button v-if="status.canConfigure" class="ui-button is-ghost admin-agent-automation-open" type="button" @click="openAutomation($event)"><span aria-hidden="true">◎</span> 受控自动审核</button>
-        <button v-if="status.canConfigure" class="ui-button is-dark" type="button" @click="openConfig($event)">配置平台模型</button>
+      <div class="admin-agent-metrics admin-command-metrics" aria-label="当前待办概览">
+        <article v-for="card in metricCards" :key="card.key" class="admin-agent-metric" :class="metricTone(card)">
+          <span>{{ card.label }}</span><strong>{{ overviewLoading ? '—' : card.value }}</strong><small>{{ card.note }}</small>
+        </article>
       </div>
     </section>
 
     <div v-if="pageError" class="admin-status is-error admin-agent-page-error" role="alert">
       <div><strong>工作台加载失败</strong><br>{{ pageError }} <button class="ui-button is-ghost" type="button" @click="loadAll">重新加载</button></div>
     </div>
-
-    <section class="admin-agent-metrics" aria-label="当前待办概览">
-      <article v-for="card in metricCards" :key="card.key" class="admin-agent-metric">
-        <span>{{ card.label }}</span><strong>{{ overviewLoading ? '—' : card.value }}</strong><small>{{ card.note }}</small>
-      </article>
-    </section>
 
     <section class="admin-agent-layout" aria-label="管理员 AI 工作区">
       <aside id="agentHistoryPanel" class="admin-agent-history" :class="{'is-open':historyOpen}" aria-label="个人会话历史">
@@ -121,10 +120,15 @@
           <button class="admin-agent-mobile-close" type="button" aria-label="关闭会话列表" @click="closeHistory()">×</button>
         </div>
         <button class="admin-agent-new" type="button" @click="newConversation"><span aria-hidden="true">＋</span> 新对话</button>
+        <label class="admin-agent-history-search">
+          <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="/icons/ui-icons.svg?v=20260729c#icon-search" xlink:href="/icons/ui-icons.svg?v=20260729c#icon-search"></use></svg>
+          <input v-model.trim="historyQuery" type="search" maxlength="80" placeholder="搜索会话" aria-label="搜索管理会话" autocomplete="off">
+        </label>
         <div v-if="historyLoading" class="admin-agent-history-empty">正在读取会话…</div>
         <div v-else-if="!conversations.length" class="admin-agent-history-empty">还没有管理会话。首次提问后会自动保存。</div>
+        <div v-else-if="!filteredConversations.length" class="admin-agent-history-empty">没有匹配的会话。换个关键词试试。</div>
         <div v-else class="admin-agent-history-list">
-          <article v-for="item in conversations" :key="item.id" class="admin-agent-history-item" :class="{'is-active':String(item.id)===String(activeConversationId)}">
+          <article v-for="item in filteredConversations" :key="item.id" class="admin-agent-history-item" :class="{'is-active':String(item.id)===String(activeConversationId)}">
             <button class="admin-agent-history-open" type="button" @click="openConversation(item.id)">
               <strong>{{ item.title || '未命名会话' }}</strong><span>{{ item.preview || '暂无摘要' }}</span><small>{{ timeLabel(item.updatedAt) }} · {{ item.turnCount }} 轮</small>
             </button>
@@ -156,16 +160,29 @@
             </article>
             <article :key="'a-'+turn.id" class="admin-agent-message is-agent">
               <span class="admin-agent-avatar" aria-hidden="true">A</span>
-              <div><span>AI 管理助手 · {{ timeLabel(turn.completedAt) }}</span><agent-rich-answer :text="turn.answer"></agent-rich-answer><small v-if="toolLabels(turn).length">读取：{{ toolLabels(turn).join('、') }}</small></div>
+              <div>
+                <span>AI 管理助手 · {{ timeLabel(turn.completedAt) }}</span>
+                <agent-rich-answer :text="turn.answer"></agent-rich-answer>
+                <small v-if="toolLabels(turn).length" class="admin-agent-evidence-line">读取：{{ toolLabels(turn).join('、') }}</small>
+                <section v-if="isLatestTurn(turn) && numericMetricCards.length" class="admin-agent-live-visual" aria-label="当前实时运营概览">
+                  <header>
+                    <div><span>LIVE OPERATIONS SNAPSHOT</span><h3>当前实时运营概览</h3></div>
+                    <small>来自系统概览接口 · 不是模型生成内容</small>
+                  </header>
+                  <div class="admin-agent-live-grid">
+                    <article v-for="card in numericMetricCards" :key="'live-'+card.key">
+                      <div><strong>{{ card.label }}</strong><span>{{ card.value }}</span></div>
+                      <i aria-hidden="true"><b :style="{width:metricBarWidth(card)+'%'}"></b></i>
+                    </article>
+                  </div>
+                </section>
+              </div>
             </article>
           </template>
           <article v-if="asking" class="admin-agent-message is-agent is-loading"><span class="admin-agent-avatar">A</span><div><span>AI 管理助手</span><p>正在核对有权访问的真实数据…</p></div></article>
         </div>
 
         <div v-if="askError" class="admin-agent-inline-error" role="alert">{{ askError }}</div>
-        <div class="admin-agent-prompts" aria-label="常用管理问题">
-          <button v-for="prompt in quickPrompts" :key="prompt" type="button" :disabled="asking" @click="draft=prompt">{{ prompt }}</button>
-        </div>
         <form class="admin-agent-composer" @submit.prevent="ask">
           <label for="agentQuestion">输入管理问题</label>
           <div><textarea id="agentQuestion" v-model="draft" maxlength="800" rows="3" :disabled="asking" placeholder="例如：汇总待审核的领养申请，并指出需要优先人工复核的风险。" @keydown.ctrl.enter.prevent="ask"></textarea>
@@ -174,10 +191,33 @@
         </form>
       </section>
 
-      <aside class="admin-agent-safety" aria-label="Agent 安全边界">
-        <p class="admin-kicker">SAFETY BOUNDARY</p><h2>人类保留决定权</h2>
-        <ul><li><strong>只读工具</strong><span>仅查询获准模块，不写入业务数据。</span></li><li><strong>隐私最小化</strong><span>不向模型发送电话、微信、API Key 或精确住址。</span></li><li><strong>逐次审计</strong><span>记录提问、工具名和结果状态。</span></li></ul>
-        <div class="admin-agent-safety-note"><strong>自动审核执行边界</strong><p>仅低风险、全部硬规则满足时允许受控自动通过；自动驳回、删除、改角色权限和资金写入仍为禁区。</p></div>
+      <aside class="admin-agent-safety admin-agent-context" aria-label="上下文与操作控制">
+        <div class="admin-agent-context-head"><p class="admin-kicker">CONTEXT &amp; CONTROL</p><h2>上下文与操作</h2><p>看清 Agent 当前能读取什么、不能写入什么，再决定下一步。</p></div>
+
+        <section class="admin-agent-context-card is-scope" aria-labelledby="agentScopeTitle">
+          <div class="admin-agent-context-title"><span aria-hidden="true">01</span><h3 id="agentScopeTitle">本次读取范围</h3></div>
+          <dl>
+            <div><dt>数据范围</dt><dd>按当前账号权限</dd></div>
+            <div><dt>敏感字段</dt><dd>最小化发送</dd></div>
+            <div><dt>业务写入</dt><dd>对话工具未启用</dd></div>
+          </dl>
+        </section>
+
+        <section class="admin-agent-context-card is-automation" aria-labelledby="agentAutomationGateTitle">
+          <div class="admin-agent-context-title"><span aria-hidden="true">02</span><h3 id="agentAutomationGateTitle">自动化闸门</h3></div>
+          <p>影子模式优先，只有低风险且硬规则全部满足的申请才可能被受控通过。</p>
+          <div class="admin-agent-boundary-tags"><span>手动启动</span><span>小批量</span><span>自动驳回 0</span></div>
+          <button v-if="status.canConfigure" class="ui-button is-ghost" type="button" @click="openAutomation($event)">打开受控审核控制台</button>
+        </section>
+
+        <section class="admin-agent-context-card is-prompts" aria-labelledby="agentPromptTitle">
+          <div class="admin-agent-context-title"><span aria-hidden="true">03</span><h3 id="agentPromptTitle">建议提问</h3></div>
+          <div class="admin-agent-context-prompts">
+            <button v-for="prompt in quickPrompts" :key="prompt" type="button" :disabled="asking" @click="draft=prompt">{{ prompt }}</button>
+          </div>
+        </section>
+
+        <div class="admin-agent-safety-note"><strong>人类保留决定权</strong><p>自动驳回、删除、角色权限调整和资金写入始终不交给对话 Agent。</p></div>
       </aside>
     </section>
   </main>
@@ -398,7 +438,7 @@
       pageError:'',statusLoading:true,statusSeq:0,overviewSeq:0,historySeq:0,conversationSeq:0,configSeq:0,
       status:{configured:false,enabled:false,apiKeyConfigured:false,canConfigure:false,connected:false,connectionStatus:'untested',connectionMessage:'',baseUrl:'',model:'',apiKeyHint:''},
       overviewLoading:true,overview:{},
-      historyLoading:true,conversationLoading:false,conversations:[],activeConversationId:null,activeTitle:'',turns:[],
+      historyLoading:true,conversationLoading:false,conversations:[],historyQuery:'',activeConversationId:null,activeTitle:'',turns:[],
       draft:'',asking:false,askError:'',
       configOpen:false,saving:false,testing:false,configError:'',configMessage:'',showApiKey:false,
       configForm:{enabled:true,baseUrl:'',model:'',apiKey:''},
@@ -443,6 +483,19 @@
           {key:'rescue',label:'处理中救助',value:this.metric(o.open_rescues),note:'需要 help / rescue 权限'},
           {key:'animal',label:'可用动物档案',value:this.metric(o.available_animals),note:'需要 animal 权限'}
         ];
+      },
+      filteredConversations:function(){
+        var q=(this.historyQuery||'').toLowerCase();
+        if(!q)return this.conversations;
+        return this.conversations.filter(function(item){
+          return [item.title,item.preview].some(function(value){return String(value||'').toLowerCase().indexOf(q)>=0;});
+        });
+      },
+      numericMetricCards:function(){
+        return this.metricCards.filter(function(card){return typeof card.value==='number'&&isFinite(card.value);});
+      },
+      numericMetricMax:function(){
+        return Math.max.apply(Math,[1].concat(this.numericMetricCards.map(function(card){return card.value;})));
       }
     },
     created:function(){
@@ -485,7 +538,10 @@
       isOverviewActive:function(){return !this.currentNavFlag;},
       api:function(options){return $.ajax(Object.assign({contentType:'application/json;charset=UTF-8',cache:false},options));},
       messageOf:function(res,xhr){if(res&&res.msg)return res.msg;if(xhr&&xhr.responseJSON&&xhr.responseJSON.msg)return xhr.responseJSON.msg;if(xhr&&xhr.status===401)return'登录已失效，请重新登录。';if(xhr&&xhr.status===403)return'当前账号无权执行该操作。';if(xhr&&xhr.status===409)return'请求冲突，请稍后重试。';if(xhr&&xhr.status>=500)return'服务暂时不可用。';return'请求失败，请稍后重试。';},
-      metric:function(value){return value===null||typeof value==='undefined'?'无权限':Number(value||0);},
+      metric:function(value){if(value===null||typeof value==='undefined')return'无权限';var n=Number(value);return isFinite(n)&&n>=0?n:'不可用';},
+      metricTone:function(card){if(typeof card.value!=='number')return'is-locked';if(card.key==='animal')return'is-ok';return card.value>0?'is-warn':'is-ok';},
+      metricBarWidth:function(card){return Math.max(card.value>0?8:0,Math.round((Number(card.value||0)/this.numericMetricMax)*100));},
+      isLatestTurn:function(turn){return !!(turn&&this.turns.length&&turn===this.turns[this.turns.length-1]);},
       avatarUrl:function(v){return AdminWorkspace.avatarUrl(v);},
       avatarFallback:function(e){AdminWorkspace.avatarFallback(e);},
       logout:function(){AuthSession.logout();},

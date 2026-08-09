@@ -1,6 +1,6 @@
 /**
- * Phase 2H strict — dashboard home + AI admin agent workspace.
- * Baseline Phase 2G seal: c1b6853c506417ba516344195eb2a577bd8f5031 · default BASE_URL :18117
+ * Phase 2H strict — dashboard home + AI admin agent workspace, extended for Page 13 UI acceptance.
+ * Page 13 baseline: e13b6ce · default BASE_URL :18117
  * Real Playwright interactions; fixtures only; no best-effort/skip; intentional HTTP = header OR registry.
  */
 const { chromium } = require('playwright');
@@ -31,7 +31,8 @@ const results = {
   startedAt: new Date().toISOString(),
   base,
   phase2gBaseline: 'c1b6853c506417ba516344195eb2a577bd8f5031',
-  branch: 'ui-polish/phase-2h-dashboard-agent-workspace-20260731',
+  page13Baseline: 'e13b6ce',
+  branch: 'codex/admin-ui-polish-13-ai-agent-workbench-20260808',
   checks: [], failures: [], screenshots: [], writeRequestLog: [], controlledRequestAudit: [],
   holdGateExecutions: {}, conversationRaceAudit: null, newConversationRaceAudit: null,
   requestCountAudit: {}, roleMatrix: {},
@@ -159,7 +160,8 @@ function writeReport() {
     const suiteSrc = fs.readFileSync('tools/ui-polish-phase-2h.cjs', 'utf8');
 
     assert('index-cache-0808b', indexHtml.includes('admin-workspace.css?v=20260808b'), 'cache');
-    assert('agent-cache-31a', agentHtml.includes('admin-workspace.css?v=20260731a'), 'cache');
+    assert('agent-cache-0809n', agentHtml.includes('admin-workspace.css?v=20260809n'), 'cache');
+    assert('css-agent-width-aligned', css.includes('.admin-agent-main { width: min(1420px, calc(100% - 48px)); }'), 'width');
     assert('index-dashboard-class', indexHtml.includes('dashboard-home'), 'cls');
     assert('index-dashboard-command-layout', indexHtml.includes('dashboard-home-layout') && indexHtml.includes('dashboard-command-panel'), 'layout');
     assert('index-dashboard-metric-band', indexHtml.includes('dashboard-home-metric-band'), 'metric-band');
@@ -177,10 +179,15 @@ function writeReport() {
     assert('agent-rename-dialog', agentHtml.includes('agentRenameTitle'), 'rename');
     assert('agent-delete-dialog', agentHtml.includes('agentDeleteTitle'), 'delete');
     assert('agent-clear-dialog', agentHtml.includes('agentClearTitle'), 'clear');
+    assert('agent-command-desk', agentHtml.includes('agent-command-desk') && agentHtml.includes('admin-command-metrics'), 'command');
+    assert('agent-context-control', agentHtml.includes('admin-agent-context') && agentHtml.includes('上下文与操作'), 'context');
+    assert('agent-live-visual-truthful', agentHtml.includes('admin-agent-live-visual') && agentHtml.includes('不是模型生成内容'), 'live');
+    assert('agent-history-search', agentHtml.includes('historyQuery') && agentHtml.includes('filteredConversations'), 'search');
     assert('css-dashboard-home', css.includes('.dashboard-home-hero'), 'css');
     assert('css-dashboard-layout', css.includes('.dashboard-home-layout') && css.includes('.dashboard-route-grid'), 'css-layout');
     assert('css-dashboard-scoped-mobile', css.includes('.dashboard-home-metric-band') && css.includes('@media (max-width: 480px)'), 'css-mobile');
     assert('css-agent-scrim', css.includes('.admin-agent-history-scrim'), 'css');
+    assert('css-agent-command-desk', css.includes('.agent-command-desk .admin-agent-layout') && css.includes('.admin-agent-live-grid'), 'css-command');
     assert('self-no-best-effort', !/bestEffort:\s*true/.test(suiteSrc), 'be');
     assert('self-no-true-assert', !/assert\s*\(\s*['"][^'"]+['"]\s*,\s*true\s*,/.test(suiteSrc), 'true');
 
@@ -643,6 +650,15 @@ function writeReport() {
     }, { timeout: 15000 });
     assert('agent-connected-label-ui', /AI Agent 已连接/.test(await page.locator('.admin-agent-state').innerText()), 'conn');
     assert('agent-no-3c-ui', !(await page.locator('text=3C').count()), '3c');
+    const agentMainBox = await page.locator('main.admin-agent-main').boundingBox();
+    const agentWorkspaceWidth = await page.evaluate(() => document.querySelector('#workspace').getBoundingClientRect().width);
+    assert('agent-main-width-aligned', !!agentMainBox && agentMainBox.width <= 1420 && Math.abs(agentMainBox.x - (agentWorkspaceWidth - agentMainBox.width) / 2) <= 1, JSON.stringify({ agentMainBox, agentWorkspaceWidth }));
+    assert('agent-metrics-inside-command-hero', (await page.locator('.admin-agent-hero .admin-agent-metrics').count()) === 1, 'hero-metrics');
+    assert('agent-context-cards-visible', (await page.locator('.admin-agent-context-card').count()) === 3, 'context-cards');
+    await page.fill('.admin-agent-history-search input', 'CONV_B');
+    assert('agent-history-search-filters', (await page.locator('.admin-agent-history-item').count()) === 1, 'filtered');
+    await page.fill('.admin-agent-history-search input', '');
+    assert('agent-history-search-restores', (await page.locator('.admin-agent-history-item').count()) === 2, 'restored');
     await shot(page, '06-agent-connected-desktop', { page: 'admin_agent', state: 'connected' });
 
     // unconfigured status
@@ -740,6 +756,10 @@ function writeReport() {
     assert('agent-race-stays-B', Number(after.id) === 102 && !after.hasLateA, JSON.stringify(results.conversationRaceAudit));
     await shot(page, '09-agent-history', { page: 'admin_agent', state: 'history' });
     assert('agent-markdown-table', (await page.locator('.admin-agent-answer-table table').count()) >= 1, 'table');
+    assert('agent-live-visual-one', (await page.locator('.admin-agent-live-visual').count()) === 1, 'live-one');
+    assert('agent-live-visual-source', /不是模型生成内容/.test(await page.locator('.admin-agent-live-visual').innerText()), 'live-source');
+    const liveWidths = await page.locator('.admin-agent-live-grid b').evaluateAll((nodes) => nodes.map((node) => parseFloat(node.style.width)));
+    assert('agent-live-visual-widths-valid', liveWidths.length === 5 && liveWidths.every((value) => Number.isFinite(value) && value >= 0 && value <= 100), JSON.stringify(liveWidths));
     await shot(page, '10-agent-markdown-table', { page: 'admin_agent', state: 'markdown' });
 
     // A open hold → newConversation → late A must not restore
@@ -1675,8 +1695,10 @@ function writeReport() {
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.evaluate(() => document.querySelector('#workspace').__vue__.openHistory({ currentTarget: document.body }));
-    await page.waitForTimeout(120);
+    await page.waitForTimeout(260);
     assert('agent-history-drawer-open', await page.evaluate(() => !!document.querySelector('#workspace').__vue__.historyOpen), 'open');
+    const drawerBox = await page.locator('#agentHistoryPanel').boundingBox();
+    assert('agent-history-drawer-visible', !!drawerBox && drawerBox.x >= 0 && drawerBox.y >= 0 && drawerBox.y < 100 && drawerBox.width <= 390 && drawerBox.height > 400, JSON.stringify(drawerBox));
     await shot(page, '19-agent-history-drawer-390', { page: 'admin_agent', state: 'history-drawer' });
     await page.evaluate(() => document.querySelector('#workspace').__vue__.closeHistory());
 
