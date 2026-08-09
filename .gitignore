@@ -56,3 +56,4 @@ scratchpad/
 latest
 /debug.log
 tools/adopt-questionnaire-artifacts/
+.codex-artifacts/

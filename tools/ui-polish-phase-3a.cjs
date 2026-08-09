@@ -32,7 +32,7 @@ const ADOPTION_PAGES = new Set([
 const RESCUE_NOTIFICATION_PAGES = new Set([
   'rescue_apply.html', 'my_rescue.html', 'notifications.html'
 ]);
-// Phase 3E volunteer service loop pages (cache stamp only; shell/workspace stay 20260731a).
+// User UI release cache is governed by tools/front-asset-version.txt.
 const VOLUNTEER_SERVICE_PAGES = new Set([
   'volunteer_apply.html', 'my_volunteer.html', 'volunteer_tasks.html'
 ]);
@@ -44,12 +44,7 @@ const FAVORITES_PETCARE_PAGES = new Set([
   'favorites.html', 'pet_care.html'
 ]);
 function expectedProductCache(file) {
-  if (AUTH_ONBOARDING_PAGES.has(file)) return '20260801g';
-  if (FAVORITES_PETCARE_PAGES.has(file)) return '20260731f';
-  if (VOLUNTEER_SERVICE_PAGES.has(file)) return '20260731e';
-  if (RESCUE_NOTIFICATION_PAGES.has(file)) return '20260731d';
-  if (ADOPTION_PAGES.has(file)) return '20260731c';
-  return PUBLIC_PAGES.has(file) ? '20260731b' : '20260731a';
+  return '20260809u1';
 }
 const VIEWPORTS = [
   { name: '1440x900', width: 1440, height: 900 },
@@ -253,8 +248,8 @@ async function visitPage(context, file, viewport, role, ids) {
         clientWidth: document.documentElement.clientWidth,
         headerInside: !!rect && rect.left >= -1 && rect.right <= innerWidth + 1,
         productCache: cssResources.some((url) => url.includes(`product-ui.css?v=${productCacheVersion}`)),
-        shellCache: cssResources.some((url) => /front-shell\.js\?v=20260731a/.test(url)),
-        workspaceCache: cssResources.some((url) => /user-workspace\.js\?v=20260731a/.test(url)),
+        shellCache: cssResources.some((url) => /front-shell\.js\?v=20260809u1/.test(url)),
+        workspaceCache: cssResources.some((url) => /user-workspace\.js\?v=20260809u1/.test(url)),
         unresolved: document.querySelectorAll('front-site-header, front-site-footer').length,
         mainCount: document.querySelectorAll('main').length
       };
@@ -309,8 +304,8 @@ async function staticAudit() {
       'shared footer after main');
     const productCacheVersion = expectedProductCache(file);
     assert(`${prefix}-css-cache`, new RegExp(`product-ui\\.css\\?v=${productCacheVersion}`).test(html), productCacheVersion);
-    assert(`${prefix}-workspace-cache`, (html.match(/user-workspace\.js\?v=20260731a/g) || []).length === 1, 'workspace');
-    assert(`${prefix}-shell-cache`, (html.match(/front-shell\.js\?v=20260731a/g) || []).length === 1, 'shell');
+    assert(`${prefix}-workspace-cache`, (html.match(/user-workspace\.js\?v=20260809u1/g) || []).length === 1, 'workspace');
+    assert(`${prefix}-shell-cache`, (html.match(/front-shell\.js\?v=20260809u1/g) || []).length === 1, 'shell');
     assert(`${prefix}-user-binding`, /<front-site-header\s+:user="user"/.test(html) && /\buser\s*:/.test(html), 'reactive user');
   }
   for (const file of ['login.html', 'register.html']) {

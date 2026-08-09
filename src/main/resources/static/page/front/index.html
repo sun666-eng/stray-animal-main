@@ -6,16 +6,16 @@
     <meta name="description" content="归途计划流浪动物领养、救助与透明公示平台">
     <title>归途计划 · 让每个生命都被认真对待</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-    <link rel="stylesheet" href="../../css/product-ui.css?v=20260731b">
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260809u1">
 </head>
-<body class="ui-public-discovery-page ui-public-home-page">
+<body class="ui-public-discovery-page ui-public-home-page ui-u1-discovery">
 <div id="app" v-cloak>
     <a class="sr-only" href="#main-content">跳到主要内容</a>
     <front-site-header :user="user"></front-site-header>
 
-    <main id="main-content" class="ui-public-home">
+    <main id="main-content" class="ui-public-home" data-front-surface="discovery-home">
         <section class="ui-container ui-home-hero" aria-labelledby="homeHeroTitle">
-            <div>
+            <div class="ui-home-intro">
                 <p class="ui-eyebrow">ADOPT · RESCUE · CARE</p>
                 <h1 id="homeHeroTitle" class="ui-home-title">让每个生命，<br>都被认真对待。</h1>
                 <p class="ui-home-lead">{{ user ? ('欢迎回来，' + user.username + '。从下方服务入口继续领养、救助或义工申请。') : '发现需要帮助的动物，了解正在等待领养的它们，并持续看到每一次善意的真实去向。' }}</p>
@@ -23,7 +23,7 @@
                     <a class="ui-button is-primary" href="./animal_browse.html">浏览待领养动物</a>
                     <a class="ui-button is-ghost" :href="user ? './rescue_apply.html' : './login.html?redirect=' + encodeURIComponent('/page/front/rescue_apply.html')">{{ user ? '发起救助' : '登录后使用服务' }}</a>
                 </div>
-                <div class="ui-trust-row" :aria-busy="String(statsLoading)" aria-live="polite">
+                <div class="ui-trust-row" :aria-busy="String(statsLoading)" aria-live="polite" aria-label="平台实时概览">
                     <div class="ui-trust-item"><strong>{{ statsLoading?'—':stats.adoptedAnimals }}</strong><span>已找到新家</span></div>
                     <div class="ui-trust-item"><strong>{{ statsLoading?'—':stats.approvedVolunteers }}</strong><span>已认证志愿者</span></div>
                     <div class="ui-trust-item"><strong>{{ statsLoading?'—':stats.availableAnimals }}</strong><span>正在等待领养</span></div>
@@ -33,7 +33,7 @@
                     <button type="button" @click="loadStats">重试</button>
                 </div>
             </div>
-            <div class="ui-home-visual"><div class="ui-home-photo"><img :src="heroImage" :alt="heroAnimal?displayName(heroAnimal)+'的照片':'等待领养动物的视觉占位图'" @error="imageFallback"><div class="ui-home-float"><small>FEATURED PROFILE</small><strong>{{ heroAnimal?displayName(heroAnimal):'等待一个家' }}</strong><span v-if="heroAnimal">{{ heroAnimal.ttype||'类型待确认' }} · {{ heroAnimal.tsex||'性别待确认' }} · {{ formatAge(heroAnimal.tbirthday) }}<br>编号 #{{ heroAnimal.id }} · {{ animalStateText(heroAnimal.tstate) }}</span><span v-else>动物资料正在更新，欢迎查看完整待领养列表。</span><a v-if="heroAnimal" :href="detailUrl(heroAnimal.id)">查看完整档案 →</a></div></div></div>
+            <div class="ui-home-visual" aria-label="本期推荐动物"><div class="ui-home-photo"><img :src="heroImage" :alt="heroAnimal?displayName(heroAnimal)+'的照片':'等待领养动物的视觉占位图'" @error="imageFallback"><div class="ui-home-float"><small>本期档案</small><strong>{{ heroAnimal?displayName(heroAnimal):'等待一个家' }}</strong><span v-if="heroAnimal">{{ heroAnimal.ttype||'类型待确认' }} · {{ heroAnimal.tsex||'性别待确认' }} · {{ formatAge(heroAnimal.tbirthday) }}<br>编号 #{{ heroAnimal.id }} · {{ animalStateText(heroAnimal.tstate) }}</span><span v-else>动物资料正在更新，欢迎查看完整待领养列表。</span><a v-if="heroAnimal" :href="detailUrl(heroAnimal.id)">查看完整档案 →</a></div></div></div>
         </section>
 
         <section v-if="user" class="ui-home-section is-light" aria-labelledby="memberServicesTitle">
@@ -67,7 +67,7 @@
             </div>
         </section>
 
-        <section class="ui-home-section" :class="{'is-light': !user}"><div class="ui-container"><div class="ui-section-head"><div><p class="ui-eyebrow">WAITING FOR YOU</p><h2>也许，你们正在等待彼此</h2><p>以下内容直接来自当前公开的待领养动物记录。</p></div><a class="ui-button is-ghost" href="./animal_browse.html">查看全部动物</a></div><div v-if="animalsLoading" class="ui-card-grid" aria-label="正在加载动物"><article v-for="n in 3" :key="n" class="ui-animal-card ui-skeleton-card"><div class="ui-card-media ui-skeleton"></div><div class="ui-skeleton ui-skeleton-line short"></div></article></div><div v-else-if="animalsError" class="ui-state" role="alert"><div><span class="ui-state-mark">!</span><h2>动物资料暂时无法加载</h2><p>{{ animalsError }}</p><button class="ui-button is-dark" type="button" @click="loadAnimals">重新加载</button></div></div><div v-else-if="animals.length===0" class="ui-state"><div><span class="ui-state-mark">♡</span><h2>当前没有公开的待领养动物</h2><p>资料更新后会第一时间在这里出现。</p></div></div><div v-else class="ui-card-grid"><article v-for="item in animals" :key="item.id" class="ui-animal-card"><a class="ui-card-media" :href="detailUrl(item.id)"><img :src="imageUrl(item.tpic)" :alt="displayName(item)+'的照片'" loading="lazy" @error="imageFallback"><span class="ui-badge" :class="animalBadgeClass(item.tstate)">{{ animalStateText(item.tstate) }}</span></a><div class="ui-card-body"><div class="ui-card-title-row"><h2>{{ displayName(item) }}</h2><span>#{{ item.id }}</span></div><div class="ui-card-meta"><span>{{ item.ttype||'类型待确认' }}</span><span>{{ item.tsex||'性别待确认' }}</span><span>{{ formatAge(item.tbirthday) }}</span></div><p class="ui-card-description">{{ item.tdescribe||'动物介绍正在完善。' }}</p><div class="ui-card-actions"><a class="ui-button is-ghost" :href="detailUrl(item.id)">了解更多</a><a class="ui-button is-primary" :href="adoptUrl(item.id)">申请领养</a></div></div></article></div></div></section>
+        <section class="ui-home-section" :class="{'is-light': !user}"><div class="ui-container"><div class="ui-section-head"><div><p class="ui-eyebrow">WAITING FOR YOU</p><h2>正在等家的它们</h2><p>以下内容直接来自当前公开的待领养动物记录。</p></div><a class="ui-button is-ghost" href="./animal_browse.html">查看全部动物</a></div><div v-if="animalsLoading" class="ui-card-grid" aria-label="正在加载动物"><article v-for="n in 3" :key="n" class="ui-animal-card ui-skeleton-card"><div class="ui-card-media ui-skeleton"></div><div class="ui-skeleton ui-skeleton-line short"></div></article></div><div v-else-if="animalsError" class="ui-state" role="alert"><div><span class="ui-state-mark">!</span><h2>动物资料暂时无法加载</h2><p>{{ animalsError }}</p><button class="ui-button is-dark" type="button" @click="loadAnimals">重新加载</button></div></div><div v-else-if="animals.length===0" class="ui-state"><div><span class="ui-state-mark">♡</span><h2>当前没有公开的待领养动物</h2><p>资料更新后会第一时间在这里出现。</p></div></div><div v-else class="ui-card-grid"><article v-for="item in animals" :key="item.id" class="ui-animal-card"><a class="ui-card-media" :href="detailUrl(item.id)"><img :src="imageUrl(item.tpic)" :alt="displayName(item)+'的照片'" loading="lazy" decoding="async" @error="imageFallback"><span class="ui-badge" :class="animalBadgeClass(item.tstate)">{{ animalStateText(item.tstate) }}</span></a><div class="ui-card-body"><div class="ui-card-title-row"><h2>{{ displayName(item) }}</h2><span>#{{ item.id }}</span></div><div class="ui-card-meta"><span>{{ item.ttype||'类型待确认' }}</span><span>{{ item.tsex||'性别待确认' }}</span><span>{{ formatAge(item.tbirthday) }}</span></div><p class="ui-card-description">{{ item.tdescribe||'动物介绍正在完善。' }}</p><div class="ui-card-actions"><a class="ui-button is-ghost" :href="detailUrl(item.id)">了解更多</a><a class="ui-button is-primary" :href="adoptUrl(item.id)">申请领养</a></div></div></article></div></div></section>
 
         <section class="ui-home-section"><div class="ui-container"><div class="ui-section-head"><div><p class="ui-eyebrow">HOW IT WORKS</p><h2>一份善意，四步抵达</h2><p>流程说明用于帮助理解平台协作方式，不代表具体请求的处理时限。</p></div></div><div class="ui-process-grid"><article v-for="step in steps" :key="step.number" class="ui-process-card"><span class="ui-eyebrow">STEP {{ step.number }}</span><strong>{{ step.title }}</strong><p>{{ step.description }}</p></article></div></div></section>
     </main>
@@ -76,8 +76,8 @@
 </div>
 <script src="../../js/jquery.min.js"></script>
 <script src="../../js/vue.min.js"></script>
-<script src="../../js/user-workspace.js?v=20260731a"></script>
-<script src="../../js/front-shell.js?v=20260731a"></script>
+<script src="../../js/user-workspace.js?v=20260809u1"></script>
+<script src="../../js/front-shell.js?v=20260809u1"></script>
 <script src="../../js/auth-session.js?v=20260728"></script>
 <script src="../../js/status-text.js?v=20260728"></script>
 <script>

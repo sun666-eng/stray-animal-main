@@ -6,26 +6,34 @@
   <meta name="description" content="查看与管理已收藏的动物档案">
   <title>我的收藏 · 归途计划</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-  <link rel="stylesheet" href="../../css/product-ui.css?v=20260731f">
+  <link rel="stylesheet" href="../../css/product-ui.css?v=20260809u1">
 </head>
-<body>
+<body class="ui-member-page ui-favorites-page">
 <div id="authWait" class="ui-auth-wait" role="status">正在验证登录状态...</div>
 <div id="app" v-cloak @keyup.esc="onEscape">
   <front-site-header :user="user"></front-site-header>
 
-  <main class="ui-container favorites-workspace">
-    <section class="favorites-hero" aria-labelledby="favoritesTitle">
-      <p class="ui-eyebrow">SAVED ANIMALS</p>
-      <h1 id="favoritesTitle" class="ui-workspace-title">我的收藏</h1>
-      <p>把想进一步了解的动物先放在这里。<strong>收藏不等于占用领养名额</strong>，也不保证可被领养。</p>
-      <div class="ui-form-actions">
-        <a class="ui-button is-primary" href="./animal_browse.html" data-favorites-browse>浏览动物</a>
+  <main class="ui-container ui-member-layout favorites-workspace" data-front-surface="discovery-favorites">
+    <front-member-sidebar active="favorites"></front-member-sidebar>
+    <section class="ui-member-content">
+      <header class="favorites-hero" aria-labelledby="favoritesTitle">
+        <div>
+          <p class="ui-eyebrow">SAVED PROFILES</p>
+          <h1 id="favoritesTitle" class="ui-workspace-title">我的收藏</h1>
+          <p>把想进一步了解的动物放在一起认真比较。<strong>收藏不等于占用领养名额</strong>，也不保证档案持续开放。</p>
+        </div>
+        <a class="ui-button is-dark" href="./animal_browse.html" data-favorites-browse>继续浏览动物</a>
+      </header>
+
+      <div v-if="!loading && !error" class="ui-member-summary" aria-label="收藏概览">
+        <div><span>全部收藏</span><strong>{{ totalFavorites }}</strong></div>
+        <div><span>可提交申请</span><strong class="is-success">{{ availableFavorites }}</strong></div>
+        <div><span>暂不可申请</span><strong :class="{ 'is-warning': unavailableFavorites > 0 }">{{ unavailableFavorites }}</strong></div>
       </div>
-    </section>
 
-    <div v-if="actionError" class="ui-form-alert is-error" role="alert" aria-live="assertive">{{ actionError }}</div>
+      <div v-if="actionError" class="ui-form-alert is-error" role="alert" aria-live="assertive">{{ actionError }}</div>
 
-    <div v-if="loading" class="ui-state" role="status" aria-live="polite">
+      <div v-if="loading" class="ui-state" role="status" aria-live="polite">
       <div>
         <span class="ui-state-mark ui-skeleton"></span>
         <h2>{{ items.length ? '正在更新收藏' : '正在读取收藏' }}</h2>
@@ -33,7 +41,7 @@
       </div>
     </div>
 
-    <div v-else-if="error" class="ui-state" role="alert">
+      <div v-else-if="error" class="ui-state" role="alert">
       <div>
         <span class="ui-state-mark">!</span>
         <h2>收藏暂时无法加载</h2>
@@ -44,7 +52,7 @@
       </div>
     </div>
 
-    <div v-else-if="!items.length" class="ui-state favorites-empty" role="status">
+      <div v-else-if="!items.length" class="ui-state favorites-empty" role="status">
       <div>
         <span class="ui-state-mark">＋</span>
         <h2>还没有收藏</h2>
@@ -53,7 +61,7 @@
       </div>
     </div>
 
-    <div v-else class="favorites-grid">
+      <div v-else class="favorites-grid">
       <article
         v-for="item in items"
         :key="canonicalId(item.favorite_id) || canonicalId(item.id)"
@@ -99,7 +107,8 @@
           </div>
         </div>
       </article>
-    </div>
+      </div>
+    </section>
   </main>
 
   <div v-if="confirmItem" class="ui-dialog-backdrop" role="presentation" @click.self="onBackdrop">
@@ -143,8 +152,8 @@
 </div>
 <script src="../../js/jquery.min.js"></script>
 <script src="../../js/vue.min.js"></script>
-<script src="../../js/user-workspace.js?v=20260731a"></script>
-<script src="../../js/front-shell.js?v=20260731a"></script>
+<script src="../../js/user-workspace.js?v=20260809u1"></script>
+<script src="../../js/front-shell.js?v=20260809u1"></script>
 <script src="../../js/auth-session.js?v=20260728"></script>
 <script>
 (function () {
@@ -185,6 +194,13 @@
           confirmTrigger: null,
           focusAfterRemoveId: '',
           focusAfterRemoveIndex: -1
+        },
+        computed: {
+          totalFavorites: function () { return this.items.length; },
+          availableFavorites: function () {
+            return this.items.filter(function (item) { return [0, 1].indexOf(Number(item.tstate)) >= 0; }).length;
+          },
+          unavailableFavorites: function () { return this.totalFavorites - this.availableFavorites; }
         },
         created: function () {
           this.load();
@@ -288,7 +304,7 @@
               : 'is-neutral';
           },
           isAdoptable: function (value) {
-            return Number(value) === 0;
+            return [0, 1].indexOf(Number(value)) >= 0;
           },
           detailUrl: function (id) {
             var cid = canonicalId(id);

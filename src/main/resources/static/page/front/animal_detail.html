@@ -9,13 +9,13 @@
       rel="icon"
       href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>"
     />
-    <link rel="stylesheet" href="../../css/product-ui.css?v=20260731b" />
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260809u1" />
   </head>
-  <body class="ui-public-discovery-page ui-public-animal-detail-page">
+  <body class="ui-public-discovery-page ui-public-animal-detail-page ui-u1-discovery">
     <div id="app" v-cloak>
       <front-site-header :user="user"></front-site-header>
 
-      <main class="ui-container ui-public-animal-detail">
+      <main class="ui-container ui-public-animal-detail" data-front-surface="discovery-detail">
         <div v-if="loading" class="ui-detail" aria-label="正在加载动物详情">
           <div class="ui-detail-photo ui-skeleton"></div>
           <div class="ui-detail-copy">
@@ -103,6 +103,8 @@
                 v-if="user"
                 class="ui-button is-ghost"
                 type="button"
+                data-favorite-action
+                :aria-pressed="favorite ? 'true' : 'false'"
                 :disabled="favoriteBusy"
                 @click="toggleFavorite"
               >
@@ -140,6 +142,18 @@
             </div>
           </div>
         </section>
+        <section v-if="!loading&&animal" class="ui-public-adoption-path" aria-labelledby="adoptionPathTitle">
+          <div>
+            <p class="ui-eyebrow">ADOPTION PATH</p>
+            <h2 id="adoptionPathTitle">从了解，到一起回家</h2>
+            <p>具体处理时间以申请资料、人工审核和交接安排为准。</p>
+          </div>
+          <ol>
+            <li><span>01</span><strong>提交申请</strong><small>如实填写家庭与照护条件</small></li>
+            <li><span>02</span><strong>人工审核</strong><small>必要时补充材料或沟通</small></li>
+            <li><span>03</span><strong>完成交接</strong><small>交接后进入正式领养与回访</small></li>
+          </ol>
+        </section>
       </main>
       <front-site-footer></front-site-footer>
       <div class="ui-toast" :class="{ 'is-show': toast }" role="status" aria-live="polite">{{ toast }}</div>
@@ -147,8 +161,8 @@
 
     <script src="../../js/jquery.min.js"></script>
     <script src="../../js/vue.min.js"></script>
-<script src="../../js/user-workspace.js?v=20260731a"></script>
-<script src="../../js/front-shell.js?v=20260731a"></script>
+<script src="../../js/user-workspace.js?v=20260809u1"></script>
+<script src="../../js/front-shell.js?v=20260809u1"></script>
     <script src="../../js/auth-session.js?v=20260728"></script>
     <script src="../../js/status-text.js?v=20260728"></script>
     <script>
@@ -307,7 +321,7 @@
               type: this.favorite ? "DELETE" : "POST",
             })
               .done((res) => {
-                if (res && res.code === "0") {
+                if (res && res.code === "0" && res.data === true) {
                   this.favorite = !this.favorite;
                   this.showToast(this.favorite ? "已加入收藏" : "已取消收藏");
                 } else this.showToast((res && res.msg) || "收藏操作未完成");

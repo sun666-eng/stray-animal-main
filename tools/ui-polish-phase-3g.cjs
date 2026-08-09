@@ -903,9 +903,9 @@ function writeReport() {
     const wsJs = fs.readFileSync('src/main/resources/static/js/user-workspace.js', 'utf8');
     const suiteSrc = fs.readFileSync('tools/ui-polish-phase-3g.cjs', 'utf8');
 
-    assert('cache-login', loginHtml.includes('v=20260801g'), 'login css');
-    assert('cache-register', regHtml.includes('v=20260801g'), 'reg css');
-    assert('cache-workspace', loginHtml.includes('user-workspace.js?v=20260801g') && regHtml.includes('user-workspace.js?v=20260801g'), 'ws');
+    assert('cache-login', loginHtml.includes('v=20260809u1'), 'login css');
+    assert('cache-register', regHtml.includes('v=20260809u1'), 'reg css');
+    assert('cache-workspace', loginHtml.includes('user-workspace.js?v=20260809u1') && regHtml.includes('user-workspace.js?v=20260809u1'), 'ws');
     assert('no-window-dialogs', !/window\.confirm|window\.alert|window\.prompt/.test(loginHtml + regHtml), 'dialogs');
     assert('safe-redirect-shared', wsJs.includes('safeRedirect') && wsJs.includes('safeRedirectFromLocation') && wsJs.includes('withRedirectParam'), 'ws');
     assert('login-uses-workspace-redirect', loginHtml.includes('safeRedirectFromLocation') || loginHtml.includes('UserWorkspace.safeRedirect'), 'login-redir');

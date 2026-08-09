@@ -6,22 +6,23 @@
     <meta name="description" content="浏览正在等待领养的流浪动物">
     <title>等待一个家 · 归途计划</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%270.9em%27 font-size=%2790%27 fill=%27%23d63a1f%27>%E2%99%A5</text></svg>">
-    <link rel="stylesheet" href="../../css/product-ui.css?v=20260731b">
+    <link rel="stylesheet" href="../../css/product-ui.css?v=20260809u1">
 </head>
-<body class="ui-animal-catalog-page ui-public-discovery-page">
+<body class="ui-animal-catalog-page ui-public-discovery-page ui-u1-discovery">
 <div id="app" v-cloak>
     <front-site-header :user="user"></front-site-header>
 
-    <main class="ui-animal-catalog-main ui-public-catalog">
+    <main class="ui-animal-catalog-main ui-public-catalog" data-front-surface="discovery-catalog">
         <section class="ui-page-head">
             <div class="ui-container">
                 <div class="ui-breadcrumb"><a href="./index.html">首页</a><span>/</span><strong>等待一个家</strong></div>
                 <div class="ui-page-head-row">
                     <div>
+                        <p class="ui-eyebrow">ANIMAL ARCHIVE</p>
                         <h1>和未来的家人，<span class="ui-catalog-title-tail">先见一面</span></h1>
                         <p>认真了解它们的健康、性格和照护需要。领养不是一次选择，而是一段长期关系的开始。</p>
                     </div>
-                    <span v-if="!loading && !error" class="ui-badge is-waiting">{{ total }} 只正在等待</span>
+                    <span v-if="!loading && !error" class="ui-badge is-waiting">{{ total }} 份开放档案</span>
                 </div>
             </div>
         </section>
@@ -48,7 +49,7 @@
                 <button class="ui-filter-chip" :class="{ 'is-active': typeFilter === '犬类' }" :aria-pressed="String(typeFilter === '犬类')" type="button" @click="setType('犬类')">狗狗</button>
                 <button v-if="query || typeFilter" class="ui-filter-chip" type="button" @click="resetFilters">清除筛选</button>
             </div>
-            <p v-if="!loading && !error && animals.length" class="ui-result-summary" aria-live="polite">当前显示第 {{ pageNum }} 页，共 {{ total }} 份公开档案。</p>
+            <p v-if="!loading && !error && animals.length" class="ui-result-summary" aria-live="polite">当前显示第 {{ pageNum }} 页，共 {{ total }} 份公开档案；筛选只影响当前浏览结果。</p>
 
             <div v-if="loading" class="ui-card-grid" aria-label="正在加载动物列表">
                 <article v-for="index in 6" :key="index" class="ui-animal-card ui-skeleton-card" aria-hidden="true">
@@ -100,8 +101,8 @@
 
 <script src="../../js/jquery.min.js"></script>
 <script src="../../js/vue.min.js"></script>
-<script src="../../js/user-workspace.js?v=20260731a"></script>
-<script src="../../js/front-shell.js?v=20260731a"></script>
+<script src="../../js/user-workspace.js?v=20260809u1"></script>
+<script src="../../js/front-shell.js?v=20260809u1"></script>
 <script src="../../js/auth-session.js?v=20260728"></script>
 <script src="../../js/status-text.js?v=20260727"></script>
 <script>

@@ -9,7 +9,7 @@
     throw new Error('front-shell.js requires Vue and user-workspace.js');
   }
 
-  var ICON_SPRITE = '/icons/ui-icons.svg';
+  var ICON_SPRITE = '/icons/ui-icons.svg?v=20260809u1';
 
   function icon(id, className) {
     return '<svg class="' + (className || 'ui-icon') + '" aria-hidden="true" focusable="false">'
@@ -205,6 +205,32 @@
       + '  <button v-if="loggedIn" class="ui-front-drawer-logout" type="button" @click="logout">' + icon('icon-logout', 'ui-icon ui-icon-sm') + '<span>退出登录</span></button>'
       + '</aside>'
       + '</div>'
+  });
+
+  global.Vue.component('front-member-sidebar', {
+    props: {
+      active: { type: String, default: '' }
+    },
+    computed: {
+      groups: function () {
+        return global.UserWorkspace.frontAccountGroups();
+      }
+    },
+    methods: {
+      isActive: function (id) {
+        return this.active === id;
+      }
+    },
+    template:
+      '<aside class="ui-member-sidebar" aria-label="我的行动导航">'
+      + '<div class="ui-member-sidebar-title"><span>MEMBER DESK</span><strong>我的行动</strong></div>'
+      + '<section v-for="group in groups" :key="group.id" class="ui-member-sidebar-group">'
+      + '  <strong>{{ group.label }}</strong>'
+      + '  <nav :aria-label="group.label">'
+      + '    <a v-for="item in group.items" :key="item.id" :href="item.href" :class="{\'is-active\': isActive(item.id)}" :aria-current="isActive(item.id) ? \'page\' : null">{{ item.label }}</a>'
+      + '  </nav>'
+      + '</section>'
+      + '</aside>'
   });
 
   global.Vue.component('front-site-footer', {
